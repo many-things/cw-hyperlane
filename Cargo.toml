@@ -1,8 +1,5 @@
 [workspace]
-
-members = [
-  'contracts/*',
-]
+members = ['contracts/*', 'packages/*']
 
 [profile.release]
 codegen-units = 1
@@ -14,3 +11,29 @@ opt-level = 3
 overflow-checks = true
 panic = 'abort'
 rpath = false
+
+[workspace.package]
+version = "0.0.1"
+authors = ["byeongsu-hong <hong@byeongsu.dev>"]
+edition = "2021"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/mars-protocol/red-bank"
+homepage = "https://marsprotocol.io"
+documentation = "https://docs.marsprotocol.io/"
+keywords = ["mars", "cosmos", "cosmwasm"]
+
+[workspace.dependencies]
+cosmwasm-std = { version = "1.1.9", features = ["stargate"] }
+cosmwasm-storage = "1.1.9"
+schemars = "0.8.12"
+cw-storage-plus = "1.0.1"
+cw-utils = "0.16.0"
+cw2 = "1.0.0"
+sha3 = "0.10.8"
+serde = "1.0.162"
+thiserror = { version = "1.0.37" }
+
+cw-multi-test = "0.16.1"
+cosmwasm-schema = "1.1.9"
+
+hpl-interface = { path = "./packages/interface" }
