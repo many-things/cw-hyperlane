@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, Addr, Binary, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
-    QuerierWrapper, Reply, Response, StdResult, WasmMsg,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, HexBinary, MessageInfo, QuerierWrapper, Reply,
+    Response, StdResult, WasmMsg,
 };
 use cw2::set_contract_version;
 use hpl_interface::{
@@ -14,7 +14,11 @@ use hpl_interface::{
 
 use crate::{
     error::ContractError,
-    state::{Config, CONFIG, MESSAGE_PROCESSED},
+    event::{
+        emit_default_ism_changed, emit_dispatch, emit_dispatch_id, emit_paused, emit_process,
+        emit_process_id, emit_unpaused,
+    },
+    state::{Config, CONFIG, MESSAGE_PROCESSED, NONCE, PAUSE},
     CONTRACT_NAME, CONTRACT_VERSION, MAILBOX_VERSION,
 };
 
@@ -64,6 +68,10 @@ pub fn instantiate(
         },
     )?;
 
+    PAUSE.save(deps.storage, &false)?;
+
+    NONCE.save(deps.storage, &0)?;
+
     Ok(Response::new()
         .add_attribute("method", "instantiate")
         .add_attribute("owner", info.sender))
@@ -94,12 +102,28 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     use ExecuteMsg::*;
 
+    assert!(!PAUSE.load(deps.storage)?, "paused");
+
     match msg {
+        Pause => {
+            let config = CONFIG.load(deps.storage)?;
+            assert_eq!(config.owner, info.sender, "not an owner");
+
+            PAUSE.save(deps.storage, &true)?;
+
+            Ok(Response::new().add_event(emit_paused(info.sender)))
+        }
+        Unpause => {
+            let config = CONFIG.load(deps.storage)?;
+            assert_eq!(config.owner, info.sender, "not an owner");
+
+            PAUSE.save(deps.storage, &false)?;
+
+            Ok(Response::new().add_event(emit_unpaused(info.sender)))
+        }
         SetDefaultISM(new_default_ism) => {
             let config = CONFIG.load(deps.storage)?;
-            if config.owner != info.sender {
-                return Err(ContractError::Unauthorized {});
-            }
+            assert_eq!(config.owner, info.sender, "not an owner");
 
             // FIXME: clone
             let new_default_ism = deps.api.addr_validate(&new_default_ism)?;
@@ -107,17 +131,11 @@ pub fn execute(
                 deps.storage,
                 &Config {
                     default_ism: new_default_ism.clone(),
-                    ..config.clone()
+                    ..config
                 },
             )?;
 
-            let resp = Response::new().add_attributes(vec![
-                attr("method", "set_default_ism"),
-                attr("owner", config.owner),
-                attr("new_default_ism", new_default_ism),
-            ]);
-
-            Ok(resp)
+            Ok(Response::new().add_event(emit_default_ism_changed(info.sender, new_default_ism)))
         }
 
         Dispatch {
@@ -125,11 +143,38 @@ pub fn execute(
             recipient_addr,
             msg_body,
         } => {
-            assert!(recipient_addr.len() <= 32);
+            assert!(recipient_addr.len() <= 32, "addr too long");
 
-            unimplemented!();
+            let config = CONFIG.load(deps.storage)?;
 
-            Ok(Response::default())
+            let nonce = NONCE.load(deps.storage)?;
+            NONCE.save(deps.storage, &(nonce + 1))?;
+
+            let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
+
+            let msg = Message {
+                version: MAILBOX_VERSION,
+                nonce,
+                origin_domain,
+                sender: Binary(info.sender.as_bytes().to_vec()),
+                dest_domain,
+                recipient: recipient_addr.into(),
+                body: msg_body.into(),
+            };
+
+            let id = msg.id();
+
+            // TODO: insert tree
+
+            Ok(Response::new().add_events(vec![
+                emit_dispatch_id(id),
+                emit_dispatch(
+                    msg.sender.clone(),
+                    dest_domain,
+                    msg.recipient.clone(),
+                    msg.into(),
+                ),
+            ]))
         }
         Process { metadata, message } => {
             let config = CONFIG.load(deps.storage)?;
@@ -137,7 +182,7 @@ pub fn execute(
             let decoded_msg: Message = message.clone().into();
             assert!(decoded_msg.recipient.len() <= 32);
 
-            let receipient = decoded_msg.recipient_addr(deps.api)?;
+            let recipient = decoded_msg.recipient_addr(deps.api)?;
 
             let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
 
@@ -153,13 +198,13 @@ pub fn execute(
             ism_verify(
                 &deps.querier,
                 &config.default_ism,
-                &receipient,
+                &recipient,
                 metadata,
                 message,
             )?;
 
             let handle_msg = WasmMsg::Execute {
-                contract_addr: receipient.to_string(),
+                contract_addr: recipient.to_string(),
                 msg: to_binary(&ExpectedHandlerMsg::Handle(HandleMsg {
                     origin: decoded_msg.origin_domain,
                     sender: decoded_msg.sender.clone().into(),
@@ -168,17 +213,10 @@ pub fn execute(
                 funds: vec![],
             };
 
-            let resp = Response::new().add_message(handle_msg).add_events(vec![
-                Event::new("mailbox_process_id")
-                    .add_attributes(vec![attr("id", HexBinary::from(id).to_hex())]),
-                Event::new("mailbox_process").add_attributes(vec![
-                    attr("origin", format!("{}", origin_domain)),
-                    attr("sender", HexBinary::from(decoded_msg.sender).to_hex()),
-                    attr("recipient", receipient),
-                ]),
-            ]);
-
-            Ok(resp)
+            Ok(Response::new().add_message(handle_msg).add_events(vec![
+                emit_process_id(id),
+                emit_process(origin_domain, decoded_msg.sender, decoded_msg.recipient),
+            ]))
         }
     }
 }

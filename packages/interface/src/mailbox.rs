@@ -11,6 +11,8 @@ pub struct InstantiateMsg {
 /// Message type for `execute` entry_point
 #[cw_serde]
 pub enum ExecuteMsg {
+    Pause,
+    Unpause,
     SetDefaultISM(String),
 
     Dispatch {

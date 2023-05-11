@@ -30,6 +30,12 @@ impl From<Message> for Binary {
     }
 }
 
+impl From<Message> for HexBinary {
+    fn from(v: Message) -> Self {
+        Binary::from(v).into()
+    }
+}
+
 impl From<Binary> for Message {
     fn from(v: Binary) -> Self {
         Self {
