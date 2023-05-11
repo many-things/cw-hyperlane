@@ -36,13 +36,15 @@ fn ism_verify(
     metadata: HexBinary,
     message: HexBinary,
 ) -> StdResult<()> {
-    let ism_resp: ism::InterchainSecurityModuleResponse =
-        querier.query_wasm_smart(receipient, &ism::QueryMsg::InterchainSecurityModule())?;
+    let ism_resp: ism::InterchainSecurityModuleResponse = querier.query_wasm_smart(
+        receipient,
+        &ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
+    )?;
 
     let ism = ism_resp.0.unwrap_or_else(|| default_ism.clone());
 
     let verify_resp: ism::VerifyResponse =
-        querier.query_wasm_smart(ism, &ism::QueryMsg::Verify { metadata, message })?;
+        querier.query_wasm_smart(ism, &ism::ISMQueryMsg::Verify { metadata, message })?;
 
     assert!(verify_resp.0);
 
