@@ -79,19 +79,9 @@ pub fn instantiate(
         .add_attribute("owner", info.sender))
 }
 
-/// Handling contract migration
-/// To make a contract migratable, you need
-/// - this entry_point implemented
-/// - only contract admin can migrate, so admin has to be set at contract initiation time
-/// Handling contract execution
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    match msg {
-        // Find matched incoming message variant and execute them with your custom logic.
-        //
-        // With `Response` type, it is possible to dispatch message to invoke external logic.
-        // See: https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#dispatching-messages
-    }
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    Ok(Response::default())
 }
 
 /// Handling contract execution

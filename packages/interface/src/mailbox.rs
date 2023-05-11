@@ -40,7 +40,7 @@ pub enum ExpectedHandlerMsg {
 
 /// Message type for `migrate` entry_point
 #[cw_serde]
-pub enum MigrateMsg {}
+pub struct MigrateMsg {}
 
 /// Message type for `query` entry_point
 #[cw_serde]
