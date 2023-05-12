@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use hpl_interface::ism::{
     owned::{ExecuteMsg, InstantiateMsg, MigrateMsg},
@@ -14,7 +14,6 @@ use crate::{
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
-/// Handling contract instantiation
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -43,11 +42,6 @@ pub fn instantiate(
         .add_attribute("owner", config.owner))
 }
 
-/// Handling contract migration
-/// To make a contract migratable, you need
-/// - this entry_point implemented
-/// - only contract admin can migrate, so admin has to be set at contract initiation time
-/// Handling contract execution
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
@@ -110,14 +104,4 @@ pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, Contract
             Ok(to_binary(&VerifyResponse(verified))?)
         }
     }
-}
-
-/// Handling submessage reply.
-/// For more info on submessage and reply, see https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#submessages
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(_deps: DepsMut, _env: Env, _msg: Reply) -> Result<Response, ContractError> {
-    // With `Response` type, it is still possible to dispatch message to invoke external logic.
-    // See: https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#dispatching-messages
-
-    todo!()
 }

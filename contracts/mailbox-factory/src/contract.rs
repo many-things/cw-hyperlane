@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult, WasmMsg,
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, WasmMsg,
 };
 use cw2::set_contract_version;
 use hpl_interface::{
@@ -9,10 +9,12 @@ use hpl_interface::{
     mailbox_factory::{ExecuteMsg, InstantiateMsg, MigrateMsg, OriginDomainResponse, QueryMsg},
 };
 
-use crate::state::{MAILBOX_CODE, ORIGIN_DOMAIN};
 use crate::{error::ContractError, CONTRACT_NAME, CONTRACT_VERSION};
+use crate::{
+    event::emit_instantiated,
+    state::{MAILBOX_CODE, ORIGIN_DOMAIN},
+};
 
-/// Handling contract instantiation
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -25,11 +27,7 @@ pub fn instantiate(
     ORIGIN_DOMAIN.save(deps.storage, &msg.origin_domain)?;
     MAILBOX_CODE.save(deps.storage, &msg.mailbox_code)?;
 
-    // With `Response` type, it is possible to dispatch message to invoke external logic.
-    // See: https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#dispatching-messages
-    Ok(Response::new()
-        .add_attribute("method", "instantiate")
-        .add_attribute("owner", info.sender))
+    Ok(Response::new().add_event(emit_instantiated(info.sender)))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -37,7 +35,6 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
     Ok(Response::default())
 }
 
-/// Handling contract execution
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
@@ -45,8 +42,10 @@ pub fn execute(
     _info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    use ExecuteMsg::*;
+
     match msg {
-        ExecuteMsg::Instantiate { owner, default_ism } => {
+        Instantiate { owner, default_ism } => {
             deps.api.addr_validate(&owner)?;
             deps.api.addr_validate(&default_ism)?;
 
@@ -62,26 +61,15 @@ pub fn execute(
 
             Ok(resp)
         }
-        ExecuteMsg::Migrate {} => todo!(),
+        Migrate {} => todo!(),
     }
 }
 
-/// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    use QueryMsg::*;
+
     match msg {
-        QueryMsg::OriginDomain => {
-            to_binary(&OriginDomainResponse(ORIGIN_DOMAIN.load(deps.storage)?))
-        }
+        OriginDomain => to_binary(&OriginDomainResponse(ORIGIN_DOMAIN.load(deps.storage)?)),
     }
-}
-
-/// Handling submessage reply.
-/// For more info on submessage and reply, see https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#submessages
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(_deps: DepsMut, _env: Env, _msg: Reply) -> Result<Response, ContractError> {
-    // With `Response` type, it is still possible to dispatch message to invoke external logic.
-    // See: https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#dispatching-messages
-
-    todo!()
 }

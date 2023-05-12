@@ -24,6 +24,12 @@ codegen({
       bundleFile: "index.ts",
       scope: "contracts",
     },
+    client: {
+      enabled: true,
+    },
+    messageComposer: {
+      enabled: true,
+    },
   },
 }).then(() => {
   console.log("✨ Typescript code is generated successfully!");

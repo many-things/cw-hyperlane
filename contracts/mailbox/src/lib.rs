@@ -1,6 +1,8 @@
 pub mod contract;
+mod core;
 mod error;
 mod event;
+mod gov;
 pub mod merkle;
 pub mod state;
 

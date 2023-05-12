@@ -1,5 +1,9 @@
 use cosmwasm_std::{Addr, Binary, Event, HexBinary};
 
+pub fn emit_instantiated(owner: Addr) -> Event {
+    Event::new("mailbox_instantiated").add_attribute("owner", owner)
+}
+
 pub fn emit_paused(owner: Addr) -> Event {
     Event::new("mailbox_paused").add_attribute("owner", owner)
 }
