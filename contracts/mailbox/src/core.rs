@@ -4,14 +4,14 @@ use cosmwasm_std::{
 };
 use hpl_interface::{
     ism,
-    mailbox::{ExpectedHandlerMsg, HandleMsg},
+    mailbox::{DispatchResponse, ExpectedHandlerMsg, HandleMsg},
     mailbox_factory,
     types::message::Message,
 };
 
 use crate::{
     event::{emit_dispatch, emit_dispatch_id, emit_process, emit_process_id},
-    state::{CONFIG, MESSAGE_PROCESSED, NONCE},
+    state::{CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE, NONCE},
     ContractError, MAILBOX_VERSION,
 };
 
@@ -71,18 +71,23 @@ pub fn dispatch(
     };
 
     let id = msg.id();
+    let mut tree = MESSAGE_TREE.load(deps.storage)?;
+    tree.insert(id.clone());
+    MESSAGE_TREE.save(deps.storage, &tree)?;
 
-    // TODO: insert tree
-
-    Ok(Response::new().add_events(vec![
-        emit_dispatch_id(id),
-        emit_dispatch(
-            msg.sender.clone(),
-            dest_domain,
-            msg.recipient.clone(),
-            msg.into(),
-        ),
-    ]))
+    Ok(Response::new()
+        .set_data(to_binary(&DispatchResponse {
+            message_id: id.clone(),
+        })?)
+        .add_events(vec![
+            emit_dispatch_id(id),
+            emit_dispatch(
+                msg.sender.clone(),
+                dest_domain,
+                msg.recipient.clone(),
+                msg.into(),
+            ),
+        ]))
 }
 
 pub fn process(
@@ -93,19 +98,31 @@ pub fn process(
     let config = CONFIG.load(deps.storage)?;
 
     let decoded_msg: Message = message.clone().into();
-    assert!(decoded_msg.recipient.len() <= 32);
+    assert!(
+        decoded_msg.recipient.len() <= 32,
+        "invalid recipient length"
+    );
 
     let recipient = decoded_msg.recipient_addr(deps.api)?;
 
     let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
 
-    assert_eq!(decoded_msg.version, MAILBOX_VERSION);
-    assert_eq!(decoded_msg.dest_domain, origin_domain);
+    assert_eq!(
+        decoded_msg.version, MAILBOX_VERSION,
+        "invalid message version"
+    );
+    assert_eq!(
+        decoded_msg.dest_domain, origin_domain,
+        "invalid destination domain"
+    );
 
     let id = decoded_msg.id();
-    assert!(MESSAGE_PROCESSED
-        .may_load(deps.storage, id.0.clone())?
-        .is_none());
+    assert!(
+        MESSAGE_PROCESSED
+            .may_load(deps.storage, id.0.clone())?
+            .is_none(),
+        "delivered"
+    );
     MESSAGE_PROCESSED.save(deps.storage, id.0.clone(), &true)?;
 
     ism_verify(

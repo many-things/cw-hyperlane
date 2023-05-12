@@ -1,13 +1,17 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, QueryResponse, Response};
 use cw2::set_contract_version;
-use hpl_interface::mailbox::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use hpl_interface::mailbox::{
+    CheckPointResponse, CountResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, NonceResponse,
+    PausedResponse, QueryMsg, RootResponse,
+};
+use serde::Serialize;
 
 use crate::{
     error::ContractError,
     event::emit_instantiated,
-    state::{Config, CONFIG, NONCE, PAUSE},
+    state::{Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -65,13 +69,31 @@ pub fn execute(
     }
 }
 
+fn to_binary<T: Serialize>(res: Result<T, ContractError>) -> Result<QueryResponse, ContractError> {
+    match res {
+        Ok(v) => Ok(cosmwasm_std::to_binary(&v)?),
+        Err(e) => Err(e),
+    }
+}
+
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+    use QueryMsg::*;
+
     match msg {
-        // Find matched incoming message variant and query them your custom logic
-        // and then construct your query response with the type usually defined
-        // `msg.rs` alongside with the query message itself.
-        //
-        // use `cosmwasm_std::to_binary` to serialize query response to json binary.
+        Root => to_binary(Ok(&RootResponse(
+            MESSAGE_TREE.load(deps.storage)?.root()?.into(),
+        ))),
+        Count => to_binary(Ok(&CountResponse(MESSAGE_TREE.load(deps.storage)?.count))),
+        CheckPoint => to_binary({
+            let tree = MESSAGE_TREE.load(deps.storage)?;
+
+            Ok(&CheckPointResponse {
+                root: tree.root()?.into(),
+                count: tree.count,
+            })
+        }),
+        Paused => to_binary(Ok(&PausedResponse(PAUSE.load(deps.storage)?))),
+        Nonce => to_binary(Ok(&NonceResponse(NONCE.load(deps.storage)?))),
     }
 }

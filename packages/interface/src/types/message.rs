@@ -1,6 +1,5 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Api, Binary, CanonicalAddr, HexBinary, StdResult};
-use sha3::{Digest, Keccak256};
 
 #[cw_serde]
 pub struct Message {
@@ -58,11 +57,7 @@ impl From<HexBinary> for Message {
 
 impl Message {
     pub fn id(&self) -> Binary {
-        let mut hasher = Keccak256::new();
-        hasher.update(Binary::from(self.clone()).0);
-        let hash = hasher.finalize().to_vec();
-
-        Binary(hash)
+        super::keccak256_hash(&Binary::from(self.clone()))
     }
 
     pub fn recipient_addr(&self, api: &dyn Api) -> StdResult<Addr> {
