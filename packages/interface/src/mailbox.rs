@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{Binary, HexBinary};
 
 /// Message type for `instantiate` entry_point
 #[cw_serde]
@@ -27,6 +27,11 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
+pub struct DispatchResponse {
+    pub message_id: Binary,
+}
+
+#[cw_serde]
 pub struct HandleMsg {
     pub origin: u32,
     pub sender: HexBinary,
@@ -46,15 +51,36 @@ pub struct MigrateMsg {}
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    // This example query variant indicates that any client can query the contract
-    // using `YourQuery` and it will return `YourQueryResponse`
-    // This `returns` information will be included in contract's schema
-    // which is used for client code generation.
-    //
-    // #[returns(YourQueryResponse)]
-    // YourQuery {},
+    #[returns(RootResponse)]
+    Root,
+
+    #[returns(CountResponse)]
+    Count,
+
+    #[returns(CheckPointResponse)]
+    CheckPoint,
+
+    #[returns(PausedResponse)]
+    Paused,
+
+    #[returns(NonceResponse)]
+    Nonce,
 }
 
-// We define a custom struct for each query response
-// #[cw_serde]
-// pub struct YourQueryResponse {}
+#[cw_serde]
+pub struct RootResponse(pub HexBinary);
+
+#[cw_serde]
+pub struct CountResponse(pub u128);
+
+#[cw_serde]
+pub struct CheckPointResponse {
+    pub root: HexBinary,
+    pub count: u128,
+}
+
+#[cw_serde]
+pub struct PausedResponse(pub bool);
+
+#[cw_serde]
+pub struct NonceResponse(pub u32);
