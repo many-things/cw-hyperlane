@@ -5,6 +5,7 @@ use cw_storage_plus::Item;
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
+    pub mailbox: Addr,
 }
 
 pub const CONFIG_KEY: &str = "config";

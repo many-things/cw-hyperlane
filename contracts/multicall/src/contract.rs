@@ -1,12 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, to_vec, Binary, ContractResult, Deps, DepsMut, Empty, Env, MessageInfo,
-    QueryRequest, Response, StdError, StdResult, SystemResult,
+    from_binary, to_binary, to_vec, Binary, CanonicalAddr, ContractResult, CosmosMsg, Deps,
+    DepsMut, Empty, Env, MessageInfo, QueryRequest, Response, StdError, StdResult, SystemResult,
 };
 use cw2::set_contract_version;
-use hpl_interface::multicall::{
-    AggregateResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
+use hpl_interface::{
+    mailbox,
+    multicall::{AggregateResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
 };
 
 use crate::{
@@ -26,6 +27,7 @@ pub fn instantiate(
 
     let config = Config {
         owner: deps.api.addr_validate(&msg.owner)?,
+        mailbox: deps.api.addr_validate(&msg.mailbox)?,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -40,7 +42,6 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
     Ok(Response::default())
 }
 
-/// Handling contract execution
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
@@ -60,10 +61,24 @@ pub fn execute(
 
             Ok(resp)
         }
+
+        Handle(mailbox::HandleMsg { sender, body, .. }) => {
+            let config = CONFIG.load(deps.storage)?;
+            assert_eq!(config.mailbox, info.sender, "not a mailbox");
+
+            let sender = deps
+                .api
+                .addr_humanize(&CanonicalAddr::from(Binary::from(sender)))?;
+            assert_eq!(config.owner, sender, "not an owner");
+
+            let msgs: Vec<CosmosMsg> = from_binary(&Binary::from(body))?;
+            let resp = Response::new().add_messages(msgs);
+
+            Ok(resp)
+        }
     }
 }
 
-/// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     use QueryMsg::*;
