@@ -1,14 +1,12 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, HexBinary};
 
-/// Message type for `instantiate` entry_point
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
     pub default_ism: String,
 }
 
-/// Message type for `execute` entry_point
 #[cw_serde]
 pub enum ExecuteMsg {
     Pause,
@@ -43,11 +41,9 @@ pub enum ExpectedHandlerMsg {
     Handle(HandleMsg),
 }
 
-/// Message type for `migrate` entry_point
 #[cw_serde]
 pub struct MigrateMsg {}
 
-/// Message type for `query` entry_point
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
