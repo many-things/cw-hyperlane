@@ -1,5 +1,5 @@
 [package]
-name = "hpl-ism-owned"
+name = "hpl-ism-multisig"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
