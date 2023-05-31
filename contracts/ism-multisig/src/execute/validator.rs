@@ -1,7 +1,8 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, Event, MessageInfo, Response};
 use hpl_interface::ism::multisig::ValidatorSet as MsgValidatorSet;
 
 use crate::{
+    event::{emit_enroll_validator, emit_unenroll_validator},
     state::{ValidatorSet, Validators, CONFIG, VALIDATORS},
     verify::{self},
     ContractError,
@@ -35,9 +36,7 @@ pub fn enroll_validator(
     validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
 
     VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-
-    // TODO: define event
-    Ok(Response::new())
+    Ok(Response::new().add_event(emit_enroll_validator(msg.domain, msg.validator)))
 }
 
 pub fn enroll_validators(
@@ -48,7 +47,9 @@ pub fn enroll_validators(
     let config = CONFIG.load(deps.storage)?;
     assert_eq!(info.sender, config.owner);
 
-    for msg in validators {
+    let mut events: Vec<Event> = Vec::new();
+
+    for msg in validators.into_iter() {
         assert_eq!(
             msg.validator,
             verify::pub_to_addr(msg.validator_pubkey.clone(), &config.chain_hpl)?,
@@ -70,10 +71,10 @@ pub fn enroll_validators(
         validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
 
         VALIDATORS.save(deps.storage, msg.domain, &validators)?;
+        events.push(emit_enroll_validator(msg.domain, msg.validator))
     }
 
-    // TODO: define event
-    Ok(Response::new())
+    Ok(Response::new().add_events(events.into_iter()))
 }
 
 pub fn unenroll_validator(
@@ -97,7 +98,5 @@ pub fn unenroll_validator(
     validator_list.sort_by(|a, b| a.signer.cmp(&b.signer));
 
     VALIDATORS.save(deps.storage, domain, &Validators(validator_list))?;
-
-    // TODO: define event
-    Ok(Response::new())
+    Ok(Response::new().add_event(emit_unenroll_validator(domain, validator)))
 }
