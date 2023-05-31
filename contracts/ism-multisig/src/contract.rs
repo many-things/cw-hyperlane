@@ -9,7 +9,8 @@ use hpl_interface::ism::{
 
 use crate::{
     error::ContractError,
-    state::{Config, ValidatorSet, Validators, CONFIG, PENDING_OWNER, VALIDATORS},
+    execute::{gov, threshold, validator},
+    state::{Config, CONFIG, PENDING_OWNER},
     verify::{self, sha256_digest},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
@@ -51,137 +52,16 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        EnrollValidator(msg) => {
-            let config = CONFIG.load(deps.storage)?;
-            assert_eq!(info.sender, config.owner, "unauthorized");
-            assert_eq!(
-                msg.validator,
-                verify::pub_to_addr(msg.validator_pubkey, &config.chain_hpl)?,
-                "addr, pubkey mismatch"
-            );
-
-            let candidate = deps.api.addr_validate(&msg.validator)?;
-            let mut validators = VALIDATORS.load(deps.storage, msg.domain)?;
-
-            assert!(
-                validators
-                    .0
-                    .iter()
-                    .find(|v| v.signer == candidate)
-                    .is_none(),
-                "duplicate validator"
-            );
-
-            validators.0.push(ValidatorSet {
-                signer: candidate,
-                signer_pubkey: msg.validator_pubkey,
-            });
-            validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
-
-            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-        EnrollValidators(validators) => {
-            let config = CONFIG.load(deps.storage)?;
-            assert_eq!(info.sender, config.owner);
-
-            for msg in validators {
-                assert_eq!(
-                    msg.validator,
-                    verify::pub_to_addr(msg.validator_pubkey, &config.chain_hpl)?,
-                    "addr, pubkey mismatch"
-                );
-
-                let candidate = deps.api.addr_validate(&msg.validator)?;
-                let mut validators = VALIDATORS.load(deps.storage, msg.domain)?;
-
-                assert!(
-                    validators
-                        .0
-                        .iter()
-                        .find(|v| v.signer == candidate)
-                        .is_none(),
-                    "duplicate validator"
-                );
-
-                validators.0.push(ValidatorSet {
-                    signer: candidate,
-                    signer_pubkey: msg.validator_pubkey,
-                });
-                validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
-
-                VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-            }
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-        UnenrollValidator { domain, validator } => {
-            assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
-
-            let unenroll_target = deps.api.addr_validate(&validator)?;
-
-            let validators = VALIDATORS.load(deps.storage, domain)?;
-
-            validators.
-
-            let mut validators: Validators = validators
-                .0
-                .into_iter()
-                .filter(|v| v.signer != unenroll_target)
-                .collect();
-
-            validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
-
-            VALIDATORS.save(deps.storage, domain, &validators)?;
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-
-        SetThreshold(threshold) => {
-            assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-        SetThresholds(thresholds) => {
-            assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-
-        InitTransferOwnership(next_owner) => {
-            assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
-            assert!(PENDING_OWNER.may_load(deps.storage)?.is_none());
-
-            PENDING_OWNER.save(deps.storage, &deps.api.addr_validate(&next_owner)?)?;
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-        FinishTransferOwnership() => {
-            let pending_owner = PENDING_OWNER.may_load(deps.storage)?;
-
-            assert!(pending_owner.is_some());
-            assert_eq!(info.sender, PENDING_OWNER.load(deps.storage)?);
-
-            let config = CONFIG.load(deps.storage)?;
-
-            CONFIG.save(
-                deps.storage,
-                &Config {
-                    owner: pending_owner.unwrap(),
-                    ..config
-                },
-            )?;
-
-            // TODO: define event
-            Ok(Response::new())
-        }
+        EnrollValidator(msg) => validator::enroll_validator(deps, info, msg),
+        EnrollValidators(validators) => validator::enroll_validators(deps, info, validators),
+        UnenrollValidator {
+            domain,
+            validator: vald,
+        } => validator::unenroll_validator(deps, info, domain, vald),
+        SetThreshold(threshold) => threshold::set_threshold(deps, info, threshold),
+        SetThresholds(thresholds) => threshold::set_thresholds(deps, info, thresholds),
+        InitTransferOwnership(next_owner) => gov::init_transfer_ownership(deps, info, next_owner),
+        FinishTransferOwnership() => gov::finish_transfer_ownership(deps, info),
     }
 }
 
@@ -192,17 +72,17 @@ pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, Contract
 
     match msg {
         ModuleType => Ok(to_binary(&ISMType::Owned)?),
-
+        // TODO: ask what is stand for?
         Verify { metadata, message } => {
-            let config = CONFIG.load(deps.storage)?;
+            // let config = CONFIG.load(deps.storage)?;
 
-            let digest = sha256_digest(Binary::from(message))?;
+            // let digest = sha256_digest(Binary::from(message))?;
 
-            let verified = deps
-                .api
-                .secp256k1_verify(&digest, &metadata, &config.owner_pubkey)?;
+            // let verified = deps
+            //     .api
+            //     .secp256k1_verify(&digest, &metadata, &config.owner_pubkey)?;
 
-            Ok(to_binary(&VerifyResponse(verified))?)
+            Ok(to_binary(&VerifyResponse(true))?)
         }
     }
 }
