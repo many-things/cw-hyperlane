@@ -61,6 +61,7 @@ pub fn execute(
         SetThresholds(thresholds) => threshold::set_thresholds(deps, info, thresholds),
         InitTransferOwnership(next_owner) => gov::init_transfer_ownership(deps, info, next_owner),
         FinishTransferOwnership() => gov::finish_transfer_ownership(deps, info),
+        RevokeTransferOwnership() => gov::revoke_transfer_ownership(deps, info),
     }
 }
 

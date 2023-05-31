@@ -25,3 +25,6 @@ pub const PENDING_OWNER: Item<Addr> = Item::new(PENDING_OWNER_KEY);
 
 pub const VALIDATORS_PREFIX: &str = "validators";
 pub const VALIDATORS: Map<u64, Validators> = Map::new(VALIDATORS_PREFIX);
+
+pub const THRESHOLD_PREFIX: &str = "threshold";
+pub const THRESHOLD: Map<u64, u8> = Map::new(THRESHOLD_PREFIX);

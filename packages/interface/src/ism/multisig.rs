@@ -31,6 +31,7 @@ pub enum ExecuteMsg {
 
     InitTransferOwnership(String),
     FinishTransferOwnership(),
+    RevokeTransferOwnership(),
 }
 
 #[cw_serde]
