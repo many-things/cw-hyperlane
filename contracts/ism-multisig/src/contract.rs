@@ -10,8 +10,7 @@ use hpl_interface::ism::{
 use crate::{
     error::ContractError,
     execute::{gov, threshold, validator},
-    state::{Config, CONFIG, PENDING_OWNER},
-    verify::{self, sha256_digest},
+    state::{Config, CONFIG},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -67,7 +66,7 @@ pub fn execute(
 
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, ContractError> {
+pub fn query(_deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, ContractError> {
     use ISMQueryMsg::*;
 
     match msg {

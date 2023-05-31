@@ -1,6 +1,10 @@
 use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
 use crate::{
+    event::{
+        emit_finish_transfer_ownership, emit_init_transfer_ownership,
+        emit_revoke_transfer_ownership,
+    },
     state::{Config, CONFIG, PENDING_OWNER},
     ContractError,
 };
@@ -15,8 +19,7 @@ pub fn init_transfer_ownership(
 
     PENDING_OWNER.save(deps.storage, &deps.api.addr_validate(&next_owner)?)?;
 
-    // TODO: define event
-    Ok(Response::new())
+    Ok(Response::new().add_event(emit_init_transfer_ownership(next_owner)))
 }
 
 pub fn finish_transfer_ownership(
@@ -39,13 +42,17 @@ pub fn finish_transfer_ownership(
     )?;
 
     // FIXME: define event
-    Ok(Response::new())
+    Ok(Response::new().add_event(emit_finish_transfer_ownership(info.sender)))
 }
 
 pub fn revoke_transfer_ownership(
     deps: DepsMut,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    // FIXME: define event
-    Ok(Response::new())
+    assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
+    assert!(PENDING_OWNER.may_load(deps.storage)?.is_some());
+
+    PENDING_OWNER.remove(deps.storage);
+
+    Ok(Response::new().add_event(emit_revoke_transfer_ownership()))
 }
