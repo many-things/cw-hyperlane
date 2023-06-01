@@ -1,5 +1,3 @@
-use std::fmt::Error;
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Binary, HexBinary};
 
@@ -63,6 +61,64 @@ impl MerkleRootMultisigIsmMetadata {
     }
 
     pub fn signature_at(&self, index: usize) -> Binary {
+        // FIXME: handle index out of length
+        Binary(self.signatures[index * SIGNATURE_LENGTH..(index + 1) * SIGNATURE_LENGTH].to_vec())
+    }
+}
+
+#[cw_serde]
+pub struct MessageIdMultisigIsmMetadata {
+    pub origin_mailbox: Binary, // byte32
+    pub merkle_root: Binary,    //bytes32
+    pub signatures: Binary,     // 65 * length
+}
+
+impl From<MessageIdMultisigIsmMetadata> for Binary {
+    fn from(v: MessageIdMultisigIsmMetadata) -> Self {
+        v.origin_mailbox
+            .0
+            .iter()
+            .chain(v.merkle_root.0.iter())
+            .chain(v.signatures.0.iter())
+            .cloned()
+            .collect::<Vec<u8>>()
+            .into()
+    }
+}
+
+impl From<MessageIdMultisigIsmMetadata> for HexBinary {
+    fn from(v: MessageIdMultisigIsmMetadata) -> Self {
+        Binary::from(v).into()
+    }
+}
+
+impl From<Binary> for MessageIdMultisigIsmMetadata {
+    fn from(v: Binary) -> Self {
+        Self {
+            origin_mailbox: Binary(v[0..32].to_vec()),
+            merkle_root: Binary(v[32..64].to_vec()),
+            signatures: Binary(v[64..].to_vec()),
+        }
+    }
+}
+
+impl From<HexBinary> for MessageIdMultisigIsmMetadata {
+    fn from(v: HexBinary) -> Self {
+        Binary(v.into()).into()
+    }
+}
+
+impl MessageIdMultisigIsmMetadata {
+    pub fn signatures_len(&self) -> Result<usize, &'static str> {
+        if self.signatures.len() % SIGNATURE_LENGTH != 0 {
+            return Err("Invalid signatures length");
+        }
+
+        Ok(self.signatures.len() / SIGNATURE_LENGTH)
+    }
+
+    pub fn signature_at(&self, index: usize) -> Binary {
+        // FIXME: handle index out of length
         Binary(self.signatures[index * SIGNATURE_LENGTH..(index + 1) * SIGNATURE_LENGTH].to_vec())
     }
 }

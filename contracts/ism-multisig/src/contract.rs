@@ -2,15 +2,18 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use hpl_interface::ism::{
-    multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg},
-    ISMQueryMsg, ISMType, VerifyResponse,
+use hpl_interface::{
+    ism::{
+        multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg},
+        ISMQueryMsg, ISMType, VerifyResponse,
+    },
+    types::{message::Message, metadata::MessageIdMultisigIsmMetadata},
 };
 
 use crate::{
     error::ContractError,
     execute::{gov, threshold, validator},
-    state::{Config, CONFIG},
+    state::{Config, CONFIG, THRESHOLD, VALIDATORS},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -67,22 +70,40 @@ pub fn execute(
 
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, ContractError> {
+pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, ContractError> {
     use ISMQueryMsg::*;
 
     match msg {
         ModuleType => Ok(to_binary(&ISMType::Owned)?),
         // TODO: ask what is stand for?
-        Verify { metadata, message } => {
-            // let config = CONFIG.load(deps.storage)?;
+        Verify {
+            metadata: raw_metadata,
+            message: raw_message,
+        } => {
+            let metadata: MessageIdMultisigIsmMetadata = raw_metadata.into();
+            let message: Message = raw_message.into();
 
-            // let digest = sha256_digest(Binary::from(message))?;
+            let threshold = THRESHOLD.load(deps.storage, message.origin_domain.into())?;
+            let validators = VALIDATORS.load(deps.storage, message.origin_domain.into())?;
 
-            // let verified = deps
-            //     .api
-            //     .secp256k1_verify(&digest, &metadata, &config.owner_pubkey)?;
+            let mut signatures: Vec<Binary> = Vec::new();
+            for i in 0..metadata.signatures_len().unwrap() {
+                signatures.push(metadata.signature_at(i))
+            }
 
-            Ok(to_binary(&VerifyResponse(true))?)
+            let mut success: u8 = 0;
+            for validator in validators.0 {
+                for signature in &signatures {
+                    let verified = deps
+                        .api
+                        .secp256k1_verify(&message.body, signature, &validator.signer_pubkey)
+                        .unwrap();
+
+                    success += if verified { 1 } else { 0 }
+                }
+            }
+
+            Ok(to_binary(&VerifyResponse(success >= threshold))?)
         }
     }
 }
