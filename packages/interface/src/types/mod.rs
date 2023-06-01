@@ -2,6 +2,7 @@ use cosmwasm_std::Binary;
 use sha3::{Digest, Keccak256};
 
 pub mod message;
+pub mod metadata;
 
 pub fn keccak256_hash(bz: &[u8]) -> Binary {
     let mut hasher = Keccak256::new();
