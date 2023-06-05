@@ -1,16 +1,21 @@
+use std::{collections::HashSet, hash::Hash};
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use hpl_interface::ism::{
-    multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg},
-    ISMQueryMsg, ISMType, VerifyResponse,
+use hpl_interface::{
+    ism::{
+        multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg},
+        ISMQueryMsg, ISMType, VerifyResponse,
+    },
+    types::{message::Message, metadata::MessageIdMultisigIsmMetadata},
 };
 
 use crate::{
     error::ContractError,
-    state::{Config, ValidatorSet, Validators, CONFIG, PENDING_OWNER, VALIDATORS},
-    verify::{self, sha256_digest},
+    execute,
+    state::{Config, CONFIG, THRESHOLD, VALIDATORS},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -51,137 +56,19 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        EnrollValidator(msg) => {
-            let config = CONFIG.load(deps.storage)?;
-            assert_eq!(info.sender, config.owner, "unauthorized");
-            assert_eq!(
-                msg.validator,
-                verify::pub_to_addr(msg.validator_pubkey, &config.chain_hpl)?,
-                "addr, pubkey mismatch"
-            );
-
-            let candidate = deps.api.addr_validate(&msg.validator)?;
-            let mut validators = VALIDATORS.load(deps.storage, msg.domain)?;
-
-            assert!(
-                validators
-                    .0
-                    .iter()
-                    .find(|v| v.signer == candidate)
-                    .is_none(),
-                "duplicate validator"
-            );
-
-            validators.0.push(ValidatorSet {
-                signer: candidate,
-                signer_pubkey: msg.validator_pubkey,
-            });
-            validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
-
-            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-        EnrollValidators(validators) => {
-            let config = CONFIG.load(deps.storage)?;
-            assert_eq!(info.sender, config.owner);
-
-            for msg in validators {
-                assert_eq!(
-                    msg.validator,
-                    verify::pub_to_addr(msg.validator_pubkey, &config.chain_hpl)?,
-                    "addr, pubkey mismatch"
-                );
-
-                let candidate = deps.api.addr_validate(&msg.validator)?;
-                let mut validators = VALIDATORS.load(deps.storage, msg.domain)?;
-
-                assert!(
-                    validators
-                        .0
-                        .iter()
-                        .find(|v| v.signer == candidate)
-                        .is_none(),
-                    "duplicate validator"
-                );
-
-                validators.0.push(ValidatorSet {
-                    signer: candidate,
-                    signer_pubkey: msg.validator_pubkey,
-                });
-                validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
-
-                VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-            }
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-        UnenrollValidator { domain, validator } => {
-            assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
-
-            let unenroll_target = deps.api.addr_validate(&validator)?;
-
-            let validators = VALIDATORS.load(deps.storage, domain)?;
-
-            validators.
-
-            let mut validators: Validators = validators
-                .0
-                .into_iter()
-                .filter(|v| v.signer != unenroll_target)
-                .collect();
-
-            validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
-
-            VALIDATORS.save(deps.storage, domain, &validators)?;
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-
-        SetThreshold(threshold) => {
-            assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-        SetThresholds(thresholds) => {
-            assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
-
-            // TODO: define event
-            Ok(Response::new())
-        }
-
+        EnrollValidator(msg) => execute::enroll_validator(deps, info, msg),
+        EnrollValidators(validators) => execute::enroll_validators(deps, info, validators),
+        UnenrollValidator {
+            domain,
+            validator: vald,
+        } => execute::unenroll_validator(deps, info, domain, vald),
+        SetThreshold(threshold) => execute::set_threshold(deps, info, threshold),
+        SetThresholds(thresholds) => execute::set_thresholds(deps, info, thresholds),
         InitTransferOwnership(next_owner) => {
-            assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
-            assert!(PENDING_OWNER.may_load(deps.storage)?.is_none());
-
-            PENDING_OWNER.save(deps.storage, &deps.api.addr_validate(&next_owner)?)?;
-
-            // TODO: define event
-            Ok(Response::new())
+            execute::init_transfer_ownership(deps, info, next_owner)
         }
-        FinishTransferOwnership() => {
-            let pending_owner = PENDING_OWNER.may_load(deps.storage)?;
-
-            assert!(pending_owner.is_some());
-            assert_eq!(info.sender, PENDING_OWNER.load(deps.storage)?);
-
-            let config = CONFIG.load(deps.storage)?;
-
-            CONFIG.save(
-                deps.storage,
-                &Config {
-                    owner: pending_owner.unwrap(),
-                    ..config
-                },
-            )?;
-
-            // TODO: define event
-            Ok(Response::new())
-        }
+        FinishTransferOwnership() => execute::finish_transfer_ownership(deps, info),
+        RevokeTransferOwnership() => execute::revoke_transfer_ownership(deps, info),
     }
 }
 
@@ -192,17 +79,47 @@ pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, Contract
 
     match msg {
         ModuleType => Ok(to_binary(&ISMType::Owned)?),
+        Verify {
+            metadata: raw_metadata,
+            message: raw_message,
+        } => {
+            let metadata: MessageIdMultisigIsmMetadata = raw_metadata.into();
+            let message: Message = raw_message.into();
 
-        Verify { metadata, message } => {
-            let config = CONFIG.load(deps.storage)?;
+            let threshold = THRESHOLD.load(deps.storage, message.origin_domain.into())?;
+            let validators = VALIDATORS.load(deps.storage, message.origin_domain.into())?;
 
-            let digest = sha256_digest(Binary::from(message))?;
+            let mut signatures: Vec<Binary> = Vec::new();
+            for i in 0..metadata.signatures_len().unwrap() {
+                signatures.push(metadata.signature_at(i))
+            }
 
-            let verified = deps
-                .api
-                .secp256k1_verify(&digest, &metadata, &config.owner_pubkey)?;
+            let unique_vali_pubkey: HashSet<_> =
+                validators.0.into_iter().map(|v| v.signer_pubkey).collect();
 
-            Ok(to_binary(&VerifyResponse(verified))?)
+            let unique_meta_pubkey: HashSet<_> = signatures
+                .into_iter()
+                .flat_map(|sig| {
+                    [
+                        deps.api
+                            .secp256k1_recover_pubkey(&message.id(), sig.as_slice(), 0)
+                            .unwrap(),
+                        deps.api
+                            .secp256k1_recover_pubkey(&message.id(), sig.as_slice(), 1)
+                            .unwrap(),
+                    ]
+                })
+                .map(Binary::from)
+                .collect();
+
+            let success = unique_vali_pubkey
+                .intersection(&unique_meta_pubkey)
+                .collect::<Vec<_>>()
+                .len();
+
+            Ok(to_binary(&VerifyResponse(
+                success >= usize::from(threshold),
+            ))?)
         }
     }
 }
