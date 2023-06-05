@@ -29,7 +29,6 @@ bech32 = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
-hex = { workspace = true }
 cosmwasm-schema = { workspace = true }
 
 hpl-interface = { workspace = true }

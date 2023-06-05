@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Event, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, Event, MessageInfo, Response, StdResult};
 use hpl_interface::ism::multisig::ThresholdSet;
 
 use crate::{
@@ -28,12 +28,13 @@ pub fn set_thresholds(
     let config = CONFIG.load(deps.storage)?;
     assert_eq!(info.sender, config.owner, "unauthorized");
 
-    let mut events: Vec<Event> = Vec::new();
-
-    for threshold in thresholds.into_iter() {
-        THRESHOLD.save(deps.storage, threshold.domain, &threshold.threshold)?;
-        events.push(emit_set_threshold(threshold.domain, threshold.threshold))
-    }
+    let events: Vec<Event> = thresholds
+        .into_iter()
+        .map(|v| {
+            THRESHOLD.save(deps.storage, v.domain, &v.threshold)?;
+            Ok(emit_set_threshold(v.domain, v.threshold))
+        })
+        .collect::<StdResult<_>>()?;
 
     Ok(Response::new().add_events(events.into_iter()))
 }

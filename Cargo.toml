@@ -34,7 +34,6 @@ ripemd = "0.1.3"
 bech32 = "0.9.1"
 serde = "1.0.162"
 thiserror = { version = "1.0.37" }
-hex = { version = "0.4", default-features = false }
 
 cw-multi-test = "0.16.1"
 cosmwasm-schema = "1.1.9"

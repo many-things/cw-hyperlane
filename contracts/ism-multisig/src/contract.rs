@@ -1,3 +1,5 @@
+use std::{collections::HashSet, hash::Hash};
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
@@ -12,7 +14,7 @@ use hpl_interface::{
 
 use crate::{
     error::ContractError,
-    execute::{gov, threshold, validator},
+    execute,
     state::{Config, CONFIG, THRESHOLD, VALIDATORS},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
@@ -54,17 +56,19 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        EnrollValidator(msg) => validator::enroll_validator(deps, info, msg),
-        EnrollValidators(validators) => validator::enroll_validators(deps, info, validators),
+        EnrollValidator(msg) => execute::enroll_validator(deps, info, msg),
+        EnrollValidators(validators) => execute::enroll_validators(deps, info, validators),
         UnenrollValidator {
             domain,
             validator: vald,
-        } => validator::unenroll_validator(deps, info, domain, vald),
-        SetThreshold(threshold) => threshold::set_threshold(deps, info, threshold),
-        SetThresholds(thresholds) => threshold::set_thresholds(deps, info, thresholds),
-        InitTransferOwnership(next_owner) => gov::init_transfer_ownership(deps, info, next_owner),
-        FinishTransferOwnership() => gov::finish_transfer_ownership(deps, info),
-        RevokeTransferOwnership() => gov::revoke_transfer_ownership(deps, info),
+        } => execute::unenroll_validator(deps, info, domain, vald),
+        SetThreshold(threshold) => execute::set_threshold(deps, info, threshold),
+        SetThresholds(thresholds) => execute::set_thresholds(deps, info, thresholds),
+        InitTransferOwnership(next_owner) => {
+            execute::init_transfer_ownership(deps, info, next_owner)
+        }
+        FinishTransferOwnership() => execute::finish_transfer_ownership(deps, info),
+        RevokeTransferOwnership() => execute::revoke_transfer_ownership(deps, info),
     }
 }
 
@@ -75,7 +79,6 @@ pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, Contract
 
     match msg {
         ModuleType => Ok(to_binary(&ISMType::Owned)?),
-        // TODO: ask what is stand for?
         Verify {
             metadata: raw_metadata,
             message: raw_message,
@@ -91,19 +94,32 @@ pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, Contract
                 signatures.push(metadata.signature_at(i))
             }
 
-            let mut success: u8 = 0;
-            for validator in validators.0 {
-                for signature in &signatures {
-                    let verified = deps
-                        .api
-                        .secp256k1_verify(&message.body, signature, &validator.signer_pubkey)
-                        .unwrap();
+            let unique_vali_pubkey: HashSet<_> =
+                validators.0.into_iter().map(|v| v.signer_pubkey).collect();
 
-                    success += if verified { 1 } else { 0 }
-                }
-            }
+            let unique_meta_pubkey: HashSet<_> = signatures
+                .into_iter()
+                .flat_map(|sig| {
+                    [
+                        deps.api
+                            .secp256k1_recover_pubkey(&message.id(), sig.as_slice(), 0)
+                            .unwrap(),
+                        deps.api
+                            .secp256k1_recover_pubkey(&message.id(), sig.as_slice(), 1)
+                            .unwrap(),
+                    ]
+                })
+                .map(Binary::from)
+                .collect();
 
-            Ok(to_binary(&VerifyResponse(success >= threshold))?)
+            let success = unique_vali_pubkey
+                .intersection(&unique_meta_pubkey)
+                .collect::<Vec<_>>()
+                .len();
+
+            Ok(to_binary(&VerifyResponse(
+                success >= usize::from(threshold),
+            ))?)
         }
     }
 }
