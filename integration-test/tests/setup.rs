@@ -23,13 +23,14 @@ async fn deploy_cw_hyperlane<'a>(
     // store codes
     let base_path = Path::new("../target/wasm32-unknown-unknown/release/");
     let artifacts = [
-        ("ism_multisig", "hpl_ism_multisig.wasm"),
-        ("mailbox", "hpl_mailbox.wasm"),
-        ("mailbox_factory", "hpl_mailbox_factory.wasm"),
-        ("multicall", "hpl_multicall.wasm"),
+        ("ism_multisig"),
+        ("mailbox"),
+        ("mailbox_factory"),
+        ("multicall"),
     ]
     .into_iter()
-    .map(|(name, filename)| {
+    .map(|name| {
+        let filename = format!("hpl_{name}.wasm");
         let path = base_path.join(filename);
         let code = fs::read(path).unwrap();
         let store_resp = wasm.store_code(&code, None, deployer).unwrap();
