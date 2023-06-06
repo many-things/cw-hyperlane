@@ -1,0 +1,30 @@
+[package]
+name = "hpl-tests"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[dependencies]
+cosmwasm-std.workspace = true
+
+[dev_dependencies]
+osmosis-test-tube.workspace = true
+osmosis-std.workspace = true
+serde_json.workspace = true
+serde-json-wasm.workspace = true
+cosmwasm-schema.workspace = true
+base64.workspace = true
