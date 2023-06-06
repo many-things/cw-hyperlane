@@ -1,4 +1,4 @@
-pub mod owned;
+pub mod multisig;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, HexBinary};

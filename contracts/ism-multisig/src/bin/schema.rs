@@ -3,7 +3,7 @@ use std::{env::current_dir, fs::remove_dir_all};
 use cosmwasm_schema::write_api;
 
 use hpl_interface::ism::{
-    owned::{ExecuteMsg, InstantiateMsg, MigrateMsg},
+    multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg},
     ISMQueryMsg,
 };
 
