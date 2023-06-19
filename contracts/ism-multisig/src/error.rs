@@ -17,4 +17,10 @@ pub enum ContractError {
 
     #[error("Invalid pubkey")]
     InvalidPubKey,
+
+    #[error("Ownership transfer not started")]
+    OwnershipTransferNotStarted,
+
+    #[error("Ownership transfer already started")]
+    OwnershipTransferAlreadyStarted,
 }
