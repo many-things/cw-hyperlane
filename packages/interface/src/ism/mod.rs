@@ -18,7 +18,7 @@ pub enum ISMType {
 #[derive(QueryResponses)]
 pub enum ISMQueryMsg {
     #[returns(ModuleTypeResponse)]
-    ModuleType,
+    ModuleType {},
 
     #[returns(VerifyResponse)]
     Verify {
@@ -35,10 +35,17 @@ pub enum ISMSpecifierQueryMsg {
 }
 
 #[cw_serde]
-pub struct ModuleTypeResponse(pub ISMType);
+pub struct ModuleTypeResponse {
+    #[serde(rename = "type")]
+    pub typ: ISMType,
+}
 
 #[cw_serde]
-pub struct VerifyResponse(pub bool);
+pub struct VerifyResponse {
+    pub verified: bool,
+}
 
 #[cw_serde]
-pub struct InterchainSecurityModuleResponse(pub Option<Addr>);
+pub struct InterchainSecurityModuleResponse {
+    pub ism: Option<Addr>,
+}

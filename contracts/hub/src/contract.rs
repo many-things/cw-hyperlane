@@ -5,8 +5,8 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use hpl_interface::{
+    hub::{ExecuteMsg, InstantiateMsg, MigrateMsg, OriginDomainResponse, QueryMsg},
     mailbox,
-    mailbox_factory::{ExecuteMsg, InstantiateMsg, MigrateMsg, OriginDomainResponse, QueryMsg},
 };
 
 use crate::{error::ContractError, CONTRACT_NAME, CONTRACT_VERSION};
@@ -70,6 +70,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use QueryMsg::*;
 
     match msg {
-        OriginDomain => to_binary(&OriginDomainResponse(ORIGIN_DOMAIN.load(deps.storage)?)),
+        OriginDomain {} => to_binary(&OriginDomainResponse {
+            domain: ORIGIN_DOMAIN.load(deps.storage)?,
+        }),
     }
 }

@@ -22,14 +22,14 @@ pub struct ThresholdSet {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    EnrollValidator(ValidatorSet),
-    EnrollValidators(Vec<ValidatorSet>),
+    EnrollValidator { set: ValidatorSet },
+    EnrollValidators { set: Vec<ValidatorSet> },
     UnenrollValidator { domain: u64, validator: String },
 
-    SetThreshold(ThresholdSet),
-    SetThresholds(Vec<ThresholdSet>),
+    SetThreshold { set: ThresholdSet },
+    SetThresholds { set: Vec<ThresholdSet> },
 
-    InitTransferOwnership(String),
+    InitTransferOwnership { owner: String },
     FinishTransferOwnership(),
     RevokeTransferOwnership(),
 }
