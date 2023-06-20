@@ -30,7 +30,7 @@ pub fn instantiate(
 
     let config = Config {
         owner: deps.api.addr_validate(&msg.owner)?,
-        chain_hpl: msg.chain_hpl,
+        addr_prefix: msg.addr_prefix,
     };
 
     CONFIG.save(deps.storage, &config)?;

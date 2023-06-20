@@ -7,7 +7,7 @@ use crate::ContractError;
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
-    pub chain_hpl: String,
+    pub addr_prefix: String,
 }
 
 #[cw_serde]

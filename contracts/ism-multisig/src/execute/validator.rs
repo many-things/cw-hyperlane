@@ -17,7 +17,7 @@ pub fn enroll_validator(
     assert_eq!(info.sender, config.owner, "unauthorized");
     assert_eq!(
         msg.validator,
-        verify::pub_to_addr(msg.validator_pubkey.clone(), &config.chain_hpl)?,
+        verify::pub_to_addr(msg.validator_pubkey.clone(), &config.addr_prefix)?,
         "addr, pubkey mismatch"
     );
 
@@ -52,7 +52,7 @@ pub fn enroll_validators(
     for msg in validators.into_iter() {
         assert_eq!(
             msg.validator,
-            verify::pub_to_addr(msg.validator_pubkey.clone(), &config.chain_hpl)?,
+            verify::pub_to_addr(msg.validator_pubkey.clone(), &config.addr_prefix)?,
             "addr, pubkey mismatch"
         );
 

@@ -72,7 +72,7 @@ mod test {
     fn mock_owner(storage: &mut dyn Storage, owner: Addr) {
         let config = Config {
             owner,
-            chain_hpl: String::new(),
+            addr_prefix: String::new(),
         };
 
         CONFIG.save(storage, &config).unwrap();
