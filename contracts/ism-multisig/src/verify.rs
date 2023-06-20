@@ -2,10 +2,10 @@ use crate::error::ContractError;
 use bech32::ToBase32;
 use cosmwasm_std::Binary;
 use ripemd::{Digest, Ripemd160};
-use sha3::Sha3_256;
+use sha2::Sha256;
 
 pub fn sha256_digest(bz: impl AsRef<[u8]>) -> Result<[u8; 32], ContractError> {
-    let mut hasher = Sha3_256::new();
+    let mut hasher = Sha256::new();
 
     hasher.update(bz);
 
