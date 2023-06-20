@@ -1,8 +1,8 @@
 mod setup;
 
 use cosmwasm_std::HexBinary;
-use ethers::prelude::parse_log;
-use hpl_interface::types::bech32_to_h256;
+use ethers::{prelude::parse_log, signers::Signer};
+use hpl_interface::types::{bech32_encode, bech32_to_h256};
 use hpl_tests::mailbox::{DispatchFilter, DispatchIdFilter};
 use osmosis_test_tube::{Module, Wasm};
 use setup::setup_env;
@@ -14,6 +14,7 @@ async fn test_mailbox_inner() -> eyre::Result<()> {
     let cw_receiver = test_env.cw_deployments.addrs.receiver;
     let cw_wasm = Wasm::new(&test_env.osmo_app);
 
+    let sender = bech32_encode("osmo", test_env.eth_owner.address().as_bytes())?;
     let receiver = bech32_to_h256(&cw_receiver)?;
     let msg_body = b"hello world";
 
@@ -21,7 +22,7 @@ async fn test_mailbox_inner() -> eyre::Result<()> {
     let dispatch_res = dispatch_tx_call.send().await?.await?.unwrap();
 
     let dispatch: DispatchFilter = parse_log(dispatch_res.logs[0].clone())?;
-    let dispatch_id: DispatchIdFilter = parse_log(dispatch_res.logs[1].clone())?;
+    let _: DispatchIdFilter = parse_log(dispatch_res.logs[1].clone())?;
 
     let process_res = cw_wasm.execute(
         &cw_mailbox,
@@ -50,7 +51,7 @@ async fn test_mailbox_inner() -> eyre::Result<()> {
             format!("_contract_address: {cw_receiver}"),
             format!("body: {}", std::str::from_utf8(msg_body)?),
             format!("origin: {}", evm_mailbox.local_domain().await?),
-            format!("sender")
+            format!("sender: {sender}")
         ],
     );
 

@@ -21,6 +21,7 @@ pub struct HplTestEnv<M: Middleware, S: Signer> {
     pub osmo_app: OsmosisTestApp,
     pub osmo_owner: SigningAccount,
     pub eth_app: AnvilInstance,
+    pub eth_owner: S,
     pub cw_deployments: deploy_cw::HplCwDeployment,
     pub evm_deployments: deploy_evm::HplEvmDeployment<M, S>,
 }
@@ -29,12 +30,10 @@ pub async fn setup_env() -> eyre::Result<HplTestEnv<Provider<Http>, Wallet<Signi
     let osmo_app = OsmosisTestApp::new();
     let eth_app = Anvil::new().spawn();
     let eth_wallet: LocalWallet = eth_app.keys()[0].clone().into();
+    let eth_wallet = eth_wallet.with_chain_id(eth_app.chain_id());
     let eth_provider =
         Provider::<Http>::try_from(&eth_app.endpoint())?.interval(Duration::from_millis(10u64));
-    let eth_signer = Arc::new(SignerMiddleware::new(
-        eth_provider,
-        eth_wallet.with_chain_id(eth_app.chain_id()),
-    ));
+    let eth_signer = Arc::new(SignerMiddleware::new(eth_provider, eth_wallet.clone()));
 
     let osmo_owner = osmo_app.init_account(&[coin(1000000u128 * BASE, "uosmo")])?;
     let cw_deployments = deploy_cw_hyperlane(&osmo_app, &osmo_owner).await?;
@@ -44,6 +43,7 @@ pub async fn setup_env() -> eyre::Result<HplTestEnv<Provider<Http>, Wallet<Signi
         osmo_app,
         osmo_owner,
         eth_app,
+        eth_owner: eth_wallet,
         cw_deployments,
         evm_deployments,
     };
