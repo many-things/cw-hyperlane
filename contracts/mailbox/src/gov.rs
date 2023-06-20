@@ -48,10 +48,98 @@ pub fn set_default_ism(
 
 #[cfg(test)]
 mod tests {
+    use cosmwasm_std::{
+        testing::{mock_dependencies, mock_env, mock_info},
+        Addr, Storage,
+    };
+
+    use super::*;
+
+    const OWNER: &str = "owner";
+    const FACTORY: &str = "factory";
+    const DEFAULT_ISM: &str = "default_ism";
+    const NOT_OWNER: &str = "not_owner";
+
+    fn mock_owner(storage: &mut dyn Storage, owner: Addr, factory: Addr, default_ism: Addr) {
+        let config = Config {
+            owner,
+            factory,
+            default_ism,
+        };
+
+        CONFIG.save(storage, &config).unwrap();
+    }
+
     #[test]
-    fn test_pause() {}
+    fn test_pause() {
+        let mut deps = mock_dependencies();
 
-    fn test_unpause() {}
+        let owner = Addr::unchecked(OWNER);
+        let factory = Addr::unchecked(FACTORY);
+        let default_ism = Addr::unchecked(DEFAULT_ISM);
 
-    fn test_set_default_ism() {}
+        mock_owner(
+            deps.as_mut().storage,
+            owner.clone(),
+            factory.clone(),
+            default_ism.clone(),
+        );
+
+        // Sender is not authorized
+        let sender = NOT_OWNER;
+        let info = mock_info(sender, &[]);
+
+        let owner_assert = pause(deps.as_mut(), info).unwrap_err();
+
+        assert!(matches!(owner_assert, ContractError::Unauthorized {}));
+    }
+
+    #[test]
+    fn test_unpause() {
+        let mut deps = mock_dependencies();
+
+        let owner = Addr::unchecked(OWNER);
+        let factory = Addr::unchecked(FACTORY);
+        let default_ism = Addr::unchecked(DEFAULT_ISM);
+
+        mock_owner(
+            deps.as_mut().storage,
+            owner.clone(),
+            factory.clone(),
+            default_ism.clone(),
+        );
+
+        // Sender is not authorized
+        let sender = NOT_OWNER;
+        let info = mock_info(sender, &[]);
+
+        let owner_assert = unpause(deps.as_mut(), info).unwrap_err();
+
+        assert!(matches!(owner_assert, ContractError::Unauthorized {}));
+    }
+
+    #[test]
+    fn test_set_default_ism() {
+        let mut deps = mock_dependencies();
+
+        let owner = Addr::unchecked(OWNER);
+        let factory = Addr::unchecked(FACTORY);
+        let default_ism = Addr::unchecked(DEFAULT_ISM);
+
+        mock_owner(
+            deps.as_mut().storage,
+            owner.clone(),
+            factory.clone(),
+            default_ism.clone(),
+        );
+
+        // Sender is not authorized
+        let sender = NOT_OWNER;
+        let info = mock_info(sender, &[]);
+        let new_default_ism = "new_default_ism".to_string();
+
+        let owner_assert = set_default_ism(deps.as_mut(), info, new_default_ism).unwrap_err();
+
+        assert!(matches!(owner_assert, ContractError::Unauthorized {}));
+    }
 }

@@ -105,3 +105,38 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
         })),
     }
 }
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+
+    use super::*;
+
+    const OWNER: &str = "";
+    const DEFAULT_ISM: &str = "";
+
+    #[test]
+    fn init() {
+        let mut deps = mock_dependencies();
+
+        instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info("owner", &[]),
+            InstantiateMsg {
+                owner: OWNER.to_string(),
+                default_ism: DEFAULT_ISM.to_string(),
+            },
+        )
+        .unwrap();
+
+        let version = cw2::get_contract_version(deps.as_ref().storage).unwrap();
+        assert_eq!(
+            version,
+            cw2::ContractVersion {
+                contract: CONTRACT_NAME.to_string(),
+                version: CONTRACT_VERSION.to_string()
+            }
+        );
+    }
+}

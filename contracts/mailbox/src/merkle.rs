@@ -143,4 +143,9 @@ mod tests {
             "0x5b07e077a81ffc6b47435f65a8727bcc542bc6fc0f25a56210efb1a74b88a5ae5e3b3917b0a11fc9edfc594b3aabbc95167d176fcc17aa76c01d7bda956862cd",
         );
     }
+
+    #[test]
+    fn test_insert() {
+        // TODO
+    }
 }

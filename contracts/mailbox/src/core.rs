@@ -145,8 +145,178 @@ pub fn process(
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_dispatch() {}
+    use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
-    fn test_process() {}
+    use super::*;
+
+    const DEST_DOMAIN: u32 = 11155111;
+    const RECIPIENT: &str = "b75d7d24e428c7859440498efe7caa3997cefb08c99bdd581b6b1f9f866096f0";
+    const MSG: &str = "48656c6c6f21";
+    const METADATA: &str = "48656c6c6f21";
+    const FACTORY_CONTRACT: &str = "";
+    const DEFAULT_ISM: &str = "default_ism";
+
+    #[test]
+    fn test_fetch_origin_domain() {
+        let mut deps = mock_dependencies();
+
+        fetch_origin_domain(&deps.as_mut().querier, &Addr::unchecked(FACTORY_CONTRACT));
+    }
+
+    #[test]
+    fn test_ism_verify() {
+        let mut deps = mock_dependencies();
+
+        let ism_verify_response_assert = ism_verify(
+            &deps.as_mut().querier,
+            &Addr::unchecked(DEFAULT_ISM),
+            &Addr::unchecked(RECIPIENT),
+            HexBinary::from_hex(METADATA).unwrap(),
+            HexBinary::from_hex(MSG).unwrap(),
+        )
+        .unwrap_err();
+
+        assert!(matches!(
+            ism_verify_response_assert,
+            ContractError::VerifyFailed {}
+        ));
+    }
+
+    #[test]
+    fn test_dispatch() {
+        let mut deps = mock_dependencies();
+
+        let long_recipient_address = HexBinary::from_hex(
+            "b75d7d24e428c7859440498efe7caa3997cefb08c99bdd581b6b1f9f866096f073c8c3b0316abe",
+        )
+        .unwrap();
+
+        // Invalid address length
+        let invalid_address_length_assert = dispatch(
+            deps.as_mut(),
+            mock_info("owner", &[]),
+            DEST_DOMAIN,
+            long_recipient_address.clone(),
+            HexBinary::from_hex(MSG).unwrap(),
+        )
+        .unwrap_err();
+
+        let len = long_recipient_address.clone().len();
+        assert!(matches!(
+            invalid_address_length_assert,
+            ContractError::InvalidAddressLength { len }
+        ));
+    }
+
+    #[test]
+    fn test_process() {
+        let mut deps = mock_dependencies();
+        let hex = |v: &str| -> Binary { HexBinary::from_hex(v).unwrap().into() };
+
+        let hpl_message: Message = Message {
+            version: 1,
+            nonce: 2,
+            origin_domain: 3,
+            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
+            dest_domain: 11155111,
+            recipient: hex(RECIPIENT),
+            body: hex("48656c6c6f21"),
+        };
+        let message: HexBinary = HexBinary::from(hpl_message);
+
+        let mut wrong_decoded_message: Message;
+
+        // Invalid address length
+        let wrong_recipient_message: HexBinary = HexBinary::from(Message {
+            version: 1,
+            nonce: 2,
+            origin_domain: 3,
+            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
+            dest_domain: 11155111,
+            recipient: hex(
+                "b75d7d24e428c7859440498efe7caa3997cefb08c99bdd581b6b1f9f866096f073c8c3b0316abe",
+            ),
+            body: hex("48656c6c6f21"),
+        });
+        wrong_decoded_message = wrong_recipient_message.clone().into();
+        let invalid_address_length_assert = process(
+            deps.as_mut(),
+            HexBinary::from_hex(METADATA).unwrap(),
+            message.clone(),
+        )
+        .unwrap_err();
+
+        let len = wrong_decoded_message.recipient.len();
+        assert!(matches!(
+            invalid_address_length_assert,
+            ContractError::InvalidAddressLength { len: len }
+        ));
+
+        // Invalid message version
+        let wrong_version_message: HexBinary = HexBinary::from(Message {
+            version: 3,
+            nonce: 2,
+            origin_domain: 3,
+            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
+            dest_domain: 11155111,
+            recipient: hex(RECIPIENT),
+            body: hex("48656c6c6f21"),
+        });
+        wrong_decoded_message = wrong_version_message.clone().into();
+        let invalid_message_version_assert = process(
+            deps.as_mut(),
+            HexBinary::from_hex(METADATA).unwrap(),
+            wrong_version_message,
+        )
+        .unwrap_err();
+
+        let version = wrong_decoded_message.version;
+        assert!(matches!(
+            invalid_message_version_assert,
+            ContractError::InvalidMessageVersion { version: version }
+        ));
+
+        // Invalid destination domain
+        let wrong_destination_domain_message: HexBinary = HexBinary::from(Message {
+            version: 1,
+            nonce: 2,
+            origin_domain: 5,
+            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
+            dest_domain: 11155111,
+            recipient: hex(RECIPIENT),
+            body: hex("48656c6c6f21"),
+        });
+        wrong_decoded_message = wrong_destination_domain_message.clone().into();
+        let invalid_destination_domain_assert = process(
+            deps.as_mut(),
+            HexBinary::from_hex(METADATA).unwrap(),
+            wrong_destination_domain_message,
+        )
+        .unwrap_err();
+
+        let dest_domain = wrong_decoded_message.dest_domain;
+        assert!(matches!(
+            invalid_destination_domain_assert,
+            ContractError::InvalidDestinationDomain {
+                domain: dest_domain
+            }
+        ));
+
+        // Invalid destination domain
+        let decoded_msg: Message = message.clone().into();
+        MESSAGE_PROCESSED
+            .save(deps.as_mut().storage, decoded_msg.id().0.clone(), &true)
+            .unwrap();
+        let already_delivered_message_assert = process(
+            deps.as_mut(),
+            HexBinary::from_hex(METADATA).unwrap(),
+            message,
+        )
+        .unwrap_err();
+
+        assert!(matches!(
+            already_delivered_message_assert,
+            ContractError::AlreadyDeliveredMessage {}
+        ));
+    }
 }
