@@ -45,7 +45,7 @@ thiserror = { version = "1.0.37" }
 
 cw-multi-test = "0.16.1"
 cosmwasm-schema = "1.1.9"
-osmosis-test-tube = "=15.1.0"
+osmosis-test-tube = { git = "https://github.com/osmosis-labs/test-tube", rev = "a4a647726f7bd6d36f4e2d58ed8af37d5acd25a1" }
 osmosis-std = "=0.15.2"
 
 tokio = { version = "1", features = ["full"] }
