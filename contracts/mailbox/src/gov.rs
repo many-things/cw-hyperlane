@@ -44,3 +44,13 @@ pub fn set_default_ism(
 
     Ok(Response::new().add_event(emit_default_ism_changed(info.sender, new_default_ism)))
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_pause() {}
+
+    fn test_unpause() {}
+
+    fn test_set_default_ism() {}
+}

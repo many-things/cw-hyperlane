@@ -148,3 +148,11 @@ pub fn process(
         emit_process(origin_domain, decoded_msg.sender, decoded_msg.recipient),
     ]))
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_dispatch() {}
+
+    fn test_process() {}
+}
