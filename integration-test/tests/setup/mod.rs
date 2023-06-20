@@ -50,12 +50,3 @@ pub async fn setup_env() -> eyre::Result<HplTestEnv<Provider<Http>, Wallet<Signi
 
     Ok(env)
 }
-
-#[tokio::test]
-async fn test_setup() {
-    let test_env = setup_env().await.unwrap();
-
-    println!("{:?}", test_env.cw_deployments.addrs);
-    println!("{:?}", test_env.cw_deployments.codes);
-    println!("{:?}", test_env.evm_deployments);
-}
