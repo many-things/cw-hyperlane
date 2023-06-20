@@ -134,13 +134,11 @@ pub fn process(
 
     let handle_msg = WasmMsg::Execute {
         contract_addr: recipient.to_string(),
-        msg: to_binary(&ExpectedHandlerMsg::Handle {
-            msg: HandleMsg {
-                origin: decoded_msg.origin_domain,
-                sender: decoded_msg.sender.clone().into(),
-                body: decoded_msg.body.into(),
-            },
-        })?,
+        msg: to_binary(&ExpectedHandlerMsg::Handle(HandleMsg {
+            origin: decoded_msg.origin_domain,
+            sender: decoded_msg.sender.clone().into(),
+            body: decoded_msg.body.into(),
+        }))?,
         funds: vec![],
     };
 

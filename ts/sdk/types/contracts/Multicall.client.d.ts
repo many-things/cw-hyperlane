@@ -5,7 +5,7 @@
 */
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { CosmosMsgForEmpty, Coin, HandleMsg, StaticCall, AggregateResponse } from "./Multicall.types";
+import { CosmosMsgForEmpty, HexBinary, Coin, StaticCall, AggregateResponse } from "./Multicall.types";
 export interface MulticallReadOnlyInterface {
     contractAddress: string;
     aggregateStatic: ({ req }: {
@@ -26,8 +26,10 @@ export interface MulticallInterface extends MulticallReadOnlyInterface {
     aggregate: ({ req }: {
         req: CosmosMsgForEmpty[];
     }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-    handle: ({ msg }: {
-        msg: HandleMsg;
+    handle: ({ body, origin, sender }: {
+        body: HexBinary;
+        origin: number;
+        sender: HexBinary;
     }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export declare class MulticallClient extends MulticallQueryClient implements MulticallInterface {
@@ -38,8 +40,10 @@ export declare class MulticallClient extends MulticallQueryClient implements Mul
     aggregate: ({ req }: {
         req: CosmosMsgForEmpty[];
     }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-    handle: ({ msg }: {
-        msg: HandleMsg;
+    handle: ({ body, origin, sender }: {
+        body: HexBinary;
+        origin: number;
+        sender: HexBinary;
     }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 //# sourceMappingURL=Multicall.client.d.ts.map

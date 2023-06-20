@@ -17,9 +17,13 @@ export interface MulticallMessage {
     req: CosmosMsgForEmpty[];
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   handle: ({
-    msg
+    body,
+    origin,
+    sender
   }: {
-    msg: HandleMsg;
+    body: HexBinary;
+    origin: number;
+    sender: HexBinary;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class MulticallMessageComposer implements MulticallMessage {
@@ -53,9 +57,13 @@ export class MulticallMessageComposer implements MulticallMessage {
     };
   };
   handle = ({
-    msg
+    body,
+    origin,
+    sender
   }: {
-    msg: HandleMsg;
+    body: HexBinary;
+    origin: number;
+    sender: HexBinary;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -64,7 +72,9 @@ export class MulticallMessageComposer implements MulticallMessage {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           handle: {
-            msg
+            body,
+            origin,
+            sender
           }
         })),
         funds

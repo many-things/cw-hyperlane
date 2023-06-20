@@ -12,9 +12,7 @@ export type ExecuteMsg = {
         req: CosmosMsgForEmpty[];
     };
 } | {
-    handle: {
-        msg: HandleMsg;
-    };
+    handle: HandleMsg;
 };
 export type CosmosMsgForEmpty = {
     bank: BankMsg;

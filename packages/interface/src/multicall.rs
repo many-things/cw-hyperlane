@@ -16,7 +16,7 @@ pub struct MigrateMsg {}
 pub enum ExecuteMsg {
     Aggregate { req: Vec<CosmosMsg> },
 
-    Handle { msg: mailbox::HandleMsg },
+    Handle(mailbox::HandleMsg),
 }
 
 #[cw_serde]

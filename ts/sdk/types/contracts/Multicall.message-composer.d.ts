@@ -4,15 +4,17 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
-import { CosmosMsgForEmpty, Coin, HandleMsg } from "./Multicall.types";
+import { CosmosMsgForEmpty, HexBinary, Coin } from "./Multicall.types";
 export interface MulticallMessage {
     contractAddress: string;
     sender: string;
     aggregate: ({ req }: {
         req: CosmosMsgForEmpty[];
     }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-    handle: ({ msg }: {
-        msg: HandleMsg;
+    handle: ({ body, origin, sender }: {
+        body: HexBinary;
+        origin: number;
+        sender: HexBinary;
     }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export declare class MulticallMessageComposer implements MulticallMessage {
@@ -22,8 +24,10 @@ export declare class MulticallMessageComposer implements MulticallMessage {
     aggregate: ({ req }: {
         req: CosmosMsgForEmpty[];
     }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-    handle: ({ msg }: {
-        msg: HandleMsg;
+    handle: ({ body, origin, sender }: {
+        body: HexBinary;
+        origin: number;
+        sender: HexBinary;
     }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 //# sourceMappingURL=Multicall.message-composer.d.ts.map

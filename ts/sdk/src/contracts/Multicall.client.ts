@@ -46,9 +46,13 @@ export interface MulticallInterface extends MulticallReadOnlyInterface {
     req: CosmosMsgForEmpty[];
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   handle: ({
-    msg
+    body,
+    origin,
+    sender
   }: {
-    msg: HandleMsg;
+    body: HexBinary;
+    origin: number;
+    sender: HexBinary;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class MulticallClient extends MulticallQueryClient implements MulticallInterface {
@@ -77,13 +81,19 @@ export class MulticallClient extends MulticallQueryClient implements MulticallIn
     }, fee, memo, funds);
   };
   handle = async ({
-    msg
+    body,
+    origin,
+    sender
   }: {
-    msg: HandleMsg;
+    body: HexBinary;
+    origin: number;
+    sender: HexBinary;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       handle: {
-        msg
+        body,
+        origin,
+        sender
       }
     }, fee, memo, funds);
   };

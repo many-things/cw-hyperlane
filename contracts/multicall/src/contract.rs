@@ -62,9 +62,7 @@ pub fn execute(
             Ok(resp)
         }
 
-        Handle {
-            msg: mailbox::HandleMsg { sender, body, .. },
-        } => {
+        Handle(mailbox::HandleMsg { sender, body, .. }) => {
             let config = CONFIG.load(deps.storage)?;
             assert_eq!(config.mailbox, info.sender, "not a mailbox");
 

@@ -40,7 +40,7 @@ pub struct HandleMsg {
 
 #[cw_serde]
 pub enum ExpectedHandlerMsg {
-    Handle { msg: HandleMsg },
+    Handle(HandleMsg),
 }
 
 #[cw_serde]
