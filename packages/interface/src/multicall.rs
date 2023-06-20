@@ -14,16 +14,16 @@ pub struct MigrateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Aggregate(Vec<CosmosMsg>),
+    Aggregate { req: Vec<CosmosMsg> },
 
-    Handle(mailbox::HandleMsg),
+    Handle { msg: mailbox::HandleMsg },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(AggregateResponse)]
-    AggregateStatic(Vec<StaticCall>),
+    AggregateStatic { req: Vec<StaticCall> },
 }
 
 #[cw_serde]
@@ -33,4 +33,6 @@ pub struct StaticCall {
 }
 
 #[cw_serde]
-pub struct AggregateResponse(pub Vec<Binary>);
+pub struct AggregateResponse {
+    pub resp: Vec<Binary>,
+}

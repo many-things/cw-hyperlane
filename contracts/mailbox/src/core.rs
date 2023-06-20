@@ -3,9 +3,8 @@ use cosmwasm_std::{
     WasmMsg,
 };
 use hpl_interface::{
-    ism,
+    hub, ism,
     mailbox::{DispatchResponse, ExpectedHandlerMsg, HandleMsg},
-    mailbox_factory,
     types::message::Message,
 };
 
@@ -16,10 +15,10 @@ use crate::{
 };
 
 fn fetch_origin_domain(querier: &QuerierWrapper, factory: &Addr) -> StdResult<u32> {
-    let resp: mailbox_factory::OriginDomainResponse =
-        querier.query_wasm_smart(factory, &mailbox_factory::QueryMsg::OriginDomain)?;
+    let resp: hub::OriginDomainResponse =
+        querier.query_wasm_smart(factory, &hub::QueryMsg::OriginDomain {})?;
 
-    Ok(resp.0)
+    Ok(resp.domain)
 }
 
 fn ism_verify(
@@ -34,12 +33,12 @@ fn ism_verify(
         &ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
     )?;
 
-    let ism = ism_resp.0.unwrap_or_else(|| default_ism.clone());
+    let ism = ism_resp.ism.unwrap_or_else(|| default_ism.clone());
 
     let verify_resp: ism::VerifyResponse =
         querier.query_wasm_smart(ism, &ism::ISMQueryMsg::Verify { metadata, message })?;
 
-    assert!(verify_resp.0);
+    assert!(verify_resp.verified);
 
     Ok(())
 }
@@ -135,11 +134,13 @@ pub fn process(
 
     let handle_msg = WasmMsg::Execute {
         contract_addr: recipient.to_string(),
-        msg: to_binary(&ExpectedHandlerMsg::Handle(HandleMsg {
-            origin: decoded_msg.origin_domain,
-            sender: decoded_msg.sender.clone().into(),
-            body: decoded_msg.body.into(),
-        }))?,
+        msg: to_binary(&ExpectedHandlerMsg::Handle {
+            msg: HandleMsg {
+                origin: decoded_msg.origin_domain,
+                sender: decoded_msg.sender.clone().into(),
+                body: decoded_msg.body.into(),
+            },
+        })?,
         funds: vec![],
     };
 

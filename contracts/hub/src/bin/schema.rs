@@ -2,7 +2,7 @@ use std::{env::current_dir, fs::remove_dir_all};
 
 use cosmwasm_schema::write_api;
 
-use hpl_interface::mailbox_factory::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use hpl_interface::hub::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 fn main() {
     write_api! {

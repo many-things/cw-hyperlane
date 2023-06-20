@@ -19,8 +19,10 @@ pub struct MigrateMsg {}
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(OriginDomainResponse)]
-    OriginDomain,
+    OriginDomain {},
 }
 
 #[cw_serde]
-pub struct OriginDomainResponse(pub u32);
+pub struct OriginDomainResponse {
+    pub domain: u32,
+}

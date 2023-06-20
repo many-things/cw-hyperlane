@@ -9,9 +9,11 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Pause,
-    Unpause,
-    SetDefaultISM(String),
+    Pause {},
+    Unpause {},
+    SetDefaultISM {
+        ism: String,
+    },
 
     Dispatch {
         dest_domain: u32,
@@ -38,7 +40,7 @@ pub struct HandleMsg {
 
 #[cw_serde]
 pub enum ExpectedHandlerMsg {
-    Handle(HandleMsg),
+    Handle { msg: HandleMsg },
 }
 
 #[cw_serde]
@@ -48,26 +50,30 @@ pub struct MigrateMsg {}
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(RootResponse)]
-    Root,
+    Root {},
 
     #[returns(CountResponse)]
-    Count,
+    Count {},
 
     #[returns(CheckPointResponse)]
-    CheckPoint,
+    CheckPoint {},
 
     #[returns(PausedResponse)]
-    Paused,
+    Paused {},
 
     #[returns(NonceResponse)]
-    Nonce,
+    Nonce {},
 }
 
 #[cw_serde]
-pub struct RootResponse(pub HexBinary);
+pub struct RootResponse {
+    pub root: HexBinary,
+}
 
 #[cw_serde]
-pub struct CountResponse(pub u128);
+pub struct CountResponse {
+    pub count: u128,
+}
 
 #[cw_serde]
 pub struct CheckPointResponse {
@@ -76,7 +82,11 @@ pub struct CheckPointResponse {
 }
 
 #[cw_serde]
-pub struct PausedResponse(pub bool);
+pub struct PausedResponse {
+    pub paused: bool,
+}
 
 #[cw_serde]
-pub struct NonceResponse(pub u32);
+pub struct NonceResponse {
+    pub nonce: u32,
+}

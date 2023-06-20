@@ -52,17 +52,19 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        Aggregate(msgs) => {
+        Aggregate { req } => {
             let config = CONFIG.load(deps.storage)?;
 
             assert_eq!(config.owner, info.sender, "not an owner");
 
-            let resp = Response::new().add_messages(msgs);
+            let resp = Response::new().add_messages(req);
 
             Ok(resp)
         }
 
-        Handle(mailbox::HandleMsg { sender, body, .. }) => {
+        Handle {
+            msg: mailbox::HandleMsg { sender, body, .. },
+        } => {
             let config = CONFIG.load(deps.storage)?;
             assert_eq!(config.mailbox, info.sender, "not a mailbox");
 
@@ -84,8 +86,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractErr
     use QueryMsg::*;
 
     match msg {
-        AggregateStatic(calls) => {
-            let resps = calls
+        AggregateStatic { req } => {
+            let resps = req
                 .into_iter()
                 .map(|call| {
                     let raw = to_vec(&QueryRequest::<Empty>::Stargate {
@@ -95,13 +97,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractErr
 
                     match deps.querier.raw_query(&raw) {
                         SystemResult::Err(system_err) => Err(StdError::generic_err(format!(
-                            "Querier system error: {}",
-                            system_err
+                            "Querier system error: {system_err}",
                         ))),
                         SystemResult::Ok(ContractResult::Err(contract_err)) => {
                             Err(StdError::generic_err(format!(
-                                "Querier contract error: {}",
-                                contract_err
+                                "Querier contract error: {contract_err}",
                             )))
                         }
                         SystemResult::Ok(ContractResult::Ok(value)) => Ok(value),
@@ -109,7 +109,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractErr
                 })
                 .collect::<StdResult<Vec<_>>>()?;
 
-            Ok(to_binary(&AggregateResponse(resps))?)
+            Ok(to_binary(&AggregateResponse { resp: resps })?)
         }
     }
 }

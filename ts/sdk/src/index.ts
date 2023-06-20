@@ -1,1 +1,3 @@
-export * from "./contracts";
+import { contracts } from "./contracts";
+
+export default contracts;

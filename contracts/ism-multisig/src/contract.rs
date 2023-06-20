@@ -1,4 +1,4 @@
-use std::{collections::HashSet, hash::Hash};
+use std::collections::HashSet;
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -56,15 +56,15 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        EnrollValidator(msg) => execute::enroll_validator(deps, info, msg),
-        EnrollValidators(validators) => execute::enroll_validators(deps, info, validators),
+        EnrollValidator { set: msg } => execute::enroll_validator(deps, info, msg),
+        EnrollValidators { set: validators } => execute::enroll_validators(deps, info, validators),
         UnenrollValidator {
             domain,
             validator: vald,
         } => execute::unenroll_validator(deps, info, domain, vald),
-        SetThreshold(threshold) => execute::set_threshold(deps, info, threshold),
-        SetThresholds(thresholds) => execute::set_thresholds(deps, info, thresholds),
-        InitTransferOwnership(next_owner) => {
+        SetThreshold { set: threshold } => execute::set_threshold(deps, info, threshold),
+        SetThresholds { set: thresholds } => execute::set_thresholds(deps, info, thresholds),
+        InitTransferOwnership { owner: next_owner } => {
             execute::init_transfer_ownership(deps, info, next_owner)
         }
         FinishTransferOwnership() => execute::finish_transfer_ownership(deps, info),
@@ -78,7 +78,7 @@ pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, Contract
     use ISMQueryMsg::*;
 
     match msg {
-        ModuleType => Ok(to_binary(&ISMType::Owned)?),
+        ModuleType {} => Ok(to_binary(&ISMType::Owned)?),
         Verify {
             metadata: raw_metadata,
             message: raw_message,
@@ -117,9 +117,9 @@ pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, Contract
                 .collect::<Vec<_>>()
                 .len();
 
-            Ok(to_binary(&VerifyResponse(
-                success >= usize::from(threshold),
-            ))?)
+            Ok(to_binary(&VerifyResponse {
+                verified: success >= usize::from(threshold),
+            })?)
         }
     }
 }
