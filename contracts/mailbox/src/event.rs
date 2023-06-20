@@ -30,7 +30,7 @@ pub fn emit_dispatch(
 ) -> Event {
     Event::new("mailbox_dispatch")
         .add_attribute("sender", HexBinary::from(sender).to_hex())
-        .add_attribute("destination", format!("{}", dest_domain))
+        .add_attribute("destination", format!("{dest_domain}"))
         .add_attribute("recipient", HexBinary::from(recipient).to_hex())
         .add_attribute("message", HexBinary::from(message).to_hex())
 }
@@ -41,7 +41,7 @@ pub fn emit_process_id(id: Binary) -> Event {
 
 pub fn emit_process(origin: u32, sender: Binary, recipient: Binary) -> Event {
     Event::new("mailbox_process")
-        .add_attribute("origin", format!("{}", origin))
+        .add_attribute("origin", format!("{origin}"))
         .add_attribute("sender", HexBinary::from(sender).to_hex())
         .add_attribute("recipient", HexBinary::from(recipient).to_hex())
 }

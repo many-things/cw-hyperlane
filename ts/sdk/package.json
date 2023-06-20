@@ -58,6 +58,7 @@
   },
   "license": "MIT OR Apache-2.0",
   "dependencies": {
-    "@cosmjs/cosmwasm-stargate": "^0.28.11"
+    "@cosmjs/cosmwasm-stargate": "^0.28.11",
+    "cosmwasm": "^1.1.1"
   }
 }

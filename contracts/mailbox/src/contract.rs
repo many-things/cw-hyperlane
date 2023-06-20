@@ -56,9 +56,11 @@ pub fn execute(
     assert!(!PAUSE.load(deps.storage)?, "paused");
 
     match msg {
-        Pause => gov::pause(deps, info),
-        Unpause => gov::unpause(deps, info),
-        SetDefaultISM(new_default_ism) => gov::set_default_ism(deps, info, new_default_ism),
+        Pause {} => gov::pause(deps, info),
+        Unpause {} => gov::unpause(deps, info),
+        SetDefaultISM {
+            ism: new_default_ism,
+        } => gov::set_default_ism(deps, info, new_default_ism),
 
         Dispatch {
             dest_domain,
@@ -81,11 +83,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
     use QueryMsg::*;
 
     match msg {
-        Root => to_binary(Ok(&RootResponse(
-            MESSAGE_TREE.load(deps.storage)?.root()?.into(),
-        ))),
-        Count => to_binary(Ok(&CountResponse(MESSAGE_TREE.load(deps.storage)?.count))),
-        CheckPoint => to_binary({
+        Root {} => to_binary(Ok(&RootResponse {
+            root: MESSAGE_TREE.load(deps.storage)?.root()?.into(),
+        })),
+        Count {} => to_binary(Ok(&CountResponse {
+            count: MESSAGE_TREE.load(deps.storage)?.count,
+        })),
+        CheckPoint {} => to_binary({
             let tree = MESSAGE_TREE.load(deps.storage)?;
 
             Ok(&CheckPointResponse {
@@ -93,7 +97,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
                 count: tree.count,
             })
         }),
-        Paused => to_binary(Ok(&PausedResponse(PAUSE.load(deps.storage)?))),
-        Nonce => to_binary(Ok(&NonceResponse(NONCE.load(deps.storage)?))),
+        Paused {} => to_binary(Ok(&PausedResponse {
+            paused: PAUSE.load(deps.storage)?,
+        })),
+        Nonce {} => to_binary(Ok(&NonceResponse {
+            nonce: NONCE.load(deps.storage)?,
+        })),
     }
 }

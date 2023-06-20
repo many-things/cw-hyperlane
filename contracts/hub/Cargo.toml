@@ -1,5 +1,5 @@
 [package]
-name = "hpl-mailbox-factory"
+name = "hpl-hub"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
