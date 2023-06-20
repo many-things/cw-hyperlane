@@ -37,20 +37,32 @@ pub fn enroll_validator(
     )?;
 
     let candidate = deps.api.addr_validate(&msg.validator)?;
-    let mut validators = VALIDATORS.load(deps.storage, msg.domain)?;
+    match VALIDATORS.may_load(deps.storage, msg.domain)? {
+        None => {
+            let validators = Validators(vec![ValidatorSet {
+                signer: candidate,
+                signer_pubkey: msg.validator_pubkey,
+            }]);
 
-    if validators.0.iter().any(|v| v.signer == candidate) {
-        return Err(ContractError::ValidatorDuplicate {});
+            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
+            Ok(Response::new().add_event(emit_enroll_validator(msg.domain, msg.validator)))
+        }
+        Some(mut validators) => {
+            // TODO: exists
+            if validators.0.iter().any(|v| v.signer == candidate) {
+                return Err(ContractError::ValidatorDuplicate {});
+            }
+
+            validators.0.push(ValidatorSet {
+                signer: candidate,
+                signer_pubkey: msg.validator_pubkey,
+            });
+            validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
+
+            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
+            Ok(Response::new().add_event(emit_enroll_validator(msg.domain, msg.validator)))
+        }
     }
-
-    validators.0.push(ValidatorSet {
-        signer: candidate,
-        signer_pubkey: msg.validator_pubkey,
-    });
-    validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
-
-    VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-    Ok(Response::new().add_event(emit_enroll_validator(msg.domain, msg.validator)))
 }
 
 pub fn enroll_validators(
@@ -99,7 +111,6 @@ pub fn unenroll_validator(
     assert_owned(deps.storage, info.sender)?;
 
     let unenroll_target = deps.api.addr_validate(&validator)?;
-
     let validators = VALIDATORS.load(deps.storage, domain)?;
 
     let mut validator_list: Vec<ValidatorSet> = validators
@@ -141,7 +152,7 @@ mod test {
         let mut deps = mock_dependencies();
         let owner = Addr::unchecked(ADDR1_VAULE);
 
-        mock_owner(deps.as_mut().storage, owner.clone());
+        mock_owner(deps.as_mut().storage, owner);
 
         let msg = MsgValidatorSet {
             domain: 1u64,
@@ -158,8 +169,7 @@ mod test {
 
         // wrong pubkey
         let info = mock_info(ADDR1_VAULE, &[]);
-        let wrong_pubkey_resp =
-            enroll_validator(deps.as_mut(), info.clone(), msg.clone()).unwrap_err();
+        let wrong_pubkey_resp = enroll_validator(deps.as_mut(), info.clone(), msg).unwrap_err();
         assert!(matches!(
             wrong_pubkey_resp,
             ContractError::ValidatorPubKeyMismatched {}
@@ -204,12 +214,10 @@ mod test {
             validator_pubkey: Binary::from_base64("AzpZu8TLfx5xEFQeVL4f+N5qu3X+Fq2uokLFLQ16OEuv")
                 .unwrap(),
         };
-        VALIDATORS
-            .save(deps.as_mut().storage, domain, &Validators(vec![]))
-            .unwrap();
 
+        // validators not exist
         let info = mock_info(ADDR1_VAULE, &[]);
-        let result = enroll_validator(deps.as_mut(), info, msg).unwrap();
+        let result = enroll_validator(deps.as_mut(), info, msg.clone()).unwrap();
 
         assert_eq!(
             result.events,
@@ -219,5 +227,30 @@ mod test {
         // check it actually save
         let saved_validators = VALIDATORS.load(&deps.storage, domain).unwrap();
         assert_eq!(validator, saved_validators.0[0].signer);
+
+        // validator is exist already
+        VALIDATORS
+            .save(
+                deps.as_mut().storage,
+                1u64,
+                &Validators(vec![ValidatorSet {
+                    signer: Addr::unchecked(ADDR2_VAULE),
+                    signer_pubkey: msg.validator_pubkey.clone(),
+                }]),
+            )
+            .unwrap();
+
+        let info = mock_info(ADDR1_VAULE, &[]);
+        let result = enroll_validator(deps.as_mut(), info, msg).unwrap();
+
+        assert_eq!(
+            result.events,
+            vec![emit_enroll_validator(1u64, validator.clone())]
+        );
+        let saved_validators = VALIDATORS.load(&deps.storage, domain).unwrap();
+        assert_eq!(validator, saved_validators.0.last().unwrap().signer);
     }
+
+    #[test]
+    fn test_enroll_validators_failure() {}
 }
