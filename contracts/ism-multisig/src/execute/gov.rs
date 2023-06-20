@@ -125,4 +125,52 @@ mod test {
             vec![emit_init_transfer_ownership(next_owner)]
         )
     }
+
+    #[test]
+    fn test_finish_transfer_ownership_failed() {
+        let mut deps = mock_dependencies();
+        let new_owner = Addr::unchecked(ADDR1_VAULE);
+
+        // Transfer not started yet
+        let info = mock_info(new_owner.as_str(), &[]);
+        let not_start_assert = finish_transfer_ownership(deps.as_mut(), info).unwrap_err();
+
+        assert!(matches!(
+            not_start_assert,
+            ContractError::OwnershipTransferNotStarted {}
+        ));
+
+        // Wrong new owner
+        PENDING_OWNER
+            .save(deps.as_mut().storage, &new_owner)
+            .unwrap();
+
+        let info = mock_info(ADDR2_VAULE, &[]);
+        let wrong_owner = finish_transfer_ownership(deps.as_mut(), info).unwrap_err();
+        assert!(matches!(wrong_owner, ContractError::Unauthorized {}))
+    }
+
+    #[test]
+    fn test_finish_transfer_ownership_success() {
+        let mut deps = mock_dependencies();
+        let new_owner = Addr::unchecked(ADDR1_VAULE);
+        mock_owner(deps.as_mut().storage, Addr::unchecked(ADDR2_VAULE));
+
+        PENDING_OWNER
+            .save(deps.as_mut().storage, &new_owner)
+            .unwrap();
+
+        let info = mock_info(new_owner.as_str(), &[]);
+        let result = finish_transfer_ownership(deps.as_mut(), info).unwrap();
+
+        // Validate response
+        assert_eq!(
+            result.events,
+            vec![emit_finish_transfer_ownership(new_owner.clone())]
+        );
+
+        // Validate actual value
+        let saved_owner = CONFIG.load(&deps.storage).unwrap().owner;
+        assert_eq!(saved_owner, new_owner);
+    }
 }
