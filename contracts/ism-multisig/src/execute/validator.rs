@@ -1,33 +1,47 @@
-use cosmwasm_std::{DepsMut, Event, MessageInfo, Response};
+use cosmwasm_std::{Binary, DepsMut, Event, MessageInfo, Response};
 use hpl_interface::ism::multisig::ValidatorSet as MsgValidatorSet;
 
 use crate::{
     event::{emit_enroll_validator, emit_unenroll_validator},
-    state::{ValidatorSet, Validators, CONFIG, VALIDATORS},
+    state::{assert_owned, ValidatorSet, Validators, CONFIG, VALIDATORS},
     verify::{self},
     ContractError,
 };
+
+fn assert_pubkey_validate(
+    validator: String,
+    pubkey: Binary,
+    addr_prefix: String,
+) -> Result<(), ContractError> {
+    let pub_to_addr = verify::pub_to_addr(pubkey, &addr_prefix)?;
+
+    if validator != pub_to_addr {
+        return Err(ContractError::ValidatorPubKeyMismatched {});
+    }
+
+    Ok(())
+}
 
 pub fn enroll_validator(
     deps: DepsMut,
     info: MessageInfo,
     msg: MsgValidatorSet,
 ) -> Result<Response, ContractError> {
+    assert_owned(deps.storage, info.sender)?;
+
     let config = CONFIG.load(deps.storage)?;
-    assert_eq!(info.sender, config.owner, "unauthorized");
-    assert_eq!(
-        msg.validator,
-        verify::pub_to_addr(msg.validator_pubkey.clone(), &config.addr_prefix)?,
-        "addr, pubkey mismatch"
-    );
+    assert_pubkey_validate(
+        msg.validator.clone(),
+        msg.validator_pubkey.clone(),
+        config.addr_prefix,
+    )?;
 
     let candidate = deps.api.addr_validate(&msg.validator)?;
     let mut validators = VALIDATORS.load(deps.storage, msg.domain)?;
 
-    assert!(
-        !validators.0.iter().any(|v| v.signer == candidate),
-        "duplicate validator"
-    );
+    if !validators.0.iter().any(|v| v.signer == candidate) {
+        return Err(ContractError::ValidatorDuplicate {});
+    }
 
     validators.0.push(ValidatorSet {
         signer: candidate,
@@ -44,25 +58,24 @@ pub fn enroll_validators(
     info: MessageInfo,
     validators: Vec<MsgValidatorSet>,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    assert_eq!(info.sender, config.owner);
+    assert_owned(deps.storage, info.sender)?;
 
+    let config = CONFIG.load(deps.storage)?;
     let mut events: Vec<Event> = Vec::new();
 
     for msg in validators.into_iter() {
-        assert_eq!(
-            msg.validator,
-            verify::pub_to_addr(msg.validator_pubkey.clone(), &config.addr_prefix)?,
-            "addr, pubkey mismatch"
-        );
+        assert_pubkey_validate(
+            msg.validator.clone(),
+            msg.validator_pubkey.clone(),
+            config.addr_prefix.clone(),
+        )?;
 
         let candidate = deps.api.addr_validate(&msg.validator)?;
         let mut validators = VALIDATORS.load(deps.storage, msg.domain)?;
 
-        assert!(
-            !validators.0.iter().any(|v| v.signer == candidate),
-            "duplicate validator"
-        );
+        if !validators.0.iter().any(|v| v.signer == candidate) {
+            return Err(ContractError::ValidatorDuplicate {});
+        }
 
         validators.0.push(ValidatorSet {
             signer: candidate,
@@ -83,7 +96,7 @@ pub fn unenroll_validator(
     domain: u64,
     validator: String,
 ) -> Result<Response, ContractError> {
-    assert_eq!(info.sender, CONFIG.load(deps.storage)?.owner);
+    assert_owned(deps.storage, info.sender)?;
 
     let unenroll_target = deps.api.addr_validate(&validator)?;
 
@@ -100,3 +113,6 @@ pub fn unenroll_validator(
     VALIDATORS.save(deps.storage, domain, &Validators(validator_list))?;
     Ok(Response::new().add_event(emit_unenroll_validator(domain, validator)))
 }
+
+#[cfg(test)]
+mod test {}
