@@ -16,7 +16,7 @@ pub fn get_module_type() -> Result<QueryResponse, ContractError> {
     Ok(to_binary(&ISMType::Owned)?)
 }
 
-pub fn get_verify(
+pub fn verify_message(
     deps: Deps,
     raw_metadata: HexBinary,
     raw_message: HexBinary,
@@ -73,7 +73,7 @@ mod test {
 
     use crate::state::{ValidatorSet, Validators, THRESHOLD, VALIDATORS};
 
-    use super::{get_module_type, get_verify};
+    use super::{get_module_type, verify_message};
 
     #[test]
     fn test_get_module_type() {
@@ -141,7 +141,7 @@ mod test {
         };
 
         let fail_result =
-            get_verify(deps.as_ref(), fail_metadata.into(), message.clone().into()).unwrap();
+            verify_message(deps.as_ref(), fail_metadata.into(), message.into()).unwrap();
         assert_eq!(
             fail_result,
             to_binary(&VerifyResponse { verified: false }).unwrap()
@@ -207,7 +207,7 @@ mod test {
         };
 
         let success_result =
-            get_verify(deps.as_ref(), success_metadata.into(), message.into()).unwrap();
+            verify_message(deps.as_ref(), success_metadata.into(), message.into()).unwrap();
         assert_eq!(
             success_result,
             to_binary(&VerifyResponse { verified: true }).unwrap()

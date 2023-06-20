@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn test_encode_decode() {
-        let encode_expected: HexBinary = HexBinary::from_hex("00000021500000aef3000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f1600aa36a70000000000000000000000005d56b8a669f50193b54319442c6eee5edd66238148656c6c6f21").unwrap();
+        let encode_expected = HexBinary::from_hex("00000021500000aef3000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f1600aa36a70000000000000000000000005d56b8a669f50193b54319442c6eee5edd66238148656c6c6f21").unwrap();
 
         let hex = |v: &str| -> Binary { HexBinary::from_hex(v).unwrap().into() };
 
