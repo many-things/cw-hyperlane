@@ -142,7 +142,10 @@ mod test {
 
         let fail_result =
             get_verify(deps.as_ref(), fail_metadata.into(), message.clone().into()).unwrap();
-        assert_eq!(fail_result, to_binary(&VerifyResponse(false)).unwrap());
+        assert_eq!(
+            fail_result,
+            to_binary(&VerifyResponse { verified: false }).unwrap()
+        );
     }
 
     #[test]
@@ -205,6 +208,9 @@ mod test {
 
         let success_result =
             get_verify(deps.as_ref(), success_metadata.into(), message.into()).unwrap();
-        assert_eq!(success_result, to_binary(&VerifyResponse(true)).unwrap());
+        assert_eq!(
+            success_result,
+            to_binary(&VerifyResponse { verified: true }).unwrap()
+        );
     }
 }
