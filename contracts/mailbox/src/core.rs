@@ -102,7 +102,8 @@ pub fn process(
         "invalid recipient length"
     );
 
-    let recipient = decoded_msg.recipient_addr(deps.api)?;
+    // FIXME: use hrp fetched from hub
+    let recipient = decoded_msg.recipient_addr("osmo")?;
 
     let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
 
