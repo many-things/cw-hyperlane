@@ -1,5 +1,7 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Api, Binary, CanonicalAddr, HexBinary, StdResult};
+use cosmwasm_std::{Addr, Binary, HexBinary, StdResult};
+
+use super::bech32_encode;
 
 #[cw_serde]
 pub struct Message {
@@ -60,9 +62,8 @@ impl Message {
         super::keccak256_hash(&Binary::from(self.clone()))
     }
 
-    pub fn recipient_addr(&self, api: &dyn Api) -> StdResult<Addr> {
-        let addr: CanonicalAddr = self.recipient.clone().into();
-        api.addr_humanize(&addr)
+    pub fn recipient_addr(&self, hrp: &str) -> StdResult<Addr> {
+        bech32_encode(hrp, &self.recipient)
     }
 }
 
