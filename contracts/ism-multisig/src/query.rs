@@ -58,3 +58,18 @@ pub fn get_verify(
         verified: success >= usize::from(threshold),
     })?)
 }
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::to_binary;
+    use hpl_interface::ism::ISMType;
+
+    use super::get_module_type;
+
+    #[test]
+    fn test_get_module_type() {
+        let result = get_module_type().unwrap();
+
+        assert_eq!(result, to_binary(&ISMType::Owned).unwrap());
+    }
+}
