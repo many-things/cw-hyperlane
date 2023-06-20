@@ -88,4 +88,51 @@ mod test {
         let saved_threshold = THRESHOLD.load(&deps.storage, threshold.domain).unwrap();
         assert_eq!(saved_threshold, threshold.threshold);
     }
+
+    #[test]
+    fn test_set_thresholds() {
+        let mut deps = mock_dependencies();
+        let owner = Addr::unchecked(ADDR1_VAULE);
+        mock_owner(deps.as_mut().storage, owner.clone());
+
+        let thresholds: Vec<ThresholdSet> = vec![
+            ThresholdSet {
+                domain: 1u64,
+                threshold: 8u8,
+            },
+            ThresholdSet {
+                domain: 2u64,
+                threshold: 7u8,
+            },
+            ThresholdSet {
+                domain: 3u64,
+                threshold: 6u8,
+            },
+        ];
+
+        // set_threshold failure test
+        let info = mock_info(ADDR2_VAULE, &[]);
+        let fail_result = set_thresholds(deps.as_mut(), info, thresholds.clone()).unwrap_err();
+
+        assert!(matches!(fail_result, ContractError::Unauthorized {}));
+
+        // set_threshold success test
+        let info = mock_info(owner.as_str(), &[]);
+        let result = set_thresholds(deps.as_mut(), info, thresholds.clone()).unwrap();
+
+        assert_eq!(
+            result.events,
+            vec![
+                emit_set_threshold(1u64, 8u8),
+                emit_set_threshold(2u64, 7u8),
+                emit_set_threshold(3u64, 6u8),
+            ]
+        );
+
+        // check it actually saved
+        for threshold in thresholds {
+            let saved_threshold = THRESHOLD.load(&deps.storage, threshold.domain).unwrap();
+            assert_eq!(saved_threshold, threshold.threshold);
+        }
+    }
 }
