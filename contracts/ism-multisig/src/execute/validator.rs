@@ -37,33 +37,30 @@ pub fn enroll_validator(
     )?;
 
     let candidate = deps.api.addr_validate(&msg.validator)?;
-    match VALIDATORS.may_load(deps.storage, msg.domain)? {
-        // handle VALIDATORS domain not exists
-        None => {
-            let validators = Validators(vec![ValidatorSet {
-                signer: candidate,
-                signer_pubkey: msg.validator_pubkey,
-            }]);
+    let validator_state = VALIDATORS.may_load(deps.storage, msg.domain)?;
 
-            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-            Ok(Response::new().add_event(emit_enroll_validator(msg.domain, msg.validator)))
+    if let Some(mut validators) = validator_state {
+        if validators.0.iter().any(|v| v.signer == candidate) {
+            return Err(ContractError::ValidatorDuplicate {});
         }
-        Some(mut validators) => {
-            // TODO: exists
-            if validators.0.iter().any(|v| v.signer == candidate) {
-                return Err(ContractError::ValidatorDuplicate {});
-            }
 
-            validators.0.push(ValidatorSet {
-                signer: candidate,
-                signer_pubkey: msg.validator_pubkey,
-            });
-            validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
+        validators.0.push(ValidatorSet {
+            signer: candidate,
+            signer_pubkey: msg.validator_pubkey,
+        });
+        validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
 
-            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-            Ok(Response::new().add_event(emit_enroll_validator(msg.domain, msg.validator)))
-        }
+        VALIDATORS.save(deps.storage, msg.domain, &validators)?;
+    } else {
+        let validators = Validators(vec![ValidatorSet {
+            signer: candidate,
+            signer_pubkey: msg.validator_pubkey,
+        }]);
+
+        VALIDATORS.save(deps.storage, msg.domain, &validators)?;
     }
+
+    Ok(Response::new().add_event(emit_enroll_validator(msg.domain, msg.validator)))
 }
 
 pub fn enroll_validators(
@@ -159,6 +156,30 @@ mod test {
     }
 
     #[test]
+    fn test_assert_pubkey_validate() {
+        let validator = String::from("osmo1q28uzwtvvvlkz6k84gd7flu576x2l2ry9506p5");
+        let validator_pubkey =
+            Binary::from_base64("AzpZu8TLfx5xEFQeVL4f+N5qu3X+Fq2uokLFLQ16OEuv").unwrap();
+        let addr_prefix = String::from("osmo");
+
+        // fail
+        let invalid_validator = assert_pubkey_validate(
+            "test".to_string(),
+            validator_pubkey.clone(),
+            addr_prefix.clone(),
+        )
+        .unwrap_err();
+
+        assert!(matches!(
+            invalid_validator,
+            ContractError::ValidatorPubKeyMismatched {}
+        ));
+
+        // success
+        assert_pubkey_validate(validator, validator_pubkey, addr_prefix).unwrap();
+    }
+
+    #[test]
     fn test_enroll_validator_failure() {
         let mut deps = mock_dependencies();
         let owner = Addr::unchecked(ADDR1_VAULE);
@@ -174,17 +195,8 @@ mod test {
 
         // unauthorized
         let info = mock_info(ADDR2_VAULE, &[]);
-        let unauthorize_resp = enroll_validator(deps.as_mut(), info, msg.clone()).unwrap_err();
-
+        let unauthorize_resp = enroll_validator(deps.as_mut(), info.clone(), msg).unwrap_err();
         assert!(matches!(unauthorize_resp, ContractError::Unauthorized {}));
-
-        // wrong pubkey
-        let info = mock_info(ADDR1_VAULE, &[]);
-        let wrong_pubkey_resp = enroll_validator(deps.as_mut(), info.clone(), msg).unwrap_err();
-        assert!(matches!(
-            wrong_pubkey_resp,
-            ContractError::ValidatorPubKeyMismatched {}
-        ));
 
         // already exist pubkey
         let valid_message = MsgValidatorSet {
@@ -204,6 +216,7 @@ mod test {
             )
             .unwrap();
 
+        let info = mock_info(ADDR1_VAULE, &[]);
         let duplicate_pubkey = enroll_validator(deps.as_mut(), info, valid_message).unwrap_err();
         assert!(matches!(
             duplicate_pubkey,
@@ -263,5 +276,104 @@ mod test {
     }
 
     #[test]
-    fn test_enroll_validators_failure() {}
+    fn test_enroll_validators_failure() {
+        let mut deps = mock_dependencies();
+        let owner = Addr::unchecked(ADDR1_VAULE);
+
+        mock_owner(deps.as_mut().storage, owner);
+
+        let msg = vec![
+            MsgValidatorSet {
+                domain: 1u64,
+                validator: String::from("osmo1q28uzwtvvvlkz6k84gd7flu576x2l2ry9506p5"),
+                validator_pubkey: Binary::from_base64(
+                    "AzpZu8TLfx5xEFQeVL4f+N5qu3X+Fq2uokLFLQ16OEuv",
+                )
+                .unwrap(),
+            },
+            MsgValidatorSet {
+                domain: 1u64,
+                validator: String::from("osmo1q28uzwtvvvlkz6k84gd7flu576x2l2ry9506p5"),
+                validator_pubkey: Binary::from_base64(
+                    "AzpZu8TLfx5xEFQeVL4f+N5qu3X+Fq2uokLFLQ16OEuv",
+                )
+                .unwrap(),
+            },
+        ];
+
+        let info = mock_info(ADDR2_VAULE, &[]);
+        let unauthorized = enroll_validators(deps.as_mut(), info, msg.clone()).unwrap_err();
+        assert!(matches!(unauthorized, ContractError::Unauthorized {}));
+
+        let info = mock_info(ADDR1_VAULE, &[]);
+        let duplicated = enroll_validators(deps.as_mut(), info, msg).unwrap_err();
+        assert!(matches!(duplicated, ContractError::ValidatorDuplicate {}));
+    }
+
+    #[test]
+    fn test_enroll_validators_success() {
+        let mut deps = mock_dependencies();
+        let owner = Addr::unchecked(ADDR1_VAULE);
+        let validator = String::from("osmo1q28uzwtvvvlkz6k84gd7flu576x2l2ry9506p5");
+        let validator_pubkey =
+            Binary::from_base64("AzpZu8TLfx5xEFQeVL4f+N5qu3X+Fq2uokLFLQ16OEuv").unwrap();
+        mock_owner(deps.as_mut().storage, owner);
+
+        let msg = vec![
+            MsgValidatorSet {
+                domain: 1u64,
+                validator: validator.clone(),
+                validator_pubkey: validator_pubkey.clone(),
+            },
+            MsgValidatorSet {
+                domain: 2u64,
+                validator: validator.clone(),
+                validator_pubkey: validator_pubkey.clone(),
+            },
+        ];
+
+        VALIDATORS
+            .save(
+                deps.as_mut().storage,
+                2u64,
+                &Validators(vec![ValidatorSet {
+                    signer: Addr::unchecked(ADDR2_VAULE),
+                    signer_pubkey: validator_pubkey,
+                }]),
+            )
+            .unwrap();
+
+        let info = mock_info(ADDR1_VAULE, &[]);
+        let result = enroll_validators(deps.as_mut(), info, msg.clone()).unwrap();
+
+        assert_eq!(
+            result.events,
+            vec![
+                emit_enroll_validator(1u64, validator.clone()),
+                emit_enroll_validator(2u64, validator.clone())
+            ]
+        );
+
+        // check it actually saved
+        assert_eq!(
+            validator,
+            VALIDATORS
+                .load(&deps.storage, 1u64)
+                .unwrap()
+                .0
+                .last()
+                .unwrap()
+                .signer
+        );
+        assert_eq!(
+            validator,
+            VALIDATORS
+                .load(&deps.storage, 2u64)
+                .unwrap()
+                .0
+                .last()
+                .unwrap()
+                .signer
+        );
+    }
 }
