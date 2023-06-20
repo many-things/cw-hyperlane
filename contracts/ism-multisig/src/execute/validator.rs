@@ -38,6 +38,7 @@ pub fn enroll_validator(
 
     let candidate = deps.api.addr_validate(&msg.validator)?;
     match VALIDATORS.may_load(deps.storage, msg.domain)? {
+        // handle VALIDATORS domain not exists
         None => {
             let validators = Validators(vec![ValidatorSet {
                 signer: candidate,
@@ -83,20 +84,30 @@ pub fn enroll_validators(
         )?;
 
         let candidate = deps.api.addr_validate(&msg.validator)?;
-        let mut validators = VALIDATORS.load(deps.storage, msg.domain)?;
+        let validators_state = VALIDATORS.may_load(deps.storage, msg.domain)?;
 
-        if validators.0.iter().any(|v| v.signer == candidate) {
-            return Err(ContractError::ValidatorDuplicate {});
+        if let Some(mut validators) = validators_state {
+            if validators.0.iter().any(|v| v.signer == candidate) {
+                return Err(ContractError::ValidatorDuplicate {});
+            }
+
+            validators.0.push(ValidatorSet {
+                signer: candidate,
+                signer_pubkey: msg.validator_pubkey,
+            });
+            validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
+
+            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
+            events.push(emit_enroll_validator(msg.domain, msg.validator));
+        } else {
+            let validators = Validators(vec![ValidatorSet {
+                signer: candidate,
+                signer_pubkey: msg.validator_pubkey,
+            }]);
+
+            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
+            events.push(emit_enroll_validator(msg.domain, msg.validator));
         }
-
-        validators.0.push(ValidatorSet {
-            signer: candidate,
-            signer_pubkey: msg.validator_pubkey,
-        });
-        validators.0.sort_by(|a, b| a.signer.cmp(&b.signer));
-
-        VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-        events.push(emit_enroll_validator(msg.domain, msg.validator))
     }
 
     Ok(Response::new().add_events(events.into_iter()))
