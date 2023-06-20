@@ -29,4 +29,7 @@ pub enum ContractError {
 
     #[error("Duplicate Validator")]
     ValidatorDuplicate {},
+
+    #[error("Validator not exists")]
+    ValidatorNotExist {},
 }
