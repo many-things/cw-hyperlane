@@ -1,5 +1,10 @@
 [workspace]
-members = ['contracts/*', 'packages/*', "integration-test"]
+members = [
+    'contracts/*',
+    'packages/interface',
+    'packages/testutils/*',
+    "integration-test",
+]
 
 [profile.release]
 codegen-units = 1
@@ -40,8 +45,8 @@ thiserror = { version = "1.0.37" }
 
 cw-multi-test = "0.16.1"
 cosmwasm-schema = "1.1.9"
-osmosis-test-tube = { git = "https://github.com/osmosis-labs/test-tube", rev = "f9c1e6b" }
-osmosis-std = "0.15.3"
+osmosis-test-tube = "=15.1.0"
+osmosis-std = "=0.15.2"
 
 tokio = { version = "1", features = ["full"] }
 eyre = { version = "0.6.8" }
