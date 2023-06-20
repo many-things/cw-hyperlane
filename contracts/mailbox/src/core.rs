@@ -10,7 +10,11 @@ use hpl_interface::{
 
 use crate::{
     event::{emit_dispatch, emit_dispatch_id, emit_process, emit_process_id},
-    state::{CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE, NONCE},
+    state::{
+        assert_addr_length, assert_already_delivered, assert_destination_domain,
+        assert_message_version, assert_verify_response, CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE,
+        NONCE,
+    },
     ContractError, MAILBOX_VERSION,
 };
 
@@ -27,7 +31,7 @@ fn ism_verify(
     receipient: &Addr,
     metadata: HexBinary,
     message: HexBinary,
-) -> StdResult<()> {
+) -> Result<(), ContractError> {
     let ism_resp: ism::InterchainSecurityModuleResponse = querier.query_wasm_smart(
         receipient,
         &ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
@@ -38,7 +42,7 @@ fn ism_verify(
     let verify_resp: ism::VerifyResponse =
         querier.query_wasm_smart(ism, &ism::ISMQueryMsg::Verify { metadata, message })?;
 
-    assert!(verify_resp.verified);
+    assert_verify_response(verify_resp.verified)?;
 
     Ok(())
 }
@@ -50,7 +54,7 @@ pub fn dispatch(
     recipient_addr: HexBinary,
     msg_body: HexBinary,
 ) -> Result<Response, ContractError> {
-    assert!(recipient_addr.len() <= 32, "addr too long");
+    assert_addr_length(recipient_addr.len())?;
 
     let config = CONFIG.load(deps.storage)?;
 
@@ -97,32 +101,22 @@ pub fn process(
     let config = CONFIG.load(deps.storage)?;
 
     let decoded_msg: Message = message.clone().into();
-    assert!(
-        decoded_msg.recipient.len() <= 32,
-        "invalid recipient length"
-    );
+
+    assert_addr_length(decoded_msg.recipient.len())?;
 
     // FIXME: use hrp fetched from hub
     let recipient = decoded_msg.recipient_addr("osmo")?;
 
     let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
 
-    assert_eq!(
-        decoded_msg.version, MAILBOX_VERSION,
-        "invalid message version"
-    );
-    assert_eq!(
-        decoded_msg.dest_domain, origin_domain,
-        "invalid destination domain"
-    );
+    assert_message_version(decoded_msg.version, MAILBOX_VERSION)?;
+
+    assert_destination_domain(decoded_msg.dest_domain, origin_domain)?;
 
     let id = decoded_msg.id();
-    assert!(
-        MESSAGE_PROCESSED
-            .may_load(deps.storage, id.0.clone())?
-            .is_none(),
-        "delivered"
-    );
+
+    assert_already_delivered(deps.storage, id.clone())?;
+
     MESSAGE_PROCESSED.save(deps.storage, id.0.clone(), &true)?;
 
     ism_verify(

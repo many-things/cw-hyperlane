@@ -2,13 +2,14 @@ use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
 use crate::{
     event::{emit_default_ism_changed, emit_paused, emit_unpaused},
-    state::{Config, CONFIG, PAUSE},
+    state::{assert_owner, Config, CONFIG, PAUSE},
     ContractError,
 };
 
 pub fn pause(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    assert_eq!(config.owner, info.sender, "not an owner");
+
+    assert_owner(config.owner.clone(), info.sender.clone())?;
 
     PAUSE.save(deps.storage, &true)?;
 
@@ -17,7 +18,7 @@ pub fn pause(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError
 
 pub fn unpause(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    assert_eq!(config.owner, info.sender, "not an owner");
+    assert_owner(config.owner.clone(), info.sender.clone())?;
 
     PAUSE.save(deps.storage, &false)?;
 
@@ -30,7 +31,7 @@ pub fn set_default_ism(
     new_default_ism: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    assert_eq!(config.owner, info.sender, "not an owner");
+    assert_owner(config.owner.clone(), info.sender.clone())?;
 
     // FIXME: clone
     let new_default_ism = deps.api.addr_validate(&new_default_ism)?;

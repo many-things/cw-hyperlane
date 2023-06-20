@@ -11,7 +11,7 @@ use serde::Serialize;
 use crate::{
     error::ContractError,
     event::emit_instantiated,
-    state::{Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
+    state::{assert_paused, Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -53,7 +53,7 @@ pub fn execute(
     use crate::gov;
     use ExecuteMsg::*;
 
-    assert!(!PAUSE.load(deps.storage)?, "paused");
+    assert_paused(deps.storage)?;
 
     match msg {
         Pause {} => gov::pause(deps, info),
