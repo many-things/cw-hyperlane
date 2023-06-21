@@ -3,38 +3,104 @@ name: test
 on: pull_request
 
 jobs:
-  check:
+  deps:
+    name: dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Load toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - run: cargo fetch --verbose
+      - run: cargo build
+      - run: cargo wasm
+
+  unit-test:
     strategy:
       fail-fast: true
 
-    name: CI
+    needs: deps
+
+    name: unit-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
-          toolchain: nightly
-          override: true
-      - uses: Swatinem/rust-cache@v2
+          fetch-depth: 1
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.toml')}}
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - uses: actions-rs/cargo@v1
+      - name: Load toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          command: test
-          args: --workspace --exclude hpl-tests # Customize args for your own needs
-        env:
-          CARGO_INCREMENTAL: "0"
-          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
-          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          toolchain: stable
+          targets: wasm32-unknown-unknown
 
-      - id: coverage
-        uses: actions-rs/grcov@v0.1
+      - run: cargo test --workspace --exclude hpl-tests
 
-      - name: Upload coverage reports to Codecov
+  coverage:
+    needs: deps
+
+    name: coverage
+    runs-on: ubuntu-latest
+    container:
+      image: xd009642/tarpaulin:develop-nightly
+      options: --security-opt seccomp=unconfined
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - run: rustup target add wasm32-unknown-unknown
+
+      - name: Generate code coverage
+        run: |
+          cargo +nightly tarpaulin \
+            --verbose \
+            --workspace --exclude hpl-tests \
+            --timeout 120 --out Xml
+
+      - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
           token: ${{secrets.CODECOV_TOKEN}}
-          files: ${{ steps.coverage.outputs.report }}
           fail_ci_if_error: true
