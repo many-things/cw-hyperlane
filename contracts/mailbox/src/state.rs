@@ -37,7 +37,7 @@ pub fn assert_owner(owner: &Addr, sender: &Addr) -> Result<(), ContractError> {
 }
 
 pub fn assert_paused(storage: &dyn Storage) -> Result<(), ContractError> {
-    if !PAUSE.load(storage)? {
+    if PAUSE.load(storage)? {
         return Err(ContractError::Paused {});
     }
 

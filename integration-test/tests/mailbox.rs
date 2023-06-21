@@ -49,7 +49,10 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
     assert_eq!(
         process_recv_evt.attributes,
         sorted(vec![
-            attr("_contract_address", cw_receiver),
+            Attribute {
+                key: "_contract_address".to_string(),
+                value: cw_receiver,
+            },
             attr("sender", sender),
             attr("origin", evm_mailbox.local_domain().await?.to_string()),
             attr("body", std::str::from_utf8(msg_body)?),
