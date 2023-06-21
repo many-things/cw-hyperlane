@@ -1,11 +1,13 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary};
+use cosmwasm_std::{Addr, Binary, Storage};
 use cw_storage_plus::{Item, Map};
+
+use crate::ContractError;
 
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
-    pub chain_hpl: String,
+    pub addr_prefix: String,
 }
 
 #[cw_serde]
@@ -28,3 +30,41 @@ pub const VALIDATORS: Map<u64, Validators> = Map::new(VALIDATORS_PREFIX);
 
 pub const THRESHOLD_PREFIX: &str = "threshold";
 pub const THRESHOLD: Map<u64, u8> = Map::new(THRESHOLD_PREFIX);
+
+pub fn assert_owned(storage: &dyn Storage, sender: Addr) -> Result<(), ContractError> {
+    if CONFIG.load(storage)?.owner != sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    Ok(())
+}
+
+pub fn assert_pending_owner(storage: &dyn Storage, sender: Addr) -> Result<(), ContractError> {
+    let pending_owner = PENDING_OWNER.may_load(storage)?;
+
+    if pending_owner.is_none() {
+        return Err(ContractError::OwnershipTransferNotStarted {});
+    }
+
+    if PENDING_OWNER.load(storage)? != sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    Ok(())
+}
+
+pub fn assert_pending_owner_empty(storage: &dyn Storage) -> Result<(), ContractError> {
+    if PENDING_OWNER.may_load(storage)?.is_some() {
+        return Err(ContractError::OwnershipTransferAlreadyStarted {});
+    }
+
+    Ok(())
+}
+
+pub fn assert_pending_owner_exist(storage: &dyn Storage) -> Result<(), ContractError> {
+    if PENDING_OWNER.may_load(storage)?.is_none() {
+        return Err(ContractError::OwnershipTransferNotStarted {});
+    }
+
+    Ok(())
+}

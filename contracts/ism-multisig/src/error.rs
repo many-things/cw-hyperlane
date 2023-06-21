@@ -10,11 +10,26 @@ pub enum ContractError {
     VerificationError(#[from] VerificationError),
 
     #[error("Unauthorized")]
-    Unauthorized {},
+    Unauthorized,
 
     #[error("Wrong length")]
     WrongLength,
 
     #[error("Invalid pubkey")]
     InvalidPubKey,
+
+    #[error("Ownership transfer not started")]
+    OwnershipTransferNotStarted,
+
+    #[error("Ownership transfer already started")]
+    OwnershipTransferAlreadyStarted,
+
+    #[error("Validator pubkey mismatched")]
+    ValidatorPubKeyMismatched,
+
+    #[error("Duplicate Validator")]
+    ValidatorDuplicate,
+
+    #[error("Validator not exists")]
+    ValidatorNotExist,
 }

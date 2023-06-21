@@ -2,10 +2,11 @@ use crate::error::ContractError;
 use bech32::ToBase32;
 use cosmwasm_std::Binary;
 use ripemd::{Digest, Ripemd160};
-use sha3::Sha3_256;
+use secp256k1::{self, PublicKey};
+use sha2::Sha256;
 
 pub fn sha256_digest(bz: impl AsRef<[u8]>) -> Result<[u8; 32], ContractError> {
-    let mut hasher = Sha3_256::new();
+    let mut hasher = Sha256::new();
 
     hasher.update(bz);
 
@@ -13,7 +14,7 @@ pub fn sha256_digest(bz: impl AsRef<[u8]>) -> Result<[u8; 32], ContractError> {
         .finalize()
         .as_slice()
         .try_into()
-        .map_err(|_| ContractError::WrongLength)
+        .map_err(|_| ContractError::WrongLength {})
 }
 
 pub fn ripemd160_digest(bz: impl AsRef<[u8]>) -> Result<[u8; 20], ContractError> {
@@ -25,7 +26,7 @@ pub fn ripemd160_digest(bz: impl AsRef<[u8]>) -> Result<[u8; 20], ContractError>
         .finalize()
         .as_slice()
         .try_into()
-        .map_err(|_| ContractError::WrongLength)
+        .map_err(|_| ContractError::WrongLength {})
 }
 
 pub fn pub_to_addr(pub_key: Binary, prefix: &str) -> Result<String, ContractError> {
@@ -33,7 +34,14 @@ pub fn pub_to_addr(pub_key: Binary, prefix: &str) -> Result<String, ContractErro
     let rip_hash = ripemd160_digest(sha_hash)?;
 
     let addr = bech32::encode(prefix, rip_hash.to_base32(), bech32::Variant::Bech32)
-        .map_err(|_| ContractError::InvalidPubKey)?;
+        .map_err(|_| ContractError::InvalidPubKey {})?;
 
     Ok(addr)
+}
+
+pub fn uncompress_pubkey(pub_key_binary: Binary) -> Result<Binary, ContractError> {
+    let pub_key =
+        PublicKey::from_slice(&pub_key_binary).map_err(|_| ContractError::InvalidPubKey {})?;
+
+    Ok(pub_key.serialize_uncompressed().into())
 }

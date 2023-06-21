@@ -4,7 +4,7 @@ use cosmwasm_std::Binary;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub chain_hpl: String,
+    pub addr_prefix: String,
 }
 
 #[cw_serde]
