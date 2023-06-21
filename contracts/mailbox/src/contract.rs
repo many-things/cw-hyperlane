@@ -11,7 +11,7 @@ use serde::Serialize;
 use crate::{
     error::ContractError,
     event::emit_instantiated,
-    state::{Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
+    state::{assert_paused, Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -53,7 +53,7 @@ pub fn execute(
     use crate::gov;
     use ExecuteMsg::*;
 
-    assert!(!PAUSE.load(deps.storage)?, "paused");
+    assert_paused(deps.storage)?;
 
     match msg {
         Pause {} => gov::pause(deps, info),
@@ -103,5 +103,40 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
         Nonce {} => to_binary(Ok(&NonceResponse {
             nonce: NONCE.load(deps.storage)?,
         })),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+
+    use super::*;
+
+    const OWNER: &str = "owner";
+    const DEFAULT_ISM: &str = "default_ism";
+
+    #[test]
+    fn init() {
+        let mut deps = mock_dependencies();
+
+        instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info("owner", &[]),
+            InstantiateMsg {
+                owner: OWNER.to_string(),
+                default_ism: DEFAULT_ISM.to_string(),
+            },
+        )
+        .unwrap();
+
+        let version = cw2::get_contract_version(deps.as_ref().storage).unwrap();
+        assert_eq!(
+            version,
+            cw2::ContractVersion {
+                contract: CONTRACT_NAME.to_string(),
+                version: CONTRACT_VERSION.to_string()
+            }
+        );
     }
 }

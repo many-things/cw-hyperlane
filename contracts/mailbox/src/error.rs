@@ -1,7 +1,7 @@
 use cosmwasm_std::StdError;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
@@ -11,6 +11,25 @@ pub enum ContractError {
 
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
-    // Add any other custom errors you like here.
-    // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
+
+    #[error("Contract is paused")]
+    Paused {},
+
+    #[error("ISM verify is failed")]
+    VerifyFailed {},
+
+    #[error("Invalid address length: {len:?}")]
+    InvalidAddressLength { len: usize },
+
+    #[error("Invalid message version: {version:?}")]
+    InvalidMessageVersion { version: u8 },
+
+    #[error("Invalid destination domain: {domain:?}")]
+    InvalidDestinationDomain { domain: u32 },
+
+    #[error("Already delivered message")]
+    AlreadyDeliveredMessage {},
+
+    #[error("Merkle tree is already full")]
+    MerkleTreeIsFull {},
 }

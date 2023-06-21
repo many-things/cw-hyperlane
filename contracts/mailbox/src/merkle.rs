@@ -2,6 +2,8 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Binary, HexBinary, StdResult};
 use hpl_interface::types::keccak256_hash;
 
+use crate::state::assert_full_merkle_tree;
+
 pub const HASH_LENGTH: usize = 32;
 pub const TREE_DEPTH: usize = 32;
 pub const MAX_LEAVES: u128 = (2_u128.pow(TREE_DEPTH as u32)) - 1;
@@ -50,7 +52,7 @@ pub struct MerkleTree {
 
 impl MerkleTree {
     pub fn insert(&mut self, node: Binary) {
-        assert!(self.count < MAX_LEAVES, "merkle tree full");
+        assert_full_merkle_tree(self.count, MAX_LEAVES).unwrap();
 
         self.count += 1;
 
