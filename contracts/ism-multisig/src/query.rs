@@ -39,7 +39,7 @@ pub fn verify_message(
                 .map(|s| (v.signer_pubkey.clone(), s))
                 .collect::<Vec<(Binary, Binary)>>()
         })
-        .fold(Vec::<(Binary, Binary)>::new(), |acc, item| {
+        .fold(vec![], |acc, item| {
             acc.into_iter().chain(item.into_iter()).collect()
         });
 
