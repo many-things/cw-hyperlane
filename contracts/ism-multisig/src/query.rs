@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use cosmwasm_std::{to_binary, Binary, Deps, HexBinary, QueryResponse};
 use hpl_interface::{
     ism::{ISMType, VerifyResponse},
@@ -8,7 +6,6 @@ use hpl_interface::{
 
 use crate::{
     state::{THRESHOLD, VALIDATORS},
-    verify::uncompress_pubkey,
     ContractError,
 };
 
@@ -32,34 +29,31 @@ pub fn verify_message(
         signatures.push(metadata.signature_at(i))
     }
 
-    let unique_vali_pubkey: HashSet<_> = validators
+    let verifiable_cases = validators
         .0
         .into_iter()
-        .map(|v| uncompress_pubkey(v.signer_pubkey).unwrap())
-        .collect();
-
-    let unique_meta_pubkey: HashSet<_> = signatures
-        .into_iter()
-        .flat_map(|sig| {
-            [
-                deps.api
-                    .secp256k1_recover_pubkey(&message.id(), &sig[0..64], 0)
-                    .unwrap(),
-                deps.api
-                    .secp256k1_recover_pubkey(&message.id(), &sig[0..64], 1)
-                    .unwrap(),
-            ]
+        .map(|v| {
+            signatures
+                .clone()
+                .into_iter()
+                .map(|s| (v.signer_pubkey.clone(), s))
+                .collect::<Vec<(Binary, Binary)>>()
         })
-        .map(Binary::from)
-        .collect();
+        .fold(Vec::<(Binary, Binary)>::new(), |acc, item| {
+            acc.into_iter().chain(item.into_iter()).collect()
+        });
 
-    let success = unique_vali_pubkey
-        .intersection(&unique_meta_pubkey)
-        .collect::<Vec<_>>()
-        .len();
+    let success: u8 = verifiable_cases
+        .into_iter()
+        .map(|v| {
+            deps.api
+                .secp256k1_verify(&message.id(), &v.1[0..64], &v.0)
+                .unwrap() as u8
+        })
+        .sum();
 
     Ok(to_binary(&VerifyResponse {
-        verified: success >= usize::from(threshold),
+        verified: success >= threshold,
     })?)
 }
 
