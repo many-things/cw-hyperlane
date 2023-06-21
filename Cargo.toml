@@ -1,5 +1,15 @@
 [workspace]
-members = ['contracts/*', 'packages/*']
+members = [
+    'contracts/*',
+    'packages/interface',
+    'packages/testutils/*',
+    "integration-test",
+]
+resolver = "2"
+
+[profile.test]
+opt-level = 2
+overflow-checks = true
 
 [profile.release]
 codegen-units = 1
@@ -33,11 +43,23 @@ sha3 = "0.10.8"
 sha2 = { version = "0.10.6", default-features = false }
 ripemd = "0.1.3"
 bech32 = "0.9.1"
+base64 = "0.21.2"
 serde = "1.0.162"
+serde_json = "1.0.96"
+serde-json-wasm = "0.5.1"
 thiserror = { version = "1.0.37" }
 secp256k1 = "0.27.0"
 
 cw-multi-test = "0.16.1"
 cosmwasm-schema = "1.1.9"
+osmosis-test-tube = { git = "https://github.com/osmosis-labs/test-tube", rev = "a4a647726f7bd6d36f4e2d58ed8af37d5acd25a1" }
+
+tokio = { version = "1", features = ["full"] }
+eyre = { version = "0.6.8" }
+ethers = "2.0.7"
 
 hpl-interface = { path = "./packages/interface" }
+hpl-hub = { path = "./contracts/hub" }
+hpl-ism-multisig = { path = "./contracts/ism-multisig" }
+hpl-mailbox = { path = "./contracts/mailbox" }
+hpl-multicall = { path = "./contracts/multicall" }

@@ -21,6 +21,8 @@
   },
   "devDependencies": {
     "@cosmwasm/ts-codegen": "^0.16.5",
+    "@rollup/plugin-commonjs": "^25.0.2",
+    "@rollup/plugin-node-resolve": "^15.1.0",
     "@swc/core": "^1.2.198",
     "@swc/helpers": "^0.3.17",
     "@types/eslint": "^8.4.1",
@@ -59,6 +61,8 @@
   "license": "MIT OR Apache-2.0",
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.28.11",
+    "@cosmjs/encoding": "^0.30.1",
+    "cosmjs-types": "^0.8.0",
     "cosmwasm": "^1.1.1"
   }
 }

@@ -2,6 +2,8 @@
 
 import { terser } from "rollup-plugin-terser";
 import typescript2 from "rollup-plugin-typescript2";
+import resolve from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
 
 import pkg from "./package.json";
 
@@ -63,12 +65,20 @@ const options = {
     }),
   ],
   plugins: [
+    resolve(),
+    commonjs({
+      dynamicRequireTargets: [
+        // include using a glob pattern (either a string or an array of strings)
+        "node_modules/cosmjs-types/*",
+      ],
+    }),
     typescript2({
       clean: true,
       useTsconfigDeclarationDir: true,
       tsconfig: "./tsconfig.bundle.json",
     }),
   ],
+  external: ["cosmjs-types", "@cosmjs/encoding", "@cosmjs/cosmwasm-stargate"],
 };
 
 export default options;

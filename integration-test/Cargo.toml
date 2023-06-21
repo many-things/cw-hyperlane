@@ -1,5 +1,5 @@
 [package]
-name = "hpl-interface"
+name = "hpl-tests"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -20,15 +20,18 @@ library = []
 
 [dependencies]
 cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
-cw-storage-plus = { workspace = true }
-cw2 = { workspace = true }
-bech32 = { workspace = true }
-sha3 = { workspace = true }
-schemars = { workspace = true }
-serde = { workspace = true }
-thiserror = { workspace = true }
-cosmwasm-schema = { workspace = true }
+ethers = { workspace = true }
 
-[dev-dependencies]
-cw-multi-test = { workspace = true }
+[dev_dependencies]
+osmosis-test-tube = { workspace = true }
+serde_json = { workspace = true }
+serde-json-wasm = { workspace = true }
+cosmwasm-schema = { workspace = true }
+base64 = { workspace = true }
+tokio = { workspace = true }
+eyre = { workspace = true }
+
+hpl-interface = { workspace = true }
+
+[build-dependencies]
+ethers = { workspace = true }
