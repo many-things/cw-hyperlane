@@ -112,8 +112,8 @@ mod test {
 
     use super::*;
 
-    const OWNER: &str = "";
-    const DEFAULT_ISM: &str = "";
+    const OWNER: &str = "owner";
+    const DEFAULT_ISM: &str = "default_ism";
 
     #[test]
     fn init() {
