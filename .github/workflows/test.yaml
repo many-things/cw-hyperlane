@@ -3,11 +3,36 @@ name: test
 on: pull_request
 
 jobs:
+  deps:
+    name: dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo fetch --verbose
+      - run: cargo wasm
+
   unit-test:
     strategy:
       fail-fast: true
 
-    name: CI
+    needs: deps
+
+    name: unit-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -32,11 +57,12 @@ jobs:
           toolchain: stable
           targets: wasm32-unknown-unknown
       - run: cargo fetch --verbose
-      - run: cargo build
       - run: cargo wasm
       - run: cargo test --workspace --exclude hpl-tests
 
   coverage:
+    needs: deps
+
     name: coverage
     runs-on: ubuntu-latest
     container:
