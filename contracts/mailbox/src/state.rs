@@ -28,7 +28,7 @@ pub const MESSAGE_TREE: Item<MerkleTree> = Item::new(MESSAGE_TREE_KEY);
 pub const MESSAGE_PROCESSED_PREFIX: &str = "message_processed";
 pub const MESSAGE_PROCESSED: Map<Vec<u8>, bool> = Map::new(MESSAGE_PROCESSED_PREFIX);
 
-pub fn assert_owner(owner: Addr, sender: Addr) -> Result<(), ContractError> {
+pub fn assert_owner(owner: &Addr, sender: &Addr) -> Result<(), ContractError> {
     if owner != sender {
         return Err(ContractError::Unauthorized {});
     }

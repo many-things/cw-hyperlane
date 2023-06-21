@@ -9,7 +9,7 @@ use crate::{
 pub fn pause(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    assert_owner(config.owner.clone(), info.sender.clone())?;
+    assert_owner(&config.owner, &info.sender)?;
 
     PAUSE.save(deps.storage, &true)?;
 
@@ -18,7 +18,7 @@ pub fn pause(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError
 
 pub fn unpause(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    assert_owner(config.owner.clone(), info.sender.clone())?;
+    assert_owner(&config.owner, &info.sender)?;
 
     PAUSE.save(deps.storage, &false)?;
 
@@ -31,7 +31,7 @@ pub fn set_default_ism(
     new_default_ism: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    assert_owner(config.owner.clone(), info.sender.clone())?;
+    assert_owner(&config.owner, &info.sender)?;
 
     // FIXME: clone
     let new_default_ism = deps.api.addr_validate(&new_default_ism)?;
