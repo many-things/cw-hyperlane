@@ -24,6 +24,7 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - run: cargo fetch --verbose
+      - run: cargo build
       - run: cargo wasm
 
   unit-test:
@@ -56,7 +57,7 @@ jobs:
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
-      - run: cargo fetch --verbose
+
       - run: cargo wasm
       - run: cargo test --workspace --exclude hpl-tests
 
