@@ -30,7 +30,6 @@ schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 cosmwasm-schema = { workspace = true }
-k256 = { workspace = true }
 hpl-interface = { workspace = true }
 
 [dev-dependencies]

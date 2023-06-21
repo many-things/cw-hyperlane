@@ -1,7 +1,6 @@
 use crate::error::ContractError;
 use bech32::ToBase32;
 use cosmwasm_std::Binary;
-use k256::ecdsa::VerifyingKey;
 use ripemd::{Digest, Ripemd160};
 use sha2::Sha256;
 
@@ -37,10 +36,4 @@ pub fn pub_to_addr(pub_key: Binary, prefix: &str) -> Result<String, ContractErro
         .map_err(|_| ContractError::InvalidPubKey {})?;
 
     Ok(addr)
-}
-
-pub fn uncompress_pubkey(pub_key_binary: Binary) -> Result<Binary, ContractError> {
-    let pub_key = VerifyingKey::from_sec1_bytes(&pub_key_binary).unwrap();
-
-    Ok(pub_key.to_encoded_point(false).as_bytes().into())
 }
