@@ -57,3 +57,7 @@ eyre = { version = "0.6.8" }
 ethers = "2.0.7"
 
 hpl-interface = { path = "./packages/interface" }
+hpl-hub = { path = "./contracts/hub" }
+hpl-ism-multisig = { path = "./contracts/ism-multisig" }
+hpl-mailbox = { path = "./contracts/mailbox" }
+hpl-multicall = { path = "./contracts/multicall" }
