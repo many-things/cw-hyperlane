@@ -65,7 +65,6 @@ jobs:
           toolchain: stable
           targets: wasm32-unknown-unknown
 
-      - run: cargo wasm
       - run: cargo test --workspace --exclude hpl-tests
 
   coverage:
@@ -92,7 +91,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - run: rustup target add wasm32-unknown-unknown
-      - run: cargo wasm
 
       - name: Generate code coverage
         run: |
