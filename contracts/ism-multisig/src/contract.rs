@@ -1,21 +1,16 @@
-use std::collections::HashSet;
-
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use hpl_interface::{
-    ism::{
-        multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg},
-        ISMQueryMsg, ISMType, VerifyResponse,
-    },
-    types::{message::Message, metadata::MessageIdMultisigIsmMetadata},
+use hpl_interface::ism::{
+    multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg},
+    ISMQueryMsg,
 };
 
 use crate::{
     error::ContractError,
     execute,
-    state::{Config, CONFIG, THRESHOLD, VALIDATORS},
+    state::{Config, CONFIG},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -30,7 +25,7 @@ pub fn instantiate(
 
     let config = Config {
         owner: deps.api.addr_validate(&msg.owner)?,
-        chain_hpl: msg.chain_hpl,
+        addr_prefix: msg.addr_prefix,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -75,51 +70,14 @@ pub fn execute(
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, ContractError> {
+    use crate::query;
     use ISMQueryMsg::*;
 
     match msg {
-        ModuleType {} => Ok(to_binary(&ISMType::Owned)?),
+        ModuleType {} => query::get_module_type(),
         Verify {
             metadata: raw_metadata,
             message: raw_message,
-        } => {
-            let metadata: MessageIdMultisigIsmMetadata = raw_metadata.into();
-            let message: Message = raw_message.into();
-
-            let threshold = THRESHOLD.load(deps.storage, message.origin_domain.into())?;
-            let validators = VALIDATORS.load(deps.storage, message.origin_domain.into())?;
-
-            let mut signatures: Vec<Binary> = Vec::new();
-            for i in 0..metadata.signatures_len().unwrap() {
-                signatures.push(metadata.signature_at(i))
-            }
-
-            let unique_vali_pubkey: HashSet<_> =
-                validators.0.into_iter().map(|v| v.signer_pubkey).collect();
-
-            let unique_meta_pubkey: HashSet<_> = signatures
-                .into_iter()
-                .flat_map(|sig| {
-                    [
-                        deps.api
-                            .secp256k1_recover_pubkey(&message.id(), sig.as_slice(), 0)
-                            .unwrap(),
-                        deps.api
-                            .secp256k1_recover_pubkey(&message.id(), sig.as_slice(), 1)
-                            .unwrap(),
-                    ]
-                })
-                .map(Binary::from)
-                .collect();
-
-            let success = unique_vali_pubkey
-                .intersection(&unique_meta_pubkey)
-                .collect::<Vec<_>>()
-                .len();
-
-            Ok(to_binary(&VerifyResponse {
-                verified: success >= usize::from(threshold),
-            })?)
-        }
+        } => query::verify_message(deps, raw_metadata, raw_message),
     }
 }
