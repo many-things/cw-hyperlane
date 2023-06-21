@@ -10,7 +10,11 @@ use hpl_interface::{
 
 use crate::{
     event::{emit_dispatch, emit_dispatch_id, emit_process, emit_process_id},
-    state::{CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE, NONCE},
+    state::{
+        assert_addr_length, assert_already_delivered, assert_destination_domain,
+        assert_message_version, assert_verify_response, CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE,
+        NONCE,
+    },
     ContractError, MAILBOX_VERSION,
 };
 
@@ -27,7 +31,7 @@ fn ism_verify(
     receipient: &Addr,
     metadata: HexBinary,
     message: HexBinary,
-) -> StdResult<()> {
+) -> Result<(), ContractError> {
     let ism_resp: ism::InterchainSecurityModuleResponse = querier.query_wasm_smart(
         receipient,
         &ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
@@ -38,7 +42,7 @@ fn ism_verify(
     let verify_resp: ism::VerifyResponse =
         querier.query_wasm_smart(ism, &ism::ISMQueryMsg::Verify { metadata, message })?;
 
-    assert!(verify_resp.verified);
+    assert_verify_response(verify_resp.verified)?;
 
     Ok(())
 }
@@ -50,7 +54,7 @@ pub fn dispatch(
     recipient_addr: HexBinary,
     msg_body: HexBinary,
 ) -> Result<Response, ContractError> {
-    assert!(recipient_addr.len() <= 32, "addr too long");
+    assert_addr_length(recipient_addr.len())?;
 
     let config = CONFIG.load(deps.storage)?;
 
@@ -94,35 +98,22 @@ pub fn process(
     metadata: HexBinary,
     message: HexBinary,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
     let decoded_msg: Message = message.clone().into();
-    assert!(
-        decoded_msg.recipient.len() <= 32,
-        "invalid recipient length"
-    );
 
+    assert_addr_length(HexBinary::from(decoded_msg.recipient.to_vec()).len())?;
+    assert_message_version(decoded_msg.version, MAILBOX_VERSION)?;
+
+    let config = CONFIG.load(deps.storage)?;
     // FIXME: use hrp fetched from hub
     let recipient = decoded_msg.recipient_addr("osmo")?;
-
     let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
 
-    assert_eq!(
-        decoded_msg.version, MAILBOX_VERSION,
-        "invalid message version"
-    );
-    assert_eq!(
-        decoded_msg.dest_domain, origin_domain,
-        "invalid destination domain"
-    );
+    assert_destination_domain(decoded_msg.dest_domain, origin_domain)?;
 
     let id = decoded_msg.id();
-    assert!(
-        MESSAGE_PROCESSED
-            .may_load(deps.storage, id.0.clone())?
-            .is_none(),
-        "delivered"
-    );
+
+    assert_already_delivered(deps.storage, id.clone())?;
+
     MESSAGE_PROCESSED.save(deps.storage, id.0.clone(), &true)?;
 
     ism_verify(
@@ -147,4 +138,74 @@ pub fn process(
         emit_process_id(id),
         emit_process(origin_domain, decoded_msg.sender, decoded_msg.recipient),
     ]))
+}
+
+#[cfg(test)]
+mod tests {
+    use cosmwasm_std::testing::{mock_dependencies, mock_info};
+
+    use super::*;
+
+    const DEST_DOMAIN: u32 = 11155111;
+    const RECIPIENT: &str = "b75d7d24e428c7859440498efe7caa3997cefb08c99bdd581b6b1f9f866096f0";
+    const MSG: &str = "48656c6c6f21";
+    const METADATA: &str = "48656c6c6f21";
+
+    #[test]
+    fn test_dispatch() {
+        let mut deps = mock_dependencies();
+
+        let long_recipient_address = HexBinary::from_hex(
+            "b75d7d24e428c7859440498efe7caa3997cefb08c99bdd581b6b1f9f866096f073c8c3b0316abe",
+        )
+        .unwrap();
+
+        // Invalid address length
+        let invalid_address_length_assert = dispatch(
+            deps.as_mut(),
+            mock_info("owner", &[]),
+            DEST_DOMAIN,
+            long_recipient_address.clone(),
+            HexBinary::from_hex(MSG).unwrap(),
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            invalid_address_length_assert,
+            ContractError::InvalidAddressLength {
+                len: long_recipient_address.len()
+            }
+        );
+    }
+
+    #[test]
+    fn test_process() {
+        let mut deps = mock_dependencies();
+        let hex = |v: &str| -> Binary { HexBinary::from_hex(v).unwrap().into() };
+
+        // Invalid message version
+        let wrong_version_message: HexBinary = HexBinary::from(Message {
+            version: 3,
+            nonce: 2,
+            origin_domain: 3,
+            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
+            dest_domain: 11155111,
+            recipient: hex(RECIPIENT),
+            body: hex("48656c6c6f21"),
+        });
+        let wrong_decoded_message: Message = wrong_version_message.clone().into();
+        let invalid_message_version_assert = process(
+            deps.as_mut(),
+            HexBinary::from_hex(METADATA).unwrap(),
+            wrong_version_message,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            invalid_message_version_assert,
+            ContractError::InvalidMessageVersion {
+                version: wrong_decoded_message.version
+            }
+        );
+    }
 }
