@@ -1,11 +1,16 @@
 mod setup;
 
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{attr, Attribute, HexBinary};
 use ethers::{prelude::parse_log, signers::Signer};
 use hpl_interface::types::{bech32_encode, bech32_to_h256};
 use hpl_tests::mailbox::{DispatchFilter, DispatchIdFilter};
 use osmosis_test_tube::{Module, Wasm};
 use setup::setup_env;
+
+fn sorted(mut attrs: Vec<Attribute>) -> Vec<Attribute> {
+    attrs.sort_by(|a, b| a.key.cmp(&b.key));
+    attrs
+}
 
 async fn test_mailbox_inner() -> eyre::Result<()> {
     let test_env = setup_env().await?;
@@ -39,20 +44,14 @@ async fn test_mailbox_inner() -> eyre::Result<()> {
         .find(|v| v.ty == "wasm-mailbox_msg_received")
         .unwrap();
 
-    let process_recv_evt_attrs = process_recv_evt
-        .attributes
-        .iter()
-        .map(|v| format!("{}: {}", v.key, v.value))
-        .collect::<Vec<_>>();
-
     assert_eq!(
-        process_recv_evt_attrs,
-        vec![
-            format!("_contract_address: {cw_receiver}"),
-            format!("body: {}", std::str::from_utf8(msg_body)?),
-            format!("origin: {}", evm_mailbox.local_domain().await?),
-            format!("sender: {sender}")
-        ],
+        process_recv_evt.attributes,
+        sorted(vec![
+            attr("_contract_address", cw_receiver),
+            attr("sender", sender),
+            attr("origin", evm_mailbox.local_domain().await?.to_string()),
+            attr("body", std::str::from_utf8(msg_body)?),
+        ]),
     );
 
     Ok(())
