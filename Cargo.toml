@@ -48,9 +48,7 @@ serde = "1.0.162"
 serde_json = "1.0.96"
 serde-json-wasm = "0.5.1"
 thiserror = { version = "1.0.37" }
-secp256k1 = "0.27.0"
 k256 = { version = "0.13.1", features = ["ecdsa"] }
-
 cw-multi-test = "0.16.1"
 cosmwasm-schema = "1.1.9"
 osmosis-test-tube = { git = "https://github.com/osmosis-labs/test-tube", rev = "a4a647726f7bd6d36f4e2d58ed8af37d5acd25a1" }

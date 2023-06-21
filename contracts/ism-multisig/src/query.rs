@@ -65,13 +65,12 @@ pub fn verify_message(
 
 #[cfg(test)]
 mod test {
+    use crate::state::{ValidatorSet, Validators, THRESHOLD, VALIDATORS};
     use cosmwasm_std::{testing::mock_dependencies, to_binary, Addr, Binary, HexBinary};
     use hpl_interface::{
         ism::{ISMType, VerifyResponse},
         types::{message::Message, metadata::MessageIdMultisigIsmMetadata},
     };
-
-    use crate::state::{ValidatorSet, Validators, THRESHOLD, VALIDATORS};
 
     use super::{get_module_type, verify_message};
 
