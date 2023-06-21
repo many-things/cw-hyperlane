@@ -170,10 +170,10 @@ mod tests {
         )
         .unwrap_err();
 
-        let len = long_recipient_address.clone().len();
+        let _len = long_recipient_address.clone().len();
         assert!(matches!(
             invalid_address_length_assert,
-            ContractError::InvalidAddressLength { len }
+            ContractError::InvalidAddressLength { len: _len }
         ));
     }
 
@@ -202,11 +202,11 @@ mod tests {
         )
         .unwrap_err();
 
-        let version = wrong_decoded_message.version;
+        let _version = wrong_decoded_message.version;
 
         assert!(matches!(
             invalid_message_version_assert,
-            ContractError::InvalidMessageVersion { version }
+            ContractError::InvalidMessageVersion { version: _version }
         ));
     }
 }

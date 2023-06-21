@@ -51,8 +51,8 @@ pub struct MerkleTree {
 }
 
 impl MerkleTree {
-    pub fn insert(&mut self, node: Binary) -> Result<(), ContractError> {
-        assert_full_merkle_tree(self.count.clone(), MAX_LEAVES)?;
+    pub fn insert(&mut self, node: Binary) {
+        assert_full_merkle_tree(self.count.clone(), MAX_LEAVES).unwrap();
 
         self.count += 1;
 
@@ -61,7 +61,7 @@ impl MerkleTree {
         for (i, next) in self.branch.iter().enumerate() {
             if (size & 1) == 1 {
                 self.branch[i] = node;
-                return Ok(());
+                return;
             }
             node = keccak256_hash(&[next.clone().0, node.0].concat());
             size /= 2;
@@ -124,7 +124,6 @@ impl MerkleTree {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use cosmwasm_std::{Binary, HexBinary};
     use hpl_interface::types::keccak256_hash;
 

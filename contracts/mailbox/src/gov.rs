@@ -49,7 +49,7 @@ pub fn set_default_ism(
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
-        testing::{mock_dependencies, mock_env, mock_info},
+        testing::{mock_dependencies, mock_info},
         Addr, Storage,
     };
 
