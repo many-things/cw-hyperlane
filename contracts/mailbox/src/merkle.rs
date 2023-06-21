@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Binary, HexBinary, StdResult};
 use hpl_interface::types::keccak256_hash;
 
-use crate::state::assert_full_merkle_tree;
+use crate::{state::assert_full_merkle_tree, ContractError};
 
 pub const HASH_LENGTH: usize = 32;
 pub const TREE_DEPTH: usize = 32;
@@ -51,8 +51,8 @@ pub struct MerkleTree {
 }
 
 impl MerkleTree {
-    pub fn insert(&mut self, node: Binary) {
-        assert_full_merkle_tree(self.count.clone(), MAX_LEAVES);
+    pub fn insert(&mut self, node: Binary) -> Result<(), ContractError> {
+        assert_full_merkle_tree(self.count.clone(), MAX_LEAVES)?;
 
         self.count += 1;
 
@@ -61,7 +61,7 @@ impl MerkleTree {
         for (i, next) in self.branch.iter().enumerate() {
             if (size & 1) == 1 {
                 self.branch[i] = node;
-                return;
+                return Ok(());
             }
             node = keccak256_hash(&[next.clone().0, node.0].concat());
             size /= 2;
@@ -124,6 +124,7 @@ impl MerkleTree {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use cosmwasm_std::{Binary, HexBinary};
     use hpl_interface::types::keccak256_hash;
 
@@ -142,10 +143,5 @@ mod tests {
             // abi.encodePacked(bytes32(keccak256("hello_world")), bytes32(keccak256("world_hello")));
             "0x5b07e077a81ffc6b47435f65a8727bcc542bc6fc0f25a56210efb1a74b88a5ae5e3b3917b0a11fc9edfc594b3aabbc95167d176fcc17aa76c01d7bda956862cd",
         );
-    }
-
-    #[test]
-    fn test_insert() {
-        // TODO
     }
 }
