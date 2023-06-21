@@ -170,19 +170,18 @@ mod tests {
         )
         .unwrap_err();
 
-        let _len = long_recipient_address.clone().len();
-        assert!(matches!(
+        assert_eq!(
             invalid_address_length_assert,
-            ContractError::InvalidAddressLength { len: _len }
-        ));
+            ContractError::InvalidAddressLength {
+                len: long_recipient_address.len()
+            }
+        );
     }
 
     #[test]
     fn test_process() {
         let mut deps = mock_dependencies();
         let hex = |v: &str| -> Binary { HexBinary::from_hex(v).unwrap().into() };
-
-        let wrong_decoded_message: Message;
 
         // Invalid message version
         let wrong_version_message: HexBinary = HexBinary::from(Message {
@@ -194,7 +193,7 @@ mod tests {
             recipient: hex(RECIPIENT),
             body: hex("48656c6c6f21"),
         });
-        wrong_decoded_message = wrong_version_message.clone().into();
+        let wrong_decoded_message: Message = wrong_version_message.clone().into();
         let invalid_message_version_assert = process(
             deps.as_mut(),
             HexBinary::from_hex(METADATA).unwrap(),
@@ -202,11 +201,11 @@ mod tests {
         )
         .unwrap_err();
 
-        let _version = wrong_decoded_message.version;
-
-        assert!(matches!(
+        assert_eq!(
             invalid_message_version_assert,
-            ContractError::InvalidMessageVersion { version: _version }
-        ));
+            ContractError::InvalidMessageVersion {
+                version: wrong_decoded_message.version
+            }
+        );
     }
 }

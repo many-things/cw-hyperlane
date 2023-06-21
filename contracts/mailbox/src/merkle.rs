@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Binary, HexBinary, StdResult};
 use hpl_interface::types::keccak256_hash;
 
-use crate::{state::assert_full_merkle_tree, ContractError};
+use crate::state::assert_full_merkle_tree;
 
 pub const HASH_LENGTH: usize = 32;
 pub const TREE_DEPTH: usize = 32;
@@ -52,7 +52,7 @@ pub struct MerkleTree {
 
 impl MerkleTree {
     pub fn insert(&mut self, node: Binary) {
-        assert_full_merkle_tree(self.count.clone(), MAX_LEAVES).unwrap();
+        assert_full_merkle_tree(self.count, MAX_LEAVES).unwrap();
 
         self.count += 1;
 

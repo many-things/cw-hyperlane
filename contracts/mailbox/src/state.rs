@@ -87,7 +87,7 @@ pub fn assert_destination_domain(
 }
 
 pub fn assert_already_delivered(storage: &dyn Storage, id: Binary) -> Result<(), ContractError> {
-    if !MESSAGE_PROCESSED.may_load(storage, id.0.clone())?.is_none() {
+    if MESSAGE_PROCESSED.may_load(storage, id.0)?.is_some() {
         return Err(ContractError::AlreadyDeliveredMessage {});
     }
 
@@ -95,7 +95,7 @@ pub fn assert_already_delivered(storage: &dyn Storage, id: Binary) -> Result<(),
 }
 
 pub fn assert_full_merkle_tree(curr_cnt: u128, max_cnt: u128) -> Result<(), ContractError> {
-    if !(curr_cnt < max_cnt) {
+    if curr_cnt >= max_cnt {
         return Err(ContractError::MerkleTreeIsFull {});
     }
 

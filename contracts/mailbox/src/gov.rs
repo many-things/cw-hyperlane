@@ -102,12 +102,7 @@ mod tests {
         let factory = Addr::unchecked(FACTORY);
         let default_ism = Addr::unchecked(DEFAULT_ISM);
 
-        mock_owner(
-            deps.as_mut().storage,
-            owner.clone(),
-            factory.clone(),
-            default_ism.clone(),
-        );
+        mock_owner(deps.as_mut().storage, owner, factory, default_ism);
 
         // Sender is not authorized
         let sender = NOT_OWNER;
@@ -126,12 +121,7 @@ mod tests {
         let factory = Addr::unchecked(FACTORY);
         let default_ism = Addr::unchecked(DEFAULT_ISM);
 
-        mock_owner(
-            deps.as_mut().storage,
-            owner.clone(),
-            factory.clone(),
-            default_ism.clone(),
-        );
+        mock_owner(deps.as_mut().storage, owner, factory, default_ism);
 
         // Sender is not authorized
         let sender = NOT_OWNER;
