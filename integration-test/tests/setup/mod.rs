@@ -22,7 +22,7 @@ pub struct HplTestEnv<M: Middleware, S: Signer> {
     pub osmo_owner: SigningAccount,
     pub eth_app: AnvilInstance,
     pub eth_owner: S,
-    pub cw_deployments: deploy_cw::HplCwDeployment,
+    pub cw_deployments: deploy_cw::HplCwDeploymentAddrs,
     pub evm_deployments: deploy_evm::HplEvmDeployment<M, S>,
 }
 
@@ -44,7 +44,7 @@ pub async fn setup_env() -> eyre::Result<HplTestEnv<Provider<Http>, Wallet<Signi
         osmo_owner,
         eth_app,
         eth_owner: eth_wallet,
-        cw_deployments,
+        cw_deployments: cw_deployments.addrs,
         evm_deployments,
     };
 

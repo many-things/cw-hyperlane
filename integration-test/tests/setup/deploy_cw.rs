@@ -19,7 +19,7 @@ pub struct HplCwDeploymentAddrs {
     pub hub: String,
     pub ism: String,
     pub mailbox: String,
-    pub receiver: String,
+    pub msg_receiver: String,
 }
 
 #[derive(Debug)]
@@ -102,16 +102,12 @@ pub async fn deploy_cw_hyperlane(
         )
         .unwrap();
 
-    let mailbox = mailbox_deploy_res
+    let mailbox_deploy_evt = mailbox_deploy_res
         .events
         .into_iter()
         .find(|v| v.ty == "wasm-mailbox_instantiated")
-        .unwrap()
-        .attributes
-        .get(0)
-        .unwrap()
-        .value
-        .clone();
+        .unwrap();
+    let mailbox = mailbox_deploy_evt.attributes.get(0).unwrap().value.clone();
 
     let msg_receiver = wasm
         .instantiate(
@@ -130,7 +126,7 @@ pub async fn deploy_cw_hyperlane(
         hub,
         ism,
         mailbox,
-        receiver: msg_receiver,
+        msg_receiver,
     };
 
     Ok(HplCwDeployment { codes, addrs })

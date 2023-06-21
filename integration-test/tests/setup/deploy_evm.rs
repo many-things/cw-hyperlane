@@ -1,18 +1,24 @@
 use std::sync::Arc;
 
 use ethers::{prelude::SignerMiddleware, providers::Middleware, signers::Signer};
-use hpl_tests::{ism_multisig, mailbox};
+use hpl_tests::{mailbox, test_mock_ism, test_mock_msg_receiver};
 
 #[derive(Debug)]
 pub struct HplEvmDeployment<M: Middleware, S: Signer> {
-    pub ism: ism_multisig::TestMultisigIsm<SignerMiddleware<M, S>>,
     pub mailbox: mailbox::Mailbox<SignerMiddleware<M, S>>,
+
+    pub ism: test_mock_ism::TestMultisigIsm<SignerMiddleware<M, S>>,
+    pub msg_receiver: test_mock_msg_receiver::TestRecipient<SignerMiddleware<M, S>>,
 }
 
 pub async fn deploy_evm_hyperlane<'a, M: Middleware + 'static, S: Signer + 'static>(
     signer: Arc<SignerMiddleware<M, S>>,
 ) -> eyre::Result<HplEvmDeployment<M, S>> {
-    let ism_multisig_contract = ism_multisig::TestMultisigIsm::deploy(signer.clone(), ())?
+    let ism_multisig_contract = test_mock_ism::TestMultisigIsm::deploy(signer.clone(), ())?
+        .send()
+        .await?;
+
+    let msg_receiver_contract = test_mock_msg_receiver::TestRecipient::deploy(signer.clone(), ())?
         .send()
         .await?;
 
@@ -27,8 +33,9 @@ pub async fn deploy_evm_hyperlane<'a, M: Middleware + 'static, S: Signer + 'stat
         .await?;
 
     let deployments = HplEvmDeployment {
-        ism: ism_multisig_contract,
         mailbox: mailbox_contract,
+        ism: ism_multisig_contract,
+        msg_receiver: msg_receiver_contract,
     };
 
     Ok(deployments)

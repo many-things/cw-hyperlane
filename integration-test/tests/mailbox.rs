@@ -2,21 +2,23 @@ mod setup;
 
 use cosmwasm_std::{attr, Attribute, HexBinary};
 use ethers::{prelude::parse_log, signers::Signer};
-use hpl_interface::types::{bech32_encode, bech32_to_h256};
-use hpl_tests::mailbox::{DispatchFilter, DispatchIdFilter};
 use osmosis_test_tube::{Module, Wasm};
 use setup::setup_env;
+
+use hpl_interface::types::{bech32_encode, bech32_to_h256};
+use hpl_tests::mailbox::{DispatchFilter, DispatchIdFilter};
 
 fn sorted(mut attrs: Vec<Attribute>) -> Vec<Attribute> {
     attrs.sort_by(|a, b| a.key.cmp(&b.key));
     attrs
 }
 
-async fn test_mailbox_inner() -> eyre::Result<()> {
+#[tokio::test]
+async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
     let test_env = setup_env().await?;
     let evm_mailbox = test_env.evm_deployments.mailbox;
-    let cw_mailbox = test_env.cw_deployments.addrs.mailbox;
-    let cw_receiver = test_env.cw_deployments.addrs.receiver;
+    let cw_mailbox = test_env.cw_deployments.mailbox;
+    let cw_receiver = test_env.cw_deployments.msg_receiver;
     let cw_wasm = Wasm::new(&test_env.osmo_app);
 
     let sender = bech32_encode("osmo", test_env.eth_owner.address().as_bytes())?;
@@ -55,9 +57,4 @@ async fn test_mailbox_inner() -> eyre::Result<()> {
     );
 
     Ok(())
-}
-
-#[tokio::test]
-async fn test_mailbox() {
-    test_mailbox_inner().await.unwrap();
 }

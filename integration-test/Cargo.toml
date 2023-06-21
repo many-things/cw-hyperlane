@@ -30,6 +30,7 @@ cosmwasm-schema = { workspace = true }
 base64 = { workspace = true }
 tokio = { workspace = true }
 eyre = { workspace = true }
+k256 = { workspace = true }
 
 hpl-interface = { workspace = true }
 

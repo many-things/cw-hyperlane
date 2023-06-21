@@ -18,7 +18,11 @@ fn generate_bind(name: &str, abi_file: &str, bind_out: PathBuf) {
 fn main() {
     let abi_base = current_dir().unwrap().join("abis");
     let bind_base = current_dir().unwrap().join("src");
-    let deployments = [("Mailbox", "mailbox"), ("TestMultisigIsm", "ism_multisig")];
+    let deployments = [
+        ("Mailbox", "mailbox"),
+        ("TestMultisigIsm", "test_mock_ism"),
+        ("TestRecipient", "test_mock_msg_receiver"),
+    ];
 
     for (abi_file, bind_out) in deployments {
         generate_bind(
