@@ -113,7 +113,7 @@ pub fn enroll_validators(
 pub fn unenroll_validator(
     deps: DepsMut,
     info: MessageInfo,
-    domain: u64,
+    domain: u32,
     validator: String,
 ) -> Result<Response, ContractError> {
     assert_owned(deps.storage, info.sender)?;
@@ -195,7 +195,7 @@ mod test {
         mock_owner(deps.as_mut().storage, owner.clone());
 
         let msg = MsgValidatorSet {
-            domain: 1u64,
+            domain: 1u32,
             validator: "test".to_string(),
             validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
         };
@@ -207,14 +207,14 @@ mod test {
 
         // already exist pubkey
         let valid_message = MsgValidatorSet {
-            domain: 1u64,
+            domain: 1u32,
             validator: VALIDATOR_ADDR.to_string(),
             validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
         };
         VALIDATORS
             .save(
                 deps.as_mut().storage,
-                1u64,
+                1u32,
                 &Validators(vec![ValidatorSet {
                     signer: Addr::unchecked(valid_message.validator.clone()),
                     signer_pubkey: valid_message.validator_pubkey.clone(),
@@ -235,7 +235,7 @@ mod test {
         let mut deps = mock_dependencies();
         let owner = Addr::unchecked(ADDR1_VAULE);
         let validator: String = VALIDATOR_ADDR.to_string();
-        let domain: u64 = 1;
+        let domain: u32 = 1;
 
         mock_owner(deps.as_mut().storage, owner.clone());
         let msg = MsgValidatorSet {
@@ -250,7 +250,7 @@ mod test {
 
         assert_eq!(
             result.events,
-            vec![emit_enroll_validator(1u64, validator.clone())]
+            vec![emit_enroll_validator(1u32, validator.clone())]
         );
 
         // check it actually save
@@ -261,7 +261,7 @@ mod test {
         VALIDATORS
             .save(
                 deps.as_mut().storage,
-                1u64,
+                1u32,
                 &Validators(vec![ValidatorSet {
                     signer: Addr::unchecked(ADDR2_VAULE),
                     signer_pubkey: msg.validator_pubkey.clone(),
@@ -274,7 +274,7 @@ mod test {
 
         assert_eq!(
             result.events,
-            vec![emit_enroll_validator(1u64, validator.clone())]
+            vec![emit_enroll_validator(1u32, validator.clone())]
         );
         let saved_validators = VALIDATORS.load(&deps.storage, domain).unwrap();
         assert_eq!(validator, saved_validators.0.last().unwrap().signer);
@@ -289,12 +289,12 @@ mod test {
 
         let msg = vec![
             MsgValidatorSet {
-                domain: 1u64,
+                domain: 1u32,
                 validator: String::from(VALIDATOR_ADDR),
                 validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
             },
             MsgValidatorSet {
-                domain: 1u64,
+                domain: 1u32,
                 validator: String::from(VALIDATOR_ADDR),
                 validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
             },
@@ -319,12 +319,12 @@ mod test {
 
         let msg = vec![
             MsgValidatorSet {
-                domain: 1u64,
+                domain: 1u32,
                 validator: validator.clone(),
                 validator_pubkey: validator_pubkey.clone(),
             },
             MsgValidatorSet {
-                domain: 2u64,
+                domain: 2u32,
                 validator: validator.clone(),
                 validator_pubkey: validator_pubkey.clone(),
             },
@@ -333,7 +333,7 @@ mod test {
         VALIDATORS
             .save(
                 deps.as_mut().storage,
-                2u64,
+                2u32,
                 &Validators(vec![ValidatorSet {
                     signer: Addr::unchecked(ADDR2_VAULE),
                     signer_pubkey: validator_pubkey,
@@ -347,8 +347,8 @@ mod test {
         assert_eq!(
             result.events,
             vec![
-                emit_enroll_validator(1u64, validator.clone()),
-                emit_enroll_validator(2u64, validator.clone())
+                emit_enroll_validator(1u32, validator.clone()),
+                emit_enroll_validator(2u32, validator.clone())
             ]
         );
 
@@ -356,7 +356,7 @@ mod test {
         assert_eq!(
             validator,
             VALIDATORS
-                .load(&deps.storage, 1u64)
+                .load(&deps.storage, 1u32)
                 .unwrap()
                 .0
                 .last()
@@ -366,7 +366,7 @@ mod test {
         assert_eq!(
             validator,
             VALIDATORS
-                .load(&deps.storage, 2u64)
+                .load(&deps.storage, 2u32)
                 .unwrap()
                 .0
                 .last()
@@ -380,7 +380,7 @@ mod test {
         let mut deps = mock_dependencies();
         let owner = Addr::unchecked(ADDR1_VAULE);
         let validator = String::from(VALIDATOR_ADDR);
-        let domain: u64 = 1;
+        let domain: u32 = 1;
 
         mock_owner(deps.as_mut().storage, owner.clone());
 
@@ -403,7 +403,7 @@ mod test {
         VALIDATORS
             .save(
                 deps.as_mut().storage,
-                1u64,
+                1u32,
                 &Validators(vec![ValidatorSet {
                     signer: Addr::unchecked(ADDR2_VAULE),
                     signer_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
@@ -423,7 +423,7 @@ mod test {
         let mut deps = mock_dependencies();
         let owner = Addr::unchecked(ADDR1_VAULE);
         let validator = String::from(VALIDATOR_ADDR);
-        let domain: u64 = 1;
+        let domain: u32 = 1;
 
         mock_owner(deps.as_mut().storage, owner.clone());
 

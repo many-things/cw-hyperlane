@@ -50,6 +50,9 @@ serde-json-wasm = "0.5.1"
 thiserror = { version = "1.0.37" }
 cw-multi-test = "0.16.1"
 cosmwasm-schema = "1.1.9"
+
+k256 = { version = "0.13.1", features = ["std", "ecdsa"] }
+hex-literal = { version = "0.4.1" }
 osmosis-test-tube = { git = "https://github.com/osmosis-labs/test-tube", rev = "a4a647726f7bd6d36f4e2d58ed8af37d5acd25a1" }
 
 tokio = { version = "1", features = ["full"] }

@@ -13,6 +13,7 @@ pub struct HplEvmDeployment<M: Middleware, S: Signer> {
 
 pub async fn deploy_evm_hyperlane<'a, M: Middleware + 'static, S: Signer + 'static>(
     signer: Arc<SignerMiddleware<M, S>>,
+    evm_domain: u32,
 ) -> eyre::Result<HplEvmDeployment<M, S>> {
     let ism_multisig_contract = test_mock_ism::TestMultisigIsm::deploy(signer.clone(), ())?
         .send()
@@ -22,7 +23,7 @@ pub async fn deploy_evm_hyperlane<'a, M: Middleware + 'static, S: Signer + 'stat
         .send()
         .await?;
 
-    let mailbox_contract = mailbox::Mailbox::deploy(signer.clone(), 1u64)?
+    let mailbox_contract = mailbox::Mailbox::deploy(signer.clone(), evm_domain)?
         .send()
         .await?;
 

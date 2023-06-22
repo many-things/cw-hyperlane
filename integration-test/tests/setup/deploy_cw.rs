@@ -1,7 +1,10 @@
 use std::{collections::BTreeMap, fs, path::Path};
 
 use cosmwasm_schema::cw_serde;
+use hpl_interface::ism::multisig::ThresholdSet;
 use osmosis_test_tube::{Account, Module, OsmosisTestApp, SigningAccount, Wasm};
+
+use crate::validator::TestValidators;
 
 #[derive(Debug)]
 pub struct HplCwDeploymentCodes {
@@ -28,9 +31,87 @@ pub struct HplCwDeployment {
     pub addrs: HplCwDeploymentAddrs,
 }
 
+#[cw_serde]
+struct EmptyMsg {}
+
+pub enum HplCwIsmType<'a> {
+    Multisig {
+        hrp: &'a str,
+        validators: TestValidators,
+    },
+
+    #[allow(dead_code)]
+    Mock,
+}
+
+impl<'a> HplCwIsmType<'a> {
+    pub fn deploy(
+        self,
+        wasm: &Wasm<'a, OsmosisTestApp>,
+        codes: &HplCwDeploymentCodes,
+        deployer: &SigningAccount,
+    ) -> String {
+        match self {
+            Self::Mock => {
+                wasm.instantiate(codes.test_mock_ism, &EmptyMsg {}, None, None, &[], deployer)
+                    .unwrap()
+                    .data
+                    .address
+            }
+            Self::Multisig {
+                hrp,
+                validators: set,
+            } => {
+                let multisig_ism = wasm
+                    .instantiate(
+                        codes.ism_multisig,
+                        &hpl_interface::ism::multisig::InstantiateMsg {
+                            owner: deployer.address(),
+                            addr_prefix: hrp.to_string(),
+                        },
+                        None,
+                        None,
+                        &[],
+                        deployer,
+                    )
+                    .unwrap()
+                    .data
+                    .address;
+
+                wasm.execute(
+                    &multisig_ism,
+                    &hpl_interface::ism::multisig::ExecuteMsg::EnrollValidators {
+                        set: set.to_set(hrp),
+                    },
+                    &[],
+                    deployer,
+                )
+                .unwrap();
+
+                wasm.execute(
+                    &multisig_ism,
+                    &hpl_interface::ism::multisig::ExecuteMsg::SetThreshold {
+                        set: ThresholdSet {
+                            domain: set.domain,
+                            threshold: set.threshold,
+                        },
+                    },
+                    &[],
+                    deployer,
+                )
+                .unwrap();
+
+                multisig_ism
+            }
+        }
+    }
+}
+
 pub async fn deploy_cw_hyperlane(
     app: &OsmosisTestApp,
     deployer: &SigningAccount,
+    origin_domain: u32,
+    mock_ism: HplCwIsmType<'_>,
 ) -> eyre::Result<HplCwDeployment> {
     let wasm = Wasm::new(app);
 
@@ -65,14 +146,11 @@ pub async fn deploy_cw_hyperlane(
         test_mock_msg_receiver: *artifacts.get("test_mock_msg_receiver").unwrap(),
     };
 
-    #[cw_serde]
-    struct EmptyMsg {}
-
     let hub = wasm
         .instantiate(
             codes.hub,
             &hpl_interface::hub::InstantiateMsg {
-                origin_domain: 2,
+                origin_domain,
                 mailbox_code: codes.mailbox,
             },
             None,
@@ -84,11 +162,7 @@ pub async fn deploy_cw_hyperlane(
         .data
         .address;
 
-    let ism = wasm
-        .instantiate(codes.test_mock_ism, &EmptyMsg {}, None, None, &[], deployer)
-        .unwrap()
-        .data
-        .address;
+    let ism = mock_ism.deploy(&wasm, &codes, deployer);
 
     let mailbox_deploy_res = wasm
         .execute(

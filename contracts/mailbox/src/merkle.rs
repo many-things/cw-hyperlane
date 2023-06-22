@@ -45,6 +45,7 @@ pub const ZERO_HASHES: [&str; HASH_LENGTH] = [
 ];
 
 #[cw_serde]
+#[derive(Default)]
 pub struct MerkleTree {
     pub branch: [Binary; TREE_DEPTH],
     pub count: u128,
