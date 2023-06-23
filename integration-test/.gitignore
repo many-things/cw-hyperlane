@@ -1,2 +1,2 @@
-src/ism_multisig.rs
+src/test_*.rs
 src/mailbox.rs

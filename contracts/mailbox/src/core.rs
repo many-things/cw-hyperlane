@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use hpl_interface::{
     hub, ism,
     mailbox::{DispatchResponse, ExpectedHandlerMsg, HandleMsg},
-    types::message::Message,
+    types::{bech32_to_h256, message::Message},
 };
 
 use crate::{
@@ -63,11 +63,13 @@ pub fn dispatch(
 
     let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
 
+    let sender = bech32_to_h256(info.sender.as_str())?;
+
     let msg = Message {
         version: MAILBOX_VERSION,
         nonce,
         origin_domain,
-        sender: Binary(info.sender.as_bytes().to_vec()),
+        sender: Binary(sender.to_vec()),
         dest_domain,
         recipient: recipient_addr.into(),
         body: msg_body.into(),
