@@ -27,6 +27,7 @@ schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 cosmwasm-schema = { workspace = true }
+bech32 = { workspace = true }
 
 hpl-interface = { workspace = true }
 

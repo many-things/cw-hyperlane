@@ -5,6 +5,7 @@ mod event;
 mod gov;
 pub mod merkle;
 pub mod state;
+pub mod verify;
 
 pub use crate::error::ContractError;
 

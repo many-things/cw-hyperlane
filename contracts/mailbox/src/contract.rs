@@ -3,8 +3,8 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, QueryResponse, Response};
 use cw2::set_contract_version;
 use hpl_interface::mailbox::{
-    CheckPointResponse, CountResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, NonceResponse,
-    PausedResponse, QueryMsg, RootResponse,
+    CheckPointResponse, CountResponse, DefaultIsmResponse, ExecuteMsg, InstantiateMsg, MigrateMsg,
+    NonceResponse, PausedResponse, QueryMsg, RootResponse,
 };
 use serde::Serialize;
 
@@ -80,6 +80,7 @@ fn to_binary<T: Serialize>(res: Result<T, ContractError>) -> Result<QueryRespons
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+    use crate::verify;
     use QueryMsg::*;
 
     match msg {
@@ -103,6 +104,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
         Nonce {} => to_binary(Ok(&NonceResponse {
             nonce: NONCE.load(deps.storage)?,
         })),
+        DefaultIsm {} => {
+            let config = CONFIG.load(deps.storage)?;
+            to_binary(Ok(&DefaultIsmResponse {
+                default_ism: verify::bech32_decode(config.default_ism).into(),
+            }))
+        }
     }
 }
 

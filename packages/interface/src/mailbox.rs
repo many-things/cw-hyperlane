@@ -63,6 +63,9 @@ pub enum QueryMsg {
 
     #[returns(NonceResponse)]
     Nonce {},
+
+    #[returns(DefaultIsmResponse)]
+    DefaultIsm {},
 }
 
 #[cw_serde]
@@ -73,6 +76,11 @@ pub struct RootResponse {
 #[cw_serde]
 pub struct CountResponse {
     pub count: u128,
+}
+
+#[cw_serde]
+pub struct DefaultIsmResponse {
+    pub default_ism: HexBinary,
 }
 
 #[cw_serde]
