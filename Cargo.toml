@@ -71,3 +71,4 @@ hpl-hub = { path = "./contracts/hub" }
 hpl-ism-multisig = { path = "./contracts/ism-multisig" }
 hpl-mailbox = { path = "./contracts/mailbox" }
 hpl-multicall = { path = "./contracts/multicall" }
+hpl-test-helper = { path = "./packages/testutils/helper" }
