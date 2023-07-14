@@ -1,8 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdError,
-};
+use cosmwasm_std::{to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response};
 
 use hpl_interface::igp_gas_oracle::{
     ConfigResponse, ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, MigrateMsg,
@@ -11,7 +9,7 @@ use hpl_interface::igp_gas_oracle::{
 
 use crate::{
     error::ContractError,
-    state::{insert_gas_data, OWNER, PENDING_OWNER, REMOTE_GAS_DATA},
+    state::{insert_gas_data, REMOTE_GAS_DATA},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -24,7 +22,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    OWNER.save(deps.storage, &info.sender)?;
+    hpl_ownable::OWNER.save(deps.storage, &info.sender)?;
 
     Ok(Response::new()
         .add_event(Event::new("init-igp-gas-oracle").add_attribute("owner", info.sender)))
@@ -33,59 +31,15 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::InitOwnershipTransfer { next_owner } => {
-            if info.sender != OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
-            if PENDING_OWNER.exists(deps.storage) {
-                return Err(StdError::generic_err("ownership transferring").into());
-            }
-
-            let next_owner = deps.api.addr_validate(&next_owner)?;
-            PENDING_OWNER.save(deps.storage, &next_owner)?;
-
-            Ok(Response::new().add_event(
-                Event::new("init-ownership-transfer")
-                    .add_attribute("owner", info.sender)
-                    .add_attribute("next_owner", next_owner),
-            ))
-        }
-        ExecuteMsg::RevokeOwnershipTransfer {} => {
-            if info.sender != OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
-            if !PENDING_OWNER.exists(deps.storage) {
-                return Err(StdError::generic_err("ownership is not transferring").into());
-            }
-
-            PENDING_OWNER.remove(deps.storage);
-
-            Ok(Response::new().add_event(
-                Event::new("revoke-ownership-transfer").add_attribute("owner", info.sender),
-            ))
-        }
-        ExecuteMsg::ClaimOwnership {} => {
-            if !PENDING_OWNER.exists(deps.storage) {
-                return Err(StdError::generic_err("ownership is not transferring").into());
-            }
-            if info.sender != PENDING_OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
-
-            OWNER.save(deps.storage, &info.sender)?;
-            PENDING_OWNER.remove(deps.storage);
-
-            Ok(Response::new()
-                .add_event(Event::new("claim-ownership").add_attribute("owner", info.sender)))
-        }
+        ExecuteMsg::Ownership(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
 
         ExecuteMsg::SetRemoteGasDataConfigs { configs } => {
-            if info.sender != OWNER.load(deps.storage)? {
+            if info.sender != hpl_ownable::OWNER.load(deps.storage)? {
                 return Err(ContractError::Unauthorized {});
             }
 
@@ -100,7 +54,7 @@ pub fn execute(
             ))
         }
         ExecuteMsg::SetRemoteGasData { config } => {
-            if info.sender != OWNER.load(deps.storage)? {
+            if info.sender != hpl_ownable::OWNER.load(deps.storage)? {
                 return Err(ContractError::Unauthorized {});
             }
 
@@ -117,8 +71,8 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     match msg {
         QueryMsg::Config {} => {
-            let owner = OWNER.load(deps.storage)?;
-            let pending_owner = PENDING_OWNER.may_load(deps.storage)?;
+            let owner = hpl_ownable::OWNER.load(deps.storage)?;
+            let pending_owner = hpl_ownable::PENDING_OWNER.may_load(deps.storage)?;
 
             Ok(to_binary(&ConfigResponse {
                 owner: owner.to_string(),
