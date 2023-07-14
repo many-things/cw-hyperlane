@@ -4,14 +4,13 @@ use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, QueryResponse, Response};
 use cw2::set_contract_version;
 use hpl_interface::mailbox::{
     CheckPointResponse, CountResponse, DefaultIsmResponse, ExecuteMsg, InstantiateMsg, MigrateMsg,
-    NonceResponse, PausedResponse, QueryMsg, RootResponse,
+    NonceResponse, PausedResponse, QueryMsg,
 };
 use serde::Serialize;
 
 use crate::{
     error::ContractError,
     event::emit_instantiated,
-    query::get_delivered,
     state::{assert_paused, Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
@@ -81,16 +80,12 @@ fn to_binary<T: Serialize>(res: Result<T, ContractError>) -> Result<QueryRespons
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
-    use crate::verify;
+    use crate::{query, verify};
     use QueryMsg::*;
 
     match msg {
-        Root {} => to_binary(Ok(&RootResponse {
-            root: MESSAGE_TREE.load(deps.storage)?.root()?.into(),
-        })),
-        Count {} => to_binary(Ok(&CountResponse {
-            count: MESSAGE_TREE.load(deps.storage)?.count,
-        })),
+        Root {} => query::get_root(deps),
+        Count {} => query::get_count(deps),
         CheckPoint {} => to_binary({
             let tree = MESSAGE_TREE.load(deps.storage)?;
             Ok(&CheckPointResponse {
@@ -110,7 +105,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
                 default_ism: verify::bech32_decode(config.default_ism).into(),
             }))
         }
-        MessageDelivered { id } => get_delivered(deps, id),
+        MessageDelivered { id } => query::get_delivered(deps, id),
     }
 }
 

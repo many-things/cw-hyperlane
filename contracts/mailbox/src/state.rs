@@ -94,7 +94,7 @@ pub fn assert_already_delivered(storage: &dyn Storage, id: Binary) -> Result<(),
     Ok(())
 }
 
-pub fn assert_full_merkle_tree(curr_cnt: u128, max_cnt: u128) -> Result<(), ContractError> {
+pub fn assert_full_merkle_tree(curr_cnt: u32, max_cnt: u32) -> Result<(), ContractError> {
     if curr_cnt >= max_cnt {
         return Err(ContractError::MerkleTreeIsFull {});
     }

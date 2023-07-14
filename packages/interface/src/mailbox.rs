@@ -78,7 +78,7 @@ pub struct RootResponse {
 
 #[cw_serde]
 pub struct CountResponse {
-    pub count: u128,
+    pub count: u32,
 }
 
 #[cw_serde]
@@ -89,7 +89,7 @@ pub struct DefaultIsmResponse {
 #[cw_serde]
 pub struct CheckPointResponse {
     pub root: HexBinary,
-    pub count: u128,
+    pub count: u32,
 }
 
 #[cw_serde]

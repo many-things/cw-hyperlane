@@ -6,7 +6,7 @@ use crate::state::assert_full_merkle_tree;
 
 pub const HASH_LENGTH: usize = 32;
 pub const TREE_DEPTH: usize = 32;
-pub const MAX_LEAVES: u128 = (2_u128.pow(TREE_DEPTH as u32)) - 1;
+pub const MAX_LEAVES: u32 = (2_u32.pow(TREE_DEPTH as u32)) - 1;
 
 pub const ZERO_BYTES: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 pub const ZERO_HASHES: [&str; HASH_LENGTH] = [
@@ -47,7 +47,7 @@ pub const ZERO_HASHES: [&str; HASH_LENGTH] = [
 #[cw_serde]
 pub struct MerkleTree {
     pub branch: [Binary; TREE_DEPTH],
-    pub count: u128,
+    pub count: u32,
 }
 
 impl MerkleTree {
@@ -138,7 +138,7 @@ mod tests {
         );
 
         assert_eq!(
-            format!("0x{}", HexBinary::from(digest).to_hex()), 
+            format!("0x{}", HexBinary::from(digest).to_hex()),
             // abi.encodePacked(bytes32(keccak256("hello_world")), bytes32(keccak256("world_hello")));
             "0x5b07e077a81ffc6b47435f65a8727bcc542bc6fc0f25a56210efb1a74b88a5ae5e3b3917b0a11fc9edfc594b3aabbc95167d176fcc17aa76c01d7bda956862cd",
         );
