@@ -13,6 +13,12 @@ pub struct RemoteGasDataConfig {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    // ownership
+    InitOwnershipTransfer { next_owner: String },
+    RevokeOwnershipTransfer {},
+    ClaimOwnership {},
+
+    // gas data
     SetRemoteGasDataConfigs { configs: Vec<RemoteGasDataConfig> },
     SetRemoteGasData { config: RemoteGasDataConfig },
 }

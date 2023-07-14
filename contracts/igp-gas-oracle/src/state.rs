@@ -12,6 +12,9 @@ pub struct RemoteGasData {
 pub const OWNER_KEY: &str = "owner";
 pub const OWNER: Item<Addr> = Item::new(OWNER_KEY);
 
+pub const PENDING_OWNER_KEY: &str = "pending_owner";
+pub const PENDING_OWNER: Item<Addr> = Item::new(PENDING_OWNER_KEY);
+
 pub const REMOTE_GAS_DATA_PREFIX: &str = "remote_gas_data";
 pub const REMOTE_GAS_DATA: Map<u32, RemoteGasData> = Map::new(REMOTE_GAS_DATA_PREFIX);
 

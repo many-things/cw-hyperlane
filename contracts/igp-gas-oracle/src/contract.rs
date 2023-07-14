@@ -1,6 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{
+    to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdError,
+};
 
 use hpl_interface::igp_gas_oracle::{
     ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, MigrateMsg, QueryMsg,
@@ -8,7 +10,7 @@ use hpl_interface::igp_gas_oracle::{
 
 use crate::{
     error::ContractError,
-    state::{insert_gas_data, OWNER, REMOTE_GAS_DATA},
+    state::{insert_gas_data, OWNER, PENDING_OWNER, REMOTE_GAS_DATA},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -35,6 +37,52 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::InitOwnershipTransfer { next_owner } => {
+            if info.sender != OWNER.load(deps.storage)? {
+                return Err(ContractError::Unauthorized {});
+            }
+            if PENDING_OWNER.exists(deps.storage) {
+                return Err(StdError::generic_err("ownership transferring").into());
+            }
+
+            let next_owner = deps.api.addr_validate(&next_owner)?;
+            PENDING_OWNER.save(deps.storage, &next_owner)?;
+
+            Ok(Response::new().add_event(
+                Event::new("init-ownership-transfer")
+                    .add_attribute("owner", info.sender)
+                    .add_attribute("next_owner", next_owner),
+            ))
+        }
+        ExecuteMsg::RevokeOwnershipTransfer {} => {
+            if info.sender != OWNER.load(deps.storage)? {
+                return Err(ContractError::Unauthorized {});
+            }
+            if !PENDING_OWNER.exists(deps.storage) {
+                return Err(StdError::generic_err("ownership is not transferring").into());
+            }
+
+            PENDING_OWNER.remove(deps.storage);
+
+            Ok(Response::new().add_event(
+                Event::new("revoke-ownership-transfer").add_attribute("owner", info.sender),
+            ))
+        }
+        ExecuteMsg::ClaimOwnership {} => {
+            if !PENDING_OWNER.exists(deps.storage) {
+                return Err(StdError::generic_err("ownership is not transferring").into());
+            }
+            if info.sender != PENDING_OWNER.load(deps.storage)? {
+                return Err(ContractError::Unauthorized {});
+            }
+
+            OWNER.save(deps.storage, &info.sender)?;
+            PENDING_OWNER.remove(deps.storage);
+
+            Ok(Response::new()
+                .add_event(Event::new("claim-ownership").add_attribute("owner", info.sender)))
+        }
+
         ExecuteMsg::SetRemoteGasDataConfigs { configs } => {
             if info.sender != OWNER.load(deps.storage)? {
                 return Err(ContractError::Unauthorized {});
