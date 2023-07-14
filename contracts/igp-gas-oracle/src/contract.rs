@@ -5,7 +5,8 @@ use cosmwasm_std::{
 };
 
 use hpl_interface::igp_gas_oracle::{
-    ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, MigrateMsg, QueryMsg,
+    ConfigResponse, ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, MigrateMsg,
+    QueryMsg,
 };
 
 use crate::{
@@ -115,6 +116,15 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     match msg {
+        QueryMsg::Config {} => {
+            let owner = OWNER.load(deps.storage)?;
+            let pending_owner = PENDING_OWNER.may_load(deps.storage)?;
+
+            Ok(to_binary(&ConfigResponse {
+                owner: owner.to_string(),
+                pending_owner: pending_owner.map(|v| v.to_string()),
+            })?)
+        }
         QueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
             let gas_data = REMOTE_GAS_DATA.load(deps.storage, dest_domain)?;
 
