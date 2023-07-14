@@ -1,6 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, Uint128, Uint256};
 
+use crate::ownable::OwnableMsg;
+
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
@@ -15,6 +17,8 @@ pub struct GasOracleConfig {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    Ownership(OwnableMsg),
+
     SetGasOracles {
         configs: Vec<GasOracleConfig>,
     },

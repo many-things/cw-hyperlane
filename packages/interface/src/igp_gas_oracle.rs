@@ -1,6 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
 
+use crate::ownable::OwnableMsg;
+
 #[cw_serde]
 pub struct InstantiateMsg {}
 
@@ -14,9 +16,7 @@ pub struct RemoteGasDataConfig {
 #[cw_serde]
 pub enum ExecuteMsg {
     // ownership
-    InitOwnershipTransfer { next_owner: String },
-    RevokeOwnershipTransfer {},
-    ClaimOwnership {},
+    Ownership(OwnableMsg),
 
     // gas data
     SetRemoteGasDataConfigs { configs: Vec<RemoteGasDataConfig> },

@@ -1,8 +1,11 @@
 use cosmwasm_std::Addr;
 use cw_multi_test::{App, AppResponse, Executor};
-use hpl_interface::igp_gas_oracle::{
-    ConfigResponse, ExecuteMsg::*, GetExchangeRateAndGasPriceResponse, QueryMsg,
-    RemoteGasDataConfig,
+use hpl_interface::{
+    igp_gas_oracle::{
+        ConfigResponse, ExecuteMsg::*, GetExchangeRateAndGasPriceResponse, QueryMsg,
+        RemoteGasDataConfig,
+    },
+    ownable::OwnableMsg,
 };
 
 pub struct IGPGasOracle<'a> {
@@ -29,9 +32,9 @@ impl<'a> IGPGasOracle<'a> {
         self.app.execute_contract(
             sender.clone(),
             self.address.clone(),
-            &InitOwnershipTransfer {
+            &Ownership(OwnableMsg::InitOwnershipTransfer {
                 next_owner: next_owner.into(),
-            },
+            }),
             &[],
         )
     }
@@ -40,7 +43,7 @@ impl<'a> IGPGasOracle<'a> {
         self.app.execute_contract(
             sender.clone(),
             self.address.clone(),
-            &RevokeOwnershipTransfer {},
+            &Ownership(OwnableMsg::RevokeOwnershipTransfer {}),
             &[],
         )
     }
@@ -49,7 +52,7 @@ impl<'a> IGPGasOracle<'a> {
         self.app.execute_contract(
             sender.clone(),
             self.address.clone(),
-            &ClaimOwnership {},
+            &Ownership(OwnableMsg::ClaimOwnership {}),
             &[],
         )
     }
