@@ -50,7 +50,9 @@ pub fn execute(
             }
 
             Ok(Response::new().add_event(
-                Event::new("set-gas-configs").add_attribute("domains", domains.join(",")),
+                Event::new("set-gas-configs")
+                    .add_attribute("owner", info.sender)
+                    .add_attribute("domains", domains.join(",")),
             ))
         }
         ExecuteMsg::SetRemoteGasData { config } => {

@@ -1,5 +1,6 @@
 pub mod contract;
 pub mod error;
+pub mod state;
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");

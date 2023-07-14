@@ -6,6 +6,7 @@ use crate::ownable::OwnableMsg;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
+    pub gas_token: String,
     pub beneficiary: String,
 }
 
