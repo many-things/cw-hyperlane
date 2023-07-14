@@ -11,6 +11,7 @@ use serde::Serialize;
 use crate::{
     error::ContractError,
     event::emit_instantiated,
+    query::get_delivered,
     state::{assert_paused, Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
@@ -92,7 +93,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
         })),
         CheckPoint {} => to_binary({
             let tree = MESSAGE_TREE.load(deps.storage)?;
-
             Ok(&CheckPointResponse {
                 root: tree.root()?.into(),
                 count: tree.count,
@@ -110,6 +110,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
                 default_ism: verify::bech32_decode(config.default_ism).into(),
             }))
         }
+        MessageDelivered { id } => get_delivered(deps, id),
     }
 }
 

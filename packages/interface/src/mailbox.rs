@@ -66,6 +66,9 @@ pub enum QueryMsg {
 
     #[returns(DefaultIsmResponse)]
     DefaultIsm {},
+
+    #[returns(MessageDeliveredResponse)]
+    MessageDelivered { id: HexBinary },
 }
 
 #[cw_serde]
@@ -97,4 +100,9 @@ pub struct PausedResponse {
 #[cw_serde]
 pub struct NonceResponse {
     pub nonce: u32,
+}
+
+#[cw_serde]
+pub struct MessageDeliveredResponse {
+    pub delivered: bool,
 }

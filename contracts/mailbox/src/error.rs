@@ -32,4 +32,7 @@ pub enum ContractError {
 
     #[error("Merkle tree is already full")]
     MerkleTreeIsFull {},
+
+    #[error("Message not found")]
+    MessageNotFound {},
 }

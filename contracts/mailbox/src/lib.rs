@@ -4,6 +4,7 @@ mod error;
 mod event;
 mod gov;
 pub mod merkle;
+mod query;
 pub mod state;
 pub mod verify;
 
