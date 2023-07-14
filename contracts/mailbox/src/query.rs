@@ -1,9 +1,12 @@
 use cosmwasm_std::{to_binary, Deps, HexBinary, QueryResponse};
-use hpl_interface::mailbox::{CountResponse, MessageDeliveredResponse, RootResponse};
+use hpl_interface::mailbox::{
+    CheckPointResponse, CountResponse, DefaultIsmResponse, MessageDeliveredResponse, NonceResponse,
+    PausedResponse, RootResponse,
+};
 
 use crate::{
-    state::{MESSAGE_PROCESSED, MESSAGE_TREE},
-    ContractError,
+    state::{CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE, NONCE, PAUSE},
+    verify, ContractError,
 };
 
 pub fn get_delivered(deps: Deps, id: HexBinary) -> Result<QueryResponse, ContractError> {
@@ -24,4 +27,30 @@ pub fn get_count(deps: Deps) -> Result<QueryResponse, ContractError> {
     let count = MESSAGE_TREE.load(deps.storage)?.count;
 
     Ok(to_binary(&CountResponse { count })?)
+}
+
+pub fn get_checkpoint(deps: Deps) -> Result<QueryResponse, ContractError> {
+    let tree = MESSAGE_TREE.load(deps.storage)?;
+
+    Ok(to_binary(&CheckPointResponse {
+        root: tree.root()?.into(),
+        count: tree.count,
+    })?)
+}
+
+pub fn get_paused(deps: Deps) -> Result<QueryResponse, ContractError> {
+    let paused = PAUSE.load(deps.storage)?;
+    Ok(to_binary(&PausedResponse { paused })?)
+}
+
+pub fn get_nonce(deps: Deps) -> Result<QueryResponse, ContractError> {
+    let nonce = NONCE.load(deps.storage)?;
+    Ok(to_binary(&NonceResponse { nonce })?)
+}
+
+pub fn get_default_ism(deps: Deps) -> Result<QueryResponse, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    Ok(to_binary(&DefaultIsmResponse {
+        default_ism: verify::bech32_decode(config.default_ism).into(),
+    })?)
 }
