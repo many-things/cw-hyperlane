@@ -5,7 +5,7 @@ use hpl_interface::types::keccak256_hash;
 use crate::state::assert_full_merkle_tree;
 
 pub const HASH_LENGTH: usize = 32;
-pub const TREE_DEPTH: usize = 32;
+pub const TREE_DEPTH: usize = 8;
 pub const MAX_LEAVES: u32 = (2_u32.pow(TREE_DEPTH as u32)) - 1;
 
 pub const ZERO_BYTES: &str = "0000000000000000000000000000000000000000000000000000000000000000";

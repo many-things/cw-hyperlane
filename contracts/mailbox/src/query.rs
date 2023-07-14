@@ -54,3 +54,31 @@ pub fn get_default_ism(deps: Deps) -> Result<QueryResponse, ContractError> {
         default_ism: verify::bech32_decode(config.default_ism).into(),
     })?)
 }
+
+#[cfg(test)]
+mod test {
+    use crate::merkle::MerkleTree;
+
+    use super::*;
+    use cosmwasm_std::{testing::mock_dependencies, HexBinary, StdError};
+
+    #[test]
+    fn test_get_delivery() {
+        let mut deps = mock_dependencies();
+        let id = HexBinary::from_hex("c0ffee").unwrap();
+        // cannot find deps delivery
+        let notfound_resp = get_delivered(deps.as_ref(), id.clone()).unwrap_err();
+        assert!(matches!(notfound_resp, ContractError::MessageNotFound {}));
+
+        // set delivery
+        MESSAGE_PROCESSED
+            .save(deps.as_mut().storage, id.clone().into(), &true)
+            .unwrap();
+
+        let resp = get_delivered(deps.as_ref(), id).unwrap();
+        assert_eq!(
+            resp,
+            to_binary(&MessageDeliveredResponse { delivered: true }).unwrap()
+        );
+    }
+}
