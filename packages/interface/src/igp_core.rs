@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, Uint128, Uint256};
+use cosmwasm_std::{Addr, Binary, Uint128, Uint256};
 
 use crate::ownable::OwnableMsg;
 
@@ -14,6 +14,24 @@ pub struct InstantiateMsg {
 pub struct GasOracleConfig {
     pub remote_domain: u32,
     pub gas_oracle: String,
+}
+
+impl From<(u32, String)> for GasOracleConfig {
+    fn from((remote_domain, gas_oracle): (u32, String)) -> Self {
+        Self {
+            remote_domain,
+            gas_oracle,
+        }
+    }
+}
+
+impl From<(u32, Addr)> for GasOracleConfig {
+    fn from((remote_domain, gas_oracle): (u32, Addr)) -> Self {
+        Self {
+            remote_domain,
+            gas_oracle: gas_oracle.to_string(),
+        }
+    }
 }
 
 #[cw_serde]
