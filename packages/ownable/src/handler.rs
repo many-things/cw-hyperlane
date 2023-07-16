@@ -1,11 +1,16 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, Event, MessageInfo, Response, StdError, StdResult, Storage,
+    Addr, CustomQuery, DepsMut, Env, Event, MessageInfo, Response, StdError, StdResult, Storage,
 };
 use hpl_interface::ownable::OwnableMsg;
 
 use crate::state::{OWNER, PENDING_OWNER};
 
-pub fn handle(deps: DepsMut, _env: Env, info: MessageInfo, msg: OwnableMsg) -> StdResult<Response> {
+pub fn handle<C: CustomQuery>(
+    deps: DepsMut<'_, C>,
+    _env: Env,
+    info: MessageInfo,
+    msg: OwnableMsg,
+) -> StdResult<Response> {
     use OwnableMsg::*;
 
     match msg {
@@ -34,7 +39,7 @@ pub fn init_ownership_transfer(
         return Err(StdError::generic_err("unauthorized"));
     }
     if PENDING_OWNER.exists(storage) {
-        return Err(StdError::generic_err("ownership transferring"));
+        return Err(StdError::generic_err("ownership is transferring"));
     }
 
     PENDING_OWNER.save(storage, next_owner)?;

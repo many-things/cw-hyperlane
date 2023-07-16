@@ -33,4 +33,4 @@ cosmwasm-schema = { workspace = true }
 hpl-interface = { workspace = true }
 
 [dev-dependencies]
-cw-multi-test = { workspace = true }
+anyhow = { workspace = true }
