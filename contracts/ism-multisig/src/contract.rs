@@ -79,5 +79,8 @@ pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, Contract
             metadata: raw_metadata,
             message: raw_message,
         } => query::verify_message(deps, raw_metadata, raw_message),
+        VerifyInfo {
+            message: raw_message,
+        } => query::get_verify_info(deps, raw_message),
     }
 }

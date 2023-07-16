@@ -1,6 +1,6 @@
 use cosmwasm_std::{to_binary, Binary, Deps, HexBinary, QueryResponse};
 use hpl_interface::{
-    ism::{ISMType, VerifyResponse},
+    ism::{ISMType, VerifyInfoResponse, VerifyResponse},
     types::{message::Message, metadata::MessageIdMultisigIsmMetadata},
 };
 
@@ -57,16 +57,32 @@ pub fn verify_message(
     })?)
 }
 
+pub fn get_verify_info(deps: Deps, raw_message: HexBinary) -> Result<QueryResponse, ContractError> {
+    let message: Message = raw_message.into();
+
+    let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
+    let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
+
+    Ok(to_binary(&VerifyInfoResponse {
+        threshold,
+        validators: validators
+            .0
+            .into_iter()
+            .map(|v| v.signer.to_string())
+            .collect(),
+    })?)
+}
+
 #[cfg(test)]
 mod test {
     use crate::state::{ValidatorSet, Validators, THRESHOLD, VALIDATORS};
     use cosmwasm_std::{testing::mock_dependencies, to_binary, Addr, Binary, HexBinary};
     use hpl_interface::{
-        ism::{ISMType, VerifyResponse},
+        ism::{ISMType, VerifyInfoResponse, VerifyResponse},
         types::{message::Message, metadata::MessageIdMultisigIsmMetadata},
     };
 
-    use super::{get_module_type, verify_message};
+    use super::{get_module_type, get_verify_info, verify_message};
 
     #[test]
     fn test_get_module_type() {
@@ -204,6 +220,70 @@ mod test {
         assert_eq!(
             success_result,
             to_binary(&VerifyResponse { verified: true }).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_get_verify_info() {
+        let hex = |v: &str| -> Binary { HexBinary::from_hex(v).unwrap().into() };
+        let mut deps = mock_dependencies();
+
+        let message = Message {
+            version: 0,
+            nonce: 8528,
+            origin_domain: 44787,
+            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
+            dest_domain: 11155111,
+            recipient: hex("0000000000000000000000005d56b8a669f50193b54319442c6eee5edd662381"),
+            body: hex("48656c6c6f21"),
+        };
+
+        VALIDATORS
+            .save(
+                deps.as_mut().storage,
+                message.origin_domain,
+                &Validators(vec![
+                    ValidatorSet {
+                        signer: Addr::unchecked("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
+                        signer_pubkey: Binary::from_base64(
+                            "ArU5zD28GiZu6HZIonZP9thauVOERZ7y5dR4fIhyT1gc",
+                        )
+                        .unwrap(),
+                    },
+                    ValidatorSet {
+                        signer: Addr::unchecked("osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat"),
+                        signer_pubkey: Binary::from_base64(
+                            "Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh",
+                        )
+                        .unwrap(),
+                    },
+                    ValidatorSet {
+                        signer: Addr::unchecked("osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd"),
+                        signer_pubkey: Binary::from_base64(
+                            "Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB",
+                        )
+                        .unwrap(),
+                    },
+                ]),
+            )
+            .unwrap();
+
+        THRESHOLD
+            .save(deps.as_mut().storage, message.origin_domain, &2u8)
+            .unwrap();
+
+        let success_result = get_verify_info(deps.as_ref(), message.into()).unwrap();
+        assert_eq!(
+            success_result,
+            to_binary(&VerifyInfoResponse {
+                threshold: 2,
+                validators: vec![
+                    "osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k".to_string(),
+                    "osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat".to_string(),
+                    "osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd".to_string(),
+                ]
+            })
+            .unwrap()
         );
     }
 }

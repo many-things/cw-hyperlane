@@ -5,7 +5,7 @@ use cosmwasm_std::{
     to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response, StdResult,
 };
 use cw2::set_contract_version;
-use hpl_interface::ism::{ISMQueryMsg, ISMType, VerifyResponse};
+use hpl_interface::ism::{ISMQueryMsg, ISMType, VerifyInfoResponse, VerifyResponse};
 
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 
@@ -54,5 +54,9 @@ pub fn query(_deps: Deps, _env: Env, msg: ISMQueryMsg) -> StdResult<QueryRespons
     match msg {
         ModuleType {} => Ok(to_binary(&ISMType::Owned)?),
         Verify { .. } => Ok(to_binary(&VerifyResponse { verified: true })?),
+        VerifyInfo { .. } => Ok(to_binary(&VerifyInfoResponse {
+            threshold: 1u8,
+            validators: vec!["".to_string()],
+        })?),
     }
 }
