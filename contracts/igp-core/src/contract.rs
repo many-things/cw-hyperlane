@@ -3,8 +3,8 @@ use std::str::FromStr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coins, to_binary, BankMsg, Deps, DepsMut, Env, Event, MessageInfo, QuerierWrapper,
-    QueryResponse, Response, Storage, Uint128, Uint256,
+    coins, ensure, ensure_eq, to_binary, BankMsg, Deps, DepsMut, Env, Event, MessageInfo,
+    QuerierWrapper, QueryResponse, Response, Storage, Uint128, Uint256,
 };
 
 use cw_utils::PaymentError;
@@ -78,9 +78,11 @@ pub fn execute(
     match msg {
         ExecuteMsg::Ownership(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::SetGasOracles { configs } => {
-            if info.sender != hpl_ownable::OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
+            ensure_eq!(
+                info.sender,
+                hpl_ownable::OWNER.load(deps.storage)?,
+                ContractError::Unauthorized {}
+            );
 
             let mut domains = vec![];
             for c in configs {
@@ -100,9 +102,11 @@ pub fn execute(
             ))
         }
         ExecuteMsg::SetBeneficiary { beneficiary } => {
-            if info.sender != hpl_ownable::OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
+            ensure_eq!(
+                info.sender,
+                hpl_ownable::OWNER.load(deps.storage)?,
+                ContractError::Unauthorized {}
+            );
 
             BENEFICIARY.save(deps.storage, &deps.api.addr_validate(&beneficiary)?)?;
 
@@ -114,9 +118,7 @@ pub fn execute(
         }
         ExecuteMsg::Claim {} => {
             let beneficiary = BENEFICIARY.load(deps.storage)?;
-            if info.sender != beneficiary {
-                return Err(ContractError::Unauthorized {});
-            }
+            ensure_eq!(info.sender, beneficiary, ContractError::Unauthorized {});
 
             let gas_token = GAS_TOKEN.load(deps.storage)?;
 
@@ -145,9 +147,7 @@ pub fn execute(
             let gas_token = GAS_TOKEN.load(deps.storage)?;
             let received = Uint256::from(cw_utils::must_pay(&info, &gas_token)?);
             let gas_needed = quote_gas_price(deps.storage, &deps.querier, dest_domain, gas_amount)?;
-            if received < gas_needed {
-                return Err(PaymentError::NonPayable {}.into());
-            }
+            ensure!(received >= gas_needed, PaymentError::NonPayable {});
 
             let payment_gap = Uint128::from_str(&(received - gas_needed).to_string())?;
 
