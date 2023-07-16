@@ -7,7 +7,8 @@ use hpl_interface::mailbox::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::{
     error::ContractError,
     event::emit_instantiated,
-    state::{assert_paused, Config, CONFIG, NONCE, PAUSE},
+    merkle::MerkleTree,
+    state::{assert_paused, Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -26,6 +27,7 @@ pub fn instantiate(
         default_ism: deps.api.addr_validate(&msg.default_ism)?,
     };
 
+    MESSAGE_TREE.save(deps.storage, &MerkleTree::default())?;
     CONFIG.save(deps.storage, &config)?;
     PAUSE.save(deps.storage, &false)?;
     NONCE.save(deps.storage, &0)?;

@@ -65,7 +65,7 @@ mod test {
         mock_owner(deps.as_mut().storage, owner.clone());
 
         let threshold = ThresholdSet {
-            domain: 1u64,
+            domain: 1u32,
             threshold: 8u8,
         };
 
@@ -97,15 +97,15 @@ mod test {
 
         let thresholds: Vec<ThresholdSet> = vec![
             ThresholdSet {
-                domain: 1u64,
+                domain: 1u32,
                 threshold: 8u8,
             },
             ThresholdSet {
-                domain: 2u64,
+                domain: 2u32,
                 threshold: 7u8,
             },
             ThresholdSet {
-                domain: 3u64,
+                domain: 3u32,
                 threshold: 6u8,
             },
         ];
@@ -123,9 +123,9 @@ mod test {
         assert_eq!(
             result.events,
             vec![
-                emit_set_threshold(1u64, 8u8),
-                emit_set_threshold(2u64, 7u8),
-                emit_set_threshold(3u64, 6u8),
+                emit_set_threshold(1u32, 8u8),
+                emit_set_threshold(2u32, 7u8),
+                emit_set_threshold(3u32, 6u8),
             ]
         );
 

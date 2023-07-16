@@ -21,8 +21,8 @@ pub fn verify_message(
     let metadata: MessageIdMultisigIsmMetadata = raw_metadata.into();
     let message: Message = raw_message.into();
 
-    let threshold = THRESHOLD.load(deps.storage, message.origin_domain.into())?;
-    let validators = VALIDATORS.load(deps.storage, message.origin_domain.into())?;
+    let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
+    let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
     let mut signatures: Vec<Binary> = Vec::new();
     for i in 0..metadata.signatures_len().unwrap() {
@@ -93,7 +93,7 @@ mod test {
         VALIDATORS
             .save(
                 deps.as_mut().storage,
-                message.origin_domain.into(),
+                message.origin_domain,
                 &Validators(vec![
                     ValidatorSet {
                         signer: Addr::unchecked("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
@@ -121,7 +121,7 @@ mod test {
             .unwrap();
 
         THRESHOLD
-            .save(deps.as_mut().storage, message.origin_domain.into(), &2u8)
+            .save(deps.as_mut().storage, message.origin_domain, &2u8)
             .unwrap();
 
         // fail
@@ -159,7 +159,7 @@ mod test {
         VALIDATORS
             .save(
                 deps.as_mut().storage,
-                message.origin_domain.into(),
+                message.origin_domain,
                 &Validators(vec![
                     ValidatorSet {
                         signer: Addr::unchecked("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
@@ -187,7 +187,7 @@ mod test {
             .unwrap();
 
         THRESHOLD
-            .save(deps.as_mut().storage, message.origin_domain.into(), &2u8)
+            .save(deps.as_mut().storage, message.origin_domain, &2u8)
             .unwrap();
 
         // success

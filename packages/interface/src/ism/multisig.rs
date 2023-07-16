@@ -9,14 +9,14 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub struct ValidatorSet {
-    pub domain: u64,
+    pub domain: u32,
     pub validator: String,
     pub validator_pubkey: Binary,
 }
 
 #[cw_serde]
 pub struct ThresholdSet {
-    pub domain: u64,
+    pub domain: u32,
     pub threshold: u8,
 }
 
@@ -24,7 +24,7 @@ pub struct ThresholdSet {
 pub enum ExecuteMsg {
     EnrollValidator { set: ValidatorSet },
     EnrollValidators { set: Vec<ValidatorSet> },
-    UnenrollValidator { domain: u64, validator: String },
+    UnenrollValidator { domain: u32, validator: String },
 
     SetThreshold { set: ThresholdSet },
     SetThresholds { set: Vec<ThresholdSet> },
