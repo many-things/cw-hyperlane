@@ -1,7 +1,7 @@
 use cosmwasm_std::{to_binary, Deps, HexBinary, QueryResponse};
 use hpl_interface::mailbox::{
-    CheckPointResponse, CountResponse, DefaultIsmResponse, MessageDeliveredResponse, NonceResponse,
-    PausedResponse, RootResponse,
+    CheckPointResponse, CountResponse, DefaultIsmResponse, MerkleTreeResponse,
+    MessageDeliveredResponse, NonceResponse, PausedResponse, RootResponse,
 };
 
 use crate::{
@@ -38,6 +38,16 @@ pub fn get_checkpoint(deps: Deps) -> Result<QueryResponse, ContractError> {
     })?)
 }
 
+pub fn get_tree(deps: Deps) -> Result<QueryResponse, ContractError> {
+    let tree = MESSAGE_TREE.load(deps.storage)?;
+    let branch: Vec<HexBinary> = tree.branch.into_iter().map(|x| x.into()).collect();
+
+    Ok(to_binary(&MerkleTreeResponse {
+        branch: branch.try_into().unwrap(),
+        count: tree.count,
+    })?)
+}
+
 pub fn get_paused(deps: Deps) -> Result<QueryResponse, ContractError> {
     let paused = PAUSE.load(deps.storage)?;
     Ok(to_binary(&PausedResponse { paused })?)
@@ -57,10 +67,9 @@ pub fn get_default_ism(deps: Deps) -> Result<QueryResponse, ContractError> {
 
 #[cfg(test)]
 mod test {
-    use crate::merkle::MerkleTree;
 
     use super::*;
-    use cosmwasm_std::{testing::mock_dependencies, HexBinary, StdError};
+    use cosmwasm_std::{testing::mock_dependencies, HexBinary};
 
     #[test]
     fn test_get_delivery() {

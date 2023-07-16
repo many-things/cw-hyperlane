@@ -82,15 +82,7 @@ pub fn dispatch(
         .set_data(to_binary(&DispatchResponse {
             message_id: id.clone(),
         })?)
-        .add_events(vec![
-            emit_dispatch_id(id),
-            emit_dispatch(
-                msg.sender.clone(),
-                dest_domain,
-                msg.recipient.clone(),
-                msg.into(),
-            ),
-        ]))
+        .add_events(vec![emit_dispatch_id(id), emit_dispatch(msg)]))
 }
 
 pub fn process(

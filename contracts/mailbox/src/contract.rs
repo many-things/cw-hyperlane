@@ -80,6 +80,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
         Nonce {} => query::get_nonce(deps),
         DefaultIsm {} => query::get_default_ism(deps),
         MessageDelivered { id } => query::get_delivered(deps, id),
+        MerkleTree {} => query::get_tree(deps),
     }
 }
 
