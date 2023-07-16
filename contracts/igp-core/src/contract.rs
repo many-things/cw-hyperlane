@@ -113,11 +113,27 @@ pub fn execute(
             ))
         }
         ExecuteMsg::Claim {} => {
-            if info.sender != BENEFICIARY.load(deps.storage)? {
+            let beneficiary = BENEFICIARY.load(deps.storage)?;
+            if info.sender != beneficiary {
                 return Err(ContractError::Unauthorized {});
             }
 
-            Ok(Response::new().add_event(Event::new("claim")))
+            let gas_token = GAS_TOKEN.load(deps.storage)?;
+
+            let balance = deps
+                .querier
+                .query_balance(&env.contract.address, gas_token)?;
+
+            let send_msg = BankMsg::Send {
+                to_address: beneficiary.to_string(),
+                amount: vec![balance.clone()],
+            };
+
+            Ok(Response::new().add_message(send_msg).add_event(
+                Event::new("claim")
+                    .add_attribute("beneficiary", beneficiary)
+                    .add_attribute("collected", balance.to_string()),
+            ))
         }
 
         ExecuteMsg::PayForGas {
