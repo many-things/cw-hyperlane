@@ -3,8 +3,8 @@ use std::str::FromStr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coins, to_binary, BankMsg, Deps, DepsMut, Env, Event, MessageInfo, QuerierWrapper,
-    QueryResponse, Response, Storage, Uint128, Uint256,
+    coins, ensure, ensure_eq, to_binary, BankMsg, Deps, DepsMut, Env, Event, MessageInfo,
+    QuerierWrapper, QueryResponse, Response, Storage, Uint128, Uint256,
 };
 
 use cw_utils::PaymentError;
@@ -78,9 +78,11 @@ pub fn execute(
     match msg {
         ExecuteMsg::Ownership(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::SetGasOracles { configs } => {
-            if info.sender != hpl_ownable::OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
+            ensure_eq!(
+                info.sender,
+                hpl_ownable::OWNER.load(deps.storage)?,
+                ContractError::Unauthorized {}
+            );
 
             let mut domains = vec![];
             for c in configs {
@@ -100,9 +102,11 @@ pub fn execute(
             ))
         }
         ExecuteMsg::SetBeneficiary { beneficiary } => {
-            if info.sender != hpl_ownable::OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
+            ensure_eq!(
+                info.sender,
+                hpl_ownable::OWNER.load(deps.storage)?,
+                ContractError::Unauthorized {}
+            );
 
             BENEFICIARY.save(deps.storage, &deps.api.addr_validate(&beneficiary)?)?;
 
@@ -113,11 +117,25 @@ pub fn execute(
             ))
         }
         ExecuteMsg::Claim {} => {
-            if info.sender != BENEFICIARY.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
+            let beneficiary = BENEFICIARY.load(deps.storage)?;
+            ensure_eq!(info.sender, beneficiary, ContractError::Unauthorized {});
 
-            Ok(Response::new().add_event(Event::new("claim")))
+            let gas_token = GAS_TOKEN.load(deps.storage)?;
+
+            let balance = deps
+                .querier
+                .query_balance(&env.contract.address, gas_token)?;
+
+            let send_msg = BankMsg::Send {
+                to_address: beneficiary.to_string(),
+                amount: vec![balance.clone()],
+            };
+
+            Ok(Response::new().add_message(send_msg).add_event(
+                Event::new("claim")
+                    .add_attribute("beneficiary", beneficiary)
+                    .add_attribute("collected", balance.to_string()),
+            ))
         }
 
         ExecuteMsg::PayForGas {
@@ -129,22 +147,26 @@ pub fn execute(
             let gas_token = GAS_TOKEN.load(deps.storage)?;
             let received = Uint256::from(cw_utils::must_pay(&info, &gas_token)?);
             let gas_needed = quote_gas_price(deps.storage, &deps.querier, dest_domain, gas_amount)?;
-            if received < gas_needed {
-                return Err(PaymentError::NonPayable {}.into());
-            }
+            ensure!(received >= gas_needed, PaymentError::NonPayable {});
 
             let payment_gap = Uint128::from_str(&(received - gas_needed).to_string())?;
 
-            let refund_msg = BankMsg::Send {
-                to_address: refund_address,
-                amount: coins(payment_gap.u128(), &gas_token),
-            };
+            let mut resp = Response::new();
 
-            Ok(Response::new().add_message(refund_msg).add_event(
+            if !payment_gap.is_zero() {
+                let refund_msg = BankMsg::Send {
+                    to_address: refund_address,
+                    amount: coins(payment_gap.u128(), &gas_token),
+                };
+                resp = resp.add_message(refund_msg);
+            }
+
+            Ok(resp.add_event(
                 Event::new("pay-for-gas")
                     .add_attribute("sender", info.sender)
                     .add_attribute("message_id", message_id.to_base64())
                     .add_attribute("gas_amount", gas_amount)
+                    .add_attribute("gas_refunded", payment_gap)
                     .add_attribute("gas_required", gas_needed),
             ))
         }

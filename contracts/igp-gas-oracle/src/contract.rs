@@ -1,6 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{
+    ensure_eq, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+};
 
 use hpl_interface::igp_gas_oracle::{
     ConfigResponse, ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, MigrateMsg,
@@ -39,9 +41,11 @@ pub fn execute(
         ExecuteMsg::Ownership(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
 
         ExecuteMsg::SetRemoteGasDataConfigs { configs } => {
-            if info.sender != hpl_ownable::OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
+            ensure_eq!(
+                info.sender,
+                hpl_ownable::OWNER.load(deps.storage)?,
+                ContractError::Unauthorized {}
+            );
 
             let mut domains = vec![];
             for config in configs {
@@ -56,9 +60,11 @@ pub fn execute(
             ))
         }
         ExecuteMsg::SetRemoteGasData { config } => {
-            if info.sender != hpl_ownable::OWNER.load(deps.storage)? {
-                return Err(ContractError::Unauthorized {});
-            }
+            ensure_eq!(
+                info.sender,
+                hpl_ownable::OWNER.load(deps.storage)?,
+                ContractError::Unauthorized {}
+            );
 
             let domain = config.remote_domain.to_string();
             insert_gas_data(deps.storage, config)?;
