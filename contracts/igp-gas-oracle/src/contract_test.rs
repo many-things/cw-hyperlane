@@ -1,8 +1,7 @@
 use cosmwasm_std::{
     from_binary,
     testing::{mock_dependencies, mock_env, mock_info},
-    Addr, Api, CustomQuery, Empty, Env, MessageInfo, OwnedDeps, Querier, Response, Storage,
-    Uint128,
+    Addr, Api, Empty, Env, MessageInfo, OwnedDeps, Querier, Response, Storage, Uint128,
 };
 use hpl_interface::igp_gas_oracle::{
     ConfigResponse, ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, QueryMsg,
@@ -15,19 +14,18 @@ use crate::{
     error::ContractError,
 };
 
-pub struct IGPGasOracle<S: Storage, A: Api, Q: Querier, C: CustomQuery = Empty> {
-    pub deps: OwnedDeps<S, A, Q, C>,
+pub struct IGPGasOracle<S: Storage, A: Api, Q: Querier> {
+    pub deps: OwnedDeps<S, A, Q, Empty>,
     pub env: Env,
 }
 
-impl<S, A, Q, C> IGPGasOracle<S, A, Q, C>
+impl<S, A, Q> IGPGasOracle<S, A, Q>
 where
     S: Storage,
     A: Api,
     Q: Querier,
-    C: CustomQuery,
 {
-    pub fn new(deps: OwnedDeps<S, A, Q, C>, env: Env) -> Self {
+    pub fn new(deps: OwnedDeps<S, A, Q>, env: Env) -> Self {
         Self { deps, env }
     }
 
