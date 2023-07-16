@@ -1,8 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_binary, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
-};
+use cosmwasm_std::{to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response};
 
 use hpl_interface::igp_gas_oracle::{
     ConfigResponse, ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, MigrateMsg,
@@ -16,8 +14,8 @@ use crate::{
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn instantiate<C: CustomQuery>(
-    deps: DepsMut<C>,
+pub fn instantiate(
+    deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     _msg: InstantiateMsg,
@@ -31,8 +29,8 @@ pub fn instantiate<C: CustomQuery>(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute<C: CustomQuery>(
-    deps: DepsMut<C>,
+pub fn execute(
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
@@ -72,11 +70,7 @@ pub fn execute<C: CustomQuery>(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query<C: CustomQuery>(
-    deps: Deps<C>,
-    _env: Env,
-    msg: QueryMsg,
-) -> Result<QueryResponse, ContractError> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     match msg {
         QueryMsg::Config {} => {
             let owner = hpl_ownable::OWNER.load(deps.storage)?;
@@ -99,10 +93,6 @@ pub fn query<C: CustomQuery>(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate<C: CustomQuery>(
-    _deps: DepsMut<C>,
-    _env: Env,
-    _msg: MigrateMsg,
-) -> Result<Response, ContractError> {
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
