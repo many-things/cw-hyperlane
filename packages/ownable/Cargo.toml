@@ -1,5 +1,5 @@
 [package]
-name = "hpl-igp-core"
+name = "hpl-ownable"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -23,14 +23,14 @@ cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw2 = { workspace = true }
-cw-utils = { workspace = true }
+bech32 = { workspace = true }
+sha3 = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 cosmwasm-schema = { workspace = true }
 
-hpl-ownable = { workspace = true }
 hpl-interface = { workspace = true }
 
 [dev-dependencies]
-cw-multi-test = { workspace = true }
+anyhow = { workspace = true }

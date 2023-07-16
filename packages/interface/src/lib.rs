@@ -4,5 +4,6 @@ pub mod igp_gas_oracle;
 pub mod ism;
 pub mod mailbox;
 pub mod multicall;
+pub mod ownable;
 pub mod types;
 pub mod va;
