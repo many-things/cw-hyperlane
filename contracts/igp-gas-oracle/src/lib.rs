@@ -3,7 +3,7 @@ pub mod error;
 pub mod state;
 
 #[cfg(test)]
-pub mod contract_test;
+pub mod tests;
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
