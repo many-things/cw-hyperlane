@@ -2,11 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, QueryResponse, Response};
 use cw2::set_contract_version;
-use hpl_interface::mailbox::{
-    CheckPointResponse, CountResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, NonceResponse,
-    PausedResponse, QueryMsg, RootResponse,
-};
-use serde::Serialize;
+use hpl_interface::mailbox::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::{
     error::ContractError,
@@ -73,38 +69,20 @@ pub fn execute(
     }
 }
 
-fn to_binary<T: Serialize>(res: Result<T, ContractError>) -> Result<QueryResponse, ContractError> {
-    match res {
-        Ok(v) => Ok(cosmwasm_std::to_binary(&v)?),
-        Err(e) => Err(e),
-    }
-}
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+    use crate::query;
     use QueryMsg::*;
 
     match msg {
-        Root {} => to_binary(Ok(&RootResponse {
-            root: MESSAGE_TREE.load(deps.storage)?.root()?.into(),
-        })),
-        Count {} => to_binary(Ok(&CountResponse {
-            count: MESSAGE_TREE.load(deps.storage)?.count,
-        })),
-        CheckPoint {} => to_binary({
-            let tree = MESSAGE_TREE.load(deps.storage)?;
-
-            Ok(&CheckPointResponse {
-                root: tree.root()?.into(),
-                count: tree.count,
-            })
-        }),
-        Paused {} => to_binary(Ok(&PausedResponse {
-            paused: PAUSE.load(deps.storage)?,
-        })),
-        Nonce {} => to_binary(Ok(&NonceResponse {
-            nonce: NONCE.load(deps.storage)?,
-        })),
+        Root {} => query::get_root(deps),
+        Count {} => query::get_count(deps),
+        CheckPoint {} => query::get_checkpoint(deps),
+        Paused {} => query::get_paused(deps),
+        Nonce {} => query::get_nonce(deps),
+        DefaultIsm {} => query::get_default_ism(deps),
+        MessageDelivered { id } => query::get_delivered(deps, id),
+        MerkleTree {} => query::get_tree(deps),
     }
 }
 

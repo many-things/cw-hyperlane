@@ -1,6 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, HexBinary};
 
+const TREE_DEPTH: usize = 32;
+
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
@@ -63,6 +65,15 @@ pub enum QueryMsg {
 
     #[returns(NonceResponse)]
     Nonce {},
+
+    #[returns(DefaultIsmResponse)]
+    DefaultIsm {},
+
+    #[returns(MerkleTreeResponse)]
+    MerkleTree {},
+
+    #[returns(MessageDeliveredResponse)]
+    MessageDelivered { id: HexBinary },
 }
 
 #[cw_serde]
@@ -72,13 +83,18 @@ pub struct RootResponse {
 
 #[cw_serde]
 pub struct CountResponse {
-    pub count: u128,
+    pub count: usize,
+}
+
+#[cw_serde]
+pub struct DefaultIsmResponse {
+    pub default_ism: HexBinary,
 }
 
 #[cw_serde]
 pub struct CheckPointResponse {
     pub root: HexBinary,
-    pub count: u128,
+    pub count: usize,
 }
 
 #[cw_serde]
@@ -89,4 +105,15 @@ pub struct PausedResponse {
 #[cw_serde]
 pub struct NonceResponse {
     pub nonce: u32,
+}
+
+#[cw_serde]
+pub struct MessageDeliveredResponse {
+    pub delivered: bool,
+}
+
+#[cw_serde]
+pub struct MerkleTreeResponse {
+    pub branch: [HexBinary; TREE_DEPTH],
+    pub count: usize,
 }

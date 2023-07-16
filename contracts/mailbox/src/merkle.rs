@@ -48,12 +48,12 @@ pub const ZERO_HASHES: [&str; HASH_LENGTH] = [
 #[derive(Default)]
 pub struct MerkleTree {
     pub branch: [Binary; TREE_DEPTH],
-    pub count: u128,
+    pub count: usize,
 }
 
 impl MerkleTree {
     pub fn insert(&mut self, node: Binary) {
-        assert_full_merkle_tree(self.count, MAX_LEAVES).unwrap();
+        assert_full_merkle_tree(self.count, MAX_LEAVES as usize).unwrap();
 
         self.count += 1;
 
@@ -139,7 +139,7 @@ mod tests {
         );
 
         assert_eq!(
-            format!("0x{}", HexBinary::from(digest).to_hex()), 
+            format!("0x{}", HexBinary::from(digest).to_hex()),
             // abi.encodePacked(bytes32(keccak256("hello_world")), bytes32(keccak256("world_hello")));
             "0x5b07e077a81ffc6b47435f65a8727bcc542bc6fc0f25a56210efb1a74b88a5ae5e3b3917b0a11fc9edfc594b3aabbc95167d176fcc17aa76c01d7bda956862cd",
         );

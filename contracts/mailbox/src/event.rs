@@ -1,4 +1,5 @@
 use cosmwasm_std::{Addr, Binary, Event, HexBinary};
+use hpl_interface::types::message::Message;
 
 pub fn emit_instantiated(owner: Addr) -> Event {
     Event::new("mailbox_instantiated").add_attribute("owner", owner)
@@ -22,17 +23,15 @@ pub fn emit_dispatch_id(id: Binary) -> Event {
     Event::new("mailbox_dispatch_id").add_attribute("message_id", HexBinary::from(id).to_hex())
 }
 
-pub fn emit_dispatch(
-    sender: Binary,
-    dest_domain: u32,
-    recipient: Binary,
-    message: Binary,
-) -> Event {
+pub fn emit_dispatch(msg: Message) -> Event {
     Event::new("mailbox_dispatch")
-        .add_attribute("sender", HexBinary::from(sender).to_hex())
-        .add_attribute("destination", format!("{dest_domain}"))
-        .add_attribute("recipient", HexBinary::from(recipient).to_hex())
-        .add_attribute("message", HexBinary::from(message).to_hex())
+        .add_attribute("version", msg.version.to_string())
+        .add_attribute("nonce", msg.nonce.to_string())
+        .add_attribute("origin_domain", msg.origin_domain.to_string())
+        .add_attribute("sender", HexBinary::from(msg.sender).to_hex())
+        .add_attribute("destination", msg.dest_domain.to_string())
+        .add_attribute("recipient", HexBinary::from(msg.recipient).to_hex())
+        .add_attribute("message", HexBinary::from(msg.body).to_hex())
 }
 
 pub fn emit_process_id(id: Binary) -> Event {
