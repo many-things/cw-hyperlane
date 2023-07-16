@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     from_binary,
     testing::{mock_info, MockApi, MockQuerier, MockStorage},
-    Addr, Binary, Empty, Env, MessageInfo, OwnedDeps, Response, Uint256,
+    Addr, Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, OwnedDeps, Response,
 };
 use hpl_interface::igp_core::{
     ExecuteMsg, GasOracleConfig, GetExchangeRateAndGasPriceResponse, InstantiateMsg, QueryMsg,
@@ -59,6 +59,14 @@ impl IGP {
             .map_err(|e| e.into())
     }
 
+    pub fn deps_mut(&mut self) -> DepsMut {
+        self.deps.as_mut()
+    }
+
+    pub fn deps_ref(&self) -> Deps {
+        self.deps.as_ref()
+    }
+
     pub fn set_gas_oracles(
         &mut self,
         sender: &Addr,
@@ -73,7 +81,7 @@ impl IGP {
     pub fn set_beneficiary(
         &mut self,
         sender: &Addr,
-        beneficiary: &str,
+        beneficiary: &Addr,
     ) -> Result<Response, ContractError> {
         self.execute(
             mock_info(sender.as_str(), &[]),
@@ -90,15 +98,16 @@ impl IGP {
     pub fn pay_for_gas(
         &mut self,
         sender: &Addr,
-        message_id: Binary,
+        funds: &[Coin],
+        message_id: &Binary,
         dest_domain: u32,
         gas_amount: u128,
-        refund_address: &str,
+        refund_address: &Addr,
     ) -> Result<Response, ContractError> {
         self.execute(
-            mock_info(sender.as_str(), &[]),
+            mock_info(sender.as_str(), funds),
             ExecuteMsg::PayForGas {
-                message_id,
+                message_id: message_id.clone(),
                 dest_domain,
                 gas_amount: gas_amount.into(),
                 refund_address: refund_address.to_string(),

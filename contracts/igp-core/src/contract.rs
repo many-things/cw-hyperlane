@@ -151,16 +151,22 @@ pub fn execute(
 
             let payment_gap = Uint128::from_str(&(received - gas_needed).to_string())?;
 
-            let refund_msg = BankMsg::Send {
-                to_address: refund_address,
-                amount: coins(payment_gap.u128(), &gas_token),
-            };
+            let mut resp = Response::new();
 
-            Ok(Response::new().add_message(refund_msg).add_event(
+            if !payment_gap.is_zero() {
+                let refund_msg = BankMsg::Send {
+                    to_address: refund_address,
+                    amount: coins(payment_gap.u128(), &gas_token),
+                };
+                resp = resp.add_message(refund_msg);
+            }
+
+            Ok(resp.add_event(
                 Event::new("pay-for-gas")
                     .add_attribute("sender", info.sender)
                     .add_attribute("message_id", message_id.to_base64())
                     .add_attribute("gas_amount", gas_amount)
+                    .add_attribute("gas_refunded", payment_gap)
                     .add_attribute("gas_required", gas_needed),
             ))
         }
