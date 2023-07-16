@@ -34,5 +34,3 @@ hpl-interface = { workspace = true }
 [dev-dependencies]
 cw-multi-test = { workspace = true }
 anyhow = { workspace = true }
-
-hpl-test-helper = { workspace = true }
