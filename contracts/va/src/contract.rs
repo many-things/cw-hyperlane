@@ -16,7 +16,9 @@ use hpl_interface::{
 use crate::{
     error::ContractError,
     pub_to_addr,
-    state::{HRP, LOCAL_DOMAIN, MAILBOX, REPLAY_PROTECITONS, STORAGE_LOCATIONS, VALIDATORS},
+    state::{
+        ADDR_PREFIX, LOCAL_DOMAIN, MAILBOX, REPLAY_PROTECITONS, STORAGE_LOCATIONS, VALIDATORS,
+    },
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -29,7 +31,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    HRP.save(deps.storage, &msg.hrp)?;
+    ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
     MAILBOX.save(deps.storage, &deps.api.addr_validate(&msg.mailbox)?)?;
     LOCAL_DOMAIN.save(deps.storage, &msg.local_domain)?;
 
@@ -105,7 +107,7 @@ pub fn execute(
                 signature[65],
             )?;
 
-            let recovered_addr = pub_to_addr(Binary(recovered), &HRP.load(deps.storage)?)?;
+            let recovered_addr = pub_to_addr(Binary(recovered), &ADDR_PREFIX.load(deps.storage)?)?;
             ensure_eq!(recovered_addr, validator, ContractError::Unauthorized {});
 
             // save validator if not saved yet

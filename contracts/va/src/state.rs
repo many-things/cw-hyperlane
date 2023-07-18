@@ -1,8 +1,8 @@
 use cosmwasm_std::{Addr, Empty};
 use cw_storage_plus::{Item, Map};
 
-pub const HRP_KEY: &str = "hrp";
-pub const HRP: Item<String> = Item::new(HRP_KEY);
+pub const ADDR_PREFIX_KEY: &str = "addr_prefix";
+pub const ADDR_PREFIX: Item<String> = Item::new(ADDR_PREFIX_KEY);
 
 pub const MAILBOX_KEY: &str = "mailbox";
 pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
