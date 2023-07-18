@@ -163,6 +163,7 @@ pub fn execute(
 
             Ok(resp.add_event(
                 Event::new("pay-for-gas")
+                    .add_attribute("payment", received)
                     .add_attribute("sender", info.sender)
                     .add_attribute("message_id", message_id.to_base64())
                     .add_attribute("gas_amount", gas_amount)
