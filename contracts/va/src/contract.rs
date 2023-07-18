@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
-    QueryResponse, Response, StdResult,
+    ensure, ensure_eq, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo,
+    Order, QueryResponse, Response, StdResult,
 };
 
 use hpl_interface::{
@@ -21,6 +21,31 @@ use crate::{
     },
     CONTRACT_NAME, CONTRACT_VERSION,
 };
+
+pub fn domain_hash(local_domain: u32, mailbox: &str) -> StdResult<Binary> {
+    let mut bz = vec![];
+    bz.append(&mut local_domain.to_be_bytes().to_vec());
+    bz.append(&mut bech32_decode(mailbox)?);
+    bz.append(&mut "HYPERLANE_ANNOUNCEMENT".as_bytes().to_vec());
+
+    let hash = keccak256_hash(&bz);
+
+    Ok(hash)
+}
+
+pub fn announcement_hash(mut domain_hash: Vec<u8>, storage_location: &str) -> Binary {
+    let mut bz = vec![];
+    bz.append(&mut domain_hash);
+    bz.append(&mut storage_location.as_bytes().to_vec());
+
+    let mut prehash = keccak256_hash(&bz);
+
+    let mut bz = vec![];
+    bz.append(&mut "\x19Ethereum Signed Message:\n".as_bytes().to_vec());
+    bz.append(&mut prehash.0);
+
+    keccak256_hash(&bz)
+}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -69,42 +94,26 @@ pub fn execute(
 
             // check replay protection
             ensure!(
-                REPLAY_PROTECITONS.has(deps.storage, replay_id.0.clone()),
+                !REPLAY_PROTECITONS.has(deps.storage, replay_id.0.clone()),
                 ContractError::Unauthorized {}
             );
             REPLAY_PROTECITONS.save(deps.storage, replay_id.0, &Empty {})?;
 
             // make announcement digest
-            let domain_hash = keccak256_hash(
-                vec![
-                    LOCAL_DOMAIN.load(deps.storage)?.to_be_bytes().to_vec(),
-                    bech32_decode(MAILBOX.load(deps.storage)?.as_str())?,
-                    "HYPERLANE_ANNOUNCEMENT".as_bytes().to_vec(),
-                ]
-                .concat()
-                .as_slice(),
-            );
+            let local_domain = LOCAL_DOMAIN.load(deps.storage)?;
+            let mailbox = MAILBOX.load(deps.storage)?;
 
-            let announcement_prehash = keccak256_hash(
-                vec![domain_hash.0, storage_location.as_bytes().to_vec()]
-                    .concat()
-                    .as_slice(),
-            );
-
-            let announcement_digest = keccak256_hash(
-                vec![
-                    "\x19Ethereum Signed Message:\n".as_bytes().to_vec(),
-                    announcement_prehash.0,
-                ]
-                .concat()
-                .as_slice(),
+            // make digest
+            let announcement_hash = announcement_hash(
+                domain_hash(local_domain, mailbox.as_str())?.0,
+                &storage_location,
             );
 
             // recover pubkey from signature & verify
             let recovered = deps.api.secp256k1_recover_pubkey(
-                &announcement_digest,
+                &announcement_hash,
                 &signature.as_slice()[..64],
-                signature[65],
+                signature[64],
             )?;
 
             let recovered_addr = pub_to_addr(Binary(recovered), &ADDR_PREFIX.load(deps.storage)?)?;

@@ -3,7 +3,7 @@ use cosmwasm_std::Binary;
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub hrp: String,
+    pub addr_prefix: String,
     pub mailbox: String,
     pub local_domain: u32,
 }
