@@ -23,6 +23,9 @@ cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw2 = { workspace = true }
+sha2 = { workspace = true }
+ripemd = { workspace = true }
+bech32 = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
@@ -31,4 +34,6 @@ cosmwasm-schema = { workspace = true }
 hpl-interface = { workspace = true }
 
 [dev-dependencies]
-cw-multi-test = { workspace = true }
+anyhow = { workspace = true }
+k256 = { workspace = true }
+sha3 = { workspace = true }
