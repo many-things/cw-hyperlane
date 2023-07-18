@@ -2,10 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use hpl_interface::ism::{
-    multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg},
-    ISMQueryMsg,
-};
+use hpl_interface::ism::multisig::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::{
     error::ContractError,
@@ -69,9 +66,9 @@ pub fn execute(
 
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: ISMQueryMsg) -> Result<Binary, ContractError> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     use crate::query;
-    use ISMQueryMsg::*;
+    use QueryMsg::*;
 
     match msg {
         ModuleType {} => query::get_module_type(),
