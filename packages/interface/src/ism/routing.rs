@@ -3,6 +3,7 @@ use cosmwasm_std::HexBinary;
 
 use crate::ownable::OwnableMsg;
 
+#[allow(unused_imports)]
 use super::{ModuleTypeResponse, VerifyResponse};
 
 #[cw_serde]

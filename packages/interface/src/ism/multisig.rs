@@ -1,6 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, HexBinary};
 
+#[allow(unused_imports)]
 use super::{ModuleTypeResponse, VerifyResponse};
 
 #[cw_serde]
