@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo,
-    Order, QueryResponse, Response, StdResult,
+    ensure, ensure_eq, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
+    QueryResponse, Response, StdResult,
 };
 
 use hpl_interface::{
