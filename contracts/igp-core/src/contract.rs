@@ -167,7 +167,8 @@ pub fn execute(
                     .add_attribute("message_id", message_id.to_base64())
                     .add_attribute("gas_amount", gas_amount)
                     .add_attribute("gas_refunded", payment_gap)
-                    .add_attribute("gas_required", gas_needed),
+                    .add_attribute("gas_required", gas_needed)
+                    .add_attribute("payment", received),
             ))
         }
     }
