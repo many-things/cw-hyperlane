@@ -26,6 +26,9 @@ pub enum ISMQueryMsg {
         metadata: HexBinary,
         message: HexBinary,
     },
+
+    #[returns(VerifyInfoResponse)]
+    VerifyInfo { message: HexBinary },
 }
 
 #[cw_serde]
@@ -44,6 +47,12 @@ pub struct ModuleTypeResponse {
 #[cw_serde]
 pub struct VerifyResponse {
     pub verified: bool,
+}
+
+#[cw_serde]
+pub struct VerifyInfoResponse {
+    pub threshold: u8,
+    pub validators: Vec<String>,
 }
 
 #[cw_serde]
