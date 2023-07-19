@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env},
-    Addr, Binary, HexBinary, Response,
+    Addr, Binary, Response,
 };
 use hpl_interface::types::bech32_encode;
 use k256::{

@@ -1,5 +1,8 @@
-use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Binary;
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Binary, HexBinary};
+
+#[allow(unused_imports)]
+use super::{ModuleTypeResponse, VerifyResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -32,6 +35,19 @@ pub enum ExecuteMsg {
     InitTransferOwnership { owner: String },
     FinishTransferOwnership(),
     RevokeTransferOwnership(),
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum QueryMsg {
+    #[returns(ModuleTypeResponse)]
+    ModuleType {},
+
+    #[returns(VerifyResponse)]
+    Verify {
+        metadata: HexBinary,
+        message: HexBinary,
+    },
 }
 
 #[cw_serde]
