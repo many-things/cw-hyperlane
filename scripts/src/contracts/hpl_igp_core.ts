@@ -38,7 +38,7 @@ export default class HplIgpCore implements Contract {
 
   instantiate = async(msg: any): Promise<ContractContext> => {
     const instantiateMsg = msg as HplIgpCoreInstantiateMsg;
-    const contract = await this.client.instantiate(this.signer, this.codeId!, instantiateMsg, "", "auto");
+    const contract = await this.client.instantiate(this.signer, this.codeId!, instantiateMsg, this.contractName, "auto");
 
     this.address = contract.contractAddress;
     return this.getContractContext();

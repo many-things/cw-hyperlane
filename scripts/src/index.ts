@@ -66,49 +66,55 @@ async function main() {
     }
   }).filter(v => v !== undefined);
 
-  console.log(`Found ${codeChanges.length} contracts to upload.\n`);
-  let creationExists = false;
-  codeChanges.forEach((v) => {
-    if (v === undefined) return;
-
-    if ('codeId' in v) {
-      console.log("UPDATE".yellow, `${v.contractName} (${v.codeId})`.padEnd(30), '|', v.digest);
-    } else {
-      console.log("CREATE".green, `${v.contractName}`.padEnd(30), '|', v.digest);
-      creationExists = true;
-    }
-  });
-
-  // check upload
-  const askUpload = await askQuestion("Do you want to upload contracts?");
-  if (!askUpload && creationExists) {
-    console.log("\n[ERROR] You must upload all new contracts.".red);
-    process.exit(1);
-  } else if (askUpload) {
-    console.log("\nuploading...\n");
-
-    for(let v of codeChanges) {
+  if (codeChanges.length !== 0) {
+    console.log(`Found ${codeChanges.length} contracts to upload.\n`);
+    let creationExists = false;
+    codeChanges.forEach((v) => {
       if (v === undefined) return;
 
-      const contract = contracts[v.contractName];
-      if (contract === undefined) return;
-
-      console.log("uploading".cyan, v.contractName)
-      try{
-        contract.digest = v.digest;
-        const contractContext = await contract.uplaod();
-        context.contracts[v.contractName] = contractContext;
-        saveContext("osmo-test-5", context);
-
-        console.log("uploaded".green, v.contractName, "as", contractContext.codeId);
-      } catch(e) {
-        const err = e as AxiosError;
-        console.log("failed".red, v.contractName, "=>", err);
+      if ('codeId' in v) {
+        console.log("UPDATE".yellow, `${v.contractName} (${v.codeId})`.padEnd(30), '|', v.digest);
+      } else {
+        console.log("CREATE".green, `${v.contractName}`.padEnd(30), '|', v.digest);
+        creationExists = true;
       }
-    };
+    });
+
+    // check upload
+    const askUpload = await askQuestion("Do you want to upload contracts?");
+    if (!askUpload && creationExists) {
+      console.log("\n[ERROR] You must upload all new contracts.".red);
+      process.exit(1);
+    } else if (askUpload) {
+      console.log("\nuploading...\n");
+
+      for(let v of codeChanges) {
+        if (v === undefined) return;
+
+        const contract = contracts[v.contractName];
+        if (contract === undefined) return;
+
+        process.stdout.write("[UPLOAD]".gray);
+        process.stdout.write(` ${v.contractName} ... `);
+
+        try{
+          contract.digest = v.digest;
+          const contractContext = await contract.uplaod();
+          context.contracts[v.contractName] = contractContext;
+          saveContext("osmo-test-5", context);
+
+          console.log("OK".green, "as", contractContext.codeId);
+        } catch(e) {
+          const err = e as AxiosError;
+          console.log("FAILED".red, "=>", err);
+        }
+      };
+    }
+  } else {
+    console.log("No contracts to upload.");
   }
 
-  runMigrations(NETWORK,true);
+  runMigrations(NETWORK, false);
 }
 
 main();

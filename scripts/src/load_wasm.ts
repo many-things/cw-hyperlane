@@ -8,8 +8,6 @@ const directoryPath = path.join(__dirname, '../../artifacts');
 const pipelineAsync = promisify(pipeline);
 
 function getWasmFilesPath(): string[] {
-  console.log(directoryPath);
-
   try {
     const files = fs.readdirSync(directoryPath);
     return files.filter((file) => file.endsWith('.wasm')).map((file) => path.join(directoryPath, file));

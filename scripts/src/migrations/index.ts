@@ -58,6 +58,13 @@ export async function runMigrations(network: string, dryRun: boolean) {
   const migStartAt = migrationOrder.findIndex((obj) => obj.name === ctx.latestMigration) + 1;
 
   // migrate
+  if (migrationOrder.slice(migStartAt).length === 0) {
+    console.log("[INFO]".gray, "No migrations to run.");
+    return;
+  }
+
+  console.log("\nrun migrations...\n")
+
   for(let obj of migrationOrder.slice(migStartAt)) {
     process.stdout.write("[MIGRATION]".gray);
     process.stdout.write(` ${obj.name} ... `);
@@ -80,4 +87,12 @@ export async function runMigrations(network: string, dryRun: boolean) {
       throw err;
     }
   }
+
+  console.log("\n[INFO]".gray, "All migrations are done.");
+  console.log("\n============= Migration Result =============\n")
+
+  Object.keys(ctx.contracts).forEach((key) => {
+    const contract = ctx.contracts[key];
+    console.log(`${key}`.padEnd(30), '=>', `${contract.address}`);
+  });
 }

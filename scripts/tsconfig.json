@@ -15,6 +15,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
+    "outDir": "dist",
     "declaration": true                       /* Skip type checking all .d.ts files. */
   },
   "include": [ "src/**/*.ts" ],
