@@ -26,7 +26,9 @@ pub fn get_root(deps: Deps) -> Result<QueryResponse, ContractError> {
 pub fn get_count(deps: Deps) -> Result<QueryResponse, ContractError> {
     let count = MESSAGE_TREE.load(deps.storage)?.count;
 
-    Ok(to_binary(&CountResponse { count })?)
+    Ok(to_binary(&CountResponse {
+        count: count as u32,
+    })?)
 }
 
 pub fn get_checkpoint(deps: Deps) -> Result<QueryResponse, ContractError> {
@@ -34,7 +36,7 @@ pub fn get_checkpoint(deps: Deps) -> Result<QueryResponse, ContractError> {
 
     Ok(to_binary(&CheckPointResponse {
         root: tree.root()?.into(),
-        count: tree.count,
+        count: tree.count as u32,
     })?)
 }
 
@@ -44,7 +46,7 @@ pub fn get_tree(deps: Deps) -> Result<QueryResponse, ContractError> {
 
     Ok(to_binary(&MerkleTreeResponse {
         branch: branch.try_into().unwrap(),
-        count: tree.count,
+        count: tree.count as u32,
     })?)
 }
 

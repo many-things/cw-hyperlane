@@ -83,7 +83,7 @@ pub struct RootResponse {
 
 #[cw_serde]
 pub struct CountResponse {
-    pub count: usize,
+    pub count: u32,
 }
 
 #[cw_serde]
@@ -94,7 +94,7 @@ pub struct DefaultIsmResponse {
 #[cw_serde]
 pub struct CheckPointResponse {
     pub root: HexBinary,
-    pub count: usize,
+    pub count: u32,
 }
 
 #[cw_serde]
@@ -115,5 +115,5 @@ pub struct MessageDeliveredResponse {
 #[cw_serde]
 pub struct MerkleTreeResponse {
     pub branch: [HexBinary; TREE_DEPTH],
-    pub count: usize,
+    pub count: u32,
 }

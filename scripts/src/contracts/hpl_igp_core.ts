@@ -3,7 +3,6 @@ import { Contract, ContractContext, HplIgpCoreInstantiateMsg } from "../types";
 import { getWasmPath } from "../load_wasm";
 import fs from "fs";
 
-
 export default class HplIgpCore implements Contract {
   contractName: string = "hpl_igp_core"
 

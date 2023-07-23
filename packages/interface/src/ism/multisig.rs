@@ -1,9 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, HexBinary};
 
-use super::VerifyInfoResponse;
 #[allow(unused_imports)]
-use super::{ModuleTypeResponse, VerifyResponse};
+use super::{ModuleTypeResponse, VerifyInfoResponse, VerifyResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
