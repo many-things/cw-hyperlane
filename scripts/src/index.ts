@@ -2,14 +2,17 @@ import colors from "colors";
 import { loadWasmFileDigest, getWasmPath } from "./load_wasm";
 import { loadContext, saveContext } from "./load_context";
 import { getTargetContract, getTargetContractName } from "./contracts";
-import { CodeUpdate, CodeCreate } from "./types";
+import { CodeUpdate, CodeCreate, Context } from "./types";
 import * as readline from 'readline';
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
 import { AxiosError } from "axios";
+import { CONTAINER } from "./ioc";
+import { runMigrations } from "./migrations";
 
 colors.enable();
+const NETWORK = "osmo-test-5";
 
 function askQuestion(query: string) {
   const rl = readline.createInterface({
@@ -34,14 +37,16 @@ async function getSigningClient(): Promise<{ client: SigningCosmWasmClient, addr
   return { client, address };
 }
 
-//     constructor(apiUrl: string, signerAddress: string, signer: OfflineSigner, gasPrice?: GasPrice, gasLimits?: Partial<GasLimits<CosmWasmFeeTable>>, broadcastMode?: BroadcastMode);
 async function main() {
   const digest = await loadWasmFileDigest();
-  const context = await loadContext("osmo-test-5");
+  const context = await loadContext(NETWORK);
   const targetContractName = getTargetContractName();
 
   const {client, address} = await getSigningClient();
-  const contracts = getTargetContract(context, client, address);
+  context.address = address;
+
+  CONTAINER.bind(Context).toConstantValue(context);
+  const contracts = getTargetContract(context, client, address, CONTAINER);
   console.log("check exist contracts....");
 
   const codeChanges = targetContractName.map((contractName) => {
@@ -103,7 +108,7 @@ async function main() {
     };
   }
 
-
+  runMigrations(NETWORK,true);
 }
 
 main();

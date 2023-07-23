@@ -14,7 +14,7 @@ export function loadContext(network: string): Context  {
   }
   catch (err) {}
 
-  return { contracts: {}};
+  return { contracts: {}, latestMigration: undefined, address: undefined};
 }
 
 export function saveContext(network: string, context: Context) {

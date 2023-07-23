@@ -7,10 +7,12 @@ export interface ContractContext {
   address: string | undefined,
 }
 
-export interface Context {
+export class Context {
   contracts: {
     [key: string]: ContractContext,
-  }
+  };
+  latestMigration: string | undefined;
+  address: string | undefined;
 }
 
 export interface CodeCreate {
@@ -26,7 +28,6 @@ export interface CodeUpdate {
 
 export type CodeUploads = CodeCreate | CodeUpdate;
 
-
 export interface Contract {
   address: string | undefined;
   codeId: number | undefined;
@@ -41,6 +42,14 @@ export interface Contract {
 
 export interface ContractConstructor {
   new(address: string | undefined, codeId: number | undefined, digest: string, signer: string, client: SigningCosmWasmClient): Contract;
+}
+
+export interface Migration {
+  name: string,
+  after: string,
+
+  run(): Promise<Context>;
+  setContext(ctx: Context): void;
 }
 
 export interface HplHubInstantiateMsg {

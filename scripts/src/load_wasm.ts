@@ -39,13 +39,10 @@ export async function loadWasmFileDigest() {
     wasmFileDigest[file] = digest;
   });
 
-  // console.log("========== Available wasm contracts ==========\n".yellow)
-
   await Promise.all(wasmFiles.map(async (file) => {
     const digest = await generateSha256(file);
     const fileName = path.basename(file);
     wasmFileDigest[file] = digest;
-    // console.log(`${fileName}`.padEnd(32, ' ').green, "|", digest);
   }));
 
   return wasmFileDigest;
