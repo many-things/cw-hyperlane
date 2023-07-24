@@ -134,9 +134,11 @@ async function main() {
       hpl_ism_multisig,
       {
         enroll_validator: {
-          domain: 26657,
-          validator: owner,
-          validator_pubkey: "ArVogl2Oa9JxkUZyhnLz7OcvLCrgeNh7dkaGRrCRuZ3w",
+          set: {
+            domain: 26657,
+            validator: owner,
+            validator_pubkey: "ArVogl2Oa9JxkUZyhnLz7OcvLCrgeNh7dkaGRrCRuZ3w",
+          },
         },
       },
       "auto"
@@ -148,8 +150,10 @@ async function main() {
       hpl_ism_multisig,
       {
         set_threshold: {
-          domain: 26657,
-          threshold: 1,
+          set: {
+            domain: 26657,
+            threshold: 1,
+          },
         },
       },
       "auto"
