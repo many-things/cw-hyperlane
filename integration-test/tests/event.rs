@@ -15,7 +15,7 @@ pub fn parse_dispatch_from_res(events: &[Event]) -> CwDispatchEvent {
         .find(|v| v.ty == "wasm-mailbox_dispatch")
         .unwrap();
 
-    let actual = &found.attributes[4..];
+    let actual = &found.attributes[1..];
 
     CwDispatchEvent {
         sender: HexBinary::from_hex(&actual[0].value).unwrap(),
