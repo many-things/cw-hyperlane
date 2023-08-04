@@ -1,0 +1,4 @@
+/dist
+/context
+.env
+/node_modules

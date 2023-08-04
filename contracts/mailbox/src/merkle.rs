@@ -48,12 +48,12 @@ pub const ZERO_HASHES: [&str; HASH_LENGTH] = [
 #[derive(Default)]
 pub struct MerkleTree {
     pub branch: [Binary; TREE_DEPTH],
-    pub count: usize,
+    pub count: u128,
 }
 
 impl MerkleTree {
     pub fn insert(&mut self, node: Binary) {
-        assert_full_merkle_tree(self.count, MAX_LEAVES as usize).unwrap();
+        assert_full_merkle_tree(self.count, MAX_LEAVES).unwrap();
 
         self.count += 1;
 

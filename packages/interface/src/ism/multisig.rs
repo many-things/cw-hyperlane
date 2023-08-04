@@ -2,7 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, HexBinary};
 
 #[allow(unused_imports)]
-use super::{ModuleTypeResponse, VerifyResponse};
+use super::{ModuleTypeResponse, VerifyInfoResponse, VerifyResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -48,6 +48,9 @@ pub enum QueryMsg {
         metadata: HexBinary,
         message: HexBinary,
     },
+
+    #[returns(VerifyInfoResponse)]
+    VerifyInfo { message: HexBinary },
 }
 
 #[cw_serde]

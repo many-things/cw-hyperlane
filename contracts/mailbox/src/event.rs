@@ -25,13 +25,10 @@ pub fn emit_dispatch_id(id: Binary) -> Event {
 
 pub fn emit_dispatch(msg: Message) -> Event {
     Event::new("mailbox_dispatch")
-        .add_attribute("version", msg.version.to_string())
-        .add_attribute("nonce", msg.nonce.to_string())
-        .add_attribute("origin_domain", msg.origin_domain.to_string())
-        .add_attribute("sender", HexBinary::from(msg.sender).to_hex())
+        .add_attribute("sender", HexBinary::from(msg.sender.clone()).to_hex())
         .add_attribute("destination", msg.dest_domain.to_string())
-        .add_attribute("recipient", HexBinary::from(msg.recipient).to_hex())
-        .add_attribute("message", HexBinary::from(msg.body).to_hex())
+        .add_attribute("recipient", HexBinary::from(msg.recipient.clone()).to_hex())
+        .add_attribute("message", HexBinary::from(msg).to_hex())
 }
 
 pub fn emit_process_id(id: Binary) -> Event {
