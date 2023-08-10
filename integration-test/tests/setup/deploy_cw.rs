@@ -10,6 +10,7 @@ use crate::validator::TestValidators;
 pub struct HplCwDeploymentCodes {
     pub hub: u64,
     pub ism_multisig: u64,
+    pub ism_routing: u64,
     pub mailbox: u64,
     pub multicall: u64,
 
@@ -35,6 +36,8 @@ pub struct HplCwDeployment {
 struct EmptyMsg {}
 
 pub enum HplCwIsmType<'a> {
+    Routing(Vec<(u32, HplCwIsmType<'a>)>),
+
     Multisig {
         hrp: &'a str,
         validators: TestValidators,
@@ -103,6 +106,28 @@ impl<'a> HplCwIsmType<'a> {
 
                 multisig_ism
             }
+            HplCwIsmType::Routing(isms) => {
+                wasm.instantiate(
+                    codes.ism_routing,
+                    &hpl_interface::ism::routing::InstantiateMsg {
+                        owner: deployer.address(),
+                        isms: isms
+                            .into_iter()
+                            .map(|(domain, ism)| hpl_interface::ism::routing::ISMSet {
+                                domain,
+                                address: ism.deploy(wasm, codes, deployer),
+                            })
+                            .collect(),
+                    },
+                    None,
+                    None,
+                    &[],
+                    deployer,
+                )
+                .unwrap()
+                .data
+                .address
+            }
         }
     }
 }
@@ -120,6 +145,7 @@ pub async fn deploy_cw_hyperlane(
     let artifacts = [
         ("hub"),
         ("ism_multisig"),
+        ("ism_routing"),
         ("mailbox"),
         ("multicall"),
         ("test_mock_ism"),
@@ -140,6 +166,7 @@ pub async fn deploy_cw_hyperlane(
     let codes = HplCwDeploymentCodes {
         hub: *artifacts.get("hub").unwrap(),
         ism_multisig: *artifacts.get("ism_multisig").unwrap(),
+        ism_routing: *artifacts.get("ism_routing").unwrap(),
         mailbox: *artifacts.get("mailbox").unwrap(),
         multicall: *artifacts.get("multicall").unwrap(),
         test_mock_ism: *artifacts.get("test_mock_ism").unwrap(),
