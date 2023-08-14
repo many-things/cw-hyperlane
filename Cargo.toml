@@ -52,10 +52,14 @@ bech32 = "0.9.1"
 base64 = "0.21.2"
 serde = "1.0.162"
 serde_json = "1.0.96"
-serde-json-wasm = "0.5.1"
+serde-json-wasm = "1.0.0"
 thiserror = { version = "1.0.37" }
 cw-multi-test = "0.16.5"
 cosmwasm-schema = "1.2.7"
+prost = { version = "0.11.9", default-features = false, features = [
+    "prost-derive",
+] }
+prost-types = { version = "0.11.9", default-features = false }
 
 anyhow = { version = "1.0.71", features = ["backtrace"] }
 k256 = { version = "0.13.1", features = ["std", "ecdsa"] }
@@ -66,6 +70,7 @@ tokio = { version = "1", features = ["full"] }
 eyre = { version = "0.6.8" }
 ethers = "2.0.7"
 
+hpl-router = { path = "./packages/router" }
 hpl-ownable = { path = "./packages/ownable" }
 hpl-interface = { path = "./packages/interface" }
 hpl-hub = { path = "./contracts/hub" }
