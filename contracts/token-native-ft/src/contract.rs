@@ -1,4 +1,3 @@
-use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -14,38 +13,11 @@ use hpl_interface::{
 
 use crate::{
     error::ContractError,
+    msg::{InstantiateMsg, MigrateMsg},
     proto::{self, MsgCreateDenom, MsgCreateDenomResponse, MsgSetDenomMetadata},
     state::{MODE, TOKEN},
     CONTRACT_NAME, CONTRACT_VERSION, REPLY_ID_CREATE_DENOM,
 };
-
-#[cw_serde]
-pub struct DenomUnit {
-    pub denom: String,
-    #[serde(
-        serialize_with = "crate::serde::as_str::serialize",
-        deserialize_with = "crate::serde::as_str::deserialize"
-    )]
-    pub exponent: u32,
-    pub aliases: Vec<String>,
-}
-
-#[cw_serde]
-pub struct Metadata {
-    pub description: String,
-    pub denom_units: Vec<DenomUnit>,
-    pub base: String,
-    pub display: String,
-    pub name: String,
-    pub symbol: String,
-}
-
-#[cw_serde]
-pub struct InstantiateMsg {
-    pub denom: String,
-    pub metadata: Option<Metadata>,
-    pub mode: TokenMode,
-}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -151,9 +123,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
         })?),
     }
 }
-
-#[cw_serde]
-pub struct MigrateMsg {}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
