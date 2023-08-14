@@ -7,6 +7,9 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error("{0}")]
+    PaymentError(#[from] cw_utils::PaymentError),
+
+    #[error("{0}")]
     RecoverPubkeyError(#[from] RecoverPubkeyError),
 
     #[error("Unauthorized")]

@@ -42,6 +42,48 @@ impl TryFrom<cosmwasm_std::Binary> for MsgCreateDenomResponse {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, ::prost::Message)]
+pub struct Coin {
+    #[prost(string, tag = "1")]
+    pub denom: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub amount: ::prost::alloc::string::String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, ::prost::Message)]
+pub struct MsgMint {
+    #[prost(string, tag = "1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub amount: ::core::option::Option<Coin>,
+}
+
+impl From<MsgMint> for CosmosMsg {
+    fn from(v: MsgMint) -> Self {
+        CosmosMsg::Stargate {
+            type_url: "/osmosis.tokenfactory.v1beta1.MsgMint".to_string(),
+            value: Binary(v.encode_to_vec()),
+        }
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, ::prost::Message)]
+pub struct MsgBurn {
+    #[prost(string, tag = "1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub amount: ::core::option::Option<Coin>,
+}
+
+impl From<MsgBurn> for CosmosMsg {
+    fn from(v: MsgBurn) -> Self {
+        CosmosMsg::Stargate {
+            type_url: "/osmosis.tokenfactory.v1beta1.MsgBurn".to_string(),
+            value: Binary(v.encode_to_vec()),
+        }
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, ::prost::Message)]
 pub struct DenomUnit {
     /// denom represents the string name of the given denom unit (e.g uatom).
     #[prost(string, tag = "1")]

@@ -1,24 +1,7 @@
-use core::fmt;
+use std::fmt;
 
-use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Binary, HexBinary, Uint256};
-
-use crate::{mailbox, router};
-
-#[cw_serde]
-pub enum ExecuteMsg {
-    Router(router::RouterMsg),
-
-    // handle transfer remote
-    Handle(mailbox::HandleMsg),
-
-    // transfer to remote
-    TransferRemote {
-        dest_domain: u32,
-        recipient: Binary,
-        amount: Uint256,
-    },
-}
 
 #[cw_serde]
 pub enum TokenTypeNative {
@@ -27,15 +10,10 @@ pub enum TokenTypeNative {
 }
 
 #[cw_serde]
-pub enum TokenTypeCW {
-    CW20 { contract: String },
-    CW721 { contract: String },
-}
-
-#[cw_serde]
 pub enum TokenType {
     Native(TokenTypeNative),
-    CW(TokenTypeCW),
+    CW20 { contract: String },
+    CW721 { contract: String },
 }
 
 #[cw_serde]
@@ -55,33 +33,6 @@ impl fmt::Display for TokenMode {
             }
         )
     }
-}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum QueryMsg {
-    #[returns(router::DomainsResponse)]
-    Domains {},
-
-    #[returns(router::RouterResponse)]
-    Router { domain: u32 },
-
-    #[returns(TokenTypeResponse)]
-    TokenType {},
-
-    #[returns(TokenModeResponse)]
-    TokenMode {},
-}
-
-#[cw_serde]
-pub struct TokenTypeResponse {
-    #[serde(rename = "type")]
-    pub typ: TokenType,
-}
-
-#[cw_serde]
-pub struct TokenModeResponse {
-    pub mode: TokenMode,
 }
 
 #[cw_serde]

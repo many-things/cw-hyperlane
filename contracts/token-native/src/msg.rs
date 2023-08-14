@@ -27,6 +27,9 @@ pub struct InstantiateMsg {
     pub denom: String,
     pub metadata: Option<Metadata>,
     pub mode: TokenMode,
+
+    pub owner: String,
+    pub mailbox: String,
 }
 
 #[cw_serde]

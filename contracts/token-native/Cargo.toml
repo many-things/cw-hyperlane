@@ -1,5 +1,5 @@
 [package]
-name = "hpl-token-native-ft"
+name = "hpl-token-native"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -22,6 +22,7 @@ library = []
 cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
 cw-storage-plus = { workspace = true }
+cw-utils = { workspace = true }
 cw2 = { workspace = true }
 sha2 = { workspace = true }
 ripemd = { workspace = true }
