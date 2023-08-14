@@ -33,8 +33,9 @@ async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
         hrp,
         validators: validators.clone(),
     };
+    let cw_routing_ism_type = HplCwIsmType::Routing(vec![(cw_domain, cw_ism_type)]);
 
-    let test_env = setup_env(evm_domain, cw_domain, cw_ism_type).await?;
+    let test_env = setup_env(evm_domain, cw_domain, cw_routing_ism_type).await?;
     let cw_mailbox = test_env.cw_deployments.mailbox;
     let cw_wasm = Wasm::new(&test_env.osmo_app);
     let evm_mailbox = test_env.evm_deployments.mailbox;
@@ -78,8 +79,9 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
         hrp,
         validators: validators.clone(),
     };
+    let cw_routing_ism_type = HplCwIsmType::Routing(vec![(evm_domain, cw_ism_type)]);
 
-    let test_env = setup_env(evm_domain, cw_domain, cw_ism_type).await?;
+    let test_env = setup_env(evm_domain, cw_domain, cw_routing_ism_type).await?;
     let evm_mailbox = test_env.evm_deployments.mailbox;
     let cw_mailbox = test_env.cw_deployments.mailbox;
     let cw_receiver = test_env.cw_deployments.msg_receiver;
