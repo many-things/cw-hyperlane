@@ -242,7 +242,7 @@ fn test_inbound_transfer() -> anyhow::Result<()> {
             &mailbox,
             origin_domain,
             &errortic,
-            default_msg.clone(),
+            default_msg,
             Err(ContractError::Unauthorized),
         ),
     ] {

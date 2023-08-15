@@ -77,6 +77,7 @@ impl TokenNative {
         execute(self.deps.as_mut(), self.env.clone(), info, msg)
     }
 
+    #[allow(dead_code)]
     fn query<T: DeserializeOwned>(&self, msg: QueryMsg) -> Result<T, ContractError> {
         query(self.deps.as_ref(), self.env.clone(), msg)
             .map(|v| from_binary::<T>(&v))?
