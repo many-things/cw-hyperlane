@@ -66,6 +66,8 @@ pub fn instantiate(
                 }),
             });
         }
+    } else {
+        TOKEN.save(deps.storage, &msg.denom)?;
     }
 
     Ok(resp.add_event(
@@ -102,50 +104,69 @@ pub fn execute(
             let recipient = bech32_encode("osmo", &token_msg.recipient)?;
 
             let denom = TOKEN.load(deps.storage)?;
+            let mode = MODE.load(deps.storage)?;
 
-            let mint_msg = MsgMint {
-                sender: env.contract.address.to_string(),
-                amount: Some(proto::Coin {
-                    denom: denom.clone(),
-                    amount: token_msg.amount.to_string(),
-                }),
-            };
+            let mut msgs: Vec<CosmosMsg> = vec![];
 
-            let send_msg = BankMsg::Send {
-                to_address: recipient.to_string(),
-                amount: vec![Coin {
-                    denom: denom.clone(),
-                    amount: Uint128::from_str(&token_msg.amount.to_string())?,
-                }],
-            };
+            if mode == TokenMode::Bridged {
+                // push token mint msg if token is bridged
+                msgs.push(
+                    MsgMint {
+                        sender: env.contract.address.to_string(),
+                        amount: Some(proto::Coin {
+                            denom: denom.clone(),
+                            amount: token_msg.amount.to_string(),
+                        }),
+                    }
+                    .into(),
+                );
+            }
 
-            Ok(Response::default()
-                .add_message(mint_msg)
-                .add_message(send_msg)
-                .add_event(
-                    Event::new("token-native-handle")
-                        .add_attribute("recipient", recipient)
-                        .add_attribute("denom", denom)
-                        .add_attribute("amount", token_msg.amount),
-                ))
+            // push token send msg
+            msgs.push(
+                BankMsg::Send {
+                    to_address: recipient.to_string(),
+                    amount: vec![Coin {
+                        denom: denom.clone(),
+                        amount: Uint128::from_str(&token_msg.amount.to_string())?,
+                    }],
+                }
+                .into(),
+            );
+
+            Ok(Response::new().add_messages(msgs).add_event(
+                Event::new("token-native-handle")
+                    .add_attribute("recipient", recipient)
+                    .add_attribute("denom", denom)
+                    .add_attribute("amount", token_msg.amount),
+            ))
         }
         ExecuteMsg::TransferRemote {
             dest_domain,
             recipient,
         } => {
             let denom = TOKEN.load(deps.storage)?;
+            let mode = MODE.load(deps.storage)?;
             let mailbox = MAILBOX.load(deps.storage)?;
             let paid = cw_utils::must_pay(&info, &denom)?;
 
             let dest_router = hpl_router::get_router(deps.storage, dest_domain)?;
 
-            let burn_msg = MsgBurn {
-                sender: env.contract.address.to_string(),
-                amount: Some(proto::Coin {
-                    denom: denom.clone(),
-                    amount: paid.to_string(),
-                }),
-            };
+            let mut msgs: Vec<CosmosMsg> = vec![];
+
+            if mode == TokenMode::Bridged {
+                // push token burn msg if token is bridged
+                msgs.push(
+                    MsgBurn {
+                        sender: env.contract.address.to_string(),
+                        amount: Some(proto::Coin {
+                            denom: denom.clone(),
+                            amount: paid.to_string(),
+                        }),
+                    }
+                    .into(),
+                );
+            }
 
             let dispatch_payload = token::Message {
                 recipient: recipient.clone(),
@@ -153,26 +174,27 @@ pub fn execute(
                 metadata: Binary::default(),
             };
 
-            let dispatch_msg = WasmMsg::Execute {
-                contract_addr: mailbox.to_string(),
-                msg: to_binary(&hpl_interface::mailbox::ExecuteMsg::Dispatch {
-                    dest_domain,
-                    recipient_addr: dest_router.into(),
-                    msg_body: dispatch_payload.into(),
-                })?,
-                funds: vec![],
-            };
+            // push mailbox dispatch msg
+            msgs.push(
+                WasmMsg::Execute {
+                    contract_addr: mailbox.to_string(),
+                    msg: to_binary(&hpl_interface::mailbox::ExecuteMsg::Dispatch {
+                        dest_domain,
+                        recipient_addr: dest_router.into(),
+                        msg_body: dispatch_payload.into(),
+                    })?,
+                    funds: vec![],
+                }
+                .into(),
+            );
 
-            Ok(Response::default()
-                .add_message(burn_msg)
-                .add_message(dispatch_msg)
-                .add_event(
-                    Event::new("token-native-transfer-remote")
-                        .add_attribute("sender", info.sender)
-                        .add_attribute("recipient", recipient.to_base64())
-                        .add_attribute("denom", denom)
-                        .add_attribute("amount", paid.to_string()),
-                ))
+            Ok(Response::default().add_messages(msgs).add_event(
+                Event::new("token-native-transfer-remote")
+                    .add_attribute("sender", info.sender)
+                    .add_attribute("recipient", recipient.to_base64())
+                    .add_attribute("denom", denom)
+                    .add_attribute("amount", paid.to_string()),
+            ))
         }
     }
 }
