@@ -13,10 +13,10 @@ pub enum ContractError {
     RecoverPubkeyError(#[from] RecoverPubkeyError),
 
     #[error("Unauthorized")]
-    Unauthorized {},
+    Unauthorized,
 
     #[error("WrongLength")]
-    WrongLength {},
+    WrongLength,
 
     #[error("InvalidReplyId")]
     InvalidReplyId,

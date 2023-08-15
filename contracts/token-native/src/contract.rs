@@ -107,7 +107,12 @@ pub fn execute(
             ensure_eq!(
                 info.sender,
                 MAILBOX.load(deps.storage)?,
-                ContractError::Unauthorized {}
+                ContractError::Unauthorized
+            );
+            ensure_eq!(
+                Binary::from(msg.sender),
+                hpl_router::get_router(deps.storage, msg.origin)?,
+                ContractError::Unauthorized
             );
 
             let token_msg: token::Message = msg.body.into();

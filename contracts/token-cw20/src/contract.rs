@@ -97,6 +97,11 @@ pub fn execute(
                 MAILBOX.load(deps.storage)?,
                 ContractError::Unauthorized
             );
+            ensure_eq!(
+                Binary::from(msg.sender),
+                hpl_router::get_router(deps.storage, msg.origin)?,
+                ContractError::Unauthorized
+            );
 
             let token_msg: token::Message = msg.body.into();
             let recipient = bech32_encode("osmo", &token_msg.recipient)?;
