@@ -3,8 +3,8 @@ use std::str::FromStr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, from_binary, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, Event,
-    MessageInfo, QueryResponse, Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
+    ensure, ensure_eq, ensure_ne, from_binary, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env,
+    Event, MessageInfo, QueryResponse, Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
 };
 use hpl_interface::{
     router::{DomainsResponse, RouterResponse},
@@ -159,6 +159,13 @@ pub fn execute(
                     let mailbox = MAILBOX.load(deps.storage)?;
 
                     let dest_router = hpl_router::get_router(deps.storage, dest_domain)?;
+                    ensure_ne!(
+                        dest_router,
+                        Binary::default(),
+                        ContractError::NoRouter {
+                            domain: dest_domain
+                        }
+                    );
 
                     let mut msgs: Vec<CosmosMsg> = vec![];
 
