@@ -3,8 +3,8 @@ use std::str::FromStr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo,
-    QueryResponse, Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
+    ensure_eq, ensure_ne, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
+    MessageInfo, QueryResponse, Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
 };
 use hpl_interface::{
     router::{DomainsResponse, RouterResponse},
@@ -166,6 +166,13 @@ pub fn execute(
             let paid = cw_utils::must_pay(&info, &token)?;
 
             let dest_router = hpl_router::get_router(deps.storage, dest_domain)?;
+            ensure_ne!(
+                dest_router,
+                Binary::default(),
+                ContractError::NoRouter {
+                    domain: dest_domain
+                }
+            );
 
             let mut msgs: Vec<CosmosMsg> = vec![];
 
