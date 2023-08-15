@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, HexBinary, Uint256};
+use cosmwasm_std::Binary;
 
 use crate::{
     mailbox, router,
