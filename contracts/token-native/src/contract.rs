@@ -36,11 +36,12 @@ pub fn instantiate(
 
     let mut resp = Response::new();
 
-    if msg.mode == TokenMode::Collateral {
+    // create native denom if token is bridged
+    if msg.mode == TokenMode::Bridged {
         resp = resp.add_submessage(SubMsg::reply_on_success(
             MsgCreateDenom {
                 sender: env.contract.address.to_string(),
-                subdenom: msg.denom,
+                subdenom: msg.denom.clone(),
             },
             REPLY_ID_CREATE_DENOM,
         ));
@@ -67,13 +68,22 @@ pub fn instantiate(
             });
         }
     } else {
+        // use denom directly if token is native
         TOKEN.save(deps.storage, &msg.denom)?;
     }
 
     Ok(resp.add_event(
         Event::new("init-token-native-fungible")
             .add_attribute("creator", info.sender)
-            .add_attribute("mode", format!("{}", msg.mode)),
+            .add_attribute("mode", format!("{}", msg.mode))
+            .add_attribute(
+                "denom",
+                if msg.mode == TokenMode::Bridged {
+                    ""
+                } else {
+                    &msg.denom
+                },
+            ),
     ))
 }
 
@@ -103,7 +113,7 @@ pub fn execute(
             let token_msg: token::Message = msg.body.into();
             let recipient = bech32_encode("osmo", &token_msg.recipient)?;
 
-            let denom = TOKEN.load(deps.storage)?;
+            let token = TOKEN.load(deps.storage)?;
             let mode = MODE.load(deps.storage)?;
 
             let mut msgs: Vec<CosmosMsg> = vec![];
@@ -114,7 +124,7 @@ pub fn execute(
                     MsgMint {
                         sender: env.contract.address.to_string(),
                         amount: Some(proto::Coin {
-                            denom: denom.clone(),
+                            denom: token.clone(),
                             amount: token_msg.amount.to_string(),
                         }),
                     }
@@ -127,7 +137,7 @@ pub fn execute(
                 BankMsg::Send {
                     to_address: recipient.to_string(),
                     amount: vec![Coin {
-                        denom: denom.clone(),
+                        denom: token.clone(),
                         amount: Uint128::from_str(&token_msg.amount.to_string())?,
                     }],
                 }
@@ -137,7 +147,7 @@ pub fn execute(
             Ok(Response::new().add_messages(msgs).add_event(
                 Event::new("token-native-handle")
                     .add_attribute("recipient", recipient)
-                    .add_attribute("denom", denom)
+                    .add_attribute("token", token)
                     .add_attribute("amount", token_msg.amount),
             ))
         }
@@ -145,10 +155,10 @@ pub fn execute(
             dest_domain,
             recipient,
         } => {
-            let denom = TOKEN.load(deps.storage)?;
+            let token = TOKEN.load(deps.storage)?;
             let mode = MODE.load(deps.storage)?;
             let mailbox = MAILBOX.load(deps.storage)?;
-            let paid = cw_utils::must_pay(&info, &denom)?;
+            let paid = cw_utils::must_pay(&info, &token)?;
 
             let dest_router = hpl_router::get_router(deps.storage, dest_domain)?;
 
@@ -160,7 +170,7 @@ pub fn execute(
                     MsgBurn {
                         sender: env.contract.address.to_string(),
                         amount: Some(proto::Coin {
-                            denom: denom.clone(),
+                            denom: token.clone(),
                             amount: paid.to_string(),
                         }),
                     }
@@ -188,11 +198,11 @@ pub fn execute(
                 .into(),
             );
 
-            Ok(Response::default().add_messages(msgs).add_event(
+            Ok(Response::new().add_messages(msgs).add_event(
                 Event::new("token-native-transfer-remote")
                     .add_attribute("sender", info.sender)
                     .add_attribute("recipient", recipient.to_base64())
-                    .add_attribute("denom", denom)
+                    .add_attribute("token", token)
                     .add_attribute("amount", paid.to_string()),
             ))
         }
