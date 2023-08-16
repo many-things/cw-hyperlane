@@ -59,7 +59,7 @@ pub fn instantiate(
     }
 
     Ok(resp.add_event(
-        Event::new("init-token-cw20")
+        Event::new("hpl::token-cw20::init")
             .add_attribute("creator", info.sender)
             .add_attribute("mode", format!("{}", msg.mode))
             .add_attribute(
@@ -138,7 +138,7 @@ pub fn execute(
             };
 
             Ok(Response::new().add_message(msg).add_event(
-                Event::new("token-cw20-handle")
+                Event::new("hpl::token-cw20::handle")
                     .add_attribute("recipient", recipient)
                     .add_attribute("token", token)
                     .add_attribute("amount", token_msg.amount),
@@ -204,7 +204,7 @@ pub fn execute(
                     );
 
                     Ok(Response::new().add_messages(msgs).add_event(
-                        Event::new("token-cw20-transfer-remote")
+                        Event::new("hpl::token-cw20::transfer-remote")
                             .add_attribute("sender", msg.sender)
                             .add_attribute("recipient", recipient.to_base64())
                             .add_attribute("token", token)
@@ -227,7 +227,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             TOKEN.save(deps.storage, &init_addr)?;
 
             let resp = Response::new().add_event(
-                Event::new("reply-init-token-cw20").add_attribute("new_token", init_addr),
+                Event::new("hpl::token-cw20::reply-init").add_attribute("new_token", init_addr),
             );
 
             Ok(resp)

@@ -73,7 +73,7 @@ pub fn instantiate(
     }
 
     Ok(resp.add_event(
-        Event::new("init-token-native-fungible")
+        Event::new("hpl::token-native::init")
             .add_attribute("creator", info.sender)
             .add_attribute("mode", format!("{}", msg.mode))
             .add_attribute(
@@ -150,7 +150,7 @@ pub fn execute(
             );
 
             Ok(Response::new().add_messages(msgs).add_event(
-                Event::new("token-native-handle")
+                Event::new("hpl::token-native::handle")
                     .add_attribute("recipient", recipient)
                     .add_attribute("token", token)
                     .add_attribute("amount", token_msg.amount),
@@ -211,7 +211,7 @@ pub fn execute(
             );
 
             Ok(Response::new().add_messages(msgs).add_event(
-                Event::new("token-native-transfer-remote")
+                Event::new("hpl::token-native::transfer-remote")
                     .add_attribute("sender", info.sender)
                     .add_attribute("recipient", recipient.to_base64())
                     .add_attribute("token", token)
@@ -231,7 +231,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             TOKEN.save(deps.storage, &reply.new_token_denom)?;
 
             let resp = Response::new().add_event(
-                Event::new("reply-init-token-native-fungible")
+                Event::new("hpl::token-native::reply-init")
                     .add_attribute("method", "reply_instantiate")
                     .add_attribute("new_denom", reply.new_token_denom),
             );
