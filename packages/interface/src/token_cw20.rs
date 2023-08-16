@@ -16,7 +16,7 @@ pub enum ReceiveMsg {
 pub enum ExecuteMsg {
     Router(router::RouterMsg),
 
-    // handle transfer remote
+    /// handle transfer remote
     Handle(mailbox::HandleMsg),
 
     // cw20 receiver
