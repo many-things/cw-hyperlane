@@ -8,6 +8,7 @@ repository = { workspace = true }
 homepage = { workspace = true }
 documentation = { workspace = true }
 keywords = { workspace = true }
+description = "Interface definitions for CosmWasm Hyperlane contracts"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
