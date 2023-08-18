@@ -22,44 +22,44 @@ export const ARTIFACTS: {
 } = {
   contracts: {
     hpl_hub: {
-      address: "osmo1yjgl5erq8v7u3u3gd8ysmzq85hclle8t8mu55h8x0yplz22w3dfq2cd07v",
-      codeId: 3047,
-      digest: "83bee2eede36470812330ed4c359aa3be611d7b0b974a140ff06e60c9252caf9"
+      address: "osmo1fzampgfzygfmh7l5vwnfqttx47q94yrpd57ceurs2jt6g46q9wys037jcr",
+      codeId: 3152,
+      digest: "2824a19f9b8607e25d55576e7324ebf1ed0f2c846eb01839e958c94866e8a0ad"
     },
     hpl_igp_core: {
-      address: "osmo1ln9e8tx9kfd5p4wvwglx4x3j9p8dnf2kgm6ghu5hpc3hhu2u80jsrwvmww",
-      codeId: 3048,
-      digest: "1eb6b6c2c5054c684a53bab7c1bdee469248c40536c5a0f411ff1577ac4d98b3"
+      address: "osmo18eptphzlxuup2387f3wlewn68pzr4keanz6e67n9tnrtwep7dhqshm9taq",
+      codeId: 3153,
+      digest: "43af1b82eb8cd9632653e76769ffeb7da1c95ea575869f7f5e34177dbe8bec5e"
     },
     hpl_igp_gas_oracle: {
-      address: "osmo1hzg8e93knvlqmm0428lf2yv20uq9qqgq8x0zs2s2p7frtd35vcvq479749",
-      codeId: 3049,
-      digest: "004b8366f738d28496f83783072c621bb26940c5ffd8360c757a6ef14bf0e984"
+      address: "osmo1tcwlcmtj3l4720n8cdk0t6l0nts27x2rswt6x0hj9kjc8wq9n8qs6gu3fg",
+      codeId: 3154,
+      digest: "7e31e76fb15b3332dab4890768a84881d9cd7431723907b7405c8f214c66e6de"
     },
     hpl_ism_multisig: {
-      address: "osmo1uxeqqfzfx0mhfmff2vug2myjfyj0s5a6tyuw4a83737ugrzm6mzspzv53k",
-      codeId: 3050,
-      digest: "fcbecc3ffa2171e7925e18734d5b3dfaed9eed4a2304fef5c5079c48f51cad2d"
+      address: "osmo12pyzlwg74p88d3em92ztyvl3mszgn0tc9chrj3hwhuzplrpn2z5ssygfuq",
+      codeId: 3155,
+      digest: "29f01d5bc172ed671e0d191b85315c484f4e234ae3a1c9a14482206cbb2c0a41"
     },
     hpl_ism_routing: {
-      address: "osmo1k2qvs6nttn2yta2w5pd625duedjmur7p35gzq4pwxr6w965fu7pq720dh4",
-      codeId: 3051,
-      digest: "1829479923b36863f8f17f70d1ad79f9e9a449424e3fa48e77c1dcb621c1ef68"
+      address: "osmo1vdl5fazjl73kp8re23n3aweqeu4yum2ula0pdcf8c25mgk9jmmgsv90g20",
+      codeId: 3156,
+      digest: "9981335ad3c21e78f4a8e8ba4af4a3aeeed50bdaf26fd6f7074ab6ad604ff5bb"
     },
     hpl_mailbox: {
-      address: "osmo1cmmk5j7nkv05xpl3r5qeczksru5uj9qv5qaeu58ucrsgkgx4hnssslrf0j",
-      codeId: 3052,
-      digest: "bba3d7d4ae9d831c1fa156705325ffb84e113abb8cf7c046b4a34175e23794c8"
+      address: "osmo1h0h5287kps9aehetgy8zpjnc3c3kdgrgx7m0kghqwx72zxe7wx2qnsqxp3",
+      codeId: 3157,
+      digest: "48e3725fa5d31f39b4fd63816cf9aadd0367bb4f8869b7adbb01fa64c3058c05"
     },
     hpl_multicall: {
-      address: "osmo164uv2tcrlfrnfjrv33s6nrj3dms3r299yhnfhcjw5xc5ze0q9rwqvg2zpm",
-      codeId: 3053,
-      digest: "db54e81af9750b461c52a22f8c7587c9e8c2992aef10c9582bc15bd388addc1e"
+      address: "osmo1dalwcenexewk8d4lnujm5w04mlwa5c7h7tqtfm6uz6gjstntekzqmptf0w",
+      codeId: 3158,
+      digest: "4f94814a642bce4da88e0c58d04f6c7f01926cc80c0c740d37230ff6fcb8315d"
     },
     hpl_validator_announce: {
-      address: "osmo1cwrsx2sw8wajjvnusfx5pjdlg3hqlx4fnymuy0jmrrpe8qmnj90s6gshs0",
-      codeId: 3054,
-      digest: "4b0accbad42896c9ddb6e85df88e7b8301ab17cad1f4ce64cd38955a12af3e31"
+      address: "osmo13qlwxa7f59a8gdysvvutsxa9zpqg5dxf3euy82rtyxw5xrenaq9qj5c8vm",
+      codeId: 3159,
+      digest: "bf66c1eff181e8aef2dbff550cd2f33f73d392a0d9aedac75a61fec85c115c04"
     }
   },
   latestMigration: "mailbox_related",
