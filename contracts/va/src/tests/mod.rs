@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     from_binary,
     testing::{mock_info, MockApi, MockQuerier, MockStorage},
-    Addr, Binary, Deps, DepsMut, Empty, Env, MessageInfo, OwnedDeps, Response,
+    Addr, Binary, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
 use hpl_interface::va::{
     ExecuteMsg, GetAnnounceStorageLocationsResponse, GetAnnouncedValidatorsResponse,
@@ -72,14 +72,14 @@ impl VA {
     pub fn announce(
         &mut self,
         sender: &Addr,
-        validator: &Addr,
+        validator: HexBinary,
         storage_location: &str,
         signature: Binary,
     ) -> Result<Response, ContractError> {
         self.execute(
             mock_info(sender.as_str(), &[]),
             ExecuteMsg::Announce {
-                validator: validator.to_string(),
+                validator,
                 storage_location: storage_location.to_string(),
                 signature,
             },
@@ -89,10 +89,10 @@ impl VA {
     #[allow(dead_code)]
     pub fn get_announce_storage_locations(
         &self,
-        validators: &[&Addr],
+        validators: &[HexBinary],
     ) -> Result<GetAnnounceStorageLocationsResponse, ContractError> {
         self.query(QueryMsg::GetAnnounceStorageLocations {
-            validators: validators.iter().map(|v| v.to_string()).collect(),
+            validators: validators.to_vec(),
         })
     }
 

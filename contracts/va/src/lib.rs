@@ -1,5 +1,5 @@
 use bech32::ToBase32;
-use cosmwasm_std::Binary;
+use cosmwasm_std::{Binary, HexBinary};
 use error::ContractError;
 use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
@@ -47,4 +47,11 @@ pub fn pub_to_addr(pub_key: Binary, prefix: &str) -> Result<String, ContractErro
         .map_err(|_| ContractError::InvalidPubKey {})?;
 
     Ok(addr)
+}
+
+pub fn pub_to_addr_binary(pub_key: Binary) -> Result<HexBinary, ContractError> {
+    let sha_hash = sha256_digest(pub_key)?;
+    let rip_hash = ripemd160_digest(sha_hash)?;
+
+    Ok(HexBinary::from(rip_hash.to_vec()))
 }

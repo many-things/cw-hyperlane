@@ -13,7 +13,7 @@ use k256::{
 use crate::{
     contract::{announcement_hash, domain_hash},
     error::ContractError,
-    pub_to_addr,
+    pub_to_addr, pub_to_addr_binary,
     state::{ADDR_PREFIX, LOCAL_DOMAIN, MAILBOX, STORAGE_LOCATIONS, VALIDATORS},
 };
 
@@ -87,6 +87,7 @@ fn test_announce() -> anyhow::Result<()> {
     let signing_key = SigningKey::from(secret_key);
 
     let public_key_bz = Binary(public_key.to_encoded_point(false).as_bytes().to_vec());
+    let addr_binary = pub_to_addr_binary(public_key_bz.clone())?;
     let public_key_addr = Addr::unchecked(pub_to_addr(public_key_bz, testdata.addr_prefix)?);
 
     let announcement_hash = announcement_hash(
@@ -97,7 +98,7 @@ fn test_announce() -> anyhow::Result<()> {
 
     va.announce(
         &testdata.deployer,
-        &public_key_addr,
+        addr_binary,
         testdata.storage_location,
         signature,
     )?;
@@ -105,7 +106,7 @@ fn test_announce() -> anyhow::Result<()> {
     // check state
     assert!(VALIDATORS.has(va.deps().storage, public_key_addr.clone()));
     assert_eq!(
-        STORAGE_LOCATIONS.load(va.deps().storage, public_key_addr.clone())?,
+        STORAGE_LOCATIONS.load(va.deps().storage, public_key_addr)?,
         vec![testdata.storage_location]
     );
 
