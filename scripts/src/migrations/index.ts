@@ -96,3 +96,7 @@ export async function runMigrations(network: string, dryRun: boolean) {
     console.log(`${key}`.padEnd(30), '=>', `${contract.address}`);
   });
 }
+
+export async function runContract(network: string) {
+
+}

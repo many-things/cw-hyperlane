@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 
 use hpl_interface::{
-    types::{bech32_decode, keccak256_hash},
+    types::{bech32_decode, bech32_encode, keccak256_hash},
     va::{
         ExecuteMsg, GetAnnounceStorageLocationsResponse, GetAnnouncedValidatorsResponse,
         InstantiateMsg, MigrateMsg, QueryMsg,
@@ -81,7 +81,9 @@ pub fn execute(
             storage_location,
             signature,
         } => {
-            let validator = deps.api.addr_validate(&validator)?;
+            let addr_prefix = ADDR_PREFIX.load(deps.storage)?;
+            let raw_validator = bech32_encode(addr_prefix.as_str(), &validator)?;
+            let validator = deps.api.addr_validate(raw_validator.as_str())?;
 
             let replay_id = keccak256_hash(
                 vec![
@@ -148,7 +150,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
             let storage_locations = validators
                 .into_iter()
                 .map(|v| {
-                    let validator = deps.api.addr_validate(&v)?;
+                    let addr_prefix = ADDR_PREFIX.load(deps.storage)?;
+                    let raw_validator = bech32_encode(addr_prefix.as_str(), &v)?;
+                    let validator = deps.api.addr_validate(raw_validator.as_str())?;
+
                     let storage_locations = STORAGE_LOCATIONS
                         .may_load(deps.storage, validator.clone())?
                         .unwrap_or_default();
