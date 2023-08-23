@@ -86,7 +86,7 @@ pub fn execute(
             let validator = deps.api.addr_validate(raw_validator.as_str())?;
 
             let replay_id = keccak256_hash(
-                vec![
+                [
                     bech32_decode(validator.as_str())?,
                     storage_location.as_bytes().to_vec(),
                 ]
@@ -115,7 +115,8 @@ pub fn execute(
             let recovered = deps.api.secp256k1_recover_pubkey(
                 &announcement_hash,
                 &signature.as_slice()[..64],
-                signature[64],
+                // We subs 27 according to this - https://eips.ethereum.org/EIPS/eip-155
+                signature[64] - 27,
             )?;
 
             let recovered_addr = pub_to_addr(Binary(recovered), &ADDR_PREFIX.load(deps.storage)?)?;

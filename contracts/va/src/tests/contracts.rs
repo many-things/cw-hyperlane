@@ -54,7 +54,7 @@ impl<'a> TestData<'a> {
 
 fn pack_signature((rs, v): (Signature, RecoveryId)) -> Binary {
     let mut bz = rs.to_bytes().to_vec();
-    bz.push(v.to_byte());
+    bz.push(v.to_byte() + 27u8);
     Binary(bz)
 }
 
