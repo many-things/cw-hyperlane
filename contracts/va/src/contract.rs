@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, Order,
-    QueryResponse, Response, StdResult,
+    ensure, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order, QueryResponse,
+    Response, StdResult,
 };
 
 use hpl_interface::{
@@ -16,7 +16,7 @@ use k256::{ecdsa::VerifyingKey, EncodedPoint};
 
 use crate::{
     error::ContractError,
-    pub_to_addr,
+    eth_hash, pub_to_addr,
     state::{
         ADDR_PREFIX, LOCAL_DOMAIN, MAILBOX, REPLAY_PROTECITONS, STORAGE_LOCATIONS, VALIDATORS,
     },
@@ -101,44 +101,29 @@ pub fn execute(
             let mailbox = MAILBOX.load(deps.storage)?;
 
             // make digest
-            let announcement_hash = announcement_hash(
+            let message_hash = eth_hash(announcement_hash(
                 domain_hash(local_domain, mailbox.as_str())?.0,
                 &storage_location,
-            );
+            ))?;
 
             // recover pubkey from signature & verify
             let recovered = deps.api.secp256k1_recover_pubkey(
-                &announcement_hash,
+                &message_hash,
                 &signature.as_slice()[..64],
                 // We subs 27 according to this - https://eips.ethereum.org/EIPS/eip-155
                 signature[64] - 27,
             )?;
 
             let public_key =
-                VerifyingKey::from_encoded_point(&EncodedPoint::from_bytes(&recovered).unwrap())
+                VerifyingKey::from_encoded_point(&EncodedPoint::from_bytes(recovered).unwrap())
                     .expect("invalid recovered public key");
-            println!(
-                "{}",
-                HexBinary::from(Binary(public_key.to_sec1_bytes().to_vec())).to_hex()
-            );
-
-            let public_key_compressed = public_key.to_encoded_point(true).as_bytes().to_vec();
-            println!(
-                "pubkey compressed: {}",
-                HexBinary::from(public_key_compressed.clone()).to_hex()
-            );
+            let public_key_compressed = public_key.to_sec1_bytes().to_vec();
 
             let recovered_addr = pub_to_addr(
                 public_key_compressed.into(),
                 &ADDR_PREFIX.load(deps.storage)?,
             )?;
-            println!("recovered_addr: {}", recovered_addr);
-
-            let verified = deps
-                .api
-                .secp256k1_verify(&announcement_hash, &signature[..64], &recovered)
-                .unwrap();
-            ensure!(verified, ContractError::Unauthorized {});
+            ensure!(recovered_addr == validator, ContractError::VerifyFailed {});
 
             // save validator if not saved yet
             if !VALIDATORS.has(deps.storage, validator.clone()) {
