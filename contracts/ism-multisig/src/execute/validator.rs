@@ -107,7 +107,7 @@ pub fn enroll_validators(
         }
     }
 
-    Ok(Response::new().add_events(events.into_iter()))
+    Ok(Response::new().add_events(events))
 }
 
 pub fn unenroll_validator(

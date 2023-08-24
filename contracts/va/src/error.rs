@@ -17,4 +17,7 @@ pub enum ContractError {
 
     #[error("InvalidPubKey")]
     InvalidPubKey {},
+
+    #[error("VerifyFailed")]
+    VerifyFailed {},
 }

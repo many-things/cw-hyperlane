@@ -1,19 +1,18 @@
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env},
-    Addr, Binary, Response,
+    Addr, Binary, HexBinary, Response,
 };
 use hpl_interface::types::bech32_encode;
 use k256::{
     ecdsa::{RecoveryId, Signature, SigningKey},
     elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
-    schnorr::signature::hazmat::PrehashSigner,
     SecretKey,
 };
 
 use crate::{
     contract::{announcement_hash, domain_hash},
     error::ContractError,
-    pub_to_addr, pub_to_addr_binary,
+    eth_hash, pub_to_addr, pub_to_addr_binary,
     state::{ADDR_PREFIX, LOCAL_DOMAIN, MAILBOX, STORAGE_LOCATIONS, VALIDATORS},
 };
 
@@ -86,15 +85,18 @@ fn test_announce() -> anyhow::Result<()> {
     let public_key = secret_key.public_key();
     let signing_key = SigningKey::from(secret_key);
 
-    let public_key_bz = Binary(public_key.to_encoded_point(false).as_bytes().to_vec());
+    let public_key_bz = Binary(public_key.to_encoded_point(true).as_bytes().to_vec());
     let addr_binary = pub_to_addr_binary(public_key_bz.clone())?;
     let public_key_addr = Addr::unchecked(pub_to_addr(public_key_bz, testdata.addr_prefix)?);
 
-    let announcement_hash = announcement_hash(
+    let verify_digest = eth_hash(announcement_hash(
         domain_hash(testdata.local_domain, testdata.mailbox.as_str())?.0,
         testdata.storage_location,
-    );
-    let signature = pack_signature(signing_key.sign_prehash(&announcement_hash)?);
+    ))?;
+    let signature = signing_key
+        .sign_prehash_recoverable(&verify_digest)
+        .unwrap();
+    let signature = pack_signature(signature);
 
     va.announce(
         &testdata.deployer,
@@ -109,6 +111,59 @@ fn test_announce() -> anyhow::Result<()> {
         STORAGE_LOCATIONS.load(va.deps().storage, public_key_addr)?,
         vec![testdata.storage_location]
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_announce_external() -> anyhow::Result<()> {
+    let cases = [
+        (
+            "0xf9e25a6be80f6d48727e42381fc3c3b7834c0cb4",
+            "0x62634b0c56b57fef1c27f25039cfb872875a9eeeb42d80a034f8d6b55ed20d09",
+            26658,
+            "file:///var/folders/3v/g38z040x54x8l6b160vv66b40000gn/T/.tmp7XoxND/checkpoint",
+            "0x6c30e1072f0e23694d3a3a96dc41fc4d17636ce145e83adef3224a6f4732c2db715407b42478c581b6ac1b79e64807a7748935d398a33bf4b73d37924c293c941b",
+        ),
+        (
+            "0xf9e25a6be80f6d48727e42381fc3c3b7834c0cb4",
+            "0x62634b0c56b57fef1c27f25039cfb872875a9eeeb42d80a034f8d6b55ed20d09",
+            26657,
+            "file:///var/folders/3v/g38z040x54x8l6b160vv66b40000gn/T/.tmpBJPK8C/checkpoint",
+            "0x76c637d605f683734c672c0437f14ae48520e85fb68b0c0b9c28069f183e3bfc46f0de0655f06937c74b5a0a15f5b8fe37f1d1ad4dd8b64dc55307a2103fedad1c",
+        ),
+    ];
+
+    let remove_hex_prefix = |v: String| -> String {
+        if v.starts_with("0x") {
+            v.strip_prefix("0x").unwrap().to_string()
+        } else {
+            v
+        }
+    };
+
+    for (validator, mailbox, domain, location, signature) in cases {
+        let testdata = TestData {
+            mailbox: Addr::unchecked(bech32_encode(
+                "osmo",
+                HexBinary::from_hex(&remove_hex_prefix(mailbox.to_string()))?.as_slice(),
+            )?),
+            local_domain: domain,
+
+            ..Default::default()
+        };
+
+        let mut va = VA::new(mock_dependencies(), mock_env());
+
+        testdata.init(&mut va)?;
+
+        va.announce(
+            &testdata.deployer,
+            HexBinary::from_hex(&remove_hex_prefix(validator.to_string()))?,
+            location,
+            HexBinary::from_hex(&remove_hex_prefix(signature.to_string()))?.into(),
+        )?;
+    }
 
     Ok(())
 }

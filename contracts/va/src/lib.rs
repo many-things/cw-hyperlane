@@ -1,6 +1,7 @@
 use bech32::ToBase32;
 use cosmwasm_std::{Binary, HexBinary};
 use error::ContractError;
+use hpl_interface::types::keccak256_hash;
 use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
 
@@ -11,9 +12,19 @@ pub mod state;
 #[cfg(test)]
 mod tests;
 
+const PREFIX: &str = "\x19Ethereum Signed Message:\n";
+
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub fn eth_hash(message: Binary) -> Result<Binary, ContractError> {
+    let mut eth_message = format!("{PREFIX}{}", message.len()).into_bytes();
+    eth_message.extend_from_slice(&message);
+    let message_hash = keccak256_hash(&eth_message);
+
+    Ok(message_hash)
+}
 
 pub fn sha256_digest(bz: impl AsRef<[u8]>) -> Result<[u8; 32], ContractError> {
     let mut hasher = Sha256::new();
