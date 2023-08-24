@@ -58,6 +58,7 @@ serde-json-wasm = "1.0.0"
 thiserror = { version = "1.0.37" }
 cw-multi-test = "0.16.5"
 cosmwasm-schema = "1.2.7"
+cosmwasm-crypto = "1.2.7"
 prost = { version = "0.11.9", default-features = false, features = [
     "prost-derive",
 ] }
@@ -65,6 +66,7 @@ prost-types = { version = "0.11.9", default-features = false }
 
 anyhow = { version = "1.0.71", features = ["backtrace"] }
 k256 = { version = "0.13.1", features = ["std", "ecdsa"] }
+digest = { version = "0.10.7" }
 hex-literal = { version = "0.4.1" }
 osmosis-test-tube = { version = "16.0.0" }
 

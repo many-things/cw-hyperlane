@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
+    ensure, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, Order,
     QueryResponse, Response, StdResult,
 };
 
@@ -12,6 +12,7 @@ use hpl_interface::{
         InstantiateMsg, MigrateMsg, QueryMsg,
     },
 };
+use k256::{ecdsa::VerifyingKey, EncodedPoint};
 
 use crate::{
     error::ContractError,
@@ -37,12 +38,6 @@ pub fn announcement_hash(mut domain_hash: Vec<u8>, storage_location: &str) -> Bi
     let mut bz = vec![];
     bz.append(&mut domain_hash);
     bz.append(&mut storage_location.as_bytes().to_vec());
-
-    let mut prehash = keccak256_hash(&bz);
-
-    let mut bz = vec![];
-    bz.append(&mut "\x19Ethereum Signed Message:\n".as_bytes().to_vec());
-    bz.append(&mut prehash.0);
 
     keccak256_hash(&bz)
 }
@@ -119,8 +114,31 @@ pub fn execute(
                 signature[64] - 27,
             )?;
 
-            let recovered_addr = pub_to_addr(Binary(recovered), &ADDR_PREFIX.load(deps.storage)?)?;
-            ensure_eq!(recovered_addr, validator, ContractError::Unauthorized {});
+            let public_key =
+                VerifyingKey::from_encoded_point(&EncodedPoint::from_bytes(&recovered).unwrap())
+                    .expect("invalid recovered public key");
+            println!(
+                "{}",
+                HexBinary::from(Binary(public_key.to_sec1_bytes().to_vec())).to_hex()
+            );
+
+            let public_key_compressed = public_key.to_encoded_point(true).as_bytes().to_vec();
+            println!(
+                "pubkey compressed: {}",
+                HexBinary::from(public_key_compressed.clone()).to_hex()
+            );
+
+            let recovered_addr = pub_to_addr(
+                public_key_compressed.into(),
+                &ADDR_PREFIX.load(deps.storage)?,
+            )?;
+            println!("recovered_addr: {}", recovered_addr);
+
+            let verified = deps
+                .api
+                .secp256k1_verify(&announcement_hash, &signature[..64], &recovered)
+                .unwrap();
+            ensure!(verified, ContractError::Unauthorized {});
 
             // save validator if not saved yet
             if !VALIDATORS.has(deps.storage, validator.clone()) {

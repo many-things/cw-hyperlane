@@ -76,7 +76,11 @@ fn test_init() -> anyhow::Result<()> {
 
 #[test]
 fn test_announce() -> anyhow::Result<()> {
-    let testdata = TestData::default();
+    let mut testdata = TestData::default();
+
+    testdata.mailbox =
+        Addr::unchecked("osmo1pvrwmjuusn9wh34j7y520g8gumuy9xtl3gvprlljfdpwju3x7ucsxrqwu2");
+    testdata.local_domain = 26657;
 
     let mut va = VA::new(mock_dependencies(), mock_env());
 
@@ -90,11 +94,11 @@ fn test_announce() -> anyhow::Result<()> {
     let addr_binary = pub_to_addr_binary(public_key_bz.clone())?;
     let public_key_addr = Addr::unchecked(pub_to_addr(public_key_bz, testdata.addr_prefix)?);
 
-    let announcement_hash = announcement_hash(
+    let verify_digest = announcement_hash(
         domain_hash(testdata.local_domain, testdata.mailbox.as_str())?.0,
         testdata.storage_location,
     );
-    let signature = pack_signature(signing_key.sign_prehash(&announcement_hash)?);
+    let signature = pack_signature(signing_key.sign_prehash(&verify_digest)?);
 
     va.announce(
         &testdata.deployer,
