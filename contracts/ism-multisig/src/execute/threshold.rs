@@ -33,7 +33,7 @@ pub fn set_thresholds(
         })
         .collect::<StdResult<_>>()?;
 
-    Ok(Response::new().add_events(events.into_iter()))
+    Ok(Response::new().add_events(events))
 }
 
 #[cfg(test)]
