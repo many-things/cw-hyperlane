@@ -4,7 +4,6 @@ members = [
     'packages/router',
     'packages/ownable',
     'packages/interface',
-    'packages/testutils/*',
     "integration-test",
 ]
 resolver = "2"
