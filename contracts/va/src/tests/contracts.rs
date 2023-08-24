@@ -5,8 +5,7 @@ use cosmwasm_std::{
 use hpl_interface::types::bech32_encode;
 use k256::{
     ecdsa::{RecoveryId, Signature, SigningKey},
-    elliptic_curve::rand_core::OsRng,
-    schnorr::signature::hazmat::PrehashSigner,
+    elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
     SecretKey,
 };
 
@@ -86,7 +85,7 @@ fn test_announce() -> anyhow::Result<()> {
     let public_key = secret_key.public_key();
     let signing_key = SigningKey::from(secret_key);
 
-    let public_key_bz = Binary(public_key.to_sec1_bytes().to_vec());
+    let public_key_bz = Binary(public_key.to_encoded_point(true).as_bytes().to_vec());
     let addr_binary = pub_to_addr_binary(public_key_bz.clone())?;
     let public_key_addr = Addr::unchecked(pub_to_addr(public_key_bz, testdata.addr_prefix)?);
 
@@ -94,7 +93,10 @@ fn test_announce() -> anyhow::Result<()> {
         domain_hash(testdata.local_domain, testdata.mailbox.as_str())?.0,
         testdata.storage_location,
     ))?;
-    let signature = pack_signature(signing_key.sign_prehash(&verify_digest)?);
+    let signature = signing_key
+        .sign_prehash_recoverable(&verify_digest)
+        .unwrap();
+    let signature = pack_signature(signature);
 
     va.announce(
         &testdata.deployer,

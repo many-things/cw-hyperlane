@@ -117,10 +117,10 @@ pub fn execute(
             let public_key =
                 VerifyingKey::from_encoded_point(&EncodedPoint::from_bytes(recovered).unwrap())
                     .expect("invalid recovered public key");
-            let public_key_compressed = public_key.to_sec1_bytes().to_vec();
+            let public_key_compressed = public_key.to_encoded_point(true).as_bytes().to_vec();
 
             let recovered_addr = pub_to_addr(
-                public_key_compressed.into(),
+                Binary(public_key_compressed),
                 &ADDR_PREFIX.load(deps.storage)?,
             )?;
             ensure!(recovered_addr == validator, ContractError::VerifyFailed {});
