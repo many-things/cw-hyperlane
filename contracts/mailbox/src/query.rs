@@ -5,6 +5,7 @@ use hpl_interface::mailbox::{
 };
 
 use crate::{
+    merkle::ZERO_BYTES,
     state::{CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE, NONCE, PAUSE},
     verify, ContractError,
 };
@@ -42,7 +43,17 @@ pub fn get_checkpoint(deps: Deps) -> Result<QueryResponse, ContractError> {
 
 pub fn get_tree(deps: Deps) -> Result<QueryResponse, ContractError> {
     let tree = MESSAGE_TREE.load(deps.storage)?;
-    let branch: Vec<HexBinary> = tree.branch.into_iter().map(|x| x.into()).collect();
+    let branch: Vec<HexBinary> = tree
+        .branch
+        .into_iter()
+        .map(|x| {
+            if x.is_empty() {
+                HexBinary::from_hex(ZERO_BYTES).unwrap()
+            } else {
+                x.into()
+            }
+        })
+        .collect();
 
     Ok(to_binary(&MerkleTreeResponse {
         branch: branch.try_into().unwrap(),
@@ -70,8 +81,27 @@ pub fn get_default_ism(deps: Deps) -> Result<QueryResponse, ContractError> {
 #[cfg(test)]
 mod test {
 
+    use crate::merkle::MerkleTree;
+
     use super::*;
-    use cosmwasm_std::{testing::mock_dependencies, HexBinary};
+    use cosmwasm_std::{from_binary, testing::mock_dependencies, HexBinary};
+
+    #[test]
+    fn test_query_tree() {
+        let mut deps = mock_dependencies();
+
+        MESSAGE_TREE
+            .save(deps.as_mut().storage, &MerkleTree::default())
+            .unwrap();
+
+        let tree: MerkleTreeResponse = from_binary(&get_tree(deps.as_ref()).unwrap()).unwrap();
+
+        assert_eq!(tree.branch.len(), 32);
+        for branch in tree.branch.iter() {
+            assert_eq!(branch, &HexBinary::from_hex(ZERO_BYTES).unwrap());
+        }
+        assert_eq!(tree.count, 0);
+    }
 
     #[test]
     fn test_get_delivery() {
