@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, Deps, Env, HexBinary, MessageInfo, QueryResponse, Uint256};
+use cosmwasm_std::{to_binary, Deps, Env, QueryResponse};
 use hpl_interface::{
     domain_routing_hook::{OwnerResponse, PauseInfoResponse},
     igp_core::QuoteGasPaymentResponse,
@@ -26,7 +26,6 @@ pub fn get_owner_info(deps: Deps) -> Result<QueryResponse, ContractError> {
 pub fn quote_dispatch(
     deps: Deps,
     _env: Env,
-    _info: MessageInfo,
     msg: PostDispatchQueryMsg,
 ) -> Result<QueryResponse, ContractError> {
     match msg {

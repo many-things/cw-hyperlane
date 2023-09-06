@@ -5,6 +5,7 @@ use cw2::set_contract_version;
 use hpl_interface::domain_routing_hook::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::{
+    query::{get_owner_info, get_pause_info, quote_dispatch},
     state::{MAILBOX, PAUSE},
     ContractError, CONTRACT_NAME, CONTRACT_VERSION,
 };
@@ -55,10 +56,10 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     match msg {
-        QueryMsg::QuoteDispatch(msg) => todo!(),
-        QueryMsg::PauseInfo {} => todo!(),
-        QueryMsg::Owner {} => todo!(),
+        QueryMsg::QuoteDispatch(msg) => quote_dispatch(deps, env, msg),
+        QueryMsg::PauseInfo {} => get_pause_info(deps),
+        QueryMsg::Owner {} => get_owner_info(deps),
     }
 }
