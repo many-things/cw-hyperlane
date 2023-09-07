@@ -1,5 +1,5 @@
 [package]
-name = "hpl-domain-routing-hook"
+name = "hpl-default-hook"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
