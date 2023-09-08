@@ -6,14 +6,12 @@ use hpl_interface::mailbox::{
 
 use crate::{
     merkle::ZERO_BYTES,
-    state::{CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE, NONCE, PAUSE},
+    state::{CONFIG, DELIVERY, MESSAGE_TREE, NONCE, PAUSE},
     verify, ContractError,
 };
 
 pub fn get_delivered(deps: Deps, id: HexBinary) -> Result<QueryResponse, ContractError> {
-    let delivered = MESSAGE_PROCESSED
-        .load(deps.storage, id.into())
-        .map_err(|_| ContractError::MessageNotFound {})?;
+    let delivered = DELIVERY.has(deps.storage, id.into());
 
     Ok(to_binary(&MessageDeliveredResponse { delivered })?)
 }
@@ -81,10 +79,10 @@ pub fn get_default_ism(deps: Deps) -> Result<QueryResponse, ContractError> {
 #[cfg(test)]
 mod test {
 
-    use crate::merkle::MerkleTree;
+    use crate::{merkle::MerkleTree, state::Delivery};
 
     use super::*;
-    use cosmwasm_std::{from_binary, testing::mock_dependencies, HexBinary};
+    use cosmwasm_std::{from_binary, testing::mock_dependencies, Addr, HexBinary};
 
     #[test]
     fn test_query_tree() {
@@ -107,13 +105,14 @@ mod test {
     fn test_get_delivery() {
         let mut deps = mock_dependencies();
         let id = HexBinary::from_hex("c0ffee").unwrap();
+        let ism = Addr::unchecked("ism");
         // cannot find deps delivery
         let notfound_resp = get_delivered(deps.as_ref(), id.clone()).unwrap_err();
         assert!(matches!(notfound_resp, ContractError::MessageNotFound {}));
 
         // set delivery
-        MESSAGE_PROCESSED
-            .save(deps.as_mut().storage, id.clone().into(), &true)
+        DELIVERY
+            .save(deps.as_mut().storage, id.clone().into(), &Delivery { ism })
             .unwrap();
 
         let resp = get_delivered(deps.as_ref(), id).unwrap();

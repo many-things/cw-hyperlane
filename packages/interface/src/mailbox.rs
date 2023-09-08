@@ -7,6 +7,7 @@ const TREE_DEPTH: usize = 32;
 pub struct InstantiateMsg {
     pub owner: String,
     pub default_ism: String,
+    pub default_hook: String,
 }
 
 #[cw_serde]
@@ -16,7 +17,9 @@ pub enum ExecuteMsg {
     SetDefaultISM {
         ism: String,
     },
-
+    SetDefaultHook {
+        hook: String,
+    },
     Dispatch {
         dest_domain: u32,
         recipient_addr: HexBinary,

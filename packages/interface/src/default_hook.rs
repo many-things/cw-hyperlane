@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, HexBinary};
+use cosmwasm_std::HexBinary;
 
 use crate::domain_routing_hook;
 

@@ -1,7 +1,7 @@
 use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
 use crate::{
-    event::{emit_default_ism_changed, emit_paused, emit_unpaused},
+    event::{emit_default_hook_changed, emit_default_ism_changed, emit_paused, emit_unpaused},
     state::{assert_owner, Config, CONFIG, PAUSE},
     ContractError,
 };
@@ -46,6 +46,27 @@ pub fn set_default_ism(
     Ok(Response::new().add_event(emit_default_ism_changed(info.sender, new_default_ism)))
 }
 
+pub fn set_default_hook(
+    deps: DepsMut,
+    info: MessageInfo,
+    default_hook: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    assert_owner(&config.owner, &info.sender)?;
+
+    // FIXME: clone
+    let new_default_hook = deps.api.addr_validate(&default_hook)?;
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            default_hook: new_default_hook.clone(),
+            ..config
+        },
+    )?;
+
+    Ok(Response::new().add_event(emit_default_hook_changed(info.sender, new_default_hook)))
+}
+
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
@@ -58,13 +79,21 @@ mod tests {
     const OWNER: &str = "owner";
     const FACTORY: &str = "factory";
     const DEFAULT_ISM: &str = "default_ism";
+    const DEFAULT_HOOK: &str = "default_hook";
     const NOT_OWNER: &str = "not_owner";
 
-    fn mock_owner(storage: &mut dyn Storage, owner: Addr, factory: Addr, default_ism: Addr) {
+    fn mock_owner(
+        storage: &mut dyn Storage,
+        owner: Addr,
+        factory: Addr,
+        default_ism: Addr,
+        default_hook: Addr,
+    ) {
         let config = Config {
             owner,
             factory,
             default_ism,
+            default_hook,
         };
 
         CONFIG.save(storage, &config).unwrap();
@@ -77,8 +106,15 @@ mod tests {
         let owner = Addr::unchecked(OWNER);
         let factory = Addr::unchecked(FACTORY);
         let default_ism = Addr::unchecked(DEFAULT_ISM);
+        let default_hook = Addr::unchecked(DEFAULT_HOOK);
 
-        mock_owner(deps.as_mut().storage, owner, factory, default_ism);
+        mock_owner(
+            deps.as_mut().storage,
+            owner,
+            factory,
+            default_ism,
+            default_hook,
+        );
 
         // Sender is not authorized
         let sender = NOT_OWNER;
@@ -96,8 +132,15 @@ mod tests {
         let owner = Addr::unchecked(OWNER);
         let factory = Addr::unchecked(FACTORY);
         let default_ism = Addr::unchecked(DEFAULT_ISM);
+        let default_hook = Addr::unchecked(DEFAULT_HOOK);
 
-        mock_owner(deps.as_mut().storage, owner, factory, default_ism);
+        mock_owner(
+            deps.as_mut().storage,
+            owner,
+            factory,
+            default_ism,
+            default_hook,
+        );
 
         // Sender is not authorized
         let sender = NOT_OWNER;
@@ -115,8 +158,15 @@ mod tests {
         let owner = Addr::unchecked(OWNER);
         let factory = Addr::unchecked(FACTORY);
         let default_ism = Addr::unchecked(DEFAULT_ISM);
+        let default_hook = Addr::unchecked(DEFAULT_HOOK);
 
-        mock_owner(deps.as_mut().storage, owner, factory, default_ism);
+        mock_owner(
+            deps.as_mut().storage,
+            owner,
+            factory,
+            default_ism,
+            default_hook,
+        );
 
         // Sender is not authorized
         let sender = NOT_OWNER;

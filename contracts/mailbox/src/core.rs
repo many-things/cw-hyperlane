@@ -9,11 +9,12 @@ use hpl_interface::{
 };
 
 use crate::{
+    contract_querier::{ism_verify, recipient_ism},
     event::{emit_dispatch, emit_dispatch_id, emit_process, emit_process_id},
     state::{
         assert_addr_length, assert_already_delivered, assert_destination_domain,
-        assert_message_version, assert_verify_response, CONFIG, MESSAGE_PROCESSED, MESSAGE_TREE,
-        NONCE,
+        assert_message_version, assert_verify_response, Delivery, CONFIG, DELIVERY,
+        LATEST_DISPATCHED_ID, MESSAGE_TREE, NONCE,
     },
     ContractError, MAILBOX_VERSION,
 };
@@ -23,28 +24,6 @@ fn fetch_origin_domain(querier: &QuerierWrapper, factory: &Addr) -> StdResult<u3
         querier.query_wasm_smart(factory, &hub::QueryMsg::OriginDomain {})?;
 
     Ok(resp.domain)
-}
-
-fn ism_verify(
-    querier: &QuerierWrapper,
-    default_ism: &Addr,
-    receipient: &Addr,
-    metadata: HexBinary,
-    message: HexBinary,
-) -> Result<(), ContractError> {
-    let ism_resp: ism::InterchainSecurityModuleResponse = querier.query_wasm_smart(
-        receipient,
-        &ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
-    )?;
-
-    let ism = ism_resp.ism.unwrap_or_else(|| default_ism.clone());
-
-    let verify_resp: ism::VerifyResponse =
-        querier.query_wasm_smart(ism, &ism::ISMQueryMsg::Verify { metadata, message })?;
-
-    assert_verify_response(verify_resp.verified)?;
-
-    Ok(())
 }
 
 pub fn dispatch(
@@ -76,14 +55,30 @@ pub fn dispatch(
     };
 
     let id = msg.id();
-    let mut tree = MESSAGE_TREE.load(deps.storage)?;
-    tree.insert(id.clone());
-    MESSAGE_TREE.save(deps.storage, &tree)?;
+
+    // Effects
+    NONCE.save(deps.storage, &(nonce + 1))?;
+    LATEST_DISPATCHED_ID.save(deps.storage, &id.to_vec())?;
+
+    // INTERACTION
+
+    let binary_msg: HexBinary = msg.clone().into();
+    let wasm_msg = WasmMsg::Execute {
+        contract_addr: config.default_hook.to_string(),
+        msg: to_binary(
+            &hpl_interface::post_dispatch_hook::PostDispatchMsg::PostDispatch {
+                metadata: binary_msg.as_slice()[0..0].into(), // Should be handle without metadata?
+                message: binary_msg,
+            },
+        )?,
+        funds: info.funds,
+    };
 
     Ok(Response::new()
         .set_data(to_binary(&DispatchResponse {
             message_id: id.clone(),
         })?)
+        .add_message(wasm_msg)
         .add_events(vec![emit_dispatch_id(id), emit_dispatch(msg)]))
 }
 
@@ -105,18 +100,13 @@ pub fn process(
     assert_destination_domain(decoded_msg.dest_domain, origin_domain)?;
 
     let id = decoded_msg.id();
+    let ism = recipient_ism(deps.as_ref(), &recipient)?;
 
     assert_already_delivered(deps.storage, id.clone())?;
 
-    MESSAGE_PROCESSED.save(deps.storage, id.0.clone(), &true)?;
+    DELIVERY.save(deps.storage, id.0.clone(), &Delivery { ism: ism.clone() })?;
 
-    ism_verify(
-        &deps.querier,
-        &config.default_ism,
-        &recipient,
-        metadata,
-        message,
-    )?;
+    ism_verify(&deps.querier, &ism, metadata, message)?;
 
     let handle_msg = WasmMsg::Execute {
         contract_addr: recipient.to_string(),
