@@ -13,6 +13,10 @@ use crate::{
 pub fn get_delivered(deps: Deps, id: HexBinary) -> Result<QueryResponse, ContractError> {
     let delivered = DELIVERY.has(deps.storage, id.into());
 
+    if !delivered {
+        return Err(ContractError::MessageNotFound {});
+    }
+
     Ok(to_binary(&MessageDeliveredResponse { delivered })?)
 }
 
@@ -104,7 +108,7 @@ mod test {
     #[test]
     fn test_get_delivery() {
         let mut deps = mock_dependencies();
-        let id = HexBinary::from_hex("c0ffee").unwrap();
+        let id = HexBinary::from_hex("c0ffeedeadbeef").unwrap();
         let ism = Addr::unchecked("ism");
         // cannot find deps delivery
         let notfound_resp = get_delivered(deps.as_ref(), id.clone()).unwrap_err();

@@ -45,3 +45,5 @@ pub fn update_mailbox(
     MAILBOX.save(deps.storage, &deps.api.addr_validate(&mailbox)?)?;
     Ok(Response::new().add_event(Event::new("update-mailbox").add_attribute("mailbox", mailbox)))
 }
+
+

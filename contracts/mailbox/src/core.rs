@@ -169,7 +169,7 @@ mod tests {
 
         // Invalid message version
         let wrong_version_message: HexBinary = HexBinary::from(Message {
-            version: 3,
+            version: 0,
             nonce: 2,
             origin_domain: 3,
             sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
