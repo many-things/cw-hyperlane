@@ -22,3 +22,4 @@ Cargo.lock
 **/state.local.json
 
 .DS_Store
+.idea/
