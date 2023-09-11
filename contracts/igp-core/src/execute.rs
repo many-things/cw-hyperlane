@@ -85,7 +85,7 @@ pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Con
 
     let balance = deps
         .querier
-        .query_balance(&env.contract.address, gas_token)?;
+        .query_balance(env.contract.address, gas_token)?;
 
     let send_msg = BankMsg::Send {
         to_address: beneficiary.to_string(),

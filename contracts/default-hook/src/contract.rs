@@ -51,24 +51,24 @@ pub fn execute(
             DomainRoutingExecuteMsg::Ownership(msg) => {
                 Ok(hpl_ownable::handle(deps, env, info, msg)?)
             }
-            DomainRoutingExecuteMsg::Pause {} => gov::pause(deps, env, info),
-            DomainRoutingExecuteMsg::Unpause {} => gov::unpause(deps, env, info),
+            DomainRoutingExecuteMsg::Pause {} => gov::pause(deps, info),
+            DomainRoutingExecuteMsg::Unpause {} => gov::unpause(deps, info),
             DomainRoutingExecuteMsg::UpdateMailbox { mailbox } => {
-                gov::update_mailbox(deps, env, info, mailbox)
+                gov::update_mailbox(deps, info, mailbox)
             }
             DomainRoutingExecuteMsg::SetHook { destination, hook } => {
-                hook::set_hook(deps, env, info, destination, hook)
+                hook::set_hook(deps, info, destination, hook)
             }
-            DomainRoutingExecuteMsg::SetHooks { hooks } => hook::set_hooks(deps, env, info, hooks),
+            DomainRoutingExecuteMsg::SetHooks { hooks } => hook::set_hooks(deps, info, hooks),
             DomainRoutingExecuteMsg::PostDispatch { metadata, message } => {
-                dispatch::dispatch(deps, env, info, metadata, message)
+                dispatch::dispatch(deps, metadata, message)
             }
         },
         ExecuteMsg::ConfigCustomHook {
             destination_domain,
             recipient,
             hook,
-        } => hook::config_custom_hook(deps, env, info, destination_domain, recipient, hook),
+        } => hook::config_custom_hook(deps, info, destination_domain, recipient, hook),
     }
 }
 
