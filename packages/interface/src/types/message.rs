@@ -62,6 +62,9 @@ impl Message {
         super::keccak256_hash(&Binary::from(self.clone()))
     }
 
+    pub fn sender_addr(&self, hrp: &str) -> StdResult<Addr> {
+        bech32_encode(hrp, &self.sender)
+    }
     pub fn recipient_addr(&self, hrp: &str) -> StdResult<Addr> {
         bech32_encode(hrp, &self.recipient)
     }

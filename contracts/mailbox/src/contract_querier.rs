@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Deps, HexBinary, QuerierWrapper, Storage};
+use cosmwasm_std::{Addr, Deps, HexBinary, QuerierWrapper};
 use hpl_interface::ism;
 
 use crate::{

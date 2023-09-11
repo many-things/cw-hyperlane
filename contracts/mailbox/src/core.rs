@@ -3,7 +3,7 @@ use cosmwasm_std::{
     WasmMsg,
 };
 use hpl_interface::{
-    hub, ism,
+    hub,
     mailbox::{DispatchResponse, ExpectedHandlerMsg, HandleMsg},
     types::{bech32_to_h256, message::Message},
 };
@@ -13,8 +13,7 @@ use crate::{
     event::{emit_dispatch, emit_dispatch_id, emit_process, emit_process_id},
     state::{
         assert_addr_length, assert_already_delivered, assert_destination_domain,
-        assert_message_version, assert_verify_response, Delivery, CONFIG, DELIVERY,
-        LATEST_DISPATCHED_ID, MESSAGE_TREE, NONCE,
+        assert_message_version, Delivery, CONFIG, DELIVERY, LATEST_DISPATCHED_ID, NONCE,
     },
     ContractError, MAILBOX_VERSION,
 };
