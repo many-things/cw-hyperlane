@@ -45,6 +45,7 @@ mod test {
 
     use super::*;
     const HOOK_ADDR: &str = "osmoaddress";
+    const CUSTOM_HOOK_ADDR: &str = "customosmoaddress";
 
     #[test]
     fn test_dispatch() {
@@ -54,6 +55,8 @@ mod test {
         let binary_message = HexBinary::from_hex("00000021500000aef3000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f1600aa36a70000000000000000000000005d56b8a669f50193b54319442c6eee5edd66238148656c6c6f21").unwrap();
         let dummy_metadata = HexBinary::from_hex("deadbeefc0ffee").unwrap();
         let hook = Addr::unchecked(HOOK_ADDR);
+        let custom_hook = Addr::unchecked(CUSTOM_HOOK_ADDR);
+        let message: Message = binary_message.clone().into();
 
         let domain_not_exist = dispatch(
             deps.as_mut(),
@@ -96,7 +99,51 @@ mod test {
             res,
             Response::new()
                 .add_message(expect_msg)
-                .add_event(emit_post_dispatch(hook, dummy_metadata, binary_message))
+                .add_event(emit_post_dispatch(
+                    hook,
+                    dummy_metadata.clone(),
+                    binary_message.clone()
+                ))
+        );
+
+        // use custom hook contracts
+        let custom_hook_config = HookConfig {
+            hook: custom_hook.clone(),
+            destination: 11155111,
+        };
+        CUSTOM_HOOK_CONFIG
+            .save(
+                deps.as_mut().storage,
+                generate_hook_key(11155111, message.recipient),
+                &custom_hook_config,
+            )
+            .unwrap();
+        let expect_msg = WasmMsg::Execute {
+            contract_addr: custom_hook.to_string(),
+            msg: to_binary(&PostDispatchMsg::PostDispatch {
+                metadata: dummy_metadata.clone(),
+                message: binary_message.clone(),
+            })
+            .unwrap(),
+            funds: vec![],
+        };
+
+        let res = dispatch(
+            deps.as_mut(),
+            dummy_metadata.clone(),
+            binary_message.clone(),
         )
+        .unwrap();
+
+        assert_eq!(
+            res,
+            Response::new()
+                .add_message(expect_msg)
+                .add_event(emit_post_dispatch(
+                    custom_hook,
+                    dummy_metadata,
+                    binary_message
+                ))
+        );
     }
 }
