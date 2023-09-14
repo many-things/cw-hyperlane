@@ -5,6 +5,7 @@ use hpl_interface::{
 };
 
 use crate::{
+    domain_hash, eth_hash, multisig_hash,
     state::{THRESHOLD, VALIDATORS},
     ContractError,
 };
@@ -41,14 +42,25 @@ pub fn verify_message(
         })
         .fold(vec![], |acc, item| acc.into_iter().chain(item).collect());
 
+    let multisig_hash = multisig_hash(
+        domain_hash(message.origin_domain, metadata.origin_mailbox)?.to_vec(),
+        metadata.merkle_root.to_vec(),
+        0,
+        message.id().to_vec(),
+    )?;
+
+    let hashed_message = eth_hash(multisig_hash)?;
+
     let success: u8 = verifiable_cases
         .into_iter()
         .map(|v| {
             deps.api
-                .secp256k1_verify(&message.id(), &v.1[0..64], &v.0)
+                .secp256k1_verify(&hashed_message, &v.1[0..64], &v.0)
                 .unwrap() as u8
         })
         .sum();
+
+    println!("success: {}", success);
 
     Ok(to_binary(&VerifyResponse {
         verified: success >= threshold,
@@ -157,18 +169,10 @@ mod test {
 
     #[test]
     fn test_get_verify_success() {
-        let hex = |v: &str| -> Binary { HexBinary::from_hex(v).unwrap().into() };
+        let raw_metadata: HexBinary = HexBinary::from_hex("0736a58fd7bd49e1f059768f8d57649670f6815054e49d3bb2ed16f71fc5ff16855a91bc5ca0e6853d2331e52759c8e8683da8bede7ac84b11b658af70dbdf1f494ddcd3802fd4934e7f3e89366c8761b57f60ebd438384d027512c36643c6b5413d05aa290d524414ec3e698eed65602204a25ed0b7ede6cca03a6370bd6b201c").unwrap();
+        let raw_message: HexBinary = HexBinary::from_hex("0000000000000068210000000000000000000000000d1255b09d94659bb0888e0aa9fca60245ce402a000068226c29bd39dce3f038d2dbb9b608f02a73d7ddc03f9cfb176dedb1a64e50c7b3e368656c6c6f").unwrap();
 
-        let message = Message {
-            version: 0,
-            nonce: 8528,
-            origin_domain: 44787,
-            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
-            dest_domain: 11155111,
-            recipient: hex("0000000000000000000000005d56b8a669f50193b54319442c6eee5edd662381"),
-            body: hex("48656c6c6f21"),
-        };
-
+        let message: Message = raw_message.clone().into();
         let mut deps = mock_dependencies();
         VALIDATORS
             .save(
@@ -176,9 +180,9 @@ mod test {
                 message.origin_domain,
                 &Validators(vec![
                     ValidatorSet {
-                        signer: Addr::unchecked("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
+                        signer: Addr::unchecked("osmo1l83956lgpak5sun7ggupls7rk7p5cr95499jdf"),
                         signer_pubkey: Binary::from_base64(
-                            "ArU5zD28GiZu6HZIonZP9thauVOERZ7y5dR4fIhyT1gc",
+                            "A5zcWOYi4ldnz6VlgCU0svd3EHozgvRqiDI0cbvT2Ewi",
                         )
                         .unwrap(),
                     },
@@ -201,20 +205,10 @@ mod test {
             .unwrap();
 
         THRESHOLD
-            .save(deps.as_mut().storage, message.origin_domain, &2u8)
+            .save(deps.as_mut().storage, message.origin_domain, &1u8)
             .unwrap();
 
-        // success
-        let success_signatures = hex("65a7fc45f77bb968620bf8f1f1845a1d2555f392c7c6ec0eb712429dd52cbea932dbe005e7e0c1e48ff17554f165bb4914b706a13d5cba1f5d41b7b3b142293300cbc3e12bb30133a5126d47b479e3da529c770b413d6e8e3a8f769055352efbfb36a5b950a2c6d129ef847f7f3f609fe1bd93fa6b3e2e656fb1056c583594fe1f00c7a687530639a9043bc4c39153332afc59b5bc3db2026423b62aab03f9cf7c7f4d28b9895aa9f5a16741702449d2478c776d64927609c30bb55119850b9878e700");
-
-        let success_metadata = MessageIdMultisigIsmMetadata {
-            origin_mailbox: hex("0000000000000000000000000000000000000000000000000000000000000000"),
-            merkle_root: hex("0000000000000000000000000000000000000000000000000000000000000000"),
-            signatures: success_signatures,
-        };
-
-        let success_result =
-            verify_message(deps.as_ref(), success_metadata.into(), message.into()).unwrap();
+        let success_result = verify_message(deps.as_ref(), raw_metadata, raw_message).unwrap();
         assert_eq!(
             success_result,
             to_binary(&VerifyResponse { verified: true }).unwrap()
