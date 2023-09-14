@@ -11,6 +11,12 @@ pub struct Config {
     pub owner: Addr,
     pub factory: Addr,
     pub default_ism: Addr,
+    pub default_hook: Addr,
+}
+
+#[cw_serde]
+pub struct Delivery {
+    pub ism: Addr,
 }
 
 pub const CONFIG_KEY: &str = "config";
@@ -22,11 +28,14 @@ pub const PAUSE: Item<bool> = Item::new(PAUSE_KEY);
 pub const NONCE_KEY: &str = "nonce";
 pub const NONCE: Item<u32> = Item::new(NONCE_KEY);
 
+pub const LATEST_DISPATCHED_ID_KEY: &str = "latest_dispatched_id";
+pub const LATEST_DISPATCHED_ID: Item<Vec<u8>> = Item::new(LATEST_DISPATCHED_ID_KEY);
+
 pub const MESSAGE_TREE_KEY: &str = "message_tree";
 pub const MESSAGE_TREE: Item<MerkleTree> = Item::new(MESSAGE_TREE_KEY);
 
-pub const MESSAGE_PROCESSED_PREFIX: &str = "message_processed";
-pub const MESSAGE_PROCESSED: Map<Vec<u8>, bool> = Map::new(MESSAGE_PROCESSED_PREFIX);
+pub const DELIVERY_PREFIX: &str = "delivery";
+pub const DELIVERY: Map<Vec<u8>, Delivery> = Map::new(DELIVERY_PREFIX);
 
 pub fn assert_owner(owner: &Addr, sender: &Addr) -> Result<(), ContractError> {
     if owner != sender {
@@ -87,7 +96,7 @@ pub fn assert_destination_domain(
 }
 
 pub fn assert_already_delivered(storage: &dyn Storage, id: Binary) -> Result<(), ContractError> {
-    if MESSAGE_PROCESSED.may_load(storage, id.0)?.is_some() {
+    if DELIVERY.may_load(storage, id.0)?.is_some() {
         return Err(ContractError::AlreadyDeliveredMessage {});
     }
 

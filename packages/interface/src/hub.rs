@@ -8,7 +8,11 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Instantiate { owner: String, default_ism: String },
+    Instantiate {
+        owner: String,
+        default_ism: String,
+        default_hook: String,
+    },
     Migrate {},
 }
 
