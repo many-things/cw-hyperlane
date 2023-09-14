@@ -20,3 +20,5 @@ Cargo.lock
 
 # Ignores local beaker state
 **/state.local.json
+
+.DS_Store
