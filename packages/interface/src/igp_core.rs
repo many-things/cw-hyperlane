@@ -1,13 +1,14 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Uint128, Uint256};
 
-use crate::ownable::OwnableMsg;
+use crate::{ownable::OwnableMsg, post_dispatch_hook::PostDispatchQueryMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
     pub gas_token: String,
     pub beneficiary: String,
+    pub prefix: String,
 }
 
 #[cw_serde]
@@ -52,11 +53,18 @@ pub enum ExecuteMsg {
         refund_address: String,
     },
     Claim {},
+    PostDispatch {
+        metadata: Binary,
+        message: Binary,
+    },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(QuoteDispatchResponse)]
+    QuoteDispatch(PostDispatchQueryMsg),
+
     #[returns(QuoteGasPaymentResponse)]
     QuoteGasPayment {
         dest_domain: u32,
@@ -65,6 +73,11 @@ pub enum QueryMsg {
 
     #[returns(GetExchangeRateAndGasPriceResponse)]
     GetExchangeRateAndGasPrice { dest_domain: u32 },
+}
+
+#[cw_serde]
+pub struct QuoteDispatchResponse {
+    pub gas_amount: Uint256,
 }
 
 #[cw_serde]

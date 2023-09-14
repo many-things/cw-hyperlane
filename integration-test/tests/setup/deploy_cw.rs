@@ -197,6 +197,7 @@ pub async fn deploy_cw_hyperlane(
             &hpl_interface::hub::ExecuteMsg::Instantiate {
                 owner: deployer.address(),
                 default_ism: ism.clone(),
+                default_hook: ism.clone(), // TODO: change into hooks
             },
             &[],
             deployer,

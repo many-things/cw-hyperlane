@@ -1,17 +1,11 @@
 pub mod contract;
-pub mod contract_querier;
-mod core;
 mod error;
-mod event;
-mod gov;
-pub mod merkle;
-mod query;
+pub mod event;
+pub mod execute;
+pub mod query;
 pub mod state;
-pub mod verify;
 
 pub use crate::error::ContractError;
-
-pub const MAILBOX_VERSION: u8 = 3;
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");

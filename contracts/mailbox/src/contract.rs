@@ -25,6 +25,7 @@ pub fn instantiate(
         owner: deps.api.addr_validate(&msg.owner)?,
         factory: info.sender,
         default_ism: deps.api.addr_validate(&msg.default_ism)?,
+        default_hook: deps.api.addr_validate(&msg.default_hook)?,
     };
 
     MESSAGE_TREE.save(deps.storage, &MerkleTree::default())?;
@@ -59,7 +60,7 @@ pub fn execute(
         SetDefaultISM {
             ism: new_default_ism,
         } => gov::set_default_ism(deps, info, new_default_ism),
-
+        SetDefaultHook { hook } => gov::set_default_hook(deps, info, hook),
         Dispatch {
             dest_domain,
             recipient_addr,
@@ -94,6 +95,7 @@ mod test {
 
     const OWNER: &str = "owner";
     const DEFAULT_ISM: &str = "default_ism";
+    const DEFAULT_HOOK: &str = "default_hook";
 
     #[test]
     fn init() {
@@ -106,6 +108,7 @@ mod test {
             InstantiateMsg {
                 owner: OWNER.to_string(),
                 default_ism: DEFAULT_ISM.to_string(),
+                default_hook: DEFAULT_HOOK.to_string(),
             },
         )
         .unwrap();

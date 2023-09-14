@@ -41,3 +41,9 @@ pub fn emit_process(origin: u32, sender: Binary, recipient: Binary) -> Event {
         .add_attribute("sender", HexBinary::from(sender).to_hex())
         .add_attribute("recipient", HexBinary::from(recipient).to_hex())
 }
+
+pub fn emit_default_hook_changed(owner: Addr, new_default_ism: Addr) -> Event {
+    Event::new("mailbox_default_hook_changed")
+        .add_attribute("owner", owner.to_string())
+        .add_attribute("new_default_hook", new_default_ism.to_string())
+}

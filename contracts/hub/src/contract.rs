@@ -45,7 +45,11 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        Instantiate { owner, default_ism } => {
+        Instantiate {
+            owner,
+            default_ism,
+            default_hook,
+        } => {
             deps.api.addr_validate(&owner)?;
             deps.api.addr_validate(&default_ism)?;
 
@@ -54,7 +58,11 @@ pub fn execute(
             let resp = Response::new().add_message(WasmMsg::Instantiate {
                 admin: Some(env.contract.address.into_string()),
                 code_id: mailbox_code,
-                msg: to_binary(&mailbox::InstantiateMsg { owner, default_ism })?,
+                msg: to_binary(&mailbox::InstantiateMsg {
+                    owner,
+                    default_ism,
+                    default_hook,
+                })?,
                 funds: vec![],
                 label: "hyperlane-mailbox".to_string(),
             });

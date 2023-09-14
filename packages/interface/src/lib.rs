@@ -1,3 +1,4 @@
+pub mod default_hook;
 pub mod domain_routing_hook;
 pub mod hub;
 pub mod igp_core;
