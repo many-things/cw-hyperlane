@@ -28,6 +28,7 @@ pub fn instantiate(
         default_hook: deps.api.addr_validate(&msg.default_hook)?,
     };
 
+    // does MerkleTree.default() initialize to ZERO_HASHES tree?
     MESSAGE_TREE.save(deps.storage, &MerkleTree::default())?;
     CONFIG.save(deps.storage, &config)?;
     PAUSE.save(deps.storage, &false)?;

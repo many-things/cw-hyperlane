@@ -4,6 +4,8 @@ use hpl_interface::types::keccak256_hash;
 
 use crate::state::assert_full_merkle_tree;
 
+// can we reuse hyperlane-monorepo/rust/hyperlane-core/src/accumulator ?
+
 pub const HASH_LENGTH: usize = 32;
 pub const TREE_DEPTH: usize = 32;
 pub const MAX_LEAVES: u128 = (2_u128.pow(TREE_DEPTH as u32)) - 1;

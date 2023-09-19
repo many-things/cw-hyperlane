@@ -23,6 +23,7 @@ pub fn emit_dispatch_id(id: Binary) -> Event {
     Event::new("mailbox_dispatch_id").add_attribute("message_id", HexBinary::from(id).to_hex())
 }
 
+// we only emit these redundantly in the ethereum mailbox because of "indexed" fields
 pub fn emit_dispatch(msg: Message) -> Event {
     Event::new("mailbox_dispatch")
         .add_attribute("sender", HexBinary::from(msg.sender.clone()).to_hex())

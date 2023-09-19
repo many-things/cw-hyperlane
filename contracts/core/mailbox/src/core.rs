@@ -37,7 +37,6 @@ pub fn dispatch(
     let config = CONFIG.load(deps.storage)?;
 
     let nonce = NONCE.load(deps.storage)?;
-    NONCE.save(deps.storage, &(nonce + 1))?;
 
     let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
 
@@ -56,11 +55,15 @@ pub fn dispatch(
     let id = msg.id();
 
     // Effects
+
+    // we should only do this once
     NONCE.save(deps.storage, &(nonce + 1))?;
     LATEST_DISPATCHED_ID.save(deps.storage, &id.to_vec())?;
 
     // INTERACTION
 
+    // we should discuss default vs required hook here
+    // is it possible to have the developer provide their own hook?
     let binary_msg: HexBinary = msg.clone().into();
     let wasm_msg = WasmMsg::Execute {
         contract_addr: config.default_hook.to_string(),
@@ -103,6 +106,7 @@ pub fn process(
 
     assert_undelivered(deps.storage, id.clone())?;
 
+    // in ethereum we mark delivered before verifying because if verify reverts, so will the state change
     DELIVERY.save(deps.storage, id.0.clone(), &Delivery { ism: ism.clone() })?;
 
     ism_verify(&deps.querier, &ism, metadata, message)?;
