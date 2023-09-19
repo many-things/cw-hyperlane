@@ -15,7 +15,10 @@ pub use crate::error::ContractError;
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+// we should probably change this to something else in the agents
 const PREFIX: &str = "\x19Ethereum Signed Message:\n";
+
+// can we reuse hyperlane-monorepo/rust/hyperlane-core/src/types/checkpoint ?
 
 pub fn domain_hash(local_domain: u32, address: Binary) -> StdResult<Binary> {
     let mut bz = vec![];

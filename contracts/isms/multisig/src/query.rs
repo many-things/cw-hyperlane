@@ -51,6 +51,8 @@ pub fn verify_message(
 
     let hashed_message = eth_hash(multisig_hash)?;
 
+    // does this account for signatures.length > threshold?
+    // does this account for signatures matching ordering but not index of validator set?
     let success: u8 = verifiable_cases
         .into_iter()
         .map(|v| {

@@ -6,7 +6,7 @@
 ## @yorhodes Review
 
 - [x] Mailbox
-- [ ] MerkleTree
+- [x] MerkleTree
+- [x] MultisigIsm
 - [ ] InterchainGasPaymaster
-- [ ] MultisigIsm
 - [ ] ValidatorAnnounce
