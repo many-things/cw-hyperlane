@@ -45,10 +45,24 @@ pub const ZERO_HASHES: [&str; HASH_LENGTH] = [
 ];
 
 #[cw_serde]
-#[derive(Default)]
 pub struct MerkleTree {
     pub branch: [Binary; TREE_DEPTH],
     pub count: u128,
+}
+
+impl Default for MerkleTree {
+    fn default() -> Self {
+        Self {
+            branch: ZERO_HASHES
+                .into_iter()
+                .map(|v| HexBinary::from_hex(v).map(|b| b.into()))
+                .collect::<StdResult<Vec<Binary>>>()
+                .unwrap()
+                .try_into()
+                .unwrap(),
+            count: Default::default(),
+        }
+    }
 }
 
 impl MerkleTree {
@@ -127,6 +141,18 @@ impl MerkleTree {
 mod tests {
     use cosmwasm_std::{Binary, HexBinary};
     use hpl_interface::types::keccak256_hash;
+
+    use super::MerkleTree;
+
+    #[test]
+    fn test_default_merkle_tree() {
+        for (i, branch) in MerkleTree::default().branch.into_iter().enumerate() {
+            assert_eq!(
+                format!("{}", HexBinary::from(branch).to_hex()),
+                super::ZERO_HASHES[i]
+            );
+        }
+    }
 
     #[test]
     fn test_compatibility() {
