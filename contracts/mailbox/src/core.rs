@@ -12,8 +12,8 @@ use crate::{
     contract_querier::{ism_verify, recipient_ism},
     event::{emit_dispatch, emit_dispatch_id, emit_process, emit_process_id},
     state::{
-        assert_addr_length, assert_already_delivered, assert_destination_domain,
-        assert_message_version, Delivery, CONFIG, DELIVERY, LATEST_DISPATCHED_ID, NONCE,
+        assert_addr_length, assert_destination_domain, assert_message_version, assert_undelivered,
+        Delivery, CONFIG, DELIVERY, LATEST_DISPATCHED_ID, NONCE,
     },
     ContractError, MAILBOX_VERSION,
 };
@@ -101,7 +101,7 @@ pub fn process(
     let id = decoded_msg.id();
     let ism = recipient_ism(deps.as_ref(), &recipient)?;
 
-    assert_already_delivered(deps.storage, id.clone())?;
+    assert_undelivered(deps.storage, id.clone())?;
 
     DELIVERY.save(deps.storage, id.0.clone(), &Delivery { ism: ism.clone() })?;
 

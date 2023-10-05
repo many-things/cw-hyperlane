@@ -95,7 +95,7 @@ pub fn assert_destination_domain(
     Ok(())
 }
 
-pub fn assert_already_delivered(storage: &dyn Storage, id: Binary) -> Result<(), ContractError> {
+pub fn assert_undelivered(storage: &dyn Storage, id: Binary) -> Result<(), ContractError> {
     if DELIVERY.may_load(storage, id.0)?.is_some() {
         return Err(ContractError::AlreadyDeliveredMessage {});
     }
