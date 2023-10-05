@@ -15,7 +15,7 @@ pub fn emit_set_hook(destination: u32, hook: Addr) -> Event {
 
 pub fn emit_set_hooks(hooks: Vec<HookConfig>) -> Event {
     Event::new("domain_rouitng_hook_set_hooks")
-        .add_attribute("hooks", serde_json::to_string(&hooks).unwrap())
+        .add_attribute("hooks", serde_json_wasm::to_string(&hooks).unwrap())
 }
 
 pub fn emit_post_dispatch(addr: Addr, metadata: HexBinary, message: HexBinary) -> Event {

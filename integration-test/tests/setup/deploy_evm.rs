@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use ethers::{prelude::SignerMiddleware, providers::Middleware, signers::Signer};
-use hpl_tests::{mailbox, test_mock_ism, test_mock_msg_receiver};
+
+use crate::contracts::{mailbox, test_mock_ism, test_mock_msg_receiver};
 
 #[derive(Debug)]
 pub struct HplEvmDeployment<M: Middleware, S: Signer> {
