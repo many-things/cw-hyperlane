@@ -50,7 +50,7 @@ pub fn execute(
         }
         ExecuteMsg::SetHooks { hooks } => hook::set_hooks(deps, env, info, hooks),
         ExecuteMsg::PostDispatch { metadata, message } => {
-            dispatch::dispatch(deps, env, info, metadata, message)
+            dispatch::dispatch(deps, metadata, message)
         }
     }
 }
