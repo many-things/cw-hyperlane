@@ -52,6 +52,7 @@ pub fn execute(
 
     match msg {
         Ownership(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
+        // can we add an explicit removal action? see https://github.com/hyperlane-xyz/hyperlane-monorepo/pull/2760
         Set { ism } => {
             ensure_eq!(
                 info.sender,

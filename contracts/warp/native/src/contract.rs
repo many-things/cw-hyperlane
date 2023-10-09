@@ -38,6 +38,8 @@ pub fn instantiate(
     let mut resp = Response::new();
 
     // create native denom if token is bridged
+    // in EVM we use Native on collateral side and HypERC20 on bridged side, meaning native is only "collateral mode"
+    // does creating a "native denom" mean creating a CW20 on bridged side?
     if msg.mode == TokenMode::Bridged {
         resp = resp.add_submessage(SubMsg::reply_on_success(
             MsgCreateDenom {
@@ -69,7 +71,7 @@ pub fn instantiate(
             });
         }
     } else {
-        // use denom directly if token is native
+        // use denom directly if token is if mode is collateral ?
         TOKEN.save(deps.storage, &msg.denom)?;
     }
 
@@ -138,6 +140,7 @@ pub fn execute(
                 );
             }
 
+            // if mode is bridged, we still push this? I am struggling to understand the "bridged mode" here
             // push token send msg
             msgs.push(
                 BankMsg::Send {

@@ -8,5 +8,9 @@
 - [x] Mailbox
 - [x] MerkleTree
 - [x] MultisigIsm
-- [ ] InterchainGasPaymaster
-- [ ] ValidatorAnnounce
+- [x] RoutingIsm
+- [x] InterchainGasPaymaster
+- [x] Router
+- [x] CW20Token
+- [x] NativeToken
+- [x] ValidatorAnnounce

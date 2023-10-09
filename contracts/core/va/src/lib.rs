@@ -18,6 +18,7 @@ const PREFIX: &str = "\x19Ethereum Signed Message:\n";
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+// let's reuse hyperlane-core here too
 pub fn eth_hash(message: Binary) -> Result<Binary, ContractError> {
     let mut eth_message = format!("{PREFIX}{}", message.len()).into_bytes();
     eth_message.extend_from_slice(&message);

@@ -48,7 +48,7 @@ pub fn instantiate(
                         code_id,
                         msg: to_binary(&init_msg)?,
                         funds: vec![],
-                        label: "created by hpl-toen-cw20".to_string(),
+                        label: "created by hpl-token-cw20".to_string(),
                     },
                     REPLY_ID_CREATE_DENOM,
                 ));
@@ -155,7 +155,6 @@ pub fn execute(
                     dest_domain,
                     recipient,
                 } => {
-                    let token = TOKEN.load(deps.storage)?;
                     let mode = MODE.load(deps.storage)?;
                     let mailbox = MAILBOX.load(deps.storage)?;
 
@@ -183,6 +182,7 @@ pub fn execute(
                             .into(),
                         );
                     }
+                    // else if mode is collateral, how do we ensure `amount` was deposited by `sender`?
 
                     let dispatch_payload = token::Message {
                         recipient: recipient.clone(),

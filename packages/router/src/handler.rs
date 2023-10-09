@@ -4,6 +4,7 @@ use cosmwasm_std::{
 };
 use hpl_interface::router::{DomainsResponse, RouterMsg, RouterQuery, RouterResponse, RouterSet};
 
+// can we move owner to Router state and add owner enforcement to relevant `RouterMsg` shapes
 use crate::state::ROUTES;
 
 pub fn handle(deps: DepsMut, _env: Env, info: MessageInfo, msg: RouterMsg) -> StdResult<Response> {

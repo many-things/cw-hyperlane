@@ -5,6 +5,7 @@ use hpl_interface::types::keccak256_hash;
 use crate::state::assert_full_merkle_tree;
 
 // can we reuse hyperlane-monorepo/rust/hyperlane-core/src/accumulator ?
+// this should be possible following https://github.com/hyperlane-xyz/hyperlane-monorepo/pull/2788
 
 pub const HASH_LENGTH: usize = 32;
 pub const TREE_DEPTH: usize = 32;
@@ -46,6 +47,7 @@ pub const ZERO_HASHES: [&str; HASH_LENGTH] = [
     "8448818bb4ae4562849e949e17ac16e0be16688e156b5cf15e098c627c0056a9",
 ];
 
+// default trait implementation should be inherited https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/401b32ddddc6faa281beb050f641afb4f024d905/rust/hyperlane-core/src/accumulator/incremental.rs#L17
 #[cw_serde]
 pub struct MerkleTree {
     pub branch: [Binary; TREE_DEPTH],

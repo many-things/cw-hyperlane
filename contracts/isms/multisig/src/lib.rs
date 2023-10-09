@@ -19,6 +19,7 @@ pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const PREFIX: &str = "\x19Ethereum Signed Message:\n";
 
 // can we reuse hyperlane-monorepo/rust/hyperlane-core/src/types/checkpoint ?
+// this should be possible following https://github.com/hyperlane-xyz/hyperlane-monorepo/pull/2788
 
 pub fn domain_hash(local_domain: u32, address: Binary) -> StdResult<Binary> {
     let mut bz = vec![];

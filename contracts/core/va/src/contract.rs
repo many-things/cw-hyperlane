@@ -23,6 +23,7 @@ use crate::{
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
+// let's reuse hyperlane-core here too
 pub fn domain_hash(local_domain: u32, mailbox: &str) -> StdResult<Binary> {
     let mut bz = vec![];
     bz.append(&mut local_domain.to_be_bytes().to_vec());

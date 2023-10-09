@@ -96,6 +96,7 @@ pub fn process(
 
     let config = CONFIG.load(deps.storage)?;
     // FIXME: use hrp fetched from hub
+    // created https://github.com/many-things/cw-hyperlane/issues/40 to track
     let recipient = decoded_msg.recipient_addr("osmo")?;
     let origin_domain = fetch_origin_domain(&deps.querier, &config.factory)?;
 
