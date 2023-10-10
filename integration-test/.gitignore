@@ -1,2 +1,2 @@
-tests/contracts/*.rs
-!tests/contracts/mod.rs
+tests/contracts/eth/bind/*.rs
+!tests/contracts/eth/bind/mod.rs

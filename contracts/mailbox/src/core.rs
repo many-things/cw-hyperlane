@@ -127,6 +127,8 @@ pub fn process(
 mod tests {
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
+    use crate::state::Config;
+
     use super::*;
 
     const DEST_DOMAIN: u32 = 11155111;
@@ -168,7 +170,7 @@ mod tests {
 
         // Invalid message version
         let wrong_version_message: HexBinary = HexBinary::from(Message {
-            version: 0,
+            version: 99,
             nonce: 2,
             origin_domain: 3,
             sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),

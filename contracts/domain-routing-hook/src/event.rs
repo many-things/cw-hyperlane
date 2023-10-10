@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Event, HexBinary};
-use hpl_interface::domain_routing_hook::HookConfig;
+use hpl_interface::hook::HookConfig;
 
 pub fn emit_set_hook(destination: u32, hook: Addr) -> Event {
     Event::new("domain-routing-hook-set-hook")
@@ -15,6 +15,13 @@ pub fn emit_set_hooks(hooks: Vec<HookConfig>) -> Event {
 pub fn emit_post_dispatch(addr: Addr, metadata: HexBinary, message: HexBinary) -> Event {
     Event::new("domain-routing-hook-post-dispatch")
         .add_attribute("addr", addr.to_string())
-        .add_attribute("metadata", metadata.to_string())
+        .add_attribute(
+            "metadata",
+            if metadata.is_empty() {
+                "0x".to_string()
+            } else {
+                metadata.to_string()
+            },
+        )
         .add_attribute("message", message.to_string())
 }

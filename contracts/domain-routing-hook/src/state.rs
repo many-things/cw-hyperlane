@@ -1,6 +1,6 @@
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
-use hpl_interface::domain_routing_hook::HookConfig;
+use hpl_interface::hook::HookConfig;
 
 pub const MAILBOX_KEY: &str = "mailbox";
 pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);

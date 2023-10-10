@@ -11,7 +11,7 @@ pub mod verify;
 
 pub use crate::error::ContractError;
 
-pub const MAILBOX_VERSION: u8 = 3;
+pub const MAILBOX_VERSION: u8 = 0;
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");

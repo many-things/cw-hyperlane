@@ -148,22 +148,31 @@ impl TestValidators {
         merkle_root: [u8; 32],
         message_id: [u8; 32],
         is_passed: bool,
-    ) -> MessageIdMultisigIsmMetadata {
-        let signatures = if is_passed {
-            self.sign(self.threshold, message_id)
-        } else {
-            self.sign(self.threshold - 1, message_id)
-        };
-
+    ) -> eyre::Result<MessageIdMultisigIsmMetadata> {
         let mut addr = [0u8; 32];
         addr[32 - origin_mailbox.0.len()..].copy_from_slice(&origin_mailbox.0);
 
-        MessageIdMultisigIsmMetadata {
+        let multisig_hash = hpl_ism_multisig::multisig_hash(
+            hpl_ism_multisig::domain_hash(self.domain, Binary(addr.to_vec()))?.to_vec(),
+            merkle_root.to_vec(),
+            0,
+            message_id.to_vec(),
+        )?;
+
+        let hashed_message = hpl_ism_multisig::eth_hash(multisig_hash)?;
+
+        let signatures = if is_passed {
+            self.sign(self.threshold, hashed_message.as_slice().try_into()?)
+        } else {
+            self.sign(self.threshold - 1, hashed_message.as_slice().try_into()?)
+        };
+
+        Ok(MessageIdMultisigIsmMetadata {
             origin_mailbox: Binary::from(addr),
             merkle_root: Binary::from(merkle_root),
             signatures: signatures.iter().fold(Binary::default(), |acc, item| {
                 Binary([acc.0, item.0.clone()].concat())
             }),
-        }
+        })
     }
 }

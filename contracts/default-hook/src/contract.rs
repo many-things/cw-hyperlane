@@ -1,11 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use hpl_interface::default_hook::ExecuteMsg;
-use hpl_interface::domain_routing_hook::{
-    ExecuteMsg as DomainRoutingExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
-};
+use hpl_interface::default_hook::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::{
     event::emit_instantiated,
@@ -33,7 +30,7 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
 
@@ -47,23 +44,15 @@ pub fn execute(
     use crate::execute::{dispatch, gov, hook};
 
     match msg {
-        ExecuteMsg::DomainRoutingHookMsg(msg) => match msg {
-            DomainRoutingExecuteMsg::Ownership(msg) => {
-                Ok(hpl_ownable::handle(deps, env, info, msg)?)
-            }
-            DomainRoutingExecuteMsg::Pause {} => gov::pause(deps, info),
-            DomainRoutingExecuteMsg::Unpause {} => gov::unpause(deps, info),
-            DomainRoutingExecuteMsg::UpdateMailbox { mailbox } => {
-                gov::update_mailbox(deps, info, mailbox)
-            }
-            DomainRoutingExecuteMsg::SetHook { destination, hook } => {
-                hook::set_hook(deps, info, destination, hook)
-            }
-            DomainRoutingExecuteMsg::SetHooks { hooks } => hook::set_hooks(deps, info, hooks),
-            DomainRoutingExecuteMsg::PostDispatch { metadata, message } => {
-                dispatch::dispatch(deps, metadata, message)
-            }
-        },
+        ExecuteMsg::Ownership(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
+        ExecuteMsg::Pause {} => gov::pause(deps, info),
+        ExecuteMsg::Unpause {} => gov::unpause(deps, info),
+        ExecuteMsg::UpdateMailbox { mailbox } => gov::update_mailbox(deps, info, mailbox),
+        ExecuteMsg::SetHook { destination, hook } => hook::set_hook(deps, info, destination, hook),
+        ExecuteMsg::SetHooks { hooks } => hook::set_hooks(deps, info, hooks),
+        ExecuteMsg::PostDispatch { metadata, message } => {
+            dispatch::dispatch(deps, metadata, message)
+        }
         ExecuteMsg::ConfigCustomHook {
             destination_domain,
             recipient,

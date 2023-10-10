@@ -1,6 +1,6 @@
 use cosmwasm_std::{to_binary, Deps, Env, QueryResponse};
 use hpl_interface::{
-    domain_routing_hook::{OwnerResponse, PauseInfoResponse},
+    hook::{OwnerResponse, PauseInfoResponse},
     igp_core::QuoteGasPaymentResponse,
     post_dispatch_hook::PostDispatchQueryMsg,
     types::message::Message,
@@ -55,7 +55,7 @@ mod test {
         testing::{mock_dependencies, mock_env},
         Addr, HexBinary, Uint256,
     };
-    use hpl_interface::domain_routing_hook::HookConfig;
+    use hpl_interface::hook::HookConfig;
 
     use super::*;
 
