@@ -83,7 +83,10 @@ pub fn get_default_ism(deps: Deps) -> Result<QueryResponse, ContractError> {
 #[cfg(test)]
 mod test {
 
-    use crate::{merkle::MerkleTree, state::Delivery};
+    use crate::{
+        merkle::{MerkleTree, ZERO_HASHES},
+        state::Delivery,
+    };
 
     use super::*;
     use cosmwasm_std::{from_binary, testing::mock_dependencies, Addr, HexBinary};
@@ -99,8 +102,8 @@ mod test {
         let tree: MerkleTreeResponse = from_binary(&get_tree(deps.as_ref()).unwrap()).unwrap();
 
         assert_eq!(tree.branch.len(), 32);
-        for branch in tree.branch.iter() {
-            assert_eq!(branch, &HexBinary::from_hex(ZERO_BYTES).unwrap());
+        for (i, branch) in tree.branch.iter().enumerate() {
+            assert_eq!(branch, &HexBinary::from_hex(ZERO_HASHES[i]).unwrap());
         }
         assert_eq!(tree.count, 0);
     }

@@ -17,7 +17,7 @@ fn generate_bind(name: &str, abi_file: &str, bind_out: PathBuf) {
 
 fn main() {
     let abi_base = current_dir().unwrap().join("abis");
-    let bind_base = current_dir().unwrap().join("src");
+    let bind_base = current_dir().unwrap().join("tests").join("contracts");
     let deployments = [
         ("Mailbox", "mailbox"),
         ("TestMultisigIsm", "test_mock_ism"),

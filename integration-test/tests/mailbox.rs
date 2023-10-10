@@ -1,3 +1,4 @@
+mod contracts;
 mod event;
 mod setup;
 mod validator;
@@ -8,9 +9,9 @@ use osmosis_test_tube::{Account, Module, Wasm};
 use setup::setup_env;
 
 use hpl_interface::types::{bech32_decode, bech32_encode, bech32_to_h256};
-use hpl_tests::mailbox::{DispatchFilter, DispatchIdFilter};
 
 use crate::{
+    contracts::mailbox::{DispatchFilter, DispatchIdFilter},
     event::{parse_dispatch_from_res, parse_dispatch_id_from_res},
     setup::HplCwIsmType,
     validator::TestValidators,
