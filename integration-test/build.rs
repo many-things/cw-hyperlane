@@ -20,6 +20,8 @@ fn main() {
     let bind_base = current_dir().unwrap().join("tests").join("contracts");
     let deployments = [
         ("Mailbox", "mailbox"),
+        ("FastHypERC20", "fast_hyp_erc20"),
+        ("FastHypERC20Collateral", "fast_hyp_erc20_collateral"),
         ("TestMultisigIsm", "test_mock_ism"),
         ("TestRecipient", "test_mock_msg_receiver"),
     ];
