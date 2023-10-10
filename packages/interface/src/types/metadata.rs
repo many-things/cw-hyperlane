@@ -5,6 +5,8 @@ use super::bech32_encode;
 
 const SIGNATURE_LENGTH: usize = 65;
 
+// for V3 "hook" compatibility, we needed to add a field to this
+// see https://github.com/hyperlane-xyz/hyperlane-monorepo/pull/2722
 #[cw_serde]
 pub struct MerkleRootMultisigIsmMetadata {
     pub origin_mailbox: Binary,
@@ -71,6 +73,8 @@ impl MerkleRootMultisigIsmMetadata {
     }
 }
 
+// for V3 "hook" compatibility, we needed to add a field to this
+// see https://github.com/hyperlane-xyz/hyperlane-monorepo/pull/2722
 #[cw_serde]
 pub struct MessageIdMultisigIsmMetadata {
     pub origin_mailbox: Binary,

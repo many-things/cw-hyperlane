@@ -13,6 +13,7 @@ pub enum RouterMsg {
     EnrollRemoteRouters { set: Vec<RouterSet> },
 }
 
+// router should also implement ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum RouterQuery {
