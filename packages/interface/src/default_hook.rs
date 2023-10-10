@@ -1,14 +1,60 @@
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
 
-use crate::domain_routing_hook;
+use crate::{
+    hook::{HookConfig, OwnerResponse, PauseInfoResponse},
+    ownable::OwnableMsg,
+    post_dispatch_hook::{PostDispatchQueryMsg, QuoteDispatchResponse},
+};
+
+#[cw_serde]
+pub struct InstantiateMsg {
+    pub owner: String,
+    pub mailbox: String,
+}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    DomainRoutingHookMsg(domain_routing_hook::ExecuteMsg),
+    Ownership(OwnableMsg),
+
+    Pause {},
+
+    Unpause {},
+
+    UpdateMailbox {
+        mailbox: String,
+    },
+
+    SetHook {
+        destination: u32,
+        hook: String,
+    },
+
+    SetHooks {
+        hooks: Vec<HookConfig>,
+    },
+
+    PostDispatch {
+        metadata: HexBinary,
+        message: HexBinary,
+    },
+
     ConfigCustomHook {
         destination_domain: u32,
         recipient: HexBinary,
         hook: String,
     },
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum QueryMsg {
+    #[returns(QuoteDispatchResponse)]
+    QuoteDispatch(PostDispatchQueryMsg),
+
+    #[returns(PauseInfoResponse)]
+    PauseInfo {},
+
+    #[returns(OwnerResponse)]
+    Owner {},
 }

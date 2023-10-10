@@ -1,5 +1,5 @@
 [package]
-name = "hpl-default-hook"
+name = "hpl-test-mock-hook"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -21,16 +21,12 @@ library = []
 [dependencies]
 cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
-cw-storage-plus = { workspace = true }
-cw2 = { workspace = true }
-cw-utils = { workspace = true }
-schemars = { workspace = true }
-thiserror = { workspace = true }
 cosmwasm-schema = { workspace = true }
-serde-json-wasm = { workspace = true }
 
-hpl-ownable = { workspace = true }
+cw2 = { workspace = true }
+cw-storage-plus = { workspace = true }
+
 hpl-interface = { workspace = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
+cw-multi-test = { workspace = true }

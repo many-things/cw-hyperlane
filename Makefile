@@ -5,5 +5,8 @@ schema:
 build:
 	cargo wasm
 
+build-dev:
+	cargo cw-optimizoor
+
 check:
-	ls artifacts | grep .wasm | xargs -n 1 -I x -t cosmwasm-check ./artifacts/x
+	ls -d ./artifacts/*.wasm | xargs -I x cosmwasm-check x

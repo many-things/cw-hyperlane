@@ -1,11 +1,5 @@
 [workspace]
-members = [
-    "contracts/*",
-    "packages/router",
-    "packages/ownable",
-    "packages/interface",
-    "integration-test",
-]
+members = ["contracts/*", "packages/*", "integration-test"]
 resolver = "2"
 
 [profile.test]
@@ -67,6 +61,8 @@ k256 = { version = "0.13.1", default-features = false, features = ["ecdsa"] }
 anyhow = { version = "1.0.71", features = ["backtrace"] }
 digest = { version = "0.10.7" }
 hex-literal = { version = "0.4.1" }
+
+test-tube = { version = "0.1.7" }
 osmosis-test-tube = { version = "19.2.0" }
 
 tokio = { version = "1", features = ["full"] }

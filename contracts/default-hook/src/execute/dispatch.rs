@@ -41,7 +41,7 @@ pub fn dispatch(
 #[cfg(test)]
 mod test {
     use cosmwasm_std::{testing::mock_dependencies, Addr};
-    use hpl_interface::{domain_routing_hook::HookConfig, post_dispatch_hook::PostDispatchMsg};
+    use hpl_interface::{hook::HookConfig, post_dispatch_hook::PostDispatchMsg};
 
     use super::*;
     const HOOK_ADDR: &str = "osmoaddress";

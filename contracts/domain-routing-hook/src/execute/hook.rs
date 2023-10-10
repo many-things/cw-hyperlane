@@ -1,5 +1,5 @@
 use cosmwasm_std::{ensure, ensure_eq, DepsMut, Env, MessageInfo, Response};
-use hpl_interface::domain_routing_hook::HookConfig;
+use hpl_interface::hook::HookConfig;
 
 use crate::{
     event::{emit_set_hook, emit_set_hooks},

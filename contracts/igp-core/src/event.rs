@@ -20,7 +20,14 @@ pub fn emit_claim(beneficiary: Addr, balance: Coin) -> Event {
 
 pub fn emit_post_dispatch(metadata: Binary, message: Binary) -> Event {
     Event::new("igp-core-post-dispatch")
-        .add_attribute("metadata", metadata.to_string())
+        .add_attribute(
+            "metadata",
+            if metadata.is_empty() {
+                "0x".to_string()
+            } else {
+                metadata.to_string()
+            },
+        )
         .add_attribute("message", message.to_string())
 }
 

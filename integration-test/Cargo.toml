@@ -23,6 +23,7 @@ cosmwasm-std = { workspace = true }
 
 [dev_dependencies]
 ethers = { workspace = true }
+test-tube = { workspace = true }
 osmosis-test-tube = { workspace = true }
 serde_json = { workspace = true }
 serde-json-wasm = { workspace = true }
@@ -37,6 +38,7 @@ sha3 = { workspace = true }
 ripemd = { workspace = true }
 hex-literal = { workspace = true }
 
+hpl-ism-multisig = { workspace = true }
 hpl-interface = { workspace = true }
 
 [build-dependencies]

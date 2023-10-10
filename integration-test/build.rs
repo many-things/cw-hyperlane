@@ -17,7 +17,10 @@ fn generate_bind(name: &str, abi_file: &str, bind_out: PathBuf) {
 
 fn main() {
     let abi_base = current_dir().unwrap().join("abis");
-    let bind_base = current_dir().unwrap().join("tests").join("contracts");
+    let bind_base = current_dir()
+        .unwrap()
+        .join("tests")
+        .join("contracts/eth/bind");
     let deployments = [
         ("Mailbox", "mailbox"),
         ("FastHypERC20", "fast_hyp_erc20"),
