@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Binary;
 
-use crate::{core::mailbox, router};
+use crate::{core, router};
 
 use super::{TokenMode, TokenType};
 
@@ -10,7 +10,7 @@ pub enum ExecuteMsg {
     Router(router::RouterMsg<Binary>),
 
     // handle transfer remote
-    Handle(mailbox::HandleMsg),
+    Handle(core::HandleMsg),
 
     // transfer to remote
     TransferRemote { dest_domain: u32, recipient: Binary },
