@@ -7,7 +7,7 @@ use cosmwasm_std::{HexBinary, Uint256};
 
 /// This is the basic message to demonstrate the required interface
 #[cw_serde]
-pub enum PostDispatchWrapperMsg {
+pub enum ExpectedHookMsg {
     PostDispatch(PostDispatchMsg),
 }
 

@@ -18,7 +18,7 @@ pub enum ExecuteMsg {
     Ownable(OwnableMsg),
     PostDispatch(PostDispatchMsg),
 
-    // routing
+    // base
     UpdateMailbox { mailbox: String },
 }
 

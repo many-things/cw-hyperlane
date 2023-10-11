@@ -20,7 +20,7 @@ pub enum ExecuteMsg {
     Pausable(PausableMsg),
     PostDispatch(PostDispatchMsg),
 
-    // pausable
+    // base
     UpdateMailbox { mailbox: String },
 }
 
