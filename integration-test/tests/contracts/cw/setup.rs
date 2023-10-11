@@ -31,6 +31,7 @@ impl<'a, R: Runner<'a>> Env<'a, R> {
             .ok_or(eyre::eyre!("no validator set found"))
     }
 
+    #[allow(dead_code)]
     pub fn gen_account(&'a self, coins: &'a [Coin]) -> SigningAccount {
         (self.acc_gen)(self.app, coins)
     }

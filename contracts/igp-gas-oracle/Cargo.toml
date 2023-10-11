@@ -1,13 +1,13 @@
 [package]
 name = "hpl-igp-gas-oracle"
-version = { workspace = true }
-authors = { workspace = true }
-edition = { workspace = true }
-license = { workspace = true }
-repository = { workspace = true }
-homepage = { workspace = true }
-documentation = { workspace = true }
-keywords = { workspace = true }
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -19,18 +19,23 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
-cw-storage-plus = { workspace = true }
-cw2 = { workspace = true }
-schemars = { workspace = true }
-serde = { workspace = true }
-thiserror = { workspace = true }
-cosmwasm-schema = { workspace = true }
+cosmwasm-std.workspace = true
+cosmwasm-storage.workspace = true
+cosmwasm-schema.workspace = true
 
-hpl-ownable = { workspace = true }
-hpl-interface = { workspace = true }
+cw-storage-plus.workspace = true
+cw2.workspace = true
+
+schemars.workspace = true
+
+thiserror.workspace = true
+
+hpl-ownable.workspace = true
+hpl-interface.workspace = true
 
 [dev-dependencies]
-cw-multi-test = { workspace = true }
-anyhow = { workspace = true }
+serde.workspace = true
+
+cw-multi-test.workspace = true
+
+anyhow.workspace = true
