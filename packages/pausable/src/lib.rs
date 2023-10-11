@@ -8,6 +8,10 @@ use hpl_interface::pausable::{PausableMsg, PausableQueryMsg, PauseInfoResponse};
 pub const PAUSE_KEY: &str = "pause";
 pub const PAUSE: Item<bool> = Item::new(PAUSE_KEY);
 
+fn new_event(name: &str) -> Event {
+    Event::new(format!("hpl_pausable::{}", name))
+}
+
 pub fn handle<C: CustomQuery>(
     deps: DepsMut<'_, C>,
     _env: Env,
@@ -30,12 +34,12 @@ pub fn handle<C: CustomQuery>(
 
 fn pause(storage: &mut dyn Storage, sender: &Addr) -> StdResult<Event> {
     PAUSE.save(storage, &true)?;
-    Ok(Event::new("pause").add_attribute("sender", sender))
+    Ok(new_event("pause").add_attribute("sender", sender))
 }
 
 fn release(storage: &mut dyn Storage, sender: &Addr) -> StdResult<Event> {
     PAUSE.save(storage, &false)?;
-    Ok(Event::new("release").add_attribute("sender", sender))
+    Ok(new_event("release").add_attribute("sender", sender))
 }
 
 pub fn handle_query<C: CustomQuery>(
