@@ -127,8 +127,6 @@ pub fn process(
 mod tests {
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
-    use crate::state::Config;
-
     use super::*;
 
     const DEST_DOMAIN: u32 = 11155111;
