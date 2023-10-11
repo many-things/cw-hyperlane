@@ -1,10 +1,9 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Binary;
 
-use crate::{
-    mailbox, router,
-    token::{TokenMode, TokenType},
-};
+use crate::{core::mailbox, router};
+
+use super::{TokenMode, TokenType};
 
 #[cw_serde]
 pub enum ReceiveMsg {

@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Uint128, Uint256};
 
-use crate::{ownable::OwnableMsg, post_dispatch_hook::PostDispatchQueryMsg};
+use crate::{hook, ownable::OwnableMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -62,8 +62,8 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(QuoteDispatchResponse)]
-    QuoteDispatch(PostDispatchQueryMsg),
+    #[returns(hook::QuoteDispatchResponse)]
+    QuoteDispatch(hook::QuoteDispatchMsg),
 
     #[returns(QuoteGasPaymentResponse)]
     QuoteGasPayment {
@@ -73,11 +73,6 @@ pub enum QueryMsg {
 
     #[returns(GetExchangeRateAndGasPriceResponse)]
     GetExchangeRateAndGasPrice { dest_domain: u32 },
-}
-
-#[cw_serde]
-pub struct QuoteDispatchResponse {
-    pub gas_amount: Uint256,
 }
 
 #[cw_serde]

@@ -4,8 +4,9 @@ use cosmwasm_std::HexBinary;
 use crate::{
     hook::{HookConfig, OwnerResponse, PauseInfoResponse},
     ownable::OwnableMsg,
-    post_dispatch_hook::{PostDispatchQueryMsg, QuoteDispatchResponse},
 };
+
+use super::{PostDispatchMsg, QuoteDispatchResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -41,7 +42,7 @@ pub enum MigrateMsg {}
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(QuoteDispatchResponse)]
-    QuoteDispatch(PostDispatchQueryMsg),
+    QuoteDispatch(PostDispatchMsg),
 
     #[returns(PauseInfoResponse)]
     PauseInfo {},
