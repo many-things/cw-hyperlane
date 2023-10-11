@@ -24,10 +24,10 @@ pub enum RouterQuery<T> {
     Domains {},
 
     #[returns(RouteResponse<T>)]
-    Route { domain: u32 },
+    GetRoute { domain: u32 },
 
     #[returns(RoutesResponse<T>)]
-    Routes {
+    ListRoutes {
         offset: Option<u32>,
         limit: Option<u32>,
         order: Option<Order>,
