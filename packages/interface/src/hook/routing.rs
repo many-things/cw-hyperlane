@@ -3,7 +3,6 @@ use cosmwasm_std::Addr;
 
 use crate::{
     ownable::{OwnableMsg, OwnableQueryMsg},
-    pausable::{PausableMsg, PausableQueryMsg},
     router::{RouterMsg, RouterQuery},
 };
 
@@ -19,7 +18,6 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // overrides
     Ownable(OwnableMsg),
-    Pausable(PausableMsg),
     PostDispatch(PostDispatchMsg),
 
     // routing
@@ -33,18 +31,17 @@ pub enum ExecuteMsg {
 #[query_responses(nested)]
 pub enum QueryMsg {
     // overrides
-    Pausable(PausableQueryMsg),
     Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
-
-    // routing
-    Routing(RoutingQueryMsg),
     Router(RouterQuery<Addr>),
+
+    // base
+    Base(RoutingHookQueryMsg),
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum RoutingQueryMsg {
+pub enum RoutingHookQueryMsg {
     #[returns(ConfigResponse)]
     Config {},
 }
@@ -53,6 +50,3 @@ pub enum RoutingQueryMsg {
 pub struct ConfigResponse {
     pub mailbox: String,
 }
-
-#[cw_serde]
-pub struct MigrateMsg {}
