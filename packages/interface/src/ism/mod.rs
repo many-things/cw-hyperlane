@@ -11,7 +11,10 @@ pub enum ISMType {
     Routing = 1,
     Aggregation = 2,
     LegacyMultisig = 3,
-    Multisig = 4,
+    MerkleRootMultisig = 4,
+    MessageIdMultisig = 5,
+    Null = 6, // used with relayer carrying no metadata
+    CcipRead = 7,
 }
 
 #[cw_serde]
