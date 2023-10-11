@@ -1,5 +1,14 @@
 [workspace]
-members = ["contracts/*", "packages/*", "integration-test"]
+members = [
+    "contracts/core/*",
+    "contracts/hooks/*",
+    "contracts/igps/*",
+    "contracts/isms/*",
+    "contracts/mocks/*",
+    "contracts/warp/*",
+    "packages/*",
+    "integration-test",
+]
 resolver = "2"
 
 [profile.test]
@@ -80,10 +89,20 @@ tokio = { version = "1", features = ["full"] }
 ethers = "2.0.7"
 
 # workspace aliases (./contracts)
-hpl-hub = { path = "./contracts/hub" }
-hpl-ism-multisig = { path = "./contracts/ism-multisig" }
-hpl-mailbox = { path = "./contracts/mailbox" }
-hpl-multicall = { path = "./contracts/multicall" }
+hpl-hub = { path = "./contracts/core/hub" }
+hpl-mailbox = { path = "./contracts/core/mailbox" }
+
+hpl-default-hook = { path = './contracts/hooks/default-hook' }
+hpl-domain-routing-hook = { path = "./contracts/hooks/domain-routing-hook" }
+
+hpl-igp-core = { path = "./contracts/igps/core" }
+hpl-igp-gas-oracle = { path = "./contracts/igps/gas-oracle" }
+
+hpl-ism-multisig = { path = "./contracts/isms/multisig" }
+hpl-ism-routing = { path = "./contracts/isms/routing" }
+
+hpl-token-cw20 = { path = "./contracts/warp/cw20" }
+hpl-token-native = { path = "./contracts/warp/native" }
 
 # workspace aliases (./packages)
 hpl-router = { path = "./packages/router" }
