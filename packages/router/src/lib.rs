@@ -33,7 +33,7 @@ where
     use RouterMsg::*;
 
     match msg {
-        EnrollRemoteRouter { set } => {
+        SetRoute { set } => {
             enroll_remote_router(deps.storage, set.clone())?;
 
             let resp = Response::new().add_event(
@@ -48,7 +48,7 @@ where
 
             Ok(resp)
         }
-        EnrollRemoteRouters { set } => {
+        SetRoutes { set } => {
             enroll_remote_routers(deps.storage, set.clone())?;
 
             let resp = Response::new().add_event(
@@ -206,10 +206,10 @@ mod test {
             handle(self.deps.as_mut(), self.env.clone(), info, msg)
         }
 
-        pub fn enroll_one(&mut self, sender: &Addr, domain: u32, router: T) -> StdResult<Response> {
+        pub fn set_route(&mut self, sender: &Addr, domain: u32, router: T) -> StdResult<Response> {
             self.handle(
                 mock_info(sender.as_str(), &[]),
-                RouterMsg::EnrollRemoteRouter {
+                RouterMsg::SetRoute {
                     set: DomainRouteSet {
                         domain,
                         route: router,
@@ -218,10 +218,10 @@ mod test {
             )
         }
 
-        pub fn enroll_many(&mut self, sender: &Addr, set: &[(u32, T)]) -> StdResult<Response> {
+        pub fn set_routes(&mut self, sender: &Addr, set: &[(u32, T)]) -> StdResult<Response> {
             self.handle(
                 mock_info(sender.as_str(), &[]),
-                RouterMsg::EnrollRemoteRouters {
+                RouterMsg::SetRoutes {
                     set: set
                         .iter()
                         .map(|v| DomainRouteSet {
@@ -290,8 +290,8 @@ mod test {
 
         let mut router = Router::default();
 
-        router.enroll_one(&owner, set_a.domain, set_a.route.clone())?;
-        router.enroll_many(&owner, &[(set_b.domain, set_b.route.clone())])?;
+        router.set_route(&owner, set_a.domain, set_a.route.clone())?;
+        router.set_routes(&owner, &[(set_b.domain, set_b.route.clone())])?;
 
         let DomainsResponse { domains } = router.query_domains()?;
         assert_eq!(domains, vec![1, 2]);
@@ -321,7 +321,7 @@ mod test {
         let router_t = Binary(b"test".to_vec());
         let router_n = Binary(b"no".to_vec());
 
-        router.enroll_one(&owner, domain_t, router_t.clone())?;
+        router.set_route(&owner, domain_t, router_t.clone())?;
 
         assert!(is_router(&router.deps.storage, domain_t, router_t)?);
         assert!(!is_router(&router.deps.storage, domain_t, router_n)?);

@@ -13,8 +13,8 @@ pub struct DomainRouteSet<T> {
 
 #[cw_serde]
 pub enum RouterMsg<T> {
-    EnrollRemoteRouter { set: DomainRouteSet<T> },
-    EnrollRemoteRouters { set: Vec<DomainRouteSet<T>> },
+    SetRoute { set: DomainRouteSet<T> },
+    SetRoutes { set: Vec<DomainRouteSet<T>> },
 }
 
 #[cw_serde]
