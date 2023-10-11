@@ -21,23 +21,28 @@ library = []
 [dependencies]
 cosmwasm-std.workspace = true
 cosmwasm-storage.workspace = true
+cosmwasm-schema.workspace = true
+
 cw-storage-plus.workspace = true
 cw-utils.workspace = true
 cw2.workspace = true
 cw20.workspace = true
 cw20-base.workspace = true
+
 sha2.workspace = true
 ripemd.workspace = true
+
+serde.workspace = true
 bech32.workspace = true
 schemars.workspace = true
-serde.workspace = true
+
 thiserror.workspace = true
-cosmwasm-schema.workspace = true
 
 hpl-router.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
+
 anyhow.workspace = true
 k256.workspace = true
 sha3.workspace = true
