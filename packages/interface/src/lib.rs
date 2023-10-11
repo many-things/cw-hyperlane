@@ -2,6 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{StdError, StdResult};
 use cw_storage_plus::Bound;
 
+pub mod connection;
 pub mod core;
 pub mod hook;
 pub mod igp;
