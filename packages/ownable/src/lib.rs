@@ -11,6 +11,10 @@ pub const OWNER: Item<Addr> = Item::new(OWNER_KEY);
 pub const PENDING_OWNER_KEY: &str = "pending_owner";
 pub const PENDING_OWNER: Item<Addr> = Item::new(PENDING_OWNER_KEY);
 
+fn new_event(name: &str) -> Event {
+    Event::new(format!("hpl_ownable::{}", name))
+}
+
 pub fn handle<C: CustomQuery>(
     deps: DepsMut<'_, C>,
     _env: Env,
@@ -50,7 +54,7 @@ fn init_ownership_transfer(
 
     PENDING_OWNER.save(storage, next_owner)?;
 
-    Ok(Event::new("init-ownership-transfer")
+    Ok(new_event("init")
         .add_attribute("owner", sender)
         .add_attribute("next_owner", next_owner))
 }
@@ -65,7 +69,7 @@ fn revoke_ownership_transfer(storage: &mut dyn Storage, sender: &Addr) -> StdRes
 
     PENDING_OWNER.remove(storage);
 
-    Ok(Event::new("revoke-ownership-transfer").add_attribute("owner", sender))
+    Ok(new_event("revoke").add_attribute("owner", sender))
 }
 
 fn claim_ownership(storage: &mut dyn Storage, sender: &Addr) -> StdResult<Event> {
@@ -79,7 +83,7 @@ fn claim_ownership(storage: &mut dyn Storage, sender: &Addr) -> StdResult<Event>
     OWNER.save(storage, sender)?;
     PENDING_OWNER.remove(storage);
 
-    Ok(Event::new("claim-ownership").add_attribute("owner", sender))
+    Ok(new_event("claim").add_attribute("owner", sender))
 }
 
 pub fn handle_query<C: CustomQuery>(
