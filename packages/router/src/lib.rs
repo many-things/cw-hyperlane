@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdError,
-    StdResult, Storage,
+    to_binary, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    StdError, StdResult, Storage,
 };
 use cw_storage_plus::Map;
 use hpl_interface::{
@@ -21,8 +21,8 @@ where
     Map::new(ROUTES_PREFIX)
 }
 
-pub fn handle<T>(
-    deps: DepsMut,
+pub fn handle<C: CustomQuery, T>(
+    deps: DepsMut<'_, C>,
     _env: Env,
     info: MessageInfo,
     msg: RouterMsg<T>,
@@ -93,7 +93,11 @@ where
     Ok(())
 }
 
-pub fn handle_query<T>(deps: Deps, _env: Env, msg: RouterQuery<T>) -> StdResult<QueryResponse>
+pub fn handle_query<C: CustomQuery, T>(
+    deps: Deps<'_, C>,
+    _env: Env,
+    msg: RouterQuery<T>,
+) -> StdResult<QueryResponse>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
@@ -101,10 +105,10 @@ where
         RouterQuery::Domains {} => to_binary(&DomainsResponse {
             domains: get_domains::<T>(deps.storage)?,
         }),
-        RouterQuery::Route { domain } => to_binary(&RouteResponse::<T> {
+        RouterQuery::GetRoute { domain } => to_binary(&RouteResponse::<T> {
             route: get_route(deps.storage, domain)?,
         }),
-        RouterQuery::Routes {
+        RouterQuery::ListRoutes {
             offset,
             limit,
             order,
@@ -238,7 +242,7 @@ mod test {
         }
 
         pub fn query_route(&self, domain: u32) -> StdResult<RouteResponse<T>> {
-            self.handle_query(RouterQuery::Route { domain })
+            self.handle_query(RouterQuery::GetRoute { domain })
         }
 
         pub fn query_routes(
@@ -247,7 +251,7 @@ mod test {
             limit: Option<u32>,
             order: Option<Order>,
         ) -> StdResult<RoutesResponse<T>> {
-            self.handle_query(RouterQuery::Routes {
+            self.handle_query(RouterQuery::ListRoutes {
                 offset,
                 limit,
                 order,
@@ -293,13 +297,16 @@ mod test {
         assert_eq!(domains, vec![1, 2]);
 
         let RouteResponse { route: route_a } = router.query_route(set_a.domain)?;
-        assert_eq!(route_a, set_a.route);
+        assert_eq!(route_a.route, set_a.route);
 
         let RouteResponse { route: route_b } = router.query_route(set_b.domain)?;
-        assert_eq!(route_b, set_b.route);
+        assert_eq!(route_b.route, set_b.route);
 
         let RouteResponse { route: route_no } = router.query_route(domain_no)?;
-        assert_eq!(route_no, Binary::default());
+        assert_eq!(route_no.route, Binary::default());
+
+        let RoutesResponse { routes } = router.query_routes(None, None, None)?;
+        assert_eq!(routes, vec![set_a, set_b]);
 
         Ok(())
     }
