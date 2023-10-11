@@ -34,10 +34,10 @@ where
 
     match msg {
         SetRoute { set } => {
-            enroll_remote_router(deps.storage, set.clone())?;
+            set_route(deps.storage, set.clone())?;
 
             let resp = Response::new().add_event(
-                Event::new("hpl_router::enroll_remote_router")
+                Event::new("hpl_router::set_route")
                     .add_attribute("sender", info.sender)
                     .add_attribute(
                         "set",
@@ -49,10 +49,10 @@ where
             Ok(resp)
         }
         SetRoutes { set } => {
-            enroll_remote_routers(deps.storage, set.clone())?;
+            set_routes(deps.storage, set.clone())?;
 
             let resp = Response::new().add_event(
-                Event::new("hpl_router::enroll_remote_routers")
+                Event::new("hpl_router::set_routes")
                     .add_attribute("sender", info.sender)
                     .add_attribute(
                         "set",
@@ -66,7 +66,7 @@ where
     }
 }
 
-pub fn enroll_remote_router<T>(storage: &mut dyn Storage, set: DomainRouteSet<T>) -> StdResult<()>
+pub fn set_route<T>(storage: &mut dyn Storage, set: DomainRouteSet<T>) -> StdResult<()>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
@@ -75,10 +75,7 @@ where
     Ok(())
 }
 
-pub fn enroll_remote_routers<T>(
-    storage: &mut dyn Storage,
-    set: Vec<DomainRouteSet<T>>,
-) -> StdResult<()>
+pub fn set_routes<T>(storage: &mut dyn Storage, set: Vec<DomainRouteSet<T>>) -> StdResult<()>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
