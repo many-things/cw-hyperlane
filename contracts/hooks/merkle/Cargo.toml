@@ -1,5 +1,5 @@
 [package]
-name = "hpl-domain-routing-hook"
+name = "hpl-hook-merkle"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
