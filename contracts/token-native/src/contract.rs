@@ -17,7 +17,7 @@ use crate::{
     error::ContractError,
     msg::{InstantiateMsg, MigrateMsg},
     proto::{self, MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint, MsgSetDenomMetadata},
-    state::{MAILBOX, MODE, OWNER, TOKEN},
+    state::{HRP, MAILBOX, MODE, OWNER, TOKEN},
     CONTRACT_NAME, CONTRACT_VERSION, REPLY_ID_CREATE_DENOM,
 };
 
@@ -30,6 +30,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    HRP.save(deps.storage, &msg.hrp)?;
     MODE.save(deps.storage, &msg.mode)?;
     OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
     MAILBOX.save(deps.storage, &deps.api.addr_validate(&msg.mailbox)?)?;
@@ -116,7 +117,7 @@ pub fn execute(
             );
 
             let token_msg: token::Message = msg.body.into();
-            let recipient = bech32_encode("osmo", &token_msg.recipient)?;
+            let recipient = bech32_encode(&HRP.load(deps.storage)?, &token_msg.recipient)?;
 
             let token = TOKEN.load(deps.storage)?;
             let mode = MODE.load(deps.storage)?;

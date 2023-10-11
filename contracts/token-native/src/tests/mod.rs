@@ -14,7 +14,7 @@ use crate::{
     contract::{execute, instantiate, query},
     error::ContractError,
     msg::{InstantiateMsg, Metadata},
-    state::{MAILBOX, MODE, OWNER, TOKEN},
+    state::{HRP, MAILBOX, MODE, OWNER, TOKEN},
 };
 
 mod contracts;
@@ -34,9 +34,11 @@ impl Default for TokenNative {
 }
 
 impl TokenNative {
+    #[allow(clippy::too_many_arguments)]
     pub fn init(
         &mut self,
         sender: &Addr,
+        hrp: &str,
         owner: &Addr,
         mailbox: &Addr,
         denom: &str,
@@ -51,6 +53,7 @@ impl TokenNative {
                 denom: denom.to_string(),
                 metadata,
                 mode,
+                hrp: hrp.to_string(),
                 owner: owner.to_string(),
                 mailbox: mailbox.to_string(),
             },
@@ -62,10 +65,12 @@ impl TokenNative {
         _sender: &Addr,
         owner: &Addr,
         mailbox: &Addr,
+        hrp: &str,
         denom: &str,
         mode: TokenMode,
     ) -> anyhow::Result<()> {
         MODE.save(&mut self.deps.storage, &mode)?;
+        HRP.save(&mut self.deps.storage, &hrp.to_string())?;
         TOKEN.save(&mut self.deps.storage, &denom.to_string())?;
         OWNER.save(&mut self.deps.storage, owner)?;
         MAILBOX.save(&mut self.deps.storage, mailbox)?;

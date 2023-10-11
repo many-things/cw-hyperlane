@@ -62,7 +62,7 @@ pub fn setup_env<'a, R: Runner<'a>>(
 
     let wasm = Wasm::new(app);
     let codes = store_code(&wasm, &deployer, artifacts)?;
-    let core = deploy_core(&wasm, &deployer, &codes, domain, ism, hook)?;
+    let core = deploy_core(&wasm, &deployer, &codes, domain, hrp, ism, hook)?;
 
     Ok(Env {
         validators: validators.iter().map(|v| (v.domain, v.clone())).collect(),
