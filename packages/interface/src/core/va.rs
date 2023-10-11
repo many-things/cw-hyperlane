@@ -5,7 +5,6 @@ use cosmwasm_std::{Binary, HexBinary};
 pub struct InstantiateMsg {
     pub addr_prefix: String,
     pub mailbox: String,
-    pub local_domain: u32,
 }
 
 #[cw_serde]
