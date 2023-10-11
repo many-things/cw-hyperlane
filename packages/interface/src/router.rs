@@ -6,15 +6,15 @@ use cosmwasm_std::Empty;
 use crate::Order;
 
 #[cw_serde]
-pub struct DomainRouterSet<T> {
+pub struct DomainRouteSet<T> {
     pub domain: u32,
-    pub router: T,
+    pub route: T,
 }
 
 #[cw_serde]
 pub enum RouterMsg<T> {
-    EnrollRemoteRouter { set: DomainRouterSet<T> },
-    EnrollRemoteRouters { set: Vec<DomainRouterSet<T>> },
+    EnrollRemoteRouter { set: DomainRouteSet<T> },
+    EnrollRemoteRouters { set: Vec<DomainRouteSet<T>> },
 }
 
 #[cw_serde]
@@ -45,10 +45,10 @@ pub struct DomainsResponse {
 
 #[cw_serde]
 pub struct RouteResponse<T> {
-    pub route: DomainRouterSet<T>,
+    pub route: DomainRouteSet<T>,
 }
 
 #[cw_serde]
 pub struct RoutesResponse<T> {
-    pub routes: Vec<DomainRouterSet<T>>,
+    pub routes: Vec<DomainRouteSet<T>>,
 }

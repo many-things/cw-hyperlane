@@ -6,7 +6,7 @@ use cw_storage_plus::Map;
 use hpl_interface::{
     range_option,
     router::{
-        DomainRouterSet, DomainsResponse, RouteResponse, RouterMsg, RouterQuery, RoutesResponse,
+        DomainRouteSet, DomainsResponse, RouteResponse, RouterMsg, RouterQuery, RoutesResponse,
     },
     Order,
 };
@@ -66,23 +66,27 @@ where
     }
 }
 
-pub fn enroll_remote_router<T>(storage: &mut dyn Storage, set: DomainRouterSet<T>) -> StdResult<()>
+pub fn enroll_remote_router<T>(storage: &mut dyn Storage, set: DomainRouteSet<T>) -> StdResult<()>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
-    get_route_map().save(storage, set.domain, &set.router)?;
+    get_route_map().save(storage, set.domain, &set.route)?;
 
     Ok(())
 }
 
 pub fn enroll_remote_routers<T>(
     storage: &mut dyn Storage,
-    set: Vec<DomainRouterSet<T>>,
+    set: Vec<DomainRouteSet<T>>,
 ) -> StdResult<()>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
-    for DomainRouterSet { domain, router } in set {
+    for DomainRouteSet {
+        domain,
+        route: router,
+    } in set
+    {
         get_route_map().save(storage, domain, &router)?;
     }
 
@@ -127,13 +131,13 @@ where
         .collect()
 }
 
-pub fn get_route<T>(storage: &dyn Storage, domain: u32) -> StdResult<DomainRouterSet<T>>
+pub fn get_route<T>(storage: &dyn Storage, domain: u32) -> StdResult<DomainRouteSet<T>>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
-    Ok(DomainRouterSet {
+    Ok(DomainRouteSet {
         domain,
-        router: get_route_map().load(storage, domain).unwrap_or_default(),
+        route: get_route_map().load(storage, domain).unwrap_or_default(),
     })
 }
 
@@ -142,7 +146,7 @@ pub fn get_routes<T>(
     offset: Option<u32>,
     limit: Option<u32>,
     order: Option<Order>,
-) -> StdResult<Vec<DomainRouterSet<T>>>
+) -> StdResult<Vec<DomainRouteSet<T>>>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
@@ -153,7 +157,10 @@ where
         .take(limit)
         .map(|item| {
             let (domain, router) = item?;
-            Ok(DomainRouterSet { domain, router })
+            Ok(DomainRouteSet {
+                domain,
+                route: router,
+            })
         })
         .collect()
 }
@@ -169,7 +176,7 @@ mod test {
     };
     use hpl_interface::{
         router::{
-            DomainRouterSet, DomainsResponse, RouteResponse, RouterMsg, RouterQuery, RoutesResponse,
+            DomainRouteSet, DomainsResponse, RouteResponse, RouterMsg, RouterQuery, RoutesResponse,
         },
         Order,
     };
@@ -199,7 +206,10 @@ mod test {
             self.handle(
                 mock_info(sender.as_str(), &[]),
                 RouterMsg::EnrollRemoteRouter {
-                    set: DomainRouterSet { domain, router },
+                    set: DomainRouteSet {
+                        domain,
+                        route: router,
+                    },
                 },
             )
         }
@@ -210,9 +220,9 @@ mod test {
                 RouterMsg::EnrollRemoteRouters {
                     set: set
                         .iter()
-                        .map(|v| DomainRouterSet {
+                        .map(|v| DomainRouteSet {
                             domain: v.0,
-                            router: v.1.clone(),
+                            route: v.1.clone(),
                         })
                         .collect(),
                 },
@@ -262,31 +272,31 @@ mod test {
     fn test_handle() -> anyhow::Result<()> {
         let owner = Addr::unchecked("owner");
 
-        let set_a = DomainRouterSet {
+        let set_a = DomainRouteSet {
             domain: 1,
-            router: Binary(b"router_a".to_vec()),
+            route: Binary(b"router_a".to_vec()),
         };
 
-        let set_b = DomainRouterSet {
+        let set_b = DomainRouteSet {
             domain: 2,
-            router: Binary(b"router_b".to_vec()),
+            route: Binary(b"router_b".to_vec()),
         };
 
         let domain_no = 99999;
 
         let mut router = Router::default();
 
-        router.enroll_one(&owner, set_a.domain, set_a.router.clone())?;
-        router.enroll_many(&owner, &[(set_b.domain, set_b.router.clone())])?;
+        router.enroll_one(&owner, set_a.domain, set_a.route.clone())?;
+        router.enroll_many(&owner, &[(set_b.domain, set_b.route.clone())])?;
 
         let DomainsResponse { domains } = router.query_domains()?;
         assert_eq!(domains, vec![1, 2]);
 
         let RouteResponse { route: route_a } = router.query_route(set_a.domain)?;
-        assert_eq!(route_a, set_a.router);
+        assert_eq!(route_a, set_a.route);
 
         let RouteResponse { route: route_b } = router.query_route(set_b.domain)?;
-        assert_eq!(route_b, set_b.router);
+        assert_eq!(route_b, set_b.route);
 
         let RouteResponse { route: route_no } = router.query_route(domain_no)?;
         assert_eq!(route_no, Binary::default());

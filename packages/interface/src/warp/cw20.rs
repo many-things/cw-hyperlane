@@ -13,7 +13,7 @@ pub enum ReceiveMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Router(router::RouterMsg),
+    Router(router::RouterMsg<Binary>),
 
     /// handle transfer remote
     Handle(mailbox::HandleMsg),
@@ -28,7 +28,7 @@ pub enum QueryMsg {
     #[returns(router::DomainsResponse)]
     Domains {},
 
-    #[returns(router::RouterResponse)]
+    #[returns(router::RouteResponse<Binary>)]
     Router { domain: u32 },
 
     #[returns(TokenTypeResponse)]
