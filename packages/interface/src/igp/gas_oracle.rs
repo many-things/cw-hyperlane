@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
 
-use crate::ownable::OwnableMsg;
+use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {}
@@ -25,18 +25,21 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
+#[serde(untagged)]
+#[query_responses(nested)]
 pub enum QueryMsg {
-    #[returns(ConfigResponse)]
-    Config {},
+    // overrides
+    Ownable(OwnableQueryMsg),
 
-    #[returns(GetExchangeRateAndGasPriceResponse)]
-    GetExchangeRateAndGasPrice { dest_domain: u32 },
+    // base
+    Base(IgpGasOracleQueryMsg),
 }
 
 #[cw_serde]
-pub struct ConfigResponse {
-    pub owner: String,
-    pub pending_owner: Option<String>,
+#[derive(QueryResponses)]
+pub enum IgpGasOracleQueryMsg {
+    #[returns(GetExchangeRateAndGasPriceResponse)]
+    GetExchangeRateAndGasPrice { dest_domain: u32 },
 }
 
 #[cw_serde]
@@ -44,6 +47,3 @@ pub struct GetExchangeRateAndGasPriceResponse {
     pub gas_price: Uint128,
     pub exchange_rate: Uint128,
 }
-
-#[cw_serde]
-pub struct MigrateMsg {}

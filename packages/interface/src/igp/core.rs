@@ -1,7 +1,11 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Uint128, Uint256};
 
-use crate::{hook, ownable::OwnableMsg};
+use crate::{
+    hook::{HookQueryMsg, PostDispatchMsg},
+    ownable::{OwnableMsg, OwnableQueryMsg},
+    router::{RouterMsg, RouterQuery},
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -37,15 +41,15 @@ impl From<(u32, Addr)> for GasOracleConfig {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    // overrides
     Ownership(OwnableMsg),
+    PostDispatch(PostDispatchMsg),
+    Router(RouterMsg<Addr>),
 
-    SetGasOracles {
-        configs: Vec<GasOracleConfig>,
-    },
+    // base
     SetBeneficiary {
         beneficiary: String,
     },
-
     PayForGas {
         message_id: Binary,
         dest_domain: u32,
@@ -53,17 +57,27 @@ pub enum ExecuteMsg {
         refund_address: String,
     },
     Claim {},
-    PostDispatch {
-        metadata: Binary,
-        message: Binary,
-    },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
+#[serde(untagged)]
+#[query_responses(nested)]
 pub enum QueryMsg {
-    #[returns(hook::QuoteDispatchResponse)]
-    QuoteDispatch(hook::QuoteDispatchMsg),
+    // overrides
+    Ownable(OwnableQueryMsg),
+    Hook(HookQueryMsg),
+    Router(RouterQuery<Addr>),
+
+    // base
+    Base(IgpQueryMsg),
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum IgpQueryMsg {
+    #[returns(BeneficiaryResponse)]
+    Beneficiary {},
 
     #[returns(QuoteGasPaymentResponse)]
     QuoteGasPayment {
@@ -76,6 +90,11 @@ pub enum QueryMsg {
 }
 
 #[cw_serde]
+pub struct BeneficiaryResponse {
+    pub beneficiary: String,
+}
+
+#[cw_serde]
 pub struct QuoteGasPaymentResponse {
     pub gas_needed: Uint256,
 }
@@ -85,6 +104,3 @@ pub struct GetExchangeRateAndGasPriceResponse {
     pub gas_price: Uint128,
     pub exchange_rate: Uint128,
 }
-
-#[cw_serde]
-pub struct MigrateMsg {}
