@@ -1,3 +1,5 @@
+#[allow(dead_code)]
+mod constants;
 mod contracts;
 mod event;
 mod validator;
@@ -9,6 +11,7 @@ use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 use hpl_interface::types::{bech32_decode, bech32_encode, bech32_to_h256};
 
 use crate::{
+    constants::*,
     contracts::{
         cw,
         eth::{
@@ -24,14 +27,6 @@ fn sorted(mut attrs: Vec<Attribute>) -> Vec<Attribute> {
     attrs.sort_by(|a, b| a.key.cmp(&b.key));
     attrs
 }
-
-const DOMAIN_EVM: u32 = 1;
-
-const DOMAIN_OSMO: u32 = 2;
-const PREFIX_OSMO: &str = "osmo";
-
-const DOMAIN_NTRN: u32 = 3;
-const PREFIX_NTRN: &str = "neutron";
 
 #[tokio::test]
 async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
