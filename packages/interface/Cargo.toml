@@ -33,4 +33,5 @@ thiserror.workspace = true
 cosmwasm-schema.workspace = true
 
 [dev-dependencies]
+rstest.workspace = true
 cw-multi-test.workspace = true
