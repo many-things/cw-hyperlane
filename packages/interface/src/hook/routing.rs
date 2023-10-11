@@ -11,7 +11,6 @@ use super::{HookQueryMsg, PostDispatchMsg};
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub mailbox: String,
 }
 
 #[cw_serde]
@@ -19,9 +18,6 @@ pub enum ExecuteMsg {
     // overrides
     Ownable(OwnableMsg),
     PostDispatch(PostDispatchMsg),
-
-    // base
-    UpdateMailbox { mailbox: String },
     Router(RouterMsg<Addr>),
 }
 
@@ -34,19 +30,4 @@ pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
     Router(RouterQuery<Addr>),
-
-    // base
-    Base(RoutingHookQueryMsg),
-}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum RoutingHookQueryMsg {
-    #[returns(ConfigResponse)]
-    Config {},
-}
-
-#[cw_serde]
-pub struct ConfigResponse {
-    pub mailbox: String,
 }

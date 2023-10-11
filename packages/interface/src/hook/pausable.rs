@@ -10,7 +10,6 @@ use super::{HookQueryMsg, PostDispatchMsg};
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub mailbox: String,
 }
 
 #[cw_serde]
@@ -19,9 +18,6 @@ pub enum ExecuteMsg {
     Ownable(OwnableMsg),
     Pausable(PausableMsg),
     PostDispatch(PostDispatchMsg),
-
-    // base
-    UpdateMailbox { mailbox: String },
 }
 
 #[cw_serde]
@@ -33,16 +29,6 @@ pub enum QueryMsg {
     Pausable(PausableQueryMsg),
     Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
-
-    // base
-    Base(PausableHookQueryMsg),
-}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum PausableHookQueryMsg {
-    #[returns(ConfigResponse)]
-    Config {},
 }
 
 #[cw_serde]
