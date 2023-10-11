@@ -12,7 +12,6 @@ pub enum ISMType {
     Aggregation = 2,
     LegacyMultisig = 3,
     Multisig = 4,
-    Owned = 5,
 }
 
 #[cw_serde]

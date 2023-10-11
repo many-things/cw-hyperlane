@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub fn get_module_type() -> Result<QueryResponse, ContractError> {
-    Ok(to_binary(&ISMType::Owned)?)
+    Ok(to_binary(&ISMType::Multisig)?)
 }
 
 pub fn verify_message(
@@ -98,7 +98,7 @@ mod test {
     fn test_get_module_type() {
         let result = get_module_type().unwrap();
 
-        assert_eq!(result, to_binary(&ISMType::Owned).unwrap());
+        assert_eq!(result, to_binary(&ISMType::Multisig).unwrap());
     }
 
     #[test]
