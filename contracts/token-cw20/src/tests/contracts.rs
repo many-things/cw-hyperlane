@@ -6,11 +6,14 @@ use hpl_interface::{
     token::{self, TokenMode},
     types::bech32_encode,
 };
+use rstest::rstest;
 
 use crate::{error::ContractError, msg::TokenOption, state::TOKEN, tests::TokenCW20};
 
-#[test]
-fn test_router_role() -> anyhow::Result<()> {
+#[rstest]
+#[case("osmo")]
+#[case("neutron")]
+fn test_router_role(#[case] hrp: &str) -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let mailbox = Addr::unchecked("mailbox");
     let owner = Addr::unchecked("owner");
@@ -29,6 +32,7 @@ fn test_router_role() -> anyhow::Result<()> {
             contract: token.to_string(),
         }),
         TokenMode::Bridged,
+        hrp,
     )?;
 
     // err
@@ -43,8 +47,10 @@ fn test_router_role() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_outbound_transfer() -> anyhow::Result<()> {
+#[rstest]
+#[case("osmo")]
+#[case("neutron")]
+fn test_outbound_transfer(#[case] hrp: &str) -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let mailbox = Addr::unchecked("mailbox");
     let router = Addr::unchecked("router");
@@ -123,6 +129,7 @@ fn test_outbound_transfer() -> anyhow::Result<()> {
                 contract: token.to_string(),
             }),
             mode.clone(),
+            hrp,
         )?;
         if mode == TokenMode::Collateral {
             TOKEN.save(&mut warp.deps.storage, &token)?;
@@ -149,8 +156,10 @@ fn test_outbound_transfer() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_inbound_transfer() -> anyhow::Result<()> {
+#[rstest]
+#[case("osmo")]
+#[case("neutron")]
+fn test_inbound_transfer(#[case] hrp: &str) -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let mailbox = Addr::unchecked("mailbox");
     let router = Addr::unchecked("router");
@@ -169,7 +178,7 @@ fn test_inbound_transfer() -> anyhow::Result<()> {
     let mint_msg: CosmosMsg = WasmMsg::Execute {
         contract_addr: token.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Mint {
-            recipient: bech32_encode("osmo", user_remote.as_bytes())?.to_string(),
+            recipient: bech32_encode(hrp, user_remote.as_bytes())?.to_string(),
             amount: amount.into(),
         })?,
         funds: vec![],
@@ -179,7 +188,7 @@ fn test_inbound_transfer() -> anyhow::Result<()> {
     let send_msg: CosmosMsg = WasmMsg::Execute {
         contract_addr: token.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-            recipient: bech32_encode("osmo", user_remote.as_bytes())?.to_string(),
+            recipient: bech32_encode(hrp, user_remote.as_bytes())?.to_string(),
             amount: amount.into(),
         })?,
         funds: vec![],
@@ -257,6 +266,7 @@ fn test_inbound_transfer() -> anyhow::Result<()> {
                 contract: token.to_string(),
             }),
             mode.clone(),
+            hrp,
         )?;
         if mode == TokenMode::Collateral {
             TOKEN.save(&mut warp.deps.storage, &token)?;

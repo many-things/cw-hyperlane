@@ -42,7 +42,7 @@ hpl-router.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
-
+rstest.workspace = true
 anyhow.workspace = true
 k256.workspace = true
 sha3.workspace = true

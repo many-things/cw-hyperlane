@@ -5,10 +5,13 @@ mod event;
 mod validator;
 
 use cosmwasm_std::{attr, Attribute, Binary, HexBinary};
-use ethers::{prelude::parse_log, signers::Signer};
+use ethers::{
+    prelude::parse_log, providers::Middleware, signers::Signer, types::TransactionReceipt,
+};
 use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 
 use hpl_interface::types::{bech32_decode, bech32_encode, bech32_to_h256};
+use test_tube::Runner;
 
 use crate::{
     constants::*,
@@ -28,6 +31,44 @@ fn sorted(mut attrs: Vec<Attribute>) -> Vec<Attribute> {
     attrs
 }
 
+async fn send_msg<'a, M, S, R>(
+    anvil: &eth::Env<M, S>,
+    cosmos: &cw::Env<'a, R>,
+) -> eyre::Result<TransactionReceipt>
+where
+    M: Middleware + 'static,
+    S: Signer + 'static,
+    R: Runner<'a>,
+{
+    let mut receiver = [0u8; 32];
+    receiver[12..].copy_from_slice(&anvil.core.msg_receiver.address().0);
+    let _sender = bech32_decode(cosmos.acc_tester.address().as_str())?;
+    let msg_body = b"hello world";
+
+    // dispatch
+    let dispatch_res = Wasm::new(cosmos.app).execute(
+        &cosmos.core.mailbox,
+        &hpl_interface::mailbox::ExecuteMsg::Dispatch {
+            dest_domain: DOMAIN_EVM,
+            recipient_addr: receiver.into(),
+            msg_body: msg_body.into(),
+        },
+        &[],
+        &cosmos.acc_tester,
+    )?;
+
+    let dispatch = parse_dispatch_from_res(&dispatch_res.events);
+    let _dispatch_id = parse_dispatch_id_from_res(&dispatch_res.events);
+
+    let process_tx = anvil
+        .core
+        .mailbox
+        .process(vec![].into(), Binary::from(dispatch.message).0.into());
+    let process_tx_res = process_tx.send().await?.await?.unwrap();
+
+    Ok(process_tx_res)
+}
+
 #[tokio::test]
 async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
     // init Osmosis env
@@ -41,34 +82,23 @@ async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
     )?;
 
+    // TODO: leave this until Neutron supports test-tube properly
+    // // init Neutron env
+    // let ntrn_app = OsmosisTestApp::new();
+    // let ntrn = cw::setup_env(
+    //     &ntrn_app,
+    //     |app, coins| app.init_account(coins).unwrap(),
+    //     None::<&str>,
+    //     "neutron",
+    //     DOMAIN_NTRN,
+    //     &[TestValidators::new(DOMAIN_EVM, 5, 3)],
+    // )?;
+
     // init Anvil env
     let anvil1 = eth::setup_env(DOMAIN_EVM).await?;
 
-    let mut receiver = [0u8; 32];
-    receiver[12..].copy_from_slice(&anvil1.core.msg_receiver.address().0);
-    let _sender = bech32_decode(osmo.acc_tester.address().as_str())?;
-    let msg_body = b"hello world";
-
-    // dispatch
-    let dispatch_res = Wasm::new(osmo.app).execute(
-        &osmo.core.mailbox,
-        &hpl_interface::mailbox::ExecuteMsg::Dispatch {
-            dest_domain: DOMAIN_EVM,
-            recipient_addr: receiver.into(),
-            msg_body: msg_body.into(),
-        },
-        &[],
-        &osmo.acc_tester,
-    )?;
-
-    let dispatch = parse_dispatch_from_res(&dispatch_res.events);
-    let _dispatch_id = parse_dispatch_id_from_res(&dispatch_res.events);
-
-    let process_tx = anvil1
-        .core
-        .mailbox
-        .process(vec![].into(), Binary::from(dispatch.message).0.into());
-    let _process_tx_res = process_tx.send().await?.await?.unwrap();
+    let _ = send_msg(&anvil1, &osmo).await?;
+    // let _ = send_msg(&anvil1, &ntrn).await?;
 
     Ok(())
 }

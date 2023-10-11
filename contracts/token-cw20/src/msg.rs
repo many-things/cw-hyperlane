@@ -17,6 +17,7 @@ pub struct InstantiateMsg {
     pub token: Option<TokenOption>,
     pub mode: TokenMode,
 
+    pub hrp: String,
     pub owner: String,
     pub mailbox: String,
 }

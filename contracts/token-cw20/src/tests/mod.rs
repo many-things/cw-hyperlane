@@ -40,6 +40,7 @@ impl TokenCW20 {
         mailbox: &Addr,
         token: Option<TokenOption>,
         mode: TokenMode,
+        hrp: &str,
     ) -> Result<Response, ContractError> {
         instantiate(
             self.deps.as_mut(),
@@ -48,6 +49,7 @@ impl TokenCW20 {
             InstantiateMsg {
                 token,
                 mode,
+                hrp: hrp.to_string(),
                 owner: owner.to_string(),
                 mailbox: mailbox.to_string(),
             },

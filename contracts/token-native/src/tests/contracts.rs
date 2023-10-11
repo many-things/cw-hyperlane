@@ -8,6 +8,7 @@ use hpl_interface::{
     token::{self, TokenMode},
     types::bech32_encode,
 };
+use rstest::rstest;
 
 use crate::{
     error::ContractError,
@@ -16,8 +17,10 @@ use crate::{
 
 use super::TokenNative;
 
-#[test]
-fn test_init() -> anyhow::Result<()> {
+#[rstest]
+#[case("osmo")]
+#[case("neutron")]
+fn test_init(#[case] hrp: &str) -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let mailbox = Addr::unchecked("mailbox");
     let owner = Addr::unchecked("owner");
@@ -26,6 +29,7 @@ fn test_init() -> anyhow::Result<()> {
 
     warp.init(
         &deployer,
+        hrp,
         &owner,
         &mailbox,
         "token-warp",
@@ -36,8 +40,10 @@ fn test_init() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_router_role() -> anyhow::Result<()> {
+#[rstest]
+#[case("osmo")]
+#[case("neutron")]
+fn test_router_role(#[case] hrp: &str) -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let mailbox = Addr::unchecked("mailbox");
     let owner = Addr::unchecked("owner");
@@ -48,7 +54,7 @@ fn test_router_role() -> anyhow::Result<()> {
 
     let mut warp = TokenNative::default();
 
-    warp.init_hack(&deployer, &owner, &mailbox, denom, TokenMode::Bridged)?;
+    warp.init_hack(&deployer, &owner, &mailbox, hrp, denom, TokenMode::Bridged)?;
 
     // err
     let err = warp
@@ -62,8 +68,10 @@ fn test_router_role() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_outbound_transfer() -> anyhow::Result<()> {
+#[rstest]
+#[case("osmo")]
+#[case("neutron")]
+fn test_outbound_transfer(#[case] hrp: &str) -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let mailbox = Addr::unchecked("mailbox");
     let router = Addr::unchecked("router");
@@ -134,7 +142,7 @@ fn test_outbound_transfer() -> anyhow::Result<()> {
             ..Default::default()
         };
 
-        warp.init_hack(&deployer, &owner, &mailbox, denom, mode)?;
+        warp.init_hack(&deployer, &owner, &mailbox, hrp, denom, mode)?;
 
         for (domain, router) in routers {
             warp.router_enroll(&owner, domain, router)?;
@@ -156,8 +164,10 @@ fn test_outbound_transfer() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_inbound_transfer() -> anyhow::Result<()> {
+#[rstest]
+#[case("osmo")]
+#[case("neutron")]
+fn test_inbound_transfer(#[case] hrp: &str) -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let mailbox = Addr::unchecked("mailbox");
     let router = Addr::unchecked("router");
@@ -183,7 +193,7 @@ fn test_inbound_transfer() -> anyhow::Result<()> {
     .into();
 
     let send_msg: CosmosMsg = BankMsg::Send {
-        to_address: bech32_encode("osmo", user_remote.as_bytes())?.to_string(),
+        to_address: bech32_encode(hrp, user_remote.as_bytes())?.to_string(),
         amount: vec![coin(amount, denom)],
     }
     .into();
@@ -251,7 +261,7 @@ fn test_inbound_transfer() -> anyhow::Result<()> {
             ..Default::default()
         };
 
-        warp.init_hack(&deployer, &owner, &mailbox, denom, mode)?;
+        warp.init_hack(&deployer, &owner, &mailbox, hrp, denom, mode)?;
         warp.router_enroll(&owner, origin_domain, router.as_bytes().into())?;
 
         let resp = warp.mailbox_handle(

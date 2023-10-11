@@ -94,6 +94,7 @@ mod test {
         testing::{mock_dependencies, mock_info},
         Addr, Storage,
     };
+    use rstest::rstest;
 
     use super::*;
     const ADDR1_VALUE: &str = "addr1";
@@ -105,13 +106,14 @@ mod test {
             .unwrap();
     }
 
-    #[test]
-    fn test_set_hook() {
+    #[rstest]
+    #[case(Addr::unchecked("osmo109ns4u04l44kqdkvp876hukd3hxz8zzm7809el"))]
+    #[case(Addr::unchecked("neutron1d6a3j0kkpc8eac0j8h6ypyevfz8hd3qnsyg35p"))]
+    fn test_set_hook(#[case] hook: Addr) {
         let mut deps = mock_dependencies();
         mock_owner(deps.as_mut().storage, ADDR1_VALUE);
 
         let destination = 11155111;
-        let hook = Addr::unchecked("osmo109ns4u04l44kqdkvp876hukd3hxz8zzm7809el");
 
         let unauthorized = set_hook(
             deps.as_mut(),
@@ -159,21 +161,26 @@ mod test {
         );
     }
 
-    #[test]
-    fn test_set_hooks() {
+    #[rstest]
+    #[case(&[
+        (5, Addr::unchecked("osmo109ns4u04l44kqdkvp876hukd3hxz8zzm7809el")),
+        (11155111, Addr::unchecked("osmo1mhnkm6fwaq53yzu7c0r3khhy60v04vse4c6gk5"))
+    ])]
+    #[case(&[
+        (5, Addr::unchecked("neutron1d6a3j0kkpc8eac0j8h6ypyevfz8hd3qnsyg35p")),
+        (11155111, Addr::unchecked("neutron1mhnkm6fwaq53yzu7c0r3khhy60v04vseeuq66p"))
+    ])]
+    fn test_set_hooks(#[case] configs: &[(u32, Addr)]) {
         let mut deps = mock_dependencies();
         mock_owner(deps.as_mut().storage, ADDR1_VALUE);
 
-        let hooks = vec![
-            HookConfig {
-                destination: 5,
-                hook: Addr::unchecked("osmo109ns4u04l44kqdkvp876hukd3hxz8zzm7809el"),
-            },
-            HookConfig {
-                destination: 11155111,
-                hook: Addr::unchecked("osmo1mhnkm6fwaq53yzu7c0r3khhy60v04vse4c6gk5"),
-            },
-        ];
+        let hooks: Vec<_> = configs
+            .iter()
+            .map(|v| HookConfig {
+                destination: v.0,
+                hook: v.1.clone(),
+            })
+            .collect();
 
         let unauthorized =
             set_hooks(deps.as_mut(), mock_info(ADDR2_VALUE, &[]), hooks.clone()).unwrap_err();

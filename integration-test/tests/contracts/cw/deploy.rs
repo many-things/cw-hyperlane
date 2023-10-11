@@ -1,4 +1,4 @@
-use cosmwasm_std::Empty;
+use cosmwasm_schema::cw_serde;
 use test_tube::{Account, Runner, SigningAccount, Wasm};
 
 use super::{
@@ -11,6 +11,7 @@ pub fn deploy_core<'a, R: Runner<'a>>(
     deployer: &SigningAccount,
     codes: &Codes,
     origin_domain: u32,
+    hrp: &str,
     test_ism: Ism,
     test_hook: Hook,
 ) -> eyre::Result<CoreDeployments> {
@@ -69,10 +70,17 @@ pub fn deploy_core<'a, R: Runner<'a>>(
     )?;
 
     // deploy test message receiver
+    #[cw_serde]
+    struct ReceiverInitMsg {
+        pub hrp: String,
+    }
+
     let msg_receiver = wasm
         .instantiate(
             codes.test_mock_msg_receiver,
-            &Empty {},
+            &ReceiverInitMsg {
+                hrp: hrp.to_string(),
+            },
             None,
             None,
             &[],

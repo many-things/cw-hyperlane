@@ -5,12 +5,15 @@ use cosmwasm_std::{
     attr, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
 };
 use cw2::set_contract_version;
+use cw_storage_plus::Item;
 use hpl_interface::{ism, mailbox, types::bech32_encode};
 
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub hrp: String,
+}
 
 #[cw_serde]
 pub struct MigrateMsg {}
@@ -18,14 +21,19 @@ pub struct MigrateMsg {}
 #[cw_serde]
 pub struct ExecuteMsg {}
 
+pub const HRP_KEY: &str = "hrp";
+pub const HRP: Item<String> = Item::new(HRP_KEY);
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> StdResult<Response> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    HRP.save(deps.storage, &msg.hrp)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -38,7 +46,7 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Respons
 /// Handling contract execution
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     msg: mailbox::ExpectedHandlerMsg,
@@ -46,7 +54,10 @@ pub fn execute(
     match msg {
         mailbox::ExpectedHandlerMsg::Handle(msg) => Ok(Response::default().add_event(
             Event::new("mailbox_msg_received").add_attributes(vec![
-                attr("sender", bech32_encode("osmo", &msg.sender)?),
+                attr(
+                    "sender",
+                    bech32_encode(&HRP.load(deps.storage)?, &msg.sender)?,
+                ),
                 attr("origin", msg.origin.to_string()),
                 attr("body", std::str::from_utf8(&msg.body)?),
             ]),
