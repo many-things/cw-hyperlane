@@ -52,6 +52,18 @@ mod tests {
 
     use super::{bech32_decode, bech32_encode};
 
+    #[test]
+    fn addr_conv() {
+        println!(
+            "{}",
+            bech32_encode(
+                "neutron",
+                &bech32_decode("osmo1mhnkm6fwaq53yzu7c0r3khhy60v04vse4c6gk5").unwrap(),
+            )
+            .unwrap()
+        );
+    }
+
     #[rstest]
     #[case(
         "osmo",

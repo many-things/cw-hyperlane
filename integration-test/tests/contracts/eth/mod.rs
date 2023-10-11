@@ -5,4 +5,4 @@ mod types;
 
 pub use bind::*;
 pub use deploy::deploy;
-pub use setup::setup_env;
+pub use setup::{setup_env, Env};

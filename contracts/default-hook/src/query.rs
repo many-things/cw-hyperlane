@@ -56,6 +56,7 @@ mod test {
         Addr, HexBinary, Uint256,
     };
     use hpl_interface::hook::HookConfig;
+    use rstest::rstest;
 
     use super::*;
 
@@ -100,8 +101,10 @@ mod test {
         )
     }
 
-    #[test]
-    fn test_quote_dispatch() {
+    #[rstest]
+    #[case(Addr::unchecked("osmo109ns4u04l44kqdkvp876hukd3hxz8zzm7809el"))]
+    #[case(Addr::unchecked("neutron1d6a3j0kkpc8eac0j8h6ypyevfz8hd3qnsyg35p"))]
+    fn test_quote_dispatch(#[case] hook: Addr) {
         let mut deps = mock_dependencies();
 
         deps.querier.update_wasm(
@@ -117,7 +120,6 @@ mod test {
             },
         );
 
-        let hook = Addr::unchecked("osmo109ns4u04l44kqdkvp876hukd3hxz8zzm7809el");
         let hook_config = HookConfig {
             hook,
             destination: 11155111,
