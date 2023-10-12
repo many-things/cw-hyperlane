@@ -9,7 +9,7 @@ use cw_storage_plus::Item;
 use hpl_interface::{
     hook::{
         routing::{ExecuteMsg, InstantiateMsg, QueryMsg},
-        HookQueryMsg, MailboxResponse, PostDispatchMsg,
+        HookQueryMsg, MailboxResponse, PostDispatchMsg, QuoteDispatchMsg, QuoteDispatchResponse,
     },
     to_binary,
     types::Message,
@@ -74,28 +74,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
-        ExecuteMsg::PostDispatch(PostDispatchMsg { metadata, message }) => {
-            ensure_eq!(
-                MAILBOX.load(deps.storage)?,
-                info.sender,
-                ContractError::Unauthorized {}
-            );
-
-            let (decoded_msg, routed_hook) = route(deps.storage, &message)?;
-
-            let hook_msg = wasm_execute(
-                &routed_hook,
-                &PostDispatchMsg { metadata, message }.wrap(),
-                vec![],
-            )?;
-
-            Ok(Response::new().add_message(hook_msg).add_event(
-                new_event("post_dispatch")
-                    .add_attribute("domain", decoded_msg.dest_domain.to_string())
-                    .add_attribute("route", routed_hook)
-                    .add_attribute("message_id", decoded_msg.id().to_hex()),
-            ))
-        }
+        ExecuteMsg::PostDispatch(msg) => post_dispatch(deps, info, msg),
     }
 }
 
@@ -106,6 +85,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         QueryMsg::Router(msg) => Ok(hpl_router::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
+            HookQueryMsg::QuoteDispatch(msg) => to_binary(quote_dispatch(deps, msg)),
         },
     }
 }
@@ -126,4 +106,38 @@ fn route(storage: &dyn Storage, message: &HexBinary) -> Result<(Message, Addr), 
         .ok_or(ContractError::HookNotRegistered(dest_domain))?;
 
     Ok((decoded_msg, routed_hook))
+}
+
+pub fn post_dispatch(
+    deps: DepsMut,
+    info: MessageInfo,
+    req: PostDispatchMsg,
+) -> Result<Response, ContractError> {
+    ensure_eq!(
+        MAILBOX.load(deps.storage)?,
+        info.sender,
+        ContractError::Unauthorized {}
+    );
+
+    let (decoded_msg, routed_hook) = route(deps.storage, &req.message)?;
+
+    let hook_msg = wasm_execute(&routed_hook, &req.wrap(), vec![])?;
+
+    Ok(Response::new().add_message(hook_msg).add_event(
+        new_event("post_dispatch")
+            .add_attribute("domain", decoded_msg.dest_domain.to_string())
+            .add_attribute("route", routed_hook)
+            .add_attribute("message_id", decoded_msg.id().to_hex()),
+    ))
+}
+
+pub fn quote_dispatch(
+    deps: Deps,
+    req: QuoteDispatchMsg,
+) -> Result<QuoteDispatchResponse, ContractError> {
+    let (_, routed_hook) = route(deps.storage, &req.message)?;
+
+    let resp: QuoteDispatchResponse = deps.querier.query_wasm_smart(&routed_hook, &req.wrap())?;
+
+    Ok(resp)
 }

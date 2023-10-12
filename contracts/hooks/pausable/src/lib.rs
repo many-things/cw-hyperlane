@@ -2,13 +2,13 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     ensure, ensure_eq, Addr, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
-    StdError,
+    StdError, Uint256,
 };
 use cw_storage_plus::Item;
 use hpl_interface::{
     hook::{
         pausable::{ExecuteMsg, InstantiateMsg, QueryMsg},
-        HookQueryMsg, MailboxResponse,
+        HookQueryMsg, MailboxResponse, QuoteDispatchResponse,
     },
     to_binary,
 };
@@ -94,6 +94,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
+            HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch()),
         },
     }
 }
@@ -101,5 +102,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
     Ok(MailboxResponse {
         mailbox: MAILBOX.load(deps.storage)?.into(),
+    })
+}
+
+fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
+    Ok(QuoteDispatchResponse {
+        gas_amount: Uint256::zero(),
     })
 }
