@@ -3,21 +3,26 @@ use std::str::FromStr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, ensure_ne, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
+    ensure_eq, ensure_ne, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event, HexBinary,
     MessageInfo, QueryResponse, Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
 };
 use hpl_interface::{
-    router::{DomainsResponse, RouterResponse},
-    token::{self, TokenMode, TokenType, TokenTypeNative},
-    token_native::{ExecuteMsg, QueryMsg, TokenModeResponse, TokenTypeResponse},
+    core::mailbox,
+    to_binary,
     types::bech32_encode,
+    warp::{
+        self,
+        native::{ExecuteMsg, InstantiateMsg, QueryMsg},
+    },
+    warp::{TokenMode, TokenModeResponse, TokenTypeResponse},
 };
+use hpl_ownable::get_owner;
+use hpl_router::get_route;
 
 use crate::{
     error::ContractError,
-    msg::{InstantiateMsg, MigrateMsg},
     proto::{self, MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint, MsgSetDenomMetadata},
-    state::{HRP, MAILBOX, MODE, OWNER, TOKEN},
+    state::{HRP, MAILBOX, MODE, TOKEN},
     CONTRACT_NAME, CONTRACT_VERSION, REPLY_ID_CREATE_DENOM,
 };
 
@@ -32,8 +37,11 @@ pub fn instantiate(
 
     HRP.save(deps.storage, &msg.hrp)?;
     MODE.save(deps.storage, &msg.mode)?;
-    OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
     MAILBOX.save(deps.storage, &deps.api.addr_validate(&msg.mailbox)?)?;
+
+    let owner = deps.api.addr_validate(&msg.owner)?;
+
+    hpl_ownable::initialize(deps.storage, &owner)?;
 
     let mut resp = Response::new();
 
@@ -99,7 +107,7 @@ pub fn execute(
         ExecuteMsg::Router(msg) => {
             ensure_eq!(
                 info.sender,
-                OWNER.load(deps.storage)?,
+                get_owner(deps.storage)?,
                 ContractError::Unauthorized {}
             );
             Ok(hpl_router::handle(deps, env, info, msg)?)
@@ -111,12 +119,14 @@ pub fn execute(
                 ContractError::Unauthorized
             );
             ensure_eq!(
-                Binary::from(msg.sender),
-                hpl_router::get_router(deps.storage, msg.origin)?,
+                msg.sender,
+                get_route::<HexBinary>(deps.storage, msg.origin)?
+                    .route
+                    .expect("route not found"),
                 ContractError::Unauthorized
             );
 
-            let token_msg: token::Message = msg.body.into();
+            let token_msg: warp::Message = msg.body.into();
             let recipient = bech32_encode(&HRP.load(deps.storage)?, &token_msg.recipient)?;
 
             let token = TOKEN.load(deps.storage)?;
@@ -166,10 +176,12 @@ pub fn execute(
             let mailbox = MAILBOX.load(deps.storage)?;
             let paid = cw_utils::must_pay(&info, &token)?;
 
-            let dest_router = hpl_router::get_router(deps.storage, dest_domain)?;
+            let dest_router = get_route::<HexBinary>(deps.storage, dest_domain)?
+                .route
+                .expect("route not found");
             ensure_ne!(
                 dest_router,
-                Binary::default(),
+                HexBinary::default(),
                 ContractError::NoRouter {
                     domain: dest_domain
                 }
@@ -191,20 +203,22 @@ pub fn execute(
                 );
             }
 
-            let dispatch_payload = token::Message {
+            let dispatch_payload = warp::Message {
                 recipient: recipient.clone(),
                 amount: Uint256::from_str(&paid.to_string())?,
-                metadata: Binary::default(),
+                metadata: HexBinary::default(),
             };
 
             // push mailbox dispatch msg
             msgs.push(
                 WasmMsg::Execute {
                     contract_addr: mailbox.to_string(),
-                    msg: to_binary(&hpl_interface::mailbox::ExecuteMsg::Dispatch {
+                    msg: cosmwasm_std::to_binary(&mailbox::ExecuteMsg::Dispatch {
                         dest_domain,
-                        recipient_addr: dest_router.into(),
+                        recipient_addr: dest_router,
                         msg_body: dispatch_payload.into(),
+                        hook: None,
+                        metadata: None,
                     })?,
                     funds: vec![],
                 }
@@ -214,7 +228,7 @@ pub fn execute(
             Ok(Response::new().add_messages(msgs).add_event(
                 Event::new("hpl::token-native::transfer-remote")
                     .add_attribute("sender", info.sender)
-                    .add_attribute("recipient", recipient.to_base64())
+                    .add_attribute("recipient", recipient.to_hex())
                     .add_attribute("token", token)
                     .add_attribute("amount", paid.to_string()),
             ))
@@ -245,22 +259,29 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
-    match msg {
-        QueryMsg::Domains {} => Ok(to_binary(&DomainsResponse {
-            domains: hpl_router::get_domains(deps.storage)?,
-        })?),
-        QueryMsg::Router { domain } => Ok(to_binary(&RouterResponse {
-            router: hpl_router::get_route(deps.storage, domain)?,
-        })?),
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+    use warp::TokenWarpDefaultQueryMsg::*;
 
-        QueryMsg::TokenType {} => Ok(to_binary(&TokenTypeResponse {
-            typ: TokenType::Native(TokenTypeNative::Fungible {
-                denom: TOKEN.load(deps.storage)?,
-            }),
-        })?),
-        QueryMsg::TokenMode {} => Ok(to_binary(&TokenModeResponse {
-            mode: MODE.load(deps.storage)?,
-        })?),
+    match msg {
+        QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
+        QueryMsg::Router(msg) => Ok(hpl_router::handle_query(deps, env, msg)?),
+        QueryMsg::TokenDefault(msg) => match msg {
+            TokenType {} => to_binary(get_token_type(deps)),
+            TokenMode {} => to_binary(get_token_mode(deps)),
+        },
     }
+}
+
+fn get_token_type(deps: Deps) -> Result<TokenTypeResponse, ContractError> {
+    let denom = TOKEN.load(deps.storage)?;
+
+    Ok(TokenTypeResponse {
+        typ: warp::TokenType::Native(warp::TokenTypeNative::Fungible { denom }),
+    })
+}
+
+fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
+    let mode = MODE.load(deps.storage)?;
+
+    Ok(TokenModeResponse { mode })
 }

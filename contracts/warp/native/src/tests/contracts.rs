@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
 use cosmwasm_std::{
-    coin, testing::mock_env, to_binary, Addr, BankMsg, Binary, CosmosMsg, Uint256, WasmMsg,
+    coin, testing::mock_env, to_binary, Addr, BankMsg, CosmosMsg, HexBinary, Uint256, WasmMsg,
 };
 use hpl_interface::{
-    mailbox,
-    token::{self, TokenMode},
+    core::mailbox,
     types::bech32_encode,
+    warp::{self, TokenMode},
 };
 use rstest::rstest;
 
@@ -50,7 +50,7 @@ fn test_router_role(#[case] hrp: &str) -> anyhow::Result<()> {
 
     let denom = "token-native";
     let domain = 999;
-    let router = Binary(b"hello".to_vec());
+    let router = b"hello".to_vec();
 
     let mut warp = TokenNative::default();
 
@@ -99,11 +99,11 @@ fn test_outbound_transfer(#[case] hrp: &str) -> anyhow::Result<()> {
         contract_addr: mailbox.to_string(),
         msg: to_binary(&mailbox::ExecuteMsg::Dispatch {
             dest_domain,
-            recipient_addr: Binary(router.as_bytes().to_vec()).into(),
-            msg_body: token::Message {
-                recipient: Binary(user_remote.as_bytes().to_vec()),
+            recipient_addr: router.as_bytes().to_vec().into(),
+            msg_body: warp::Message {
+                recipient: user_remote.as_bytes().to_vec().into(),
                 amount: Uint256::from_str(&amount.to_string())?,
-                metadata: Binary::default(),
+                metadata: HexBinary::default(),
             }
             .into(),
         })?,

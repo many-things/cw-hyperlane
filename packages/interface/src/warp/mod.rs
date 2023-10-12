@@ -4,7 +4,7 @@ pub mod native;
 use std::fmt;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, HexBinary, Uint256};
+use cosmwasm_std::{HexBinary, Uint256};
 
 #[cw_serde]
 pub enum TokenTypeNative {
@@ -40,12 +40,12 @@ impl fmt::Display for TokenMode {
 
 #[cw_serde]
 pub struct Message {
-    pub recipient: Binary,
+    pub recipient: HexBinary,
     pub amount: Uint256,
-    pub metadata: Binary,
+    pub metadata: HexBinary,
 }
 
-impl From<Message> for Binary {
+impl From<Message> for HexBinary {
     fn from(v: Message) -> Self {
         v.recipient
             .iter()
@@ -57,25 +57,13 @@ impl From<Message> for Binary {
     }
 }
 
-impl From<Message> for HexBinary {
-    fn from(v: Message) -> Self {
-        Binary::from(v).into()
-    }
-}
-
-impl From<Binary> for Message {
-    fn from(v: Binary) -> Self {
-        Self {
-            recipient: Binary(v[0..32].to_vec()),
-            amount: Uint256::from_be_bytes(v[32..64].try_into().unwrap()),
-            metadata: Binary(v[64..].to_vec()),
-        }
-    }
-}
-
 impl From<HexBinary> for Message {
     fn from(v: HexBinary) -> Self {
-        Binary(v.into()).into()
+        Self {
+            recipient: v[0..32].to_vec().into(),
+            amount: Uint256::from_be_bytes(v[32..64].try_into().unwrap()),
+            metadata: v[64..].to_vec().into(),
+        }
     }
 }
 
