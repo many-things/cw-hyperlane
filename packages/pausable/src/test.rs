@@ -96,7 +96,7 @@ fn test_pause(
 
     // validate
     if res.is_ok() {
-        assert_eq!(pausable.pause_info()?, true);
+        assert!(pausable.pause_info()?);
     }
 
     Ok(())
@@ -130,7 +130,7 @@ fn test_release(
 
     // validate
     if res.is_ok() {
-        assert_eq!(pausable.pause_info()?, false);
+        assert!(!pausable.pause_info()?);
     }
 
     Ok(())
