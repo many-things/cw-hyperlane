@@ -1,6 +1,8 @@
 pub mod merkle;
 pub mod pausable;
 pub mod routing;
+pub mod routing_custom;
+pub mod routing_fallback;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{HexBinary, Uint256};
