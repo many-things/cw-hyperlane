@@ -1,10 +1,7 @@
 use cosmwasm_std::{Deps, HexBinary};
-use hpl_interface::{
-    core::mailbox::{
-        DefaultHookResponse, DefaultIsmResponse, HrpResponse, LocalDomainResponse,
-        MessageDeliveredResponse, RecipientIsmResponse,
-    },
-    ism,
+use hpl_interface::core::mailbox::{
+    DefaultHookResponse, DefaultIsmResponse, HrpResponse, LocalDomainResponse,
+    MessageDeliveredResponse, RecipientIsmResponse,
 };
 
 use crate::{
@@ -63,4 +60,3 @@ pub fn get_recipient_ism(
 
     Ok(RecipientIsmResponse { ism })
 }
-

@@ -1,5 +1,4 @@
-#[cfg(not(feature = "library"))]
-mod contract;
+pub mod contract;
 mod contract_querier;
 mod error;
 mod event;
