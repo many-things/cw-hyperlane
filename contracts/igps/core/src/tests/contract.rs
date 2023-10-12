@@ -5,7 +5,7 @@ use cosmwasm_std::{
     SystemResult, Uint128, Uint256,
 };
 use cw_utils::PaymentError;
-use hpl_interface::igp::{core::GasOracleConfig, gas_oracle};
+use hpl_interface::igp::{core::GasOracleConfig, oracle};
 
 use crate::{
     state::{BENEFICIARY, GAS_TOKEN},
@@ -123,7 +123,7 @@ fn test_gas_query() -> anyhow::Result<()> {
     igp.deps.querier.update_wasm(|v| -> QuerierResult {
         match v {
             cosmwasm_std::WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&gas_oracle::GetExchangeRateAndGasPriceResponse {
+                to_binary(&oracle::GetExchangeRateAndGasPriceResponse {
                     gas_price: Uint128::new(150 * 10u128.pow(9)), // 150 gwei gas price
                     exchange_rate: Uint128::new(2 * 10u128.pow(9)), // 0.2 exchange rate (remote token less valuable)
                 })
@@ -185,7 +185,7 @@ fn test_pay_for_gas() -> anyhow::Result<()> {
     igp.deps.querier.update_wasm(|v| -> QuerierResult {
         match v {
             cosmwasm_std::WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&gas_oracle::GetExchangeRateAndGasPriceResponse {
+                to_binary(&oracle::GetExchangeRateAndGasPriceResponse {
                     gas_price: Uint128::new(150 * 10u128.pow(9)), // 150 gwei gas price
                     exchange_rate: Uint128::new(2 * 10u128.pow(9)), // 0.2 exchange rate (remote token less valuable)
                 })

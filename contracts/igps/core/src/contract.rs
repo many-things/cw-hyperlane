@@ -4,7 +4,7 @@ use cosmwasm_std::{Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Respon
 
 use hpl_interface::hook::HookQueryMsg;
 use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg};
-use hpl_interface::igp::gas_oracle::IgpGasOracleQueryMsg;
+use hpl_interface::igp::oracle::IgpGasOracleQueryMsg;
 
 use crate::state::{Config, CONFIG};
 use crate::{

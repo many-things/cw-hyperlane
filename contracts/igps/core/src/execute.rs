@@ -8,7 +8,7 @@ use cosmwasm_std::{
 };
 use cw_utils::PaymentError;
 use hpl_interface::hook::PostDispatchMsg;
-use hpl_interface::igp::gas_oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
+use hpl_interface::igp::oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
 use hpl_interface::types::{IGPMetadata, Message};
 
 use std::str::FromStr;

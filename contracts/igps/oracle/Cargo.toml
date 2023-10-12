@@ -1,5 +1,5 @@
 [package]
-name = "hpl-igp-gas-oracle"
+name = "hpl-igp-oracle"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

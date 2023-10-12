@@ -5,7 +5,7 @@ use crate::DEFAULT_GAS_USAGE;
 use cosmwasm_std::{to_binary, Addr, Deps, QueryResponse, Uint256};
 use hpl_interface::hook::QuoteDispatchMsg;
 use hpl_interface::igp::core::QuoteGasPaymentResponse;
-use hpl_interface::igp::gas_oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
+use hpl_interface::igp::oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
 use hpl_interface::types::{IGPMetadata, Message};
 
 pub fn quote_gas_payment(

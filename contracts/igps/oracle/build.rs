@@ -3,7 +3,7 @@ use std::{env::current_dir, fs::remove_dir_all};
 use cosmwasm_schema::write_api;
 use cosmwasm_std::Empty;
 
-use hpl_interface::igp::gas_oracle::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use hpl_interface::igp::oracle::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {

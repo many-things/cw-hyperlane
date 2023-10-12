@@ -7,7 +7,7 @@ use crate::{
     router::{RouterMsg, RouterQuery},
 };
 
-use super::gas_oracle::IgpGasOracleQueryMsg;
+use super::oracle::IgpGasOracleQueryMsg;
 
 #[cw_serde]
 pub struct InstantiateMsg {
