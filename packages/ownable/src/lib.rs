@@ -14,6 +14,10 @@ const OWNER: Item<Addr> = Item::new(OWNER_KEY);
 const PENDING_OWNER_KEY: &str = "pending_owner";
 const PENDING_OWNER: Item<Addr> = Item::new(PENDING_OWNER_KEY);
 
+fn event_to_resp(event: Event) -> Response {
+    Response::new().add_event(event)
+}
+
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_ownable::{}", name))
 }
@@ -34,17 +38,23 @@ pub fn handle<C: CustomQuery>(
 
     match msg {
         InitOwnershipTransfer { next_owner } => {
-            Ok(Response::new().add_event(init_ownership_transfer(
+            let event = init_ownership_transfer(
                 deps.storage,
                 &info.sender,
                 &deps.api.addr_validate(&next_owner)?,
-            )?))
+            )?;
+
+            Ok(event_to_resp(event))
         }
         RevokeOwnershipTransfer {} => {
-            Ok(Response::new().add_event(revoke_ownership_transfer(deps.storage, &info.sender)?))
+            let event = revoke_ownership_transfer(deps.storage, &info.sender)?;
+
+            Ok(event_to_resp(event))
         }
         ClaimOwnership {} => {
-            Ok(Response::new().add_event(claim_ownership(deps.storage, &info.sender)?))
+            let event = claim_ownership(deps.storage, &info.sender)?;
+
+            Ok(event_to_resp(event))
         }
     }
 }

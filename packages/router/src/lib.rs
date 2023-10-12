@@ -2,7 +2,7 @@
 mod test;
 
 use cosmwasm_std::{
-    to_binary, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
     StdError, StdResult, Storage,
 };
 use cw_storage_plus::Map;
@@ -16,6 +16,14 @@ use hpl_interface::{
 use serde::{de::DeserializeOwned, Serialize};
 
 const ROUTES_PREFIX: &str = "routes";
+
+fn event_to_resp(event: Event) -> Response {
+    Response::new().add_event(event)
+}
+
+fn new_event(name: &str) -> Event {
+    Event::new(format!("hpl_router::{}", name))
+}
 
 fn get_route_map<T>() -> Map<'static, u32, T>
 where
@@ -37,60 +45,60 @@ where
 
     match msg {
         SetRoute { set } => {
-            set_route(deps.storage, set.clone())?;
+            let event = set_route(deps.storage, &info.sender, set)?;
 
-            let resp = Response::new().add_event(
-                Event::new("hpl_router::set_route")
-                    .add_attribute("sender", info.sender)
-                    .add_attribute(
-                        "set",
-                        serde_json_wasm::to_string(&set)
-                            .map_err(|_| StdError::generic_err("encoding failed"))?,
-                    ),
-            );
-
-            Ok(resp)
+            Ok(event_to_resp(event))
         }
         SetRoutes { set } => {
-            set_routes(deps.storage, set.clone())?;
+            let event = set_routes(deps.storage, &info.sender, set)?;
 
-            let resp = Response::new().add_event(
-                Event::new("hpl_router::set_routes")
-                    .add_attribute("sender", info.sender)
-                    .add_attribute(
-                        "set",
-                        serde_json_wasm::to_string(&set)
-                            .map_err(|_| StdError::generic_err("encoding failed"))?,
-                    ),
-            );
-
-            Ok(resp)
+            Ok(event_to_resp(event))
         }
     }
 }
 
-pub fn set_route<T>(storage: &mut dyn Storage, set: DomainRouteSet<T>) -> StdResult<()>
+pub fn set_route<T>(
+    storage: &mut dyn Storage,
+    sender: &Addr,
+    set: DomainRouteSet<T>,
+) -> StdResult<Event>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
     get_route_map().save(storage, set.domain, &set.route)?;
 
-    Ok(())
+    Ok(new_event("set_route")
+        .add_attribute("sender", sender)
+        .add_attribute(
+            "set",
+            serde_json_wasm::to_string(&set)
+                .map_err(|_| StdError::generic_err("encoding failed"))?,
+        ))
 }
 
-pub fn set_routes<T>(storage: &mut dyn Storage, set: Vec<DomainRouteSet<T>>) -> StdResult<()>
+pub fn set_routes<T>(
+    storage: &mut dyn Storage,
+    sender: &Addr,
+    set: Vec<DomainRouteSet<T>>,
+) -> StdResult<Event>
 where
     T: Serialize + DeserializeOwned + Clone + Eq + Default,
 {
     for DomainRouteSet {
         domain,
         route: router,
-    } in set
+    } in set.clone()
     {
         get_route_map().save(storage, domain, &router)?;
     }
 
-    Ok(())
+    Ok(new_event("set_routes")
+        .add_attribute("sender", sender)
+        .add_attribute(
+            "set",
+            serde_json_wasm::to_string(&set)
+                .map_err(|_| StdError::generic_err("encoding failed"))?,
+        ))
 }
 
 pub fn handle_query<C: CustomQuery, T>(
