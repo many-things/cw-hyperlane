@@ -17,6 +17,18 @@ impl PostDispatchMsg {
     }
 }
 
+#[cw_serde]
+pub struct QuoteDispatchMsg {
+    pub metadata: HexBinary,
+    pub message: HexBinary,
+}
+
+impl QuoteDispatchMsg {
+    pub fn wrap(self) -> HookQueryMsg {
+        HookQueryMsg::QuoteDispatch(self)
+    }
+}
+
 /// This is the basic message to demonstrate the required interface
 #[cw_serde]
 pub enum ExpectedHookMsg {
@@ -28,12 +40,6 @@ pub enum ExpectedHookMsg {
 pub enum HookQueryMsg {
     #[returns(QuoteDispatchResponse)]
     QuoteDispatch(QuoteDispatchMsg),
-}
-
-#[cw_serde]
-pub struct QuoteDispatchMsg {
-    pub metadata: HexBinary,
-    pub message: HexBinary,
 }
 
 #[cw_serde]
