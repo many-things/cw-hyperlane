@@ -8,8 +8,8 @@ use cw_utils::PaymentError;
 use hpl_interface::igp::{core::GasOracleConfig, gas_oracle};
 
 use crate::{
-    error::ContractError,
-    state::{BENEFICIARY, GAS_ORACLE, GAS_TOKEN},
+    state::{BENEFICIARY, GAS_TOKEN},
+    ContractError,
 };
 
 use super::IGP;

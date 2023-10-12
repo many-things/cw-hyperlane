@@ -4,14 +4,13 @@ use cosmwasm_std::{
     Addr, Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, OwnedDeps, Response,
 };
 use hpl_interface::igp::core::{
-    ExecuteMsg, GasOracleConfig, GetExchangeRateAndGasPriceResponse, InstantiateMsg, QueryMsg,
-    QuoteGasPaymentResponse,
+    ExecuteMsg, GasOracleConfig, InstantiateMsg, QueryMsg, QuoteGasPaymentResponse,
 };
 use serde::de::DeserializeOwned;
 
 use crate::{
     contract::{execute, instantiate, query},
-    error::ContractError,
+    ContractError,
 };
 
 mod contract;

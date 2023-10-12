@@ -4,12 +4,12 @@ use cosmwasm_std::{Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Respon
 
 use hpl_interface::hook::HookQueryMsg;
 use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg};
+use hpl_interface::igp::gas_oracle::IgpGasOracleQueryMsg;
 
 use crate::state::{Config, CONFIG};
 use crate::{
-    error::ContractError,
     state::{BENEFICIARY, GAS_TOKEN},
-    CONTRACT_NAME, CONTRACT_VERSION,
+    ContractError, CONTRACT_NAME, CONTRACT_VERSION,
 };
 
 fn new_event(name: &str) -> Event {
@@ -32,7 +32,7 @@ pub fn instantiate(
     CONFIG.save(deps.storage, &Config { prefix: msg.prefix })?;
 
     Ok(Response::new().add_event(
-        new_event("initialzie")
+        new_event("initialize")
             .add_attribute("sender", info.sender)
             .add_attribute("owner", msg.owner)
             .add_attribute("beneficiary", msg.beneficiary),
@@ -86,15 +86,17 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             HookQueryMsg::QuoteDispatch(msg) => quote_dispatch(deps, msg),
             HookQueryMsg::Mailbox {} => todo!(),
         },
+        QueryMsg::Oracle(msg) => match msg {
+            IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
+                get_exchange_rate_and_gas_price(deps, dest_domain)
+            }
+        },
         QueryMsg::Base(msg) => match msg {
             IgpQueryMsg::Beneficiary {} => todo!(),
             IgpQueryMsg::QuoteGasPayment {
                 dest_domain,
                 gas_amount,
             } => quote_gas_payment(deps, dest_domain, gas_amount),
-            IgpQueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
-                get_exchange_rate_and_gas_price(deps, dest_domain)
-            }
         },
     }
 }

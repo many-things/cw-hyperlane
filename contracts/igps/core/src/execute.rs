@@ -1,15 +1,14 @@
-use crate::constant::{DEFAULT_GAS_USAGE, TOKEN_EXCHANGE_RATE_SCALE};
-use crate::error::ContractError;
-use crate::event::{emit_claim, emit_pay_for_gas, emit_set_beneficiary, emit_set_gas_oracles};
-use crate::state::{BENEFICIARY, CONFIG, GAS_ORACLE, GAS_TOKEN};
+use crate::event::{emit_claim, emit_pay_for_gas, emit_post_dispatch, emit_set_beneficiary};
+use crate::state::{BENEFICIARY, CONFIG, GAS_TOKEN};
+use crate::ContractError;
+use crate::{DEFAULT_GAS_USAGE, TOKEN_EXCHANGE_RATE_SCALE};
 use cosmwasm_std::{
-    coins, ensure, ensure_eq, BankMsg, DepsMut, Env, HexBinary, MessageInfo, QuerierWrapper,
+    coins, ensure, ensure_eq, Addr, BankMsg, DepsMut, Env, HexBinary, MessageInfo, QuerierWrapper,
     Response, Storage, Uint128, Uint256,
 };
 use cw_utils::PaymentError;
 use hpl_interface::hook::PostDispatchMsg;
-use hpl_interface::igp::gas_oracle::IgpGasOracleQueryMsg;
-use hpl_interface::igp::{core::GasOracleConfig, gas_oracle};
+use hpl_interface::igp::gas_oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
 use hpl_interface::types::{IGPMetadata, Message};
 
 use std::str::FromStr;
@@ -20,11 +19,12 @@ pub fn quote_gas_price(
     dest_domain: u32,
     gas_amount: Uint256,
 ) -> Result<Uint256, ContractError> {
-    let gas_oracle = GAS_ORACLE
-        .may_load(storage, dest_domain)?
+    let gas_oracle_set = hpl_router::get_route::<Addr>(storage, dest_domain)?;
+    let gas_oracle = gas_oracle_set
+        .route
         .ok_or(ContractError::GasOracleNotFound {})?;
 
-    let gas_price_resp: gas_oracle::GetExchangeRateAndGasPriceResponse = querier.query_wasm_smart(
+    let gas_price_resp: GetExchangeRateAndGasPriceResponse = querier.query_wasm_smart(
         gas_oracle,
         &IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain },
     )?;
@@ -34,31 +34,6 @@ pub fn quote_gas_price(
         / Uint256::from(TOKEN_EXCHANGE_RATE_SCALE);
 
     Ok(gas_needed)
-}
-
-pub fn set_gas_oracle(
-    deps: DepsMut,
-    info: MessageInfo,
-    configs: Vec<GasOracleConfig>,
-) -> Result<Response, ContractError> {
-    ensure_eq!(
-        info.sender,
-        hpl_ownable::get_owner(deps.storage)?,
-        ContractError::Unauthorized {}
-    );
-
-    let mut domains = vec![];
-    for c in configs {
-        domains.push(c.remote_domain.to_string());
-
-        GAS_ORACLE.save(
-            deps.storage,
-            c.remote_domain,
-            &deps.api.addr_validate(&c.gas_oracle)?,
-        )?;
-    }
-
-    Ok(Response::new().add_event(emit_set_gas_oracles(info.sender, domains)))
 }
 
 pub fn set_beneficiary(
@@ -103,7 +78,7 @@ pub fn post_dispatch(
     req: PostDispatchMsg,
 ) -> Result<Response, ContractError> {
     let igp_metadata: IGPMetadata = req.metadata.clone().into();
-    let message: Message = req.message.into();
+    let message: Message = req.message.clone().into();
     let prefix = CONFIG.load(deps.storage)?.prefix;
 
     let gas_limit = match req.metadata.to_vec().len() < 32 {
@@ -113,14 +88,15 @@ pub fn post_dispatch(
     let refund_address =
         igp_metadata.get_refund_address(prefix.clone(), message.sender_addr(prefix.as_str())?);
 
-    pay_for_gas(
+    Ok(pay_for_gas(
         deps,
         info,
         message.id(),
         message.dest_domain,
         gas_limit,
         refund_address.to_string(),
-    )
+    )?
+    .add_event(emit_post_dispatch(req.metadata, req.message)))
 }
 
 pub fn pay_for_gas(

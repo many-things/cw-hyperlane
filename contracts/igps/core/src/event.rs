@@ -1,11 +1,5 @@
 use cosmwasm_std::{Addr, Coin, Event, HexBinary, Uint128, Uint256};
 
-pub fn emit_set_gas_oracles(owner: Addr, domains: Vec<String>) -> Event {
-    Event::new("igp-core-set-gas-oracle")
-        .add_attribute("owner", owner)
-        .add_attribute("domains", domains.join(","))
-}
-
 pub fn emit_set_beneficiary(owner: Addr, beneficiary: String) -> Event {
     Event::new("igp-core-set-beneficiary")
         .add_attribute("owner", owner)

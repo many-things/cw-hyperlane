@@ -1,11 +1,13 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, HexBinary, Uint128, Uint256};
+use cosmwasm_std::{Addr, HexBinary, Uint256};
 
 use crate::{
     hook::{HookQueryMsg, PostDispatchMsg},
     ownable::{OwnableMsg, OwnableQueryMsg},
     router::{RouterMsg, RouterQuery},
 };
+
+use super::gas_oracle::IgpGasOracleQueryMsg;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -68,6 +70,7 @@ pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
     Router(RouterQuery<Addr>),
+    Oracle(IgpGasOracleQueryMsg),
 
     // base
     Base(IgpQueryMsg),
@@ -84,9 +87,6 @@ pub enum IgpQueryMsg {
         dest_domain: u32,
         gas_amount: Uint256,
     },
-
-    #[returns(GetExchangeRateAndGasPriceResponse)]
-    GetExchangeRateAndGasPrice { dest_domain: u32 },
 }
 
 #[cw_serde]
@@ -97,10 +97,4 @@ pub struct BeneficiaryResponse {
 #[cw_serde]
 pub struct QuoteGasPaymentResponse {
     pub gas_needed: Uint256,
-}
-
-#[cw_serde]
-pub struct GetExchangeRateAndGasPriceResponse {
-    pub gas_price: Uint128,
-    pub exchange_rate: Uint128,
 }
