@@ -1,8 +1,8 @@
 use cosmwasm_std::{
     coin,
     testing::{mock_dependencies, mock_env},
-    to_binary, Addr, ContractResult, HexBinary, Order, QuerierResult, Response, StdResult,
-    SystemResult, Uint128, Uint256,
+    to_binary, Addr, ContractResult, HexBinary, QuerierResult, Response, SystemResult, Uint128,
+    Uint256,
 };
 use cw_utils::PaymentError;
 use hpl_interface::igp::{core::GasOracleConfig, oracle};
@@ -83,10 +83,13 @@ fn test_setter() -> anyhow::Result<()> {
 
     // check state mutation
     let storage = igp.deps_ref().storage;
-    let actual_configs: Vec<GasOracleConfig> = GAS_ORACLE
-        .range(storage, None, None, Order::Ascending)
-        .map(|item| Ok(item?.into()))
-        .collect::<StdResult<_>>()?;
+    let actual_configs = hpl_router::get_routes::<Addr>(storage, None, None, None)?
+        .into_iter()
+        .map(|v| GasOracleConfig {
+            remote_domain: v.domain,
+            gas_oracle: v.route.unwrap().to_string(),
+        })
+        .collect::<Vec<_>>();
 
     assert_eq!(configs, actual_configs);
 

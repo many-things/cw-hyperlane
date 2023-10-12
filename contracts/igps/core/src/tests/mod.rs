@@ -3,9 +3,15 @@ use cosmwasm_std::{
     testing::{mock_info, MockApi, MockQuerier, MockStorage},
     Addr, Coin, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
-use hpl_interface::igp::{
-    core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg, QuoteGasPaymentResponse},
-    oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg},
+use hpl_interface::{
+    igp::{
+        core::{
+            ExecuteMsg, GasOracleConfig, IgpQueryMsg, InstantiateMsg, QueryMsg,
+            QuoteGasPaymentResponse,
+        },
+        oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg},
+    },
+    router::{DomainRouteSet, RouterMsg},
 };
 use serde::de::DeserializeOwned;
 
@@ -66,6 +72,25 @@ impl IGP {
 
     pub fn deps_ref(&self) -> Deps {
         self.deps.as_ref()
+    }
+
+    pub fn set_gas_oracles(
+        &mut self,
+        sender: &Addr,
+        configs: Vec<GasOracleConfig>,
+    ) -> Result<Response, ContractError> {
+        self.execute(
+            mock_info(sender.as_str(), &[]),
+            ExecuteMsg::Router(RouterMsg::<Addr>::SetRoutes {
+                set: configs
+                    .into_iter()
+                    .map(|v| DomainRouteSet {
+                        domain: v.remote_domain,
+                        route: Some(Addr::unchecked(v.gas_oracle)),
+                    })
+                    .collect(),
+            }),
+        )
     }
 
     pub fn set_beneficiary(
