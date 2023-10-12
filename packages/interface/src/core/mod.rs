@@ -11,6 +11,12 @@ pub struct HandleMsg {
     pub body: HexBinary,
 }
 
+impl HandleMsg {
+    pub fn wrap(self) -> ExpectedHandleMsg {
+        ExpectedHandleMsg::Handle(self)
+    }
+}
+
 #[cw_serde]
 pub enum ExpectedHandleMsg {
     Handle(HandleMsg),

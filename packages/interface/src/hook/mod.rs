@@ -5,16 +5,22 @@ pub mod routing;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{HexBinary, Uint256};
 
+#[cw_serde]
+pub struct PostDispatchMsg {
+    pub metadata: HexBinary,
+    pub message: HexBinary,
+}
+
+impl PostDispatchMsg {
+    pub fn wrap(self) -> ExpectedHookMsg {
+        ExpectedHookMsg::PostDispatch(self)
+    }
+}
+
 /// This is the basic message to demonstrate the required interface
 #[cw_serde]
 pub enum ExpectedHookMsg {
     PostDispatch(PostDispatchMsg),
-}
-
-#[cw_serde]
-pub struct PostDispatchMsg {
-    metadata: HexBinary,
-    message: HexBinary,
 }
 
 #[cw_serde]
@@ -26,8 +32,8 @@ pub enum HookQueryMsg {
 
 #[cw_serde]
 pub struct QuoteDispatchMsg {
-    metadata: HexBinary,
-    message: HexBinary,
+    pub metadata: HexBinary,
+    pub message: HexBinary,
 }
 
 #[cw_serde]
