@@ -251,7 +251,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
             domains: hpl_router::get_domains(deps.storage)?,
         })?),
         QueryMsg::Router { domain } => Ok(to_binary(&RouterResponse {
-            router: hpl_router::get_router(deps.storage, domain)?,
+            router: hpl_router::get_route(deps.storage, domain)?,
         })?),
 
         QueryMsg::TokenType {} => Ok(to_binary(&TokenTypeResponse {
@@ -263,9 +263,4 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
             mode: MODE.load(deps.storage)?,
         })?),
     }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
 }

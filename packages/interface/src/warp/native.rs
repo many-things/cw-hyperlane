@@ -1,44 +1,91 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
+use cosmwasm_std::HexBinary;
 
-use crate::{core, router};
+use crate::{
+    core,
+    ownable::OwnableQueryMsg,
+    router::{RouterMsg, RouterQuery},
+};
 
-use super::{TokenMode, TokenType};
+use super::{TokenMode, TokenWarpDefaultQueryMsg};
+
+#[cw_serde]
+pub struct DenomUnit {
+    pub denom: String,
+    #[serde(
+        serialize_with = "as_str::serialize",
+        deserialize_with = "as_str::deserialize"
+    )]
+    pub exponent: u32,
+    pub aliases: Vec<String>,
+}
+
+#[cw_serde]
+pub struct Metadata {
+    pub description: String,
+    pub denom_units: Vec<DenomUnit>,
+    pub base: String,
+    pub display: String,
+    pub name: String,
+    pub symbol: String,
+}
+
+#[cw_serde]
+pub struct InstantiateMsg {
+    pub denom: String,
+    pub metadata: Option<Metadata>,
+    pub mode: TokenMode,
+
+    pub hrp: String,
+    pub owner: String,
+    pub mailbox: String,
+}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Router(router::RouterMsg<Binary>),
+    Router(RouterMsg<HexBinary>),
 
     // handle transfer remote
     Handle(core::HandleMsg),
 
     // transfer to remote
-    TransferRemote { dest_domain: u32, recipient: Binary },
+    TransferRemote {
+        dest_domain: u32,
+        recipient: HexBinary,
+    },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
+#[serde(untagged)]
+#[query_responses(nested)]
 pub enum QueryMsg {
-    #[returns(router::DomainsResponse)]
-    Domains {},
+    Ownable(OwnableQueryMsg),
 
-    #[returns(router::RouteResponse<Binary>)]
-    Router { domain: u32 },
+    Router(RouterQuery<HexBinary>),
 
-    #[returns(TokenTypeResponse)]
-    TokenType {},
-
-    #[returns(TokenModeResponse)]
-    TokenMode {},
+    TokenDefault(TokenWarpDefaultQueryMsg),
 }
 
-#[cw_serde]
-pub struct TokenTypeResponse {
-    #[serde(rename = "type")]
-    pub typ: TokenType,
-}
+mod as_str {
+    use serde::{de, Deserialize, Deserializer, Serializer};
+    use std::{fmt::Display, str::FromStr};
 
-#[cw_serde]
-pub struct TokenModeResponse {
-    pub mode: TokenMode,
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+    where
+        T: FromStr,
+        T::Err: Display,
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        T::from_str(&s).map_err(de::Error::custom)
+    }
+
+    pub fn serialize<S, T>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+        T: Display,
+    {
+        serializer.serialize_str(&value.to_string())
+    }
 }

@@ -1,5 +1,5 @@
 [package]
-name = "hpl-token-native"
+name = "hpl-warp-native"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

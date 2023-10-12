@@ -7,15 +7,16 @@ use cosmwasm_std::{
     Event, MessageInfo, QueryResponse, Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
 };
 use hpl_interface::{
-    router::{DomainsResponse, RouterResponse},
-    token::{self, TokenMode, TokenType},
-    token_cw20::{ExecuteMsg, QueryMsg, ReceiveMsg, TokenModeResponse, TokenTypeResponse},
+    router::DomainsResponse,
     types::bech32_encode,
+    warp::{
+        self,
+        cw20::{ExecuteMsg, InstantiateMsg, QueryMsg},
+    },
 };
 
 use crate::{
     error::ContractError,
-    msg::{InstantiateMsg, MigrateMsg, TokenOption},
     state::{HRP, MAILBOX, MODE, OWNER, TOKEN},
     CONTRACT_NAME, CONTRACT_VERSION, REPLY_ID_CREATE_DENOM,
 };
@@ -36,7 +37,7 @@ pub fn instantiate(
 
     let mut resp = Response::new();
 
-    if msg.mode == TokenMode::Bridged {
+    if msg.mode == warp::TokenMode::Bridged {
         ensure!(msg.token.is_some(), ContractError::InvalidTokenOption);
         let token = msg.token.clone().unwrap();
 
@@ -82,8 +83,10 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    use ExecuteMsg::*;
+
     match msg {
-        ExecuteMsg::Router(msg) => {
+        Router(msg) => {
             ensure_eq!(
                 info.sender,
                 OWNER.load(deps.storage)?,
@@ -92,7 +95,7 @@ pub fn execute(
 
             Ok(hpl_router::handle(deps, env, info, msg)?)
         }
-        ExecuteMsg::Handle(msg) => {
+        Handle(msg) => {
             ensure_eq!(
                 info.sender,
                 MAILBOX.load(deps.storage)?,
@@ -116,7 +119,7 @@ pub fn execute(
                 {
                     WasmMsg::Execute {
                         contract_addr: token.to_string(),
-                        msg: to_binary(&cw20::Cw20ExecuteMsg::Mint {
+                        msg: to_binary(&cw20::Cw20Mint {
                             recipient: recipient.to_string(),
                             amount: Uint128::from_str(&token_msg.amount.to_string())?,
                         })?,
@@ -145,7 +148,7 @@ pub fn execute(
                     .add_attribute("amount", token_msg.amount),
             ))
         }
-        ExecuteMsg::Receive(msg) => {
+        Receive(msg) => {
             let token = TOKEN.load(deps.storage)?;
 
             ensure_eq!(info.sender, token, ContractError::Unauthorized);
@@ -257,9 +260,4 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
             mode: MODE.load(deps.storage)?,
         })?),
     }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
 }

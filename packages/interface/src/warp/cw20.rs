@@ -1,19 +1,47 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
+use cosmwasm_std::HexBinary;
 
-use crate::{core, router};
+use crate::{
+    core,
+    ownable::OwnableQueryMsg,
+    router::{self, RouterQuery},
+};
 
-use super::{TokenMode, TokenType};
+use super::{TokenMode, TokenWarpDefaultQueryMsg};
+
+#[cw_serde]
+pub enum TokenOption {
+    Create {
+        code_id: u64,
+        init_msg: Box<cw20_base::msg::InstantiateMsg>,
+    },
+    Reuse {
+        contract: String,
+    },
+}
+
+#[cw_serde]
+pub struct InstantiateMsg {
+    pub token: Option<TokenOption>,
+    pub mode: TokenMode,
+
+    pub hrp: String,
+    pub owner: String,
+    pub mailbox: String,
+}
 
 #[cw_serde]
 pub enum ReceiveMsg {
     // transfer to remote
-    TransferRemote { dest_domain: u32, recipient: Binary },
+    TransferRemote {
+        dest_domain: u32,
+        recipient: HexBinary,
+    },
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Router(router::RouterMsg<Binary>),
+    Router(router::RouterMsg<HexBinary>),
 
     /// handle transfer remote
     Handle(core::HandleMsg),
@@ -24,27 +52,10 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
+#[serde(untagged)]
+#[query_responses(nested)]
 pub enum QueryMsg {
-    #[returns(router::DomainsResponse)]
-    Domains {},
-
-    #[returns(router::RouteResponse<Binary>)]
-    Router { domain: u32 },
-
-    #[returns(TokenTypeResponse)]
-    TokenType {},
-
-    #[returns(TokenModeResponse)]
-    TokenMode {},
-}
-
-#[cw_serde]
-pub struct TokenTypeResponse {
-    #[serde(rename = "type")]
-    pub typ: TokenType,
-}
-
-#[cw_serde]
-pub struct TokenModeResponse {
-    pub mode: TokenMode,
+    Ownable(OwnableQueryMsg),
+    Router(RouterQuery<HexBinary>),
+    TokenDefault(TokenWarpDefaultQueryMsg),
 }

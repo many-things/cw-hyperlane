@@ -1,6 +1,6 @@
 use cosmwasm_std::Addr;
 use cw_storage_plus::Item;
-use hpl_interface::token::TokenMode;
+use hpl_interface::warp::TokenMode;
 
 pub const TOKEN_KEY: &str = "token";
 pub const TOKEN: Item<Addr> = Item::new(TOKEN_KEY);

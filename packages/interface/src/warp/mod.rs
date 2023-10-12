@@ -3,7 +3,7 @@ pub mod native;
 
 use std::fmt;
 
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, HexBinary, Uint256};
 
 #[cw_serde]
@@ -77,4 +77,25 @@ impl From<HexBinary> for Message {
     fn from(v: HexBinary) -> Self {
         Binary(v.into()).into()
     }
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum TokenWarpDefaultQueryMsg {
+    #[returns(TokenTypeResponse)]
+    TokenType {},
+
+    #[returns(TokenModeResponse)]
+    TokenMode {},
+}
+
+#[cw_serde]
+pub struct TokenTypeResponse {
+    #[serde(rename = "type")]
+    pub typ: TokenType,
+}
+
+#[cw_serde]
+pub struct TokenModeResponse {
+    pub mode: TokenMode,
 }

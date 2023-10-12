@@ -1,14 +1,14 @@
 use std::{env::current_dir, fs::remove_dir_all};
 
 use cosmwasm_schema::write_api;
+use cosmwasm_std::Empty;
 
-use hpl_interface::token_cw20::{ExecuteMsg, QueryMsg};
-use hpl_token_cw20::msg::{InstantiateMsg, MigrateMsg};
+use hpl_interface::warp::cw20::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {
         instantiate: InstantiateMsg,
-        migrate: MigrateMsg,
+        migrate: Empty,
         execute: ExecuteMsg,
         query: QueryMsg,
     }
