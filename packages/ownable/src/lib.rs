@@ -2,8 +2,8 @@
 mod test;
 
 use cosmwasm_std::{
-    to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
-    StdError, StdResult, Storage,
+    ensure, ensure_eq, to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo,
+    QueryResponse, Response, StdError, StdResult, Storage,
 };
 use cw_storage_plus::Item;
 use hpl_interface::ownable::{OwnableMsg, OwnableQueryMsg, OwnerResponse, PendingOwnerResponse};
@@ -64,12 +64,16 @@ pub fn init_ownership_transfer(
     sender: &Addr,
     next_owner: &Addr,
 ) -> StdResult<Event> {
-    if sender != OWNER.load(storage)? {
-        return Err(StdError::generic_err("unauthorized"));
-    }
-    if PENDING_OWNER.exists(storage) {
-        return Err(StdError::generic_err("ownership is transferring"));
-    }
+    ensure_eq!(
+        sender,
+        OWNER.load(storage)?,
+        StdError::generic_err("unauthorized")
+    );
+
+    ensure!(
+        !PENDING_OWNER.exists(storage),
+        StdError::generic_err("ownership is transferring")
+    );
 
     PENDING_OWNER.save(storage, next_owner)?;
 
@@ -79,12 +83,16 @@ pub fn init_ownership_transfer(
 }
 
 pub fn revoke_ownership_transfer(storage: &mut dyn Storage, sender: &Addr) -> StdResult<Event> {
-    if sender != OWNER.load(storage)? {
-        return Err(StdError::generic_err("unauthorized"));
-    }
-    if !PENDING_OWNER.exists(storage) {
-        return Err(StdError::generic_err("ownership is not transferring"));
-    }
+    ensure_eq!(
+        sender,
+        OWNER.load(storage)?,
+        StdError::generic_err("unauthorized")
+    );
+
+    ensure!(
+        PENDING_OWNER.exists(storage),
+        StdError::generic_err("ownership is not transferring")
+    );
 
     PENDING_OWNER.remove(storage);
 
@@ -92,12 +100,16 @@ pub fn revoke_ownership_transfer(storage: &mut dyn Storage, sender: &Addr) -> St
 }
 
 pub fn claim_ownership(storage: &mut dyn Storage, sender: &Addr) -> StdResult<Event> {
-    if !PENDING_OWNER.exists(storage) {
-        return Err(StdError::generic_err("ownership is not transferring"));
-    }
-    if sender != PENDING_OWNER.load(storage)? {
-        return Err(StdError::generic_err("unauthorized"));
-    }
+    ensure!(
+        PENDING_OWNER.exists(storage),
+        StdError::generic_err("ownership is not transferring")
+    );
+
+    ensure_eq!(
+        sender,
+        PENDING_OWNER.load(storage)?,
+        StdError::generic_err("unauthorized")
+    );
 
     OWNER.save(storage, sender)?;
     PENDING_OWNER.remove(storage);
