@@ -248,7 +248,7 @@ fn test_announce_external() -> anyhow::Result<()> {
             &testdata.deployer,
             HexBinary::from_hex(&remove_hex_prefix(validator.to_string()))?,
             location,
-            HexBinary::from_hex(&remove_hex_prefix(signature.to_string()))?.into(),
+            HexBinary::from_hex(&remove_hex_prefix(signature.to_string()))?,
         )?;
     }
 
