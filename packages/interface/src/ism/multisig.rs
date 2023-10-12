@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, HexBinary};
+use cosmwasm_std::HexBinary;
 
 #[allow(unused_imports)]
 use super::{ModuleTypeResponse, VerifyInfoResponse, VerifyResponse};
@@ -14,7 +14,7 @@ pub struct InstantiateMsg {
 pub struct ValidatorSet {
     pub domain: u32,
     pub validator: String,
-    pub validator_pubkey: Binary,
+    pub validator_pubkey: HexBinary,
 }
 
 #[cw_serde]

@@ -6,7 +6,7 @@ pub mod query;
 pub mod state;
 mod verify;
 
-use cosmwasm_std::{Binary, StdResult};
+use cosmwasm_std::{HexBinary, StdResult};
 use hpl_interface::types::keccak256_hash;
 
 pub use crate::error::ContractError;
@@ -17,7 +17,7 @@ pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const PREFIX: &str = "\x19Ethereum Signed Message:\n";
 
-pub fn domain_hash(local_domain: u32, address: Binary) -> StdResult<Binary> {
+pub fn domain_hash(local_domain: u32, address: HexBinary) -> StdResult<HexBinary> {
     let mut bz = vec![];
     bz.append(&mut local_domain.to_be_bytes().to_vec());
     bz.append(&mut address.to_vec());
@@ -28,7 +28,7 @@ pub fn domain_hash(local_domain: u32, address: Binary) -> StdResult<Binary> {
     Ok(hash)
 }
 
-pub fn eth_hash(message: Binary) -> Result<Binary, ContractError> {
+pub fn eth_hash(message: HexBinary) -> Result<HexBinary, ContractError> {
     let mut eth_message = format!("{PREFIX}{}", message.len()).into_bytes();
     eth_message.extend_from_slice(&message);
     let message_hash = keccak256_hash(&eth_message);
@@ -41,7 +41,7 @@ pub fn multisig_hash(
     mut root: Vec<u8>,
     index: u32,
     mut message_id: Vec<u8>,
-) -> Result<Binary, ContractError> {
+) -> Result<HexBinary, ContractError> {
     let mut bz = vec![];
 
     bz.append(&mut domain_hash);

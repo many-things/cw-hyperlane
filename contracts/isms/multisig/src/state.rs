@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary, Storage};
+use cosmwasm_std::{Addr, HexBinary, Storage};
 use cw_storage_plus::{Item, Map};
 
 use crate::ContractError;
@@ -13,7 +13,7 @@ pub struct Config {
 #[cw_serde]
 pub struct ValidatorSet {
     pub signer: Addr,
-    pub signer_pubkey: Binary,
+    pub signer_pubkey: HexBinary,
 }
 
 #[cw_serde]

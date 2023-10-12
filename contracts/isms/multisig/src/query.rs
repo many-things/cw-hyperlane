@@ -1,7 +1,7 @@
-use cosmwasm_std::{to_binary, Binary, Deps, HexBinary, QueryResponse};
+use cosmwasm_std::{to_binary, Deps, HexBinary, QueryResponse};
 use hpl_interface::{
     ism::{ISMType, VerifyInfoResponse, VerifyResponse},
-    types::{message::Message, metadata::MessageIdMultisigIsmMetadata},
+    types::{Message, MessageIdMultisigIsmMetadata},
 };
 
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub fn get_module_type() -> Result<QueryResponse, ContractError> {
-    Ok(to_binary(&ISMType::Multisig)?)
+    Ok(to_binary(&ISMType::LegacyMultisig)?)
 }
 
 pub fn verify_message(
@@ -25,7 +25,7 @@ pub fn verify_message(
     let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
     let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
-    let mut signatures: Vec<Binary> = Vec::new();
+    let mut signatures: Vec<HexBinary> = Vec::new();
     for i in 0..metadata.signatures_len().unwrap() {
         signatures.push(metadata.signature_at(i))
     }
@@ -38,7 +38,7 @@ pub fn verify_message(
                 .clone()
                 .into_iter()
                 .map(|s| (v.signer_pubkey.clone(), s))
-                .collect::<Vec<(Binary, Binary)>>()
+                .collect::<Vec<(HexBinary, HexBinary)>>()
         })
         .fold(vec![], |acc, item| acc.into_iter().chain(item).collect());
 
@@ -89,7 +89,7 @@ mod test {
     use cosmwasm_std::{testing::mock_dependencies, to_binary, Addr, Binary, HexBinary};
     use hpl_interface::{
         ism::{ISMType, VerifyInfoResponse, VerifyResponse},
-        types::{message::Message, metadata::MessageIdMultisigIsmMetadata},
+        types::{Message, MessageIdMultisigIsmMetadata},
     };
 
     use super::{get_module_type, get_verify_info, verify_message};
@@ -98,13 +98,19 @@ mod test {
     fn test_get_module_type() {
         let result = get_module_type().unwrap();
 
-        assert_eq!(result, to_binary(&ISMType::Multisig).unwrap());
+        assert_eq!(result, to_binary(&ISMType::LegacyMultisig).unwrap());
+    }
+
+    fn hex(v: &str) -> HexBinary {
+        HexBinary::from_hex(v).unwrap()
+    }
+
+    fn base64(v: &str) -> HexBinary {
+        Binary::from_base64(v).unwrap().to_vec().into()
     }
 
     #[test]
     fn test_get_verify_failure() {
-        let hex = |v: &str| -> Binary { HexBinary::from_hex(v).unwrap().into() };
-
         let message = Message {
             version: 0,
             nonce: 8528,
@@ -123,24 +129,15 @@ mod test {
                 &Validators(vec![
                     ValidatorSet {
                         signer: Addr::unchecked("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
-                        signer_pubkey: Binary::from_base64(
-                            "ArU5zD28GiZu6HZIonZP9thauVOERZ7y5dR4fIhyT1gc",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("ArU5zD28GiZu6HZIonZP9thauVOERZ7y5dR4fIhyT1gc"),
                     },
                     ValidatorSet {
                         signer: Addr::unchecked("osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat"),
-                        signer_pubkey: Binary::from_base64(
-                            "Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh"),
                     },
                     ValidatorSet {
                         signer: Addr::unchecked("osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd"),
-                        signer_pubkey: Binary::from_base64(
-                            "Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB"),
                     },
                 ]),
             )
@@ -181,24 +178,15 @@ mod test {
                 &Validators(vec![
                     ValidatorSet {
                         signer: Addr::unchecked("osmo1l83956lgpak5sun7ggupls7rk7p5cr95499jdf"),
-                        signer_pubkey: Binary::from_base64(
-                            "A5zcWOYi4ldnz6VlgCU0svd3EHozgvRqiDI0cbvT2Ewi",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("A5zcWOYi4ldnz6VlgCU0svd3EHozgvRqiDI0cbvT2Ewi"),
                     },
                     ValidatorSet {
                         signer: Addr::unchecked("osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat"),
-                        signer_pubkey: Binary::from_base64(
-                            "Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh"),
                     },
                     ValidatorSet {
                         signer: Addr::unchecked("osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd"),
-                        signer_pubkey: Binary::from_base64(
-                            "Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB"),
                     },
                 ]),
             )
@@ -217,7 +205,6 @@ mod test {
 
     #[test]
     fn test_get_verify_info() {
-        let hex = |v: &str| -> Binary { HexBinary::from_hex(v).unwrap().into() };
         let mut deps = mock_dependencies();
 
         let message = Message {
@@ -237,24 +224,15 @@ mod test {
                 &Validators(vec![
                     ValidatorSet {
                         signer: Addr::unchecked("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
-                        signer_pubkey: Binary::from_base64(
-                            "ArU5zD28GiZu6HZIonZP9thauVOERZ7y5dR4fIhyT1gc",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("ArU5zD28GiZu6HZIonZP9thauVOERZ7y5dR4fIhyT1gc"),
                     },
                     ValidatorSet {
                         signer: Addr::unchecked("osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat"),
-                        signer_pubkey: Binary::from_base64(
-                            "Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh"),
                     },
                     ValidatorSet {
                         signer: Addr::unchecked("osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd"),
-                        signer_pubkey: Binary::from_base64(
-                            "Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB",
-                        )
-                        .unwrap(),
+                        signer_pubkey: base64("Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB"),
                     },
                 ]),
             )

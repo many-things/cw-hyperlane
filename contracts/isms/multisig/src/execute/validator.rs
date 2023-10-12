@@ -1,4 +1,4 @@
-use cosmwasm_std::{Binary, DepsMut, Event, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, Event, HexBinary, MessageInfo, Response};
 use hpl_interface::ism::multisig::ValidatorSet as MsgValidatorSet;
 
 use crate::{
@@ -10,7 +10,7 @@ use crate::{
 
 fn assert_pubkey_validate(
     validator: String,
-    pubkey: Binary,
+    pubkey: HexBinary,
     addr_prefix: String,
 ) -> Result<(), ContractError> {
     let pub_to_addr = verify::pub_to_addr(pubkey, &addr_prefix)?;
@@ -153,7 +153,8 @@ mod test {
     const ADDR2_VAULE: &str = "addr2";
 
     const VALIDATOR_ADDR: &str = "osmo1q28uzwtvvvlkz6k84gd7flu576x2l2ry9506p5";
-    const VALIDATOR_PUBKEY: &str = "AzpZu8TLfx5xEFQeVL4f+N5qu3X+Fq2uokLFLQ16OEuv";
+    const VALIDATOR_PUBKEY: &str =
+        "033a59bbc4cb7f1e7110541e54be1ff8de6abb75fe16adaea242c52d0d7a384baf";
 
     fn mock_owner(storage: &mut dyn Storage, owner: Addr) {
         let config = Config {
@@ -167,7 +168,7 @@ mod test {
     #[test]
     fn test_assert_pubkey_validate() {
         let validator = String::from(VALIDATOR_ADDR);
-        let validator_pubkey = Binary::from_base64(VALIDATOR_PUBKEY).unwrap();
+        let validator_pubkey = HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap();
         let addr_prefix = String::from("osmo");
 
         // fail
@@ -197,7 +198,7 @@ mod test {
         let msg = MsgValidatorSet {
             domain: 1u32,
             validator: "test".to_string(),
-            validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+            validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
         };
 
         // unauthorized
@@ -209,7 +210,7 @@ mod test {
         let valid_message = MsgValidatorSet {
             domain: 1u32,
             validator: VALIDATOR_ADDR.to_string(),
-            validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+            validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
         };
         VALIDATORS
             .save(
@@ -241,7 +242,7 @@ mod test {
         let msg = MsgValidatorSet {
             domain,
             validator: validator.clone(),
-            validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+            validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
         };
 
         // validators not exist
@@ -291,12 +292,12 @@ mod test {
             MsgValidatorSet {
                 domain: 1u32,
                 validator: String::from(VALIDATOR_ADDR),
-                validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+                validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
             },
             MsgValidatorSet {
                 domain: 1u32,
                 validator: String::from(VALIDATOR_ADDR),
-                validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+                validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
             },
         ];
 
@@ -314,7 +315,7 @@ mod test {
         let mut deps = mock_dependencies();
         let owner = Addr::unchecked(ADDR1_VAULE);
         let validator = String::from(VALIDATOR_ADDR);
-        let validator_pubkey = Binary::from_base64(VALIDATOR_PUBKEY).unwrap();
+        let validator_pubkey = HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap();
         mock_owner(deps.as_mut().storage, owner.clone());
 
         let msg = vec![
@@ -406,7 +407,7 @@ mod test {
                 1u32,
                 &Validators(vec![ValidatorSet {
                     signer: Addr::unchecked(ADDR2_VAULE),
-                    signer_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+                    signer_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
                 }]),
             )
             .unwrap();
@@ -434,7 +435,7 @@ mod test {
                 domain,
                 &Validators(vec![ValidatorSet {
                     signer: Addr::unchecked(validator.clone()),
-                    signer_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+                    signer_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
                 }]),
             )
             .unwrap();
