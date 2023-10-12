@@ -2,7 +2,10 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{ensure, Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
 
-use hpl_interface::core::mailbox::{ExecuteMsg, InstantiateMsg, MailboxQueryMsg, QueryMsg};
+use hpl_interface::{
+    core::mailbox::{ExecuteMsg, InstantiateMsg, MailboxQueryMsg, QueryMsg},
+    to_binary,
+};
 
 use crate::{
     error::ContractError,
@@ -78,13 +81,6 @@ pub fn execute(
         ),
         Process { metadata, message } => execute::process(deps, info, metadata, message),
     }
-}
-
-fn to_binary<T: serde::Serialize>(
-    data: Result<T, ContractError>,
-) -> Result<QueryResponse, ContractError> {
-    data.map(|v| cosmwasm_std::to_binary(&v))?
-        .map_err(|err| err.into())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

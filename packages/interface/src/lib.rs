@@ -1,5 +1,7 @@
+use std::error::Error;
+
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{StdError, StdResult};
+use cosmwasm_std::{QueryResponse, StdError, StdResult};
 use cw_storage_plus::Bound;
 
 pub mod connection;
@@ -74,4 +76,11 @@ pub fn range_option<'a, T: cw_storage_plus::PrimaryKey<'a>>(
     };
 
     Ok(((min, max), limit, order))
+}
+
+pub fn to_binary<T: serde::Serialize, E: Error, F: From<E> + From<StdError>>(
+    data: Result<T, E>,
+) -> Result<QueryResponse, F> {
+    data.map(|v| cosmwasm_std::to_binary(&v))?
+        .map_err(|err| err.into())
 }
