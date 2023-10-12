@@ -52,6 +52,3 @@ pub enum QueryMsg {
     #[returns(VerifyInfoResponse)]
     VerifyInfo { message: HexBinary },
 }
-
-#[cw_serde]
-pub struct MigrateMsg {}

@@ -45,6 +45,3 @@ pub enum QueryMsg {
 pub struct RouteResponse {
     pub ism: String,
 }
-
-#[cw_serde]
-pub struct MigrateMsg {}
