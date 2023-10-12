@@ -1,22 +1,114 @@
 use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env},
-    Addr, Binary, HexBinary, Response,
+    from_binary,
+    testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
+    Addr, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
-use hpl_interface::types::bech32_encode;
+use hpl_interface::{
+    core::va::{
+        ExecuteMsg, GetAnnounceStorageLocationsResponse, GetAnnouncedValidatorsResponse,
+        InstantiateMsg, QueryMsg,
+    },
+    types::bech32_encode,
+};
 use k256::{
-    ecdsa::{RecoveryId, Signature, SigningKey},
+    ecdsa::SigningKey,
     elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
     SecretKey,
 };
+use serde::de::DeserializeOwned;
 
 use crate::{
-    contract::{announcement_hash, domain_hash},
+    contract::{announcement_hash, domain_hash, execute, instantiate, query},
     error::ContractError,
     eth_hash, pub_to_addr, pub_to_addr_binary,
-    state::{ADDR_PREFIX, LOCAL_DOMAIN, MAILBOX, STORAGE_LOCATIONS, VALIDATORS},
+    state::{ADDR_PREFIX, LOCAL_DOMAIN, MAILBOX},
 };
 
-use super::VA;
+pub struct VA {
+    pub deps: OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
+    pub env: Env,
+}
+
+impl VA {
+    pub fn new(deps: OwnedDeps<MockStorage, MockApi, MockQuerier>, env: Env) -> Self {
+        Self { deps, env }
+    }
+
+    #[allow(dead_code)]
+    pub fn with_env(&mut self, env: Env) {
+        self.env = env
+    }
+
+    #[allow(dead_code)]
+    pub fn deps_mut(&mut self) -> DepsMut {
+        self.deps.as_mut()
+    }
+
+    pub fn deps(&self) -> Deps {
+        self.deps.as_ref()
+    }
+
+    pub fn init(
+        &mut self,
+        sender: &Addr,
+        hrp: &str,
+        mailbox: &Addr,
+    ) -> Result<Response, ContractError> {
+        instantiate(
+            self.deps.as_mut(),
+            self.env.clone(),
+            mock_info(sender.as_str(), &[]),
+            InstantiateMsg {
+                addr_prefix: hrp.to_string(),
+                mailbox: mailbox.to_string(),
+            },
+        )
+    }
+
+    fn execute(&mut self, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
+        execute(self.deps.as_mut(), self.env.clone(), info, msg)
+    }
+
+    fn query<T: DeserializeOwned>(&self, msg: QueryMsg) -> Result<T, ContractError> {
+        query(self.deps.as_ref(), self.env.clone(), msg)
+            .map(|v| from_binary::<T>(&v))?
+            .map_err(|e| e.into())
+    }
+
+    pub fn announce(
+        &mut self,
+        sender: &Addr,
+        validator: HexBinary,
+        storage_location: &str,
+        signature: HexBinary,
+    ) -> Result<Response, ContractError> {
+        self.execute(
+            mock_info(sender.as_str(), &[]),
+            ExecuteMsg::Announce {
+                validator,
+                storage_location: storage_location.to_string(),
+                signature,
+            },
+        )
+    }
+
+    #[allow(dead_code)]
+    pub fn get_announce_storage_locations(
+        &self,
+        validators: &[HexBinary],
+    ) -> Result<GetAnnounceStorageLocationsResponse, ContractError> {
+        self.query(QueryMsg::GetAnnounceStorageLocations {
+            validators: validators.to_vec(),
+        })
+    }
+
+    #[allow(dead_code)]
+    pub fn get_announced_validators(
+        &self,
+    ) -> Result<GetAnnouncedValidatorsResponse, ContractError> {
+        self.query(QueryMsg::GetAnnouncedValidators {})
+    }
+}
 
 struct TestData<'a> {
     pub deployer: Addr,
@@ -80,7 +172,7 @@ fn test_announce() -> anyhow::Result<()> {
     let public_key = secret_key.public_key();
     let signing_key = SigningKey::from(secret_key);
 
-    let public_key_bz = Binary(public_key.to_encoded_point(true).as_bytes().to_vec());
+    let public_key_bz = public_key.to_encoded_point(true).as_bytes().to_vec();
     let addr_binary = pub_to_addr_binary(public_key_bz.clone())?;
     let public_key_addr = Addr::unchecked(pub_to_addr(public_key_bz, testdata.addr_prefix)?);
 
