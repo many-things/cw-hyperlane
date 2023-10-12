@@ -2,7 +2,7 @@ use std::{env::current_dir, fs::remove_dir_all};
 
 use cosmwasm_schema::write_api;
 
-use hpl_interface::va::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use hpl_interface::core::va::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 fn main() {
     write_api! {
@@ -15,4 +15,6 @@ fn main() {
     let mut raw_dir = current_dir().unwrap();
     raw_dir.push("schema");
     remove_dir_all(raw_dir.join("raw")).unwrap();
+
+    println!("cargo:rerun-if-changed=build.rs");
 }
