@@ -108,7 +108,7 @@ fn route(storage: &dyn Storage, message: &HexBinary) -> Result<(Message, Addr), 
     Ok((decoded_msg, routed_hook))
 }
 
-pub fn post_dispatch(
+fn post_dispatch(
     deps: DepsMut,
     info: MessageInfo,
     req: PostDispatchMsg,
@@ -131,7 +131,7 @@ pub fn post_dispatch(
     ))
 }
 
-pub fn quote_dispatch(
+fn quote_dispatch(
     deps: Deps,
     req: QuoteDispatchMsg,
 ) -> Result<QuoteDispatchResponse, ContractError> {
