@@ -4,10 +4,10 @@ use cosmwasm_std::{
     ensure_eq, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
 };
 
-use hpl_interface::igp_gas_oracle::{
-    ConfigResponse, ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, MigrateMsg,
-    QueryMsg,
+use hpl_interface::igp::oracle::{
+    ExecuteMsg, GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg, InstantiateMsg, QueryMsg,
 };
+use hpl_ownable::get_owner;
 
 use crate::{
     error::ContractError,
@@ -24,7 +24,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    hpl_ownable::OWNER.save(deps.storage, &info.sender)?;
+    hpl_ownable::initialize(deps.storage, &info.sender)?;
 
     Ok(Response::new()
         .add_event(Event::new("init-igp-gas-oracle").add_attribute("owner", info.sender)))
@@ -43,7 +43,7 @@ pub fn execute(
         ExecuteMsg::SetRemoteGasDataConfigs { configs } => {
             ensure_eq!(
                 info.sender,
-                hpl_ownable::OWNER.load(deps.storage)?,
+                get_owner(deps.storage)?,
                 ContractError::Unauthorized {}
             );
 
@@ -62,7 +62,7 @@ pub fn execute(
         ExecuteMsg::SetRemoteGasData { config } => {
             ensure_eq!(
                 info.sender,
-                hpl_ownable::OWNER.load(deps.storage)?,
+                get_owner(deps.storage)?,
                 ContractError::Unauthorized {}
             );
 
@@ -76,29 +76,18 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     match msg {
-        QueryMsg::Config {} => {
-            let owner = hpl_ownable::OWNER.load(deps.storage)?;
-            let pending_owner = hpl_ownable::PENDING_OWNER.may_load(deps.storage)?;
+        QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
+        QueryMsg::Base(msg) => match msg {
+            IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
+                let gas_data = REMOTE_GAS_DATA.load(deps.storage, dest_domain)?;
 
-            Ok(to_binary(&ConfigResponse {
-                owner: owner.to_string(),
-                pending_owner: pending_owner.map(|v| v.to_string()),
-            })?)
-        }
-        QueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
-            let gas_data = REMOTE_GAS_DATA.load(deps.storage, dest_domain)?;
-
-            Ok(to_binary(&GetExchangeRateAndGasPriceResponse {
-                gas_price: gas_data.gas_price,
-                exchange_rate: gas_data.token_exchange_rate,
-            })?)
-        }
+                Ok(to_binary(&GetExchangeRateAndGasPriceResponse {
+                    gas_price: gas_data.gas_price,
+                    exchange_rate: gas_data.token_exchange_rate,
+                })?)
+            }
+        },
     }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
 }

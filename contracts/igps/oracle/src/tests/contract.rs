@@ -2,7 +2,7 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env},
     Addr, Uint128,
 };
-use hpl_interface::igp_gas_oracle::RemoteGasDataConfig;
+use hpl_interface::igp::oracle::RemoteGasDataConfig;
 
 use crate::{error::ContractError, tests::IGPGasOracle};
 

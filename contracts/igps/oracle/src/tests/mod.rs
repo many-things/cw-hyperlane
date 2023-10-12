@@ -2,8 +2,8 @@ use cosmwasm_std::{
     from_binary, testing::mock_info, Addr, Api, Empty, Env, MessageInfo, OwnedDeps, Querier,
     Response, Storage,
 };
-use hpl_interface::igp_gas_oracle::{
-    ConfigResponse, ExecuteMsg, GetExchangeRateAndGasPriceResponse, InstantiateMsg, QueryMsg,
+use hpl_interface::igp::oracle::{
+    ExecuteMsg, GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg, InstantiateMsg, QueryMsg,
     RemoteGasDataConfig,
 };
 use serde::de::DeserializeOwned;
@@ -75,14 +75,10 @@ where
         )
     }
 
-    pub fn get_config(&self) -> Result<ConfigResponse, ContractError> {
-        self.query(QueryMsg::Config {})
-    }
-
     pub fn get_exchange_rate_and_gas_price(
         &self,
         dest_domain: u32,
     ) -> Result<GetExchangeRateAndGasPriceResponse, ContractError> {
-        self.query(QueryMsg::GetExchangeRateAndGasPrice { dest_domain })
+        self.query(IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain }.wrap())
     }
 }

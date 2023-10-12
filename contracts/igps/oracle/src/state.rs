@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{StdResult, Storage, Uint128};
 use cw_storage_plus::Map;
-use hpl_interface::igp_gas_oracle::RemoteGasDataConfig;
+use hpl_interface::igp::oracle::RemoteGasDataConfig;
 
 #[cw_serde]
 pub struct RemoteGasData {
