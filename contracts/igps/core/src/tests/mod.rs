@@ -3,7 +3,7 @@ use cosmwasm_std::{
     testing::{mock_info, MockApi, MockQuerier, MockStorage},
     Addr, Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, OwnedDeps, Response,
 };
-use hpl_interface::igp_core::{
+use hpl_interface::igp::core::{
     ExecuteMsg, GasOracleConfig, GetExchangeRateAndGasPriceResponse, InstantiateMsg, QueryMsg,
     QuoteGasPaymentResponse,
 };
