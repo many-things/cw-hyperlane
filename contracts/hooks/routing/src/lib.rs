@@ -137,7 +137,7 @@ pub fn quote_dispatch(
 ) -> Result<QuoteDispatchResponse, ContractError> {
     let (_, routed_hook) = route(deps.storage, &req.message)?;
 
-    let resp: QuoteDispatchResponse = deps.querier.query_wasm_smart(&routed_hook, &req.wrap())?;
+    let resp: QuoteDispatchResponse = deps.querier.query_wasm_smart(routed_hook, &req.wrap())?;
 
     Ok(resp)
 }

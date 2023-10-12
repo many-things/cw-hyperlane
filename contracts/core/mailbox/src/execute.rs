@@ -4,7 +4,7 @@ use cosmwasm_std::{
 use hpl_interface::{
     core::{mailbox::DispatchResponse, HandleMsg},
     hook::PostDispatchMsg,
-    types::{bech32_to_h256, message::Message},
+    types::{bech32_to_h256, Message},
 };
 
 use crate::{
