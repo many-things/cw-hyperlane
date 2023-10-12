@@ -33,8 +33,15 @@ serde-json-wasm.workspace = true
 thiserror.workspace = true
 
 hpl-ownable.workspace = true
+hpl-router.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true
 anyhow.workspace = true
+
+[build-dependencies]
+cosmwasm-std.workspace = true
+cosmwasm-schema.workspace = true
+
+hpl-interface.workspace = true
