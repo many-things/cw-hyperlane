@@ -10,11 +10,11 @@ use super::{HookQueryMsg, PostDispatchMsg};
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
+    pub mailbox: String,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    // overrides
     Ownable(OwnableMsg),
     Pausable(PausableMsg),
     PostDispatch(PostDispatchMsg),
@@ -25,13 +25,7 @@ pub enum ExecuteMsg {
 #[serde(untagged)]
 #[query_responses(nested)]
 pub enum QueryMsg {
-    // overrides
     Pausable(PausableQueryMsg),
     Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
-}
-
-#[cw_serde]
-pub struct ConfigResponse {
-    pub mailbox: String,
 }

@@ -10,11 +10,11 @@ pub const TREE_DEPTH: usize = 32;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
+    pub mailbox: String,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    // overrides
     Ownable(OwnableMsg),
     PostDispatch(PostDispatchMsg),
 }
@@ -24,11 +24,8 @@ pub enum ExecuteMsg {
 #[serde(untagged)]
 #[query_responses(nested)]
 pub enum QueryMsg {
-    // overrides
     Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
-
-    // base
     Base(MerkleHookQueryMsg),
 }
 
