@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, HexBinary};
+use cosmwasm_std::HexBinary;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -12,7 +12,7 @@ pub enum ExecuteMsg {
     Announce {
         validator: HexBinary,
         storage_location: String,
-        signature: Binary,
+        signature: HexBinary,
     },
 }
 
