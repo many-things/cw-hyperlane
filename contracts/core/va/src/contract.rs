@@ -6,15 +6,16 @@ use cosmwasm_std::{
 };
 
 use hpl_interface::{
-    types::{bech32_decode, bech32_encode, keccak256_hash},
-    va::{
+    core::va::{
         ExecuteMsg, GetAnnounceStorageLocationsResponse, GetAnnouncedValidatorsResponse,
         InstantiateMsg, MigrateMsg, QueryMsg,
     },
+    types::{bech32_decode, bech32_encode, keccak256_hash},
 };
 use k256::{ecdsa::VerifyingKey, EncodedPoint};
 
 use crate::{
+    contract_querier::local_domain,
     error::ContractError,
     eth_hash, pub_to_addr,
     state::{
@@ -51,15 +52,18 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    let mailbox = deps.api.addr_validate(&msg.mailbox)?;
+    let local_domain = local_domain(deps.as_ref(), &mailbox)?;
+
     ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
-    MAILBOX.save(deps.storage, &deps.api.addr_validate(&msg.mailbox)?)?;
-    LOCAL_DOMAIN.save(deps.storage, &msg.local_domain)?;
+    MAILBOX.save(deps.storage, &mailbox)?;
+    LOCAL_DOMAIN.save(deps.storage, &local_domain)?;
 
     Ok(Response::new().add_event(
         Event::new("init-validator-announce")
             .add_attribute("creator", info.sender)
             .add_attribute("mailbox", msg.mailbox)
-            .add_attribute("local-domain", msg.local_domain.to_string()),
+            .add_attribute("local-domain", local_domain.to_string()),
     ))
 }
 

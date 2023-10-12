@@ -1,9 +1,9 @@
 use cosmwasm_std::{
     from_binary,
     testing::{mock_info, MockApi, MockQuerier, MockStorage},
-    Addr, Binary, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
+    Addr, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
-use hpl_interface::va::{
+use hpl_interface::core::va::{
     ExecuteMsg, GetAnnounceStorageLocationsResponse, GetAnnouncedValidatorsResponse,
     InstantiateMsg, QueryMsg,
 };
@@ -45,7 +45,6 @@ impl VA {
         sender: &Addr,
         hrp: &str,
         mailbox: &Addr,
-        local_domain: u32,
     ) -> Result<Response, ContractError> {
         instantiate(
             self.deps.as_mut(),
@@ -54,7 +53,6 @@ impl VA {
             InstantiateMsg {
                 addr_prefix: hrp.to_string(),
                 mailbox: mailbox.to_string(),
-                local_domain,
             },
         )
     }
@@ -74,7 +72,7 @@ impl VA {
         sender: &Addr,
         validator: HexBinary,
         storage_location: &str,
-        signature: Binary,
+        signature: HexBinary,
     ) -> Result<Response, ContractError> {
         self.execute(
             mock_info(sender.as_str(), &[]),

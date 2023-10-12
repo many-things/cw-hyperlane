@@ -42,19 +42,14 @@ impl<'a> Default for TestData<'a> {
 
 impl<'a> TestData<'a> {
     pub fn init(&self, va: &mut VA) -> Result<Response, ContractError> {
-        va.init(
-            &self.deployer,
-            self.addr_prefix,
-            &self.mailbox,
-            self.local_domain,
-        )
+        va.init(&self.deployer, self.addr_prefix, &self.mailbox)
     }
 }
 
-fn pack_signature((rs, v): (Signature, RecoveryId)) -> Binary {
+fn pack_signature((rs, v): (Signature, RecoveryId)) -> HexBinary {
     let mut bz = rs.to_bytes().to_vec();
     bz.push(v.to_byte() + 27u8);
-    Binary(bz)
+    bz.into()
 }
 
 #[test]

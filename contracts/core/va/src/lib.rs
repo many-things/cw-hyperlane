@@ -6,6 +6,7 @@ use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
 
 pub mod contract;
+pub mod contract_querier;
 pub mod error;
 pub mod state;
 
