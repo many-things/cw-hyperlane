@@ -11,7 +11,7 @@ use hpl_interface::{
     types::bech32_encode,
 };
 use k256::{
-    ecdsa::SigningKey,
+    ecdsa::{RecoveryId, Signature, SigningKey},
     elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
     SecretKey,
 };
@@ -21,7 +21,7 @@ use crate::{
     contract::{announcement_hash, domain_hash, execute, instantiate, query},
     error::ContractError,
     eth_hash, pub_to_addr, pub_to_addr_binary,
-    state::{ADDR_PREFIX, LOCAL_DOMAIN, MAILBOX},
+    state::{HRP, LOCAL_DOMAIN, MAILBOX, STORAGE_LOCATIONS, VALIDATORS},
 };
 
 pub struct VA {
@@ -59,7 +59,7 @@ impl VA {
             self.env.clone(),
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
-                addr_prefix: hrp.to_string(),
+                hrp: hrp.to_string(),
                 mailbox: mailbox.to_string(),
             },
         )
@@ -112,7 +112,7 @@ impl VA {
 
 struct TestData<'a> {
     pub deployer: Addr,
-    pub addr_prefix: &'a str,
+    pub hrp: &'a str,
     pub mailbox: Addr,
     pub local_domain: u32,
     pub storage_location: &'a str,
@@ -120,12 +120,12 @@ struct TestData<'a> {
 
 impl<'a> Default for TestData<'a> {
     fn default() -> Self {
-        let addr_prefix = "osmo";
+        let hrp = "osmo";
 
         Self {
             deployer: Addr::unchecked("deployer"),
-            addr_prefix,
-            mailbox: bech32_encode(addr_prefix, "mailbox_____________".as_bytes()).unwrap(),
+            hrp,
+            mailbox: bech32_encode(hrp, "mailbox_____________".as_bytes()).unwrap(),
             local_domain: 1,
             storage_location: "s3://bucket/key",
         }
@@ -134,7 +134,7 @@ impl<'a> Default for TestData<'a> {
 
 impl<'a> TestData<'a> {
     pub fn init(&self, va: &mut VA) -> Result<Response, ContractError> {
-        va.init(&self.deployer, self.addr_prefix, &self.mailbox)
+        va.init(&self.deployer, self.hrp, &self.mailbox)
     }
 }
 
@@ -153,7 +153,7 @@ fn test_init() -> anyhow::Result<()> {
     testdata.init(&mut va)?;
 
     let storage = va.deps().storage;
-    assert_eq!(ADDR_PREFIX.load(storage)?, testdata.addr_prefix);
+    assert_eq!(HRP.load(storage)?, testdata.hrp);
     assert_eq!(MAILBOX.load(storage)?, testdata.mailbox);
     assert_eq!(LOCAL_DOMAIN.load(storage)?, testdata.local_domain);
 
@@ -173,11 +173,11 @@ fn test_announce() -> anyhow::Result<()> {
     let signing_key = SigningKey::from(secret_key);
 
     let public_key_bz = public_key.to_encoded_point(true).as_bytes().to_vec();
-    let addr_binary = pub_to_addr_binary(public_key_bz.clone())?;
-    let public_key_addr = Addr::unchecked(pub_to_addr(public_key_bz, testdata.addr_prefix)?);
+    let addr_binary = pub_to_addr_binary(public_key_bz.clone().into())?;
+    let public_key_addr = Addr::unchecked(pub_to_addr(public_key_bz.into(), testdata.hrp)?);
 
     let verify_digest = eth_hash(announcement_hash(
-        domain_hash(testdata.local_domain, testdata.mailbox.as_str())?.0,
+        domain_hash(testdata.local_domain, testdata.mailbox.as_str())?.to_vec(),
         testdata.storage_location,
     ))?;
     let signature = signing_key

@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, to_binary, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order, QueryResponse,
-    Response, StdResult,
+    ensure, to_binary, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, Order,
+    QueryResponse, Response, StdResult,
 };
 
 use hpl_interface::{
@@ -18,13 +18,11 @@ use crate::{
     contract_querier::local_domain,
     error::ContractError,
     eth_hash, pub_to_addr,
-    state::{
-        ADDR_PREFIX, LOCAL_DOMAIN, MAILBOX, REPLAY_PROTECITONS, STORAGE_LOCATIONS, VALIDATORS,
-    },
+    state::{HRP, LOCAL_DOMAIN, MAILBOX, REPLAY_PROTECITONS, STORAGE_LOCATIONS, VALIDATORS},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
-pub fn domain_hash(local_domain: u32, mailbox: &str) -> StdResult<Binary> {
+pub fn domain_hash(local_domain: u32, mailbox: &str) -> StdResult<HexBinary> {
     let mut bz = vec![];
     bz.append(&mut local_domain.to_be_bytes().to_vec());
     bz.append(&mut bech32_decode(mailbox)?);
@@ -35,7 +33,7 @@ pub fn domain_hash(local_domain: u32, mailbox: &str) -> StdResult<Binary> {
     Ok(hash)
 }
 
-pub fn announcement_hash(mut domain_hash: Vec<u8>, storage_location: &str) -> Binary {
+pub fn announcement_hash(mut domain_hash: Vec<u8>, storage_location: &str) -> HexBinary {
     let mut bz = vec![];
     bz.append(&mut domain_hash);
     bz.append(&mut storage_location.as_bytes().to_vec());
@@ -55,7 +53,7 @@ pub fn instantiate(
     let mailbox = deps.api.addr_validate(&msg.mailbox)?;
     let local_domain = local_domain(deps.as_ref(), &mailbox)?;
 
-    ADDR_PREFIX.save(deps.storage, &msg.addr_prefix)?;
+    HRP.save(deps.storage, &msg.hrp)?;
     MAILBOX.save(deps.storage, &mailbox)?;
     LOCAL_DOMAIN.save(deps.storage, &local_domain)?;
 
@@ -80,8 +78,8 @@ pub fn execute(
             storage_location,
             signature,
         } => {
-            let addr_prefix = ADDR_PREFIX.load(deps.storage)?;
-            let raw_validator = bech32_encode(addr_prefix.as_str(), &validator)?;
+            let hrp = HRP.load(deps.storage)?;
+            let raw_validator = bech32_encode(hrp.as_str(), &validator)?;
             let validator = deps.api.addr_validate(raw_validator.as_str())?;
 
             let replay_id = keccak256_hash(
@@ -95,10 +93,10 @@ pub fn execute(
 
             // check replay protection
             ensure!(
-                !REPLAY_PROTECITONS.has(deps.storage, replay_id.0.clone()),
+                !REPLAY_PROTECITONS.has(deps.storage, replay_id.to_vec()),
                 ContractError::Unauthorized {}
             );
-            REPLAY_PROTECITONS.save(deps.storage, replay_id.0, &Empty {})?;
+            REPLAY_PROTECITONS.save(deps.storage, replay_id.to_vec(), &Empty {})?;
 
             // make announcement digest
             let local_domain = LOCAL_DOMAIN.load(deps.storage)?;
@@ -106,7 +104,7 @@ pub fn execute(
 
             // make digest
             let message_hash = eth_hash(announcement_hash(
-                domain_hash(local_domain, mailbox.as_str())?.0,
+                domain_hash(local_domain, mailbox.as_str())?.to_vec(),
                 &storage_location,
             ))?;
 
@@ -123,10 +121,7 @@ pub fn execute(
                     .expect("invalid recovered public key");
             let public_key_compressed = public_key.to_encoded_point(true).as_bytes().to_vec();
 
-            let recovered_addr = pub_to_addr(
-                Binary(public_key_compressed),
-                &ADDR_PREFIX.load(deps.storage)?,
-            )?;
+            let recovered_addr = pub_to_addr(public_key_compressed.into(), &hrp)?;
             ensure!(recovered_addr == validator, ContractError::VerifyFailed {});
 
             // save validator if not saved yet
@@ -158,8 +153,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
             let storage_locations = validators
                 .into_iter()
                 .map(|v| {
-                    let addr_prefix = ADDR_PREFIX.load(deps.storage)?;
-                    let raw_validator = bech32_encode(addr_prefix.as_str(), &v)?;
+                    let hrp = HRP.load(deps.storage)?;
+                    let raw_validator = bech32_encode(hrp.as_str(), &v)?;
                     let validator = deps.api.addr_validate(raw_validator.as_str())?;
 
                     let storage_locations = STORAGE_LOCATIONS
