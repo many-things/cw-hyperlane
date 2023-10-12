@@ -7,7 +7,7 @@ use hpl_interface::ownable::{OwnableMsg, OwnableQueryMsg, OwnerResponse, Pending
 use rstest::rstest;
 use serde::de::DeserializeOwned;
 
-use crate::{handle, handle_query, OWNER};
+use crate::{handle, handle_query};
 
 pub struct Ownable<C: CustomQuery = Empty> {
     pub deps: OwnedDeps<MockStorage, MockApi, MockQuerier, C>,
@@ -74,11 +74,11 @@ fn ownable_default() -> Ownable {
 #[case(Addr::unchecked("hello"))]
 #[case(Addr::unchecked("world"))]
 fn test_initialize(#[case] owner: Addr) -> anyhow::Result<()> {
-    let mut deps = mock_dependencies();
+    let mut ownable = ownable_default();
 
-    crate::initialize(deps.as_mut().storage, &owner)?;
+    crate::initialize(ownable.deps.as_mut().storage, &owner)?;
 
-    let owner_saved = OWNER.load(deps.as_ref().storage)?;
+    let owner_saved = ownable.owner()?;
 
     assert_eq!(owner, owner_saved);
 
