@@ -28,7 +28,10 @@ pub fn recipient_ism(deps: Deps, receipient: &Addr) -> Result<Addr, ContractErro
         &ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
     )?;
 
-    let default_ism: Addr = CONFIG.load(deps.storage)?.default_ism;
+    let default_ism: Addr = CONFIG
+        .load(deps.storage)?
+        .default_ism
+        .expect("default_ism not set");
 
     Ok(ism_resp.ism.unwrap_or(default_ism))
 }

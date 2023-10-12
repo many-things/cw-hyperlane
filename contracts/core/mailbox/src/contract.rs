@@ -1,115 +1,129 @@
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, QueryResponse, Response};
-use cw2::set_contract_version;
-use hpl_interface::mailbox::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use cosmwasm_std::{ensure, Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
+
+use hpl_interface::core::mailbox::{ExecuteMsg, InstantiateMsg, MailboxQueryMsg, QueryMsg};
 
 use crate::{
     error::ContractError,
     event::emit_instantiated,
-    merkle::MerkleTree,
-    state::{assert_paused, Config, CONFIG, MESSAGE_TREE, NONCE, PAUSE},
+    state::{Config, CONFIG},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let config = Config {
-        owner: deps.api.addr_validate(&msg.owner)?,
-        factory: info.sender,
-        default_ism: deps.api.addr_validate(&msg.default_ism)?,
-        default_hook: deps.api.addr_validate(&msg.default_hook)?,
+        hrp: msg.hrp,
+        local_domain: msg.domain,
+        default_ism: None,
+        default_hook: None,
     };
 
-    MESSAGE_TREE.save(deps.storage, &MerkleTree::default())?;
     CONFIG.save(deps.storage, &config)?;
-    PAUSE.save(deps.storage, &false)?;
-    NONCE.save(deps.storage, &0)?;
 
-    Ok(Response::new().add_event(emit_instantiated(config.owner)))
+    let owner = deps.api.addr_validate(&msg.owner)?;
+    hpl_ownable::initialize(deps.storage, &owner)?;
+    hpl_pausable::initialize(deps.storage, &false)?;
+
+    Ok(Response::new().add_event(emit_instantiated(owner)))
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+#[entry_point]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    use crate::core;
-    use crate::gov;
+    use crate::execute;
     use ExecuteMsg::*;
 
-    assert_paused(deps.storage)?;
+    ensure!(
+        hpl_pausable::get_pause_info(deps.storage)?,
+        ContractError::Paused {}
+    );
 
     match msg {
-        Pause {} => gov::pause(deps, info),
-        Unpause {} => gov::unpause(deps, info),
-        SetDefaultISM {
-            ism: new_default_ism,
-        } => gov::set_default_ism(deps, info, new_default_ism),
-        SetDefaultHook { hook } => gov::set_default_hook(deps, info, hook),
+        Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
+
+        SetDefaultIsm { ism } => execute::set_default_ism(deps, info, ism),
+        SetDefaultHook { hook } => execute::set_default_hook(deps, info, hook),
         Dispatch {
             dest_domain,
             recipient_addr,
             msg_body,
-        } => core::dispatch(deps, info, dest_domain, recipient_addr, msg_body),
-        Process { metadata, message } => core::process(deps, metadata, message),
+            hook,
+            metadata,
+        } => execute::dispatch(
+            deps,
+            info,
+            dest_domain,
+            recipient_addr,
+            msg_body,
+            hook,
+            metadata,
+        ),
+        Process { metadata, message } => execute::process(deps, info, metadata, message),
     }
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+fn to_binary<T: serde::Serialize>(
+    data: Result<T, ContractError>,
+) -> Result<QueryResponse, ContractError> {
+    data.map(|v| cosmwasm_std::to_binary(&v))?
+        .map_err(|err| err.into())
+}
+
+#[entry_point]
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     use crate::query;
-    use QueryMsg::*;
+    use MailboxQueryMsg::*;
 
     match msg {
-        Root {} => query::get_root(deps),
-        Count {} => query::get_count(deps),
-        CheckPoint {} => query::get_checkpoint(deps),
-        Paused {} => query::get_paused(deps),
-        Nonce {} => query::get_nonce(deps),
-        DefaultIsm {} => query::get_default_ism(deps),
-        MessageDelivered { id } => query::get_delivered(deps, id),
-        MerkleTree {} => query::get_tree(deps),
+        QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
+        QueryMsg::Base(msg) => match msg {
+            Hrp {} => to_binary(query::get_hrp(deps)),
+            LocalDomain {} => to_binary(query::get_local_domain(deps)),
+            DefaultIsm {} => to_binary(query::get_default_ism(deps)),
+            DefaultHook {} => to_binary(query::get_default_hook(deps)),
+            MessageDelivered { id } => to_binary(query::get_delivered(deps, id)),
+            RecipientIsm { recipient_addr } => {
+                to_binary(query::get_recipient_ism(deps, recipient_addr))
+            }
+        },
     }
 }
 
 #[cfg(test)]
 mod test {
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use rstest::rstest;
 
     use super::*;
 
-    const OWNER: &str = "owner";
-    const DEFAULT_ISM: &str = "default_ism";
-    const DEFAULT_HOOK: &str = "default_hook";
-
-    #[test]
-    fn init() {
+    #[rstest]
+    #[case("owner", "osmo", 1)]
+    #[case("owner", "neutron", 2)]
+    fn init(#[case] owner: String, #[case] hrp: String, #[case] domain: u32) {
         let mut deps = mock_dependencies();
 
         instantiate(
             deps.as_mut(),
             mock_env(),
             mock_info("owner", &[]),
-            InstantiateMsg {
-                owner: OWNER.to_string(),
-                default_ism: DEFAULT_ISM.to_string(),
-                default_hook: DEFAULT_HOOK.to_string(),
-            },
+            InstantiateMsg { owner, hrp, domain },
         )
         .unwrap();
 
@@ -121,5 +135,10 @@ mod test {
                 version: CONTRACT_VERSION.to_string()
             }
         );
+
+        let config = CONFIG.load(deps.as_ref().storage).unwrap();
+
+        assert_eq!(config.default_hook, None);
+        assert_eq!(config.default_ism, None);
     }
 }

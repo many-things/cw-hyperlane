@@ -1,29 +1,36 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary, Storage};
+use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
-
-use crate::merkle::MerkleTree;
 
 use crate::ContractError;
 
 #[cw_serde]
 pub struct Config {
-    pub owner: Addr,
-    pub factory: Addr,
-    pub default_ism: Addr,
-    pub default_hook: Addr,
+    pub hrp: String,
+    pub local_domain: u32,
+    pub default_ism: Option<Addr>,
+    pub default_hook: Option<Addr>,
+}
+
+impl Config {
+    pub fn get_default_ism(&self) -> Addr {
+        self.default_ism.clone().expect("default_ism not set")
+    }
+
+    pub fn get_default_hook(&self) -> Addr {
+        self.default_hook.clone().expect("default_hook not set")
+    }
 }
 
 #[cw_serde]
 pub struct Delivery {
-    pub ism: Addr,
+    pub sender: Addr,
+    // uint48 value?
+    // uint48 timestamp?
 }
 
 pub const CONFIG_KEY: &str = "config";
 pub const CONFIG: Item<Config> = Item::new(CONFIG_KEY);
-
-pub const PAUSE_KEY: &str = "pause";
-pub const PAUSE: Item<bool> = Item::new(PAUSE_KEY);
 
 pub const NONCE_KEY: &str = "nonce";
 pub const NONCE: Item<u32> = Item::new(NONCE_KEY);
@@ -31,81 +38,12 @@ pub const NONCE: Item<u32> = Item::new(NONCE_KEY);
 pub const LATEST_DISPATCHED_ID_KEY: &str = "latest_dispatched_id";
 pub const LATEST_DISPATCHED_ID: Item<Vec<u8>> = Item::new(LATEST_DISPATCHED_ID_KEY);
 
-pub const MESSAGE_TREE_KEY: &str = "message_tree";
-pub const MESSAGE_TREE: Item<MerkleTree> = Item::new(MESSAGE_TREE_KEY);
-
-pub const DELIVERY_PREFIX: &str = "delivery";
-pub const DELIVERY: Map<Vec<u8>, Delivery> = Map::new(DELIVERY_PREFIX);
-
-pub fn assert_owner(owner: &Addr, sender: &Addr) -> Result<(), ContractError> {
-    if owner != sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    Ok(())
-}
-
-pub fn assert_paused(storage: &dyn Storage) -> Result<(), ContractError> {
-    if PAUSE.load(storage)? {
-        return Err(ContractError::Paused {});
-    }
-
-    Ok(())
-}
+pub const DELIVERIES_PREFIX: &str = "deliveries";
+pub const DELIVERIES: Map<Vec<u8>, Delivery> = Map::new(DELIVERIES_PREFIX);
 
 pub fn assert_verify_response(resp: bool) -> Result<(), ContractError> {
     if !resp {
         return Err(ContractError::VerifyFailed {});
-    }
-
-    Ok(())
-}
-
-pub fn assert_addr_length(len: usize) -> Result<(), ContractError> {
-    if len > 32 {
-        return Err(ContractError::InvalidAddressLength { len });
-    }
-
-    Ok(())
-}
-
-pub fn assert_message_version(
-    message_version: u8,
-    mailbox_version: u8,
-) -> Result<(), ContractError> {
-    if message_version != mailbox_version {
-        return Err(ContractError::InvalidMessageVersion {
-            version: message_version,
-        });
-    }
-
-    Ok(())
-}
-
-pub fn assert_destination_domain(
-    message_dest_domain: u32,
-    origin_domain: u32,
-) -> Result<(), ContractError> {
-    if message_dest_domain != origin_domain {
-        return Err(ContractError::InvalidDestinationDomain {
-            domain: message_dest_domain,
-        });
-    }
-
-    Ok(())
-}
-
-pub fn assert_undelivered(storage: &dyn Storage, id: Binary) -> Result<(), ContractError> {
-    if DELIVERY.may_load(storage, id.0)?.is_some() {
-        return Err(ContractError::AlreadyDeliveredMessage {});
-    }
-
-    Ok(())
-}
-
-pub fn assert_full_merkle_tree(curr_cnt: u128, max_cnt: u128) -> Result<(), ContractError> {
-    if curr_cnt >= max_cnt {
-        return Err(ContractError::MerkleTreeIsFull {});
     }
 
     Ok(())

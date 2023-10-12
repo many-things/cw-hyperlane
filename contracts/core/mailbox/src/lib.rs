@@ -1,18 +1,16 @@
-pub mod contract;
-pub mod contract_querier;
-mod core;
+#[cfg(not(feature = "library"))]
+mod contract;
+mod contract_querier;
 mod error;
 mod event;
-mod gov;
-pub mod merkle;
-mod query;
-pub mod state;
-pub mod verify;
+pub mod execute;
+pub mod query;
+mod state;
 
 pub use crate::error::ContractError;
 
 pub const MAILBOX_VERSION: u8 = 0;
 
 // version info for migration info
-pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
-pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -1,6 +1,7 @@
 mod bech32;
 mod crypto;
 
+pub mod merkle;
 pub mod message;
 pub mod metadata;
 

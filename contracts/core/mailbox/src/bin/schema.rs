@@ -2,12 +2,13 @@ use std::{env::current_dir, fs::remove_dir_all};
 
 use cosmwasm_schema::write_api;
 
-use hpl_interface::mailbox::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use cosmwasm_std::Empty;
+use hpl_interface::core::mailbox::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {
         instantiate: InstantiateMsg,
-        migrate: MigrateMsg,
+        migrate: Empty,
         execute: ExecuteMsg,
         query: QueryMsg,
     }

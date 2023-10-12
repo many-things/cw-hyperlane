@@ -1,8 +1,7 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Binary, HexBinary, StdResult};
-use hpl_interface::types::keccak256_hash;
+use cosmwasm_std::{ensure, Binary, HexBinary, StdError, StdResult};
 
-use crate::state::assert_full_merkle_tree;
+use super::keccak256_hash;
 
 pub const HASH_LENGTH: usize = 32;
 pub const TREE_DEPTH: usize = 32;
@@ -66,8 +65,11 @@ impl Default for MerkleTree {
 }
 
 impl MerkleTree {
-    pub fn insert(&mut self, node: Binary) {
-        assert_full_merkle_tree(self.count, MAX_LEAVES).unwrap();
+    pub fn insert(&mut self, node: Binary) -> StdResult<()> {
+        ensure!(
+            self.count < MAX_LEAVES,
+            StdError::generic_err("tree is full")
+        );
 
         self.count += 1;
 
@@ -76,7 +78,7 @@ impl MerkleTree {
         for (i, next) in self.branch.iter().enumerate() {
             if (size & 1) == 1 {
                 self.branch[i] = node;
-                return;
+                return Ok(());
             }
             node = keccak256_hash(&[next.clone().0, node.0].concat());
             size /= 2;
@@ -139,10 +141,7 @@ impl MerkleTree {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{Binary, HexBinary};
-    use hpl_interface::types::keccak256_hash;
-
-    use super::MerkleTree;
+    use super::*;
 
     #[test]
     fn test_default_merkle_tree() {

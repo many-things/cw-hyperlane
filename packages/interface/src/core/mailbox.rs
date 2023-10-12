@@ -5,8 +5,9 @@ use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub domain: u32,
+    pub hrp: String,
     pub owner: String,
+    pub domain: u32,
 }
 
 #[cw_serde]
@@ -36,6 +37,11 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
+pub struct DispatchResponse {
+    pub message_id: HexBinary,
+}
+
+#[cw_serde]
 #[derive(QueryResponses)]
 #[serde(untagged)]
 #[query_responses(nested)]
@@ -50,6 +56,9 @@ pub enum QueryMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum MailboxQueryMsg {
+    #[returns(HrpResponse)]
+    Hrp {},
+
     #[returns(LocalDomainResponse)]
     LocalDomain {},
 
@@ -67,8 +76,13 @@ pub enum MailboxQueryMsg {
 }
 
 #[cw_serde]
+pub struct HrpResponse {
+    pub hrp: String,
+}
+
+#[cw_serde]
 pub struct LocalDomainResponse {
-    pub domain: u32,
+    pub local_domain: u32,
 }
 
 #[cw_serde]
@@ -78,12 +92,12 @@ pub struct MessageDeliveredResponse {
 
 #[cw_serde]
 pub struct DefaultIsmResponse {
-    pub ism: String,
+    pub default_ism: String,
 }
 
 #[cw_serde]
 pub struct DefaultHookResponse {
-    pub hook: String,
+    pub default_hook: String,
 }
 
 #[cw_serde]
