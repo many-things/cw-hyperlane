@@ -1,14 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    wasm_execute, Addr, Deps, DepsMut, Env, Event, HexBinary, MessageInfo, QueryResponse, Response,
-    StdError, Storage,
+    ensure_eq, wasm_execute, Addr, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
+    QueryResponse, Response, StdError, Storage,
 };
 
+use cw_storage_plus::Item;
 use hpl_interface::{
     hook::{
         routing::{ExecuteMsg, InstantiateMsg, QueryMsg},
-        HookQueryMsg, PostDispatchMsg, QuoteDispatchMsg, QuoteDispatchResponse,
+        HookQueryMsg, MailboxResponse, PostDispatchMsg,
     },
     to_binary,
     types::Message,
@@ -33,6 +34,9 @@ pub enum ContractError {
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+pub const MAILBOX_KEY: &str = "mailbox";
+pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
+
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_hook_routing::{}", name))
 }
@@ -41,16 +45,23 @@ fn new_event(name: &str) -> Event {
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
+    let mailbox = deps.api.addr_validate(&msg.mailbox)?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
 
-    Ok(Response::new())
+    MAILBOX.save(deps.storage, &mailbox)?;
+
+    Ok(Response::new().add_event(
+        new_event("initialize")
+            .add_attribute("sender", info.sender)
+            .add_attribute("owner", owner),
+    ))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -64,6 +75,12 @@ pub fn execute(
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
         ExecuteMsg::PostDispatch(PostDispatchMsg { metadata, message }) => {
+            ensure_eq!(
+                MAILBOX.load(deps.storage)?,
+                info.sender,
+                ContractError::Unauthorized {}
+            );
+
             post_dispatch(deps, metadata, message)
         }
     }
@@ -75,11 +92,15 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Router(msg) => Ok(hpl_router::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
-            HookQueryMsg::QuoteDispatch(QuoteDispatchMsg { metadata, message }) => {
-                to_binary(quote_dispatch(deps, metadata, message))
-            }
+            HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
         },
     }
+}
+
+fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+    Ok(MailboxResponse {
+        mailbox: MAILBOX.load(deps.storage)?.into(),
+    })
 }
 
 fn route(storage: &dyn Storage, message: &HexBinary) -> Result<(Message, Addr), ContractError> {
@@ -113,18 +134,4 @@ pub fn post_dispatch(
             .add_attribute("route", routed_hook)
             .add_attribute("message_id", decoded_msg.id().to_hex()),
     ))
-}
-
-pub fn quote_dispatch(
-    deps: Deps,
-    metadata: HexBinary,
-    message: HexBinary,
-) -> Result<QuoteDispatchResponse, ContractError> {
-    let (_, routed_hook) = route(deps.storage, &message)?;
-
-    let hook_resp: QuoteDispatchResponse = deps
-        .querier
-        .query_wasm_smart(&routed_hook, &QuoteDispatchMsg { metadata, message }.wrap())?;
-
-    Ok(hook_resp)
 }
