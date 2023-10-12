@@ -69,7 +69,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::Pausable(msg) => Ok(hpl_pausable::handle(deps, env, info, msg)?),
-        ExecuteMsg::PostDispatch(msg) => {
+        ExecuteMsg::PostDispatch(_) => {
             ensure_eq!(
                 MAILBOX.load(deps.storage)?,
                 info.sender,

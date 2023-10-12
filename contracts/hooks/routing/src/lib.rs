@@ -81,7 +81,20 @@ pub fn execute(
                 ContractError::Unauthorized {}
             );
 
-            post_dispatch(deps, metadata, message)
+            let (decoded_msg, routed_hook) = route(deps.storage, &message)?;
+
+            let hook_msg = wasm_execute(
+                &routed_hook,
+                &PostDispatchMsg { metadata, message }.wrap(),
+                vec![],
+            )?;
+
+            Ok(Response::new().add_message(hook_msg).add_event(
+                new_event("post_dispatch")
+                    .add_attribute("domain", decoded_msg.dest_domain.to_string())
+                    .add_attribute("route", routed_hook)
+                    .add_attribute("message_id", decoded_msg.id().to_hex()),
+            ))
         }
     }
 }
@@ -113,25 +126,4 @@ fn route(storage: &dyn Storage, message: &HexBinary) -> Result<(Message, Addr), 
         .ok_or(ContractError::HookNotRegistered(dest_domain))?;
 
     Ok((decoded_msg, routed_hook))
-}
-
-pub fn post_dispatch(
-    deps: DepsMut,
-    metadata: HexBinary,
-    message: HexBinary,
-) -> Result<Response, ContractError> {
-    let (decoded_msg, routed_hook) = route(deps.storage, &message)?;
-
-    let hook_msg = wasm_execute(
-        &routed_hook,
-        &PostDispatchMsg { metadata, message }.wrap(),
-        vec![],
-    )?;
-
-    Ok(Response::new().add_message(hook_msg).add_event(
-        new_event("routed")
-            .add_attribute("domain", decoded_msg.dest_domain.to_string())
-            .add_attribute("route", routed_hook)
-            .add_attribute("message_id", decoded_msg.id().to_hex()),
-    ))
 }
