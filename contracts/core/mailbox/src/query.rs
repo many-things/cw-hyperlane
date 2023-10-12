@@ -8,6 +8,7 @@ use hpl_interface::{
 };
 
 use crate::{
+    contract_querier::recipient_ism,
     state::{CONFIG, DELIVERIES},
     ContractError,
 };
@@ -58,15 +59,8 @@ pub fn get_recipient_ism(
 ) -> Result<RecipientIsmResponse, ContractError> {
     let recipient = deps.api.addr_validate(&recipient)?;
 
-    let ism_resp: ism::InterchainSecurityModuleResponse = deps.querier.query_wasm_smart(
-        recipient,
-        &ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
-    )?;
+    let ism = recipient_ism(deps, &recipient)?.into();
 
-    let config = CONFIG.load(deps.storage)?;
-    let default_ism = config.get_default_ism();
-
-    Ok(RecipientIsmResponse {
-        ism: ism_resp.ism.unwrap_or(default_ism).into(),
-    })
+    Ok(RecipientIsmResponse { ism })
 }
+

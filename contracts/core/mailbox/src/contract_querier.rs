@@ -22,16 +22,13 @@ pub fn ism_verify(
 }
 
 /// Returns the ISM address of the recipient, or the default ISM if the recipient does not have one.
-pub fn recipient_ism(deps: Deps, receipient: &Addr) -> Result<Addr, ContractError> {
+pub fn recipient_ism(deps: Deps, recipient: &Addr) -> Result<Addr, ContractError> {
     let ism_resp: ism::InterchainSecurityModuleResponse = deps.querier.query_wasm_smart(
-        receipient,
+        recipient,
         &ism::ISMSpecifierQueryMsg::InterchainSecurityModule(),
     )?;
 
-    let default_ism: Addr = CONFIG
-        .load(deps.storage)?
-        .default_ism
-        .expect("default_ism not set");
+    let default_ism: Addr = CONFIG.load(deps.storage)?.get_default_ism();
 
     Ok(ism_resp.ism.unwrap_or(default_ism))
 }
