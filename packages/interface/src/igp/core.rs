@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Uint128, Uint256};
+use cosmwasm_std::{Addr, HexBinary, Uint128, Uint256};
 
 use crate::{
     hook::{HookQueryMsg, PostDispatchMsg},
@@ -42,16 +42,16 @@ impl From<(u32, Addr)> for GasOracleConfig {
 #[cw_serde]
 pub enum ExecuteMsg {
     // overrides
-    Ownership(OwnableMsg),
-    PostDispatch(PostDispatchMsg),
+    Ownable(OwnableMsg),
     Router(RouterMsg<Addr>),
+    PostDispatch(PostDispatchMsg),
 
     // base
     SetBeneficiary {
         beneficiary: String,
     },
     PayForGas {
-        message_id: Binary,
+        message_id: HexBinary,
         dest_domain: u32,
         gas_amount: Uint256,
         refund_address: String,

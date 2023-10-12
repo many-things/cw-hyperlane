@@ -42,6 +42,12 @@ pub enum IgpGasOracleQueryMsg {
     GetExchangeRateAndGasPrice { dest_domain: u32 },
 }
 
+impl IgpGasOracleQueryMsg {
+    pub fn wrap(self) -> QueryMsg {
+        QueryMsg::Base(self)
+    }
+}
+
 #[cw_serde]
 pub struct GetExchangeRateAndGasPriceResponse {
     pub gas_price: Uint128,
