@@ -4,11 +4,12 @@ use cosmwasm_std::{ensure_eq, to_binary, Binary, Deps, DepsMut, Env, MessageInfo
 use cw2::set_contract_version;
 use hpl_interface::{
     ism::{
-        routing::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, RouteResponse},
+        routing::{ExecuteMsg, InstantiateMsg, QueryMsg, RouteResponse},
         ISMQueryMsg, ModuleTypeResponse, VerifyResponse,
     },
-    types::message::Message,
+    types::Message,
 };
+use hpl_ownable::get_owner;
 
 use crate::{error::ContractError, state::MODULES, CONTRACT_NAME, CONTRACT_VERSION};
 
@@ -21,7 +22,9 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    hpl_ownable::OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
+    let owner = deps.api.addr_validate(&msg.owner)?;
+
+    hpl_ownable::initialize(deps.storage, &owner)?;
 
     for ism in msg.isms {
         MODULES.save(
@@ -37,11 +40,6 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -54,8 +52,8 @@ pub fn execute(
         Ownership(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         Set { ism } => {
             ensure_eq!(
+                get_owner(deps.storage)?,
                 info.sender,
-                hpl_ownable::OWNER.load(deps.storage)?,
                 ContractError::Unauthorized {}
             );
 

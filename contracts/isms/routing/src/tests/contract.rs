@@ -1,8 +1,9 @@
-use cosmwasm_std::{to_binary, Addr, Binary, ContractResult, HexBinary, SystemResult, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, ContractResult, HexBinary, SystemResult, WasmQuery};
 use hpl_interface::{
     ism::{routing::ISMSet, ISMType, VerifyResponse},
-    types::message::Message,
+    types::Message,
 };
+use hpl_ownable::get_owner;
 
 use crate::{state::MODULES, ContractError};
 
@@ -17,7 +18,7 @@ fn make_default_message() -> Message {
         nonce: 0,
         origin_domain: 0,
         dest_domain: 0,
-        body: Binary::default(),
+        body: Default::default(),
     }
 }
 
@@ -41,7 +42,7 @@ fn test_init() -> anyhow::Result<()> {
     ism.init(&deployer, &owner, isms)?;
 
     let storage = ism.deps.as_ref().storage;
-    assert_eq!(owner, hpl_ownable::OWNER.load(storage)?);
+    assert_eq!(owner, get_owner(storage)?);
     assert_eq!(Addr::unchecked("ism1"), MODULES.load(storage, 1)?);
     assert_eq!(Addr::unchecked("ism2"), MODULES.load(storage, 2)?);
 
