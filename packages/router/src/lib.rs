@@ -27,7 +27,7 @@ fn new_event(name: &str) -> Event {
 
 fn get_route_map<T>() -> Map<'static, u32, T>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     Map::new(ROUTES_PREFIX)
 }
@@ -39,7 +39,7 @@ pub fn handle<C: CustomQuery, T>(
     msg: RouterMsg<T>,
 ) -> StdResult<Response>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     use RouterMsg::*;
 
@@ -63,7 +63,7 @@ pub fn set_route<T>(
     set: DomainRouteSet<T>,
 ) -> StdResult<Event>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     get_route_map().save(storage, set.domain, &set.route)?;
 
@@ -82,7 +82,7 @@ pub fn set_routes<T>(
     set: Vec<DomainRouteSet<T>>,
 ) -> StdResult<Event>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     for DomainRouteSet {
         domain,
@@ -107,7 +107,7 @@ pub fn handle_query<C: CustomQuery, T>(
     msg: RouterQuery<T>,
 ) -> StdResult<QueryResponse>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     match msg {
         RouterQuery::Domains {} => to_binary(&DomainsResponse {
@@ -129,14 +129,14 @@ where
 
 pub fn is_router<T>(storage: &dyn Storage, domain: u32, router: T) -> StdResult<bool>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     Ok(router == get_route_map().load(storage, domain)?)
 }
 
 pub fn get_domains<T>(storage: &dyn Storage) -> StdResult<Vec<u32>>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     get_route_map::<T>()
         .keys(storage, None, None, Order::Asc.into())
@@ -145,11 +145,11 @@ where
 
 pub fn get_route<T>(storage: &dyn Storage, domain: u32) -> StdResult<DomainRouteSet<T>>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     Ok(DomainRouteSet {
         domain,
-        route: get_route_map().load(storage, domain).unwrap_or_default(),
+        route: get_route_map().load(storage, domain).ok(),
     })
 }
 
@@ -160,7 +160,7 @@ pub fn get_routes<T>(
     order: Option<Order>,
 ) -> StdResult<Vec<DomainRouteSet<T>>>
 where
-    T: Serialize + DeserializeOwned + Clone + Eq + Default,
+    T: Serialize + DeserializeOwned + Clone + Eq,
 {
     let ((min, max), limit, order) = range_option(offset, limit, order)?;
 

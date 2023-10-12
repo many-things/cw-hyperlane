@@ -8,7 +8,7 @@ use crate::Order;
 #[cw_serde]
 pub struct DomainRouteSet<T> {
     pub domain: u32,
-    pub route: T,
+    pub route: Option<T>,
 }
 
 #[cw_serde]

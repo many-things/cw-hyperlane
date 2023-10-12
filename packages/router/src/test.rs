@@ -39,7 +39,7 @@ where
             RouterMsg::SetRoute {
                 set: DomainRouteSet {
                     domain,
-                    route: router,
+                    route: Some(router),
                 },
             },
         )
@@ -53,7 +53,7 @@ where
                     .iter()
                     .map(|v| DomainRouteSet {
                         domain: v.0,
-                        route: v.1.clone(),
+                        route: Some(v.1.clone()),
                     })
                     .collect(),
             },
@@ -105,20 +105,20 @@ fn test_handle() -> anyhow::Result<()> {
 
     let set_a = DomainRouteSet {
         domain: 1,
-        route: Binary(b"router_a".to_vec()),
+        route: Some(Binary(b"router_a".to_vec())),
     };
 
     let set_b = DomainRouteSet {
         domain: 2,
-        route: Binary(b"router_b".to_vec()),
+        route: Some(Binary(b"router_b".to_vec())),
     };
 
     let domain_no = 99999;
 
     let mut router = Router::default();
 
-    router.set_route(&owner, set_a.domain, set_a.route.clone())?;
-    router.set_routes(&owner, &[(set_b.domain, set_b.route.clone())])?;
+    router.set_route(&owner, set_a.domain, set_a.route.clone().unwrap())?;
+    router.set_routes(&owner, &[(set_b.domain, set_b.route.clone().unwrap())])?;
 
     let DomainsResponse { domains } = router.query_domains()?;
     assert_eq!(domains, vec![1, 2]);
@@ -130,7 +130,7 @@ fn test_handle() -> anyhow::Result<()> {
     assert_eq!(route_b.route, set_b.route);
 
     let RouteResponse { route: route_no } = router.query_route(domain_no)?;
-    assert_eq!(route_no.route, Binary::default());
+    assert_eq!(route_no.route, None);
 
     let RoutesResponse { routes } = router.query_routes(None, None, None)?;
     assert_eq!(routes, vec![set_a, set_b]);
