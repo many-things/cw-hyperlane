@@ -89,6 +89,12 @@ pub enum IgpQueryMsg {
     },
 }
 
+impl IgpQueryMsg {
+    pub fn wrap(self) -> QueryMsg {
+        QueryMsg::Base(self)
+    }
+}
+
 #[cw_serde]
 pub struct BeneficiaryResponse {
     pub beneficiary: String,

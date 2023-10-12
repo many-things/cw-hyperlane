@@ -1,10 +1,11 @@
 use cosmwasm_std::{
     from_binary,
     testing::{mock_info, MockApi, MockQuerier, MockStorage},
-    Addr, Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, OwnedDeps, Response,
+    Addr, Coin, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
-use hpl_interface::igp::core::{
-    ExecuteMsg, GasOracleConfig, InstantiateMsg, QueryMsg, QuoteGasPaymentResponse,
+use hpl_interface::igp::{
+    core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg, QuoteGasPaymentResponse},
+    oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg},
 };
 use serde::de::DeserializeOwned;
 
@@ -67,17 +68,6 @@ impl IGP {
         self.deps.as_ref()
     }
 
-    pub fn set_gas_oracles(
-        &mut self,
-        sender: &Addr,
-        configs: Vec<GasOracleConfig>,
-    ) -> Result<Response, ContractError> {
-        self.execute(
-            mock_info(sender.as_str(), &[]),
-            ExecuteMsg::SetGasOracles { configs },
-        )
-    }
-
     pub fn set_beneficiary(
         &mut self,
         sender: &Addr,
@@ -99,7 +89,7 @@ impl IGP {
         &mut self,
         sender: &Addr,
         funds: &[Coin],
-        message_id: &Binary,
+        message_id: &HexBinary,
         dest_domain: u32,
         gas_amount: u128,
         refund_address: &Addr,
@@ -120,16 +110,21 @@ impl IGP {
         dest_domain: u32,
         gas_amount: u128,
     ) -> Result<QuoteGasPaymentResponse, ContractError> {
-        self.query(QueryMsg::QuoteGasPayment {
-            dest_domain,
-            gas_amount: gas_amount.into(),
-        })
+        self.query(
+            IgpQueryMsg::QuoteGasPayment {
+                dest_domain,
+                gas_amount: gas_amount.into(),
+            }
+            .wrap(),
+        )
     }
 
     pub fn get_exchange_rate_and_gas_price(
         &self,
         dest_domain: u32,
     ) -> Result<GetExchangeRateAndGasPriceResponse, ContractError> {
-        self.query(QueryMsg::GetExchangeRateAndGasPrice { dest_domain })
+        self.query(QueryMsg::Oracle(
+            IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain },
+        ))
     }
 }

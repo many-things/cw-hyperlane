@@ -1,40 +1,20 @@
 use crate::event::{emit_claim, emit_pay_for_gas, emit_post_dispatch, emit_set_beneficiary};
+use crate::query::quote_gas_price;
 use crate::state::{BENEFICIARY, CONFIG, GAS_TOKEN};
 use crate::ContractError;
-use crate::{DEFAULT_GAS_USAGE, TOKEN_EXCHANGE_RATE_SCALE};
+use crate::DEFAULT_GAS_USAGE;
+
 use cosmwasm_std::{
-    coins, ensure, ensure_eq, Addr, BankMsg, DepsMut, Env, HexBinary, MessageInfo, QuerierWrapper,
-    Response, Storage, Uint128, Uint256,
+    coins, ensure, ensure_eq, BankMsg, DepsMut, Env, HexBinary, MessageInfo, Response, Uint128,
+    Uint256,
 };
 use cw_utils::PaymentError;
-use hpl_interface::hook::PostDispatchMsg;
-use hpl_interface::igp::oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
-use hpl_interface::types::{IGPMetadata, Message};
+use hpl_interface::{
+    hook::PostDispatchMsg,
+    types::{IGPMetadata, Message},
+};
 
 use std::str::FromStr;
-
-pub fn quote_gas_price(
-    storage: &dyn Storage,
-    querier: &QuerierWrapper,
-    dest_domain: u32,
-    gas_amount: Uint256,
-) -> Result<Uint256, ContractError> {
-    let gas_oracle_set = hpl_router::get_route::<Addr>(storage, dest_domain)?;
-    let gas_oracle = gas_oracle_set
-        .route
-        .ok_or(ContractError::GasOracleNotFound {})?;
-
-    let gas_price_resp: GetExchangeRateAndGasPriceResponse = querier.query_wasm_smart(
-        gas_oracle,
-        &IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain },
-    )?;
-
-    let dest_gas_cost = gas_amount * Uint256::from(gas_price_resp.gas_price);
-    let gas_needed = (dest_gas_cost * Uint256::from(gas_price_resp.exchange_rate))
-        / Uint256::from(TOKEN_EXCHANGE_RATE_SCALE);
-
-    Ok(gas_needed)
-}
 
 pub fn set_beneficiary(
     deps: DepsMut,
