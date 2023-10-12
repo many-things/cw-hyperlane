@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{ensure, Binary, HexBinary, StdError, StdResult};
+use cosmwasm_std::{ensure, HexBinary, StdError, StdResult};
 
 use super::keccak256_hash;
 
@@ -45,7 +45,7 @@ pub const ZERO_HASHES: [&str; HASH_LENGTH] = [
 
 #[cw_serde]
 pub struct MerkleTree {
-    pub branch: [Binary; TREE_DEPTH],
+    pub branch: [HexBinary; TREE_DEPTH],
     pub count: u128,
 }
 
@@ -54,8 +54,8 @@ impl Default for MerkleTree {
         Self {
             branch: ZERO_HASHES
                 .into_iter()
-                .map(|v| HexBinary::from_hex(v).map(|b| b.into()))
-                .collect::<StdResult<Vec<Binary>>>()
+                .map(HexBinary::from_hex)
+                .collect::<StdResult<Vec<HexBinary>>>()
                 .unwrap()
                 .try_into()
                 .unwrap(),
@@ -65,7 +65,7 @@ impl Default for MerkleTree {
 }
 
 impl MerkleTree {
-    pub fn insert(&mut self, node: Binary) -> StdResult<()> {
+    pub fn insert(&mut self, node: HexBinary) -> StdResult<()> {
         ensure!(
             self.count < MAX_LEAVES,
             StdError::generic_err("tree is full")
@@ -80,13 +80,13 @@ impl MerkleTree {
                 self.branch[i] = node;
                 return Ok(());
             }
-            node = keccak256_hash(&[next.clone().0, node.0].concat());
+            node = keccak256_hash(&[next.to_vec(), node.to_vec()].concat());
             size /= 2;
         }
         panic!("unreachable code")
     }
 
-    pub fn root_with_ctx(&self, zeroes: [[u8; HASH_LENGTH]; TREE_DEPTH]) -> StdResult<Binary> {
+    pub fn root_with_ctx(&self, zeroes: [[u8; HASH_LENGTH]; TREE_DEPTH]) -> StdResult<HexBinary> {
         let idx = self.count;
 
         Ok(zeroes
@@ -96,24 +96,24 @@ impl MerkleTree {
                 let ith_bit = (idx >> i) & 1;
                 let next = self.branch[i].clone();
                 if ith_bit == 1 {
-                    keccak256_hash(&[next.0, current.0].concat())
+                    keccak256_hash(&[next.to_vec(), current.to_vec()].concat())
                 } else {
-                    keccak256_hash(&[current.0, zero.to_vec()].concat())
+                    keccak256_hash(&[current.to_vec(), zero.to_vec()].concat())
                 }
             }))
     }
 
-    pub fn root(&self) -> StdResult<Binary> {
+    pub fn root(&self) -> StdResult<HexBinary> {
         self.root_with_ctx(MerkleTree::zeroes()?)
     }
 
-    pub fn branch_root(item: Binary, branch: [Binary; TREE_DEPTH], idx: u128) -> Binary {
+    pub fn branch_root(item: HexBinary, branch: [HexBinary; TREE_DEPTH], idx: u128) -> HexBinary {
         branch
             .into_iter()
             .enumerate()
             .fold(item, |current, (i, next)| match (idx >> i) & 1 {
-                1 => keccak256_hash(&[next.0, current.0].concat()),
-                _ => keccak256_hash(&[current.0, next.0].concat()),
+                1 => keccak256_hash(&[next.to_vec(), current.to_vec()].concat()),
+                _ => keccak256_hash(&[current.to_vec(), next.to_vec()].concat()),
             })
     }
 
@@ -146,25 +146,21 @@ mod tests {
     #[test]
     fn test_default_merkle_tree() {
         for (i, branch) in MerkleTree::default().branch.into_iter().enumerate() {
-            assert_eq!(
-                format!("{}", HexBinary::from(branch).to_hex()),
-                super::ZERO_HASHES[i]
-            );
+            assert_eq!(format!("{}", branch.to_hex()), super::ZERO_HASHES[i]);
         }
     }
 
     #[test]
     fn test_compatibility() {
-        let digest = Binary(
-            [
-                keccak256_hash("hello_world".as_bytes()).0,
-                keccak256_hash("world_hello".as_bytes()).0,
-            ]
-            .concat(),
-        );
+        let digest: HexBinary = [
+            keccak256_hash("hello_world".as_bytes()).to_vec(),
+            keccak256_hash("world_hello".as_bytes()).to_vec(),
+        ]
+        .concat()
+        .into();
 
         assert_eq!(
-            format!("0x{}", HexBinary::from(digest).to_hex()),
+            format!("0x{}", digest.to_hex()),
             // abi.encodePacked(bytes32(keccak256("hello_world")), bytes32(keccak256("world_hello")));
             "0x5b07e077a81ffc6b47435f65a8727bcc542bc6fc0f25a56210efb1a74b88a5ae5e3b3917b0a11fc9edfc594b3aabbc95167d176fcc17aa76c01d7bda956862cd",
         );

@@ -16,7 +16,7 @@ pub struct Message {
 
 impl Message {
     pub fn id(&self) -> HexBinary {
-        super::keccak256_hash(&HexBinary::from(self.clone())).into()
+        super::keccak256_hash(&HexBinary::from(self.clone()))
     }
 
     pub fn sender_addr(&self, hrp: &str) -> StdResult<Addr> {
