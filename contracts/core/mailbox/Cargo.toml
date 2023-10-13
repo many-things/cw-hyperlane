@@ -37,15 +37,9 @@ hpl-pausable.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
-rand.workspace = true
 rstest.workspace = true
 
 serde.workspace = true
 
 cw-multi-test.workspace = true
-
-[build-dependencies]
-cosmwasm-std.workspace = true
-cosmwasm-schema.workspace = true
-
-hpl-interface.workspace = true
+ibcx-test-utils.workspace = true

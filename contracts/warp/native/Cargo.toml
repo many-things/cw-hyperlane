@@ -48,9 +48,3 @@ rstest.workspace = true
 anyhow.workspace = true
 k256.workspace = true
 sha3.workspace = true
-
-[build-dependencies]
-cosmwasm-std.workspace = true
-cosmwasm-schema.workspace = true
-
-hpl-interface.workspace = true
