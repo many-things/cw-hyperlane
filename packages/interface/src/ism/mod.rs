@@ -2,7 +2,7 @@ pub mod multisig;
 pub mod routing;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, HexBinary};
+use cosmwasm_std::{Addr, CustomQuery, HexBinary, QuerierWrapper, StdResult};
 
 #[cw_serde]
 #[repr(u32)]
@@ -60,4 +60,28 @@ pub struct VerifyInfoResponse {
 #[cw_serde]
 pub struct InterchainSecurityModuleResponse {
     pub ism: Option<Addr>,
+}
+
+pub fn recipient<C: CustomQuery>(
+    querier: &QuerierWrapper<C>,
+    recipient: impl Into<String>,
+) -> StdResult<Option<Addr>> {
+    let res = querier.query_wasm_smart::<InterchainSecurityModuleResponse>(
+        recipient,
+        &ISMSpecifierQueryMsg::InterchainSecurityModule(),
+    )?;
+
+    Ok(res.ism)
+}
+
+pub fn verify<C: CustomQuery>(
+    querier: &QuerierWrapper<C>,
+    ism: impl Into<String>,
+    metadata: HexBinary,
+    message: HexBinary,
+) -> StdResult<bool> {
+    let verify_resp = querier
+        .query_wasm_smart::<VerifyResponse>(ism, &ISMQueryMsg::Verify { metadata, message })?;
+
+    Ok(verify_resp.verified)
 }

@@ -6,33 +6,24 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
-    #[error("Unauthorized")]
+    #[error("unauthorized")]
     Unauthorized {},
 
-    #[error("Custom Error val: {val:?}")]
-    CustomError { val: String },
-
-    #[error("Contract is paused")]
-    Paused {},
-
-    #[error("ISM verify is failed")]
+    #[error("ism verify failed")]
     VerifyFailed {},
 
-    #[error("Invalid address length: {len:?}")]
+    #[error("invalid address length: {len:?}")]
     InvalidAddressLength { len: usize },
 
-    #[error("Invalid message version: {version:?}")]
+    #[error("invalid message version: {version:?}")]
     InvalidMessageVersion { version: u8 },
 
-    #[error("Invalid destination domain: {domain:?}")]
+    #[error("invalid destination domain: {domain:?}")]
     InvalidDestinationDomain { domain: u32 },
 
-    #[error("Already delivered message")]
+    #[error("message already delivered")]
     AlreadyDeliveredMessage {},
 
-    #[error("Merkle tree is already full")]
-    MerkleTreeIsFull {},
-
-    #[error("Message not found")]
+    #[error("message not found")]
     MessageNotFound {},
 }

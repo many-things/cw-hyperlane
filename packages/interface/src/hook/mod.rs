@@ -5,7 +5,9 @@ pub mod routing_custom;
 pub mod routing_fallback;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{HexBinary, Uint256};
+use cosmwasm_std::{
+    wasm_execute, Coin, CustomQuery, HexBinary, QuerierWrapper, StdResult, Uint256, WasmMsg,
+};
 
 #[cw_serde]
 pub struct PostDispatchMsg {
@@ -55,4 +57,37 @@ pub struct MailboxResponse {
 #[cw_serde]
 pub struct QuoteDispatchResponse {
     pub gas_amount: Uint256,
+}
+
+pub fn post_dispatch(
+    hook: impl Into<String>,
+    metadata: impl Into<HexBinary>,
+    message: impl Into<HexBinary>,
+    funds: Option<Vec<Coin>>,
+) -> StdResult<WasmMsg> {
+    wasm_execute(
+        hook,
+        &PostDispatchMsg {
+            metadata: metadata.into(),
+            message: message.into(),
+        }
+        .wrap(),
+        funds.unwrap_or_default(),
+    )
+}
+
+pub fn quote_dispatch<C: CustomQuery>(
+    querier: &QuerierWrapper<C>,
+    hook: impl Into<String>,
+    metadata: impl Into<HexBinary>,
+    message: impl Into<HexBinary>,
+) -> StdResult<QuoteDispatchResponse> {
+    querier.query_wasm_smart(
+        hook,
+        &QuoteDispatchMsg {
+            metadata: metadata.into(),
+            message: message.into(),
+        }
+        .wrap(),
+    )
 }

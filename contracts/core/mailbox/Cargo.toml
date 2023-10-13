@@ -37,6 +37,7 @@ hpl-pausable.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
+rand.workspace = true
 rstest.workspace = true
 
 serde.workspace = true

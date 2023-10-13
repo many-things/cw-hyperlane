@@ -1,14 +1,19 @@
 use cosmwasm_std::{
-    ensure, ensure_eq, to_binary, DepsMut, HexBinary, MessageInfo, Response, WasmMsg,
+    ensure, ensure_eq, to_binary, wasm_execute, DepsMut, HexBinary, MessageInfo, Response,
 };
 use hpl_interface::{
-    core::{mailbox::DispatchResponse, HandleMsg},
-    hook::PostDispatchMsg,
-    types::{bech32_to_h256, Message},
+    core::{
+        mailbox::{DispatchMsg, DispatchResponse},
+        HandleMsg,
+    },
+    hook::post_dispatch,
+    ism,
+    types::Message,
 };
 
+use hpl_ownable::get_owner;
+
 use crate::{
-    contract_querier::{ism_verify, recipient_ism},
     event::{
         emit_default_hook_set, emit_default_ism_set, emit_dispatch, emit_dispatch_id, emit_process,
         emit_process_id,
@@ -23,7 +28,7 @@ pub fn set_default_ism(
     new_default_ism: String,
 ) -> Result<Response, ContractError> {
     ensure_eq!(
-        hpl_ownable::get_owner(deps.storage)?,
+        get_owner(deps.storage)?,
         info.sender,
         ContractError::Unauthorized {}
     );
@@ -46,7 +51,7 @@ pub fn set_default_hook(
     new_default_hook: String,
 ) -> Result<Response, ContractError> {
     ensure_eq!(
-        hpl_ownable::get_owner(deps.storage)?,
+        get_owner(deps.storage)?,
         info.sender,
         ContractError::Unauthorized {}
     );
@@ -66,66 +71,45 @@ pub fn set_default_hook(
 pub fn dispatch(
     deps: DepsMut,
     info: MessageInfo,
-    dest_domain: u32,
-    recipient_addr: HexBinary,
-    msg_body: HexBinary,
-    hook: Option<String>,
-    metadata: Option<HexBinary>,
+    dispatch_msg: DispatchMsg,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let nonce = NONCE.load(deps.storage)?;
+
     ensure!(
-        recipient_addr.len() <= 32,
+        dispatch_msg.recipient_addr.len() <= 32,
         ContractError::InvalidAddressLength {
-            len: recipient_addr.len()
+            len: dispatch_msg.recipient_addr.len()
         }
     );
 
-    let config = CONFIG.load(deps.storage)?;
-    let nonce = NONCE.load(deps.storage)?;
-    let sender = bech32_to_h256(info.sender.as_str())?;
+    // interaction
+    let hook = dispatch_msg
+        .get_hook_addr(deps.api, config.default_hook)?
+        .expect("default_hook not set");
+    let hook_metadata = dispatch_msg.metadata.clone();
 
-    let msg = Message {
-        version: MAILBOX_VERSION,
-        nonce,
-        origin_domain: config.local_domain,
-        sender: sender.to_vec().into(),
-        dest_domain,
-        recipient: recipient_addr,
-        body: msg_body,
-    };
+    let msg = dispatch_msg.to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
 
-    let id = msg.id();
+    let message_id = msg.id();
 
     // effects
     NONCE.save(deps.storage, &(nonce + 1))?;
-    LATEST_DISPATCHED_ID.save(deps.storage, &id.to_vec())?;
-
-    // interaction
-    let default_hook = config.get_default_hook();
-    let hook = hook
-        .map(|v| deps.api.addr_validate(&v))
-        .transpose()?
-        .unwrap_or(default_hook);
+    LATEST_DISPATCHED_ID.save(deps.storage, &message_id.to_vec())?;
 
     // make message
-    let wasm_msg = WasmMsg::Execute {
-        contract_addr: hook.to_string(),
-        msg: to_binary(
-            &PostDispatchMsg {
-                metadata: metadata.unwrap_or_default(),
-                message: msg.clone().into(),
-            }
-            .wrap(),
-        )?,
-        funds: info.funds,
-    };
+    let post_dispatch_msg = post_dispatch(
+        hook,
+        hook_metadata.unwrap_or_default(),
+        msg.clone(),
+        Some(info.funds),
+    )?;
 
     Ok(Response::new()
-        .set_data(to_binary(&DispatchResponse {
-            message_id: id.clone(),
-        })?)
-        .add_message(wasm_msg)
-        .add_event(emit_dispatch_id(id))
-        .add_event(emit_dispatch(msg)))
+        .add_event(emit_dispatch_id(message_id.clone()))
+        .add_event(emit_dispatch(msg))
+        .set_data(to_binary(&DispatchResponse { message_id })?)
+        .add_message(post_dispatch_msg))
 }
 
 pub fn process(
@@ -139,12 +123,6 @@ pub fn process(
     let decoded_msg: Message = message.clone().into();
     let recipient = decoded_msg.recipient_addr(&config.hrp)?;
 
-    ensure!(
-        decoded_msg.recipient.len() <= 32,
-        ContractError::InvalidAddressLength {
-            len: decoded_msg.recipient.len()
-        }
-    );
     ensure_eq!(
         decoded_msg.version,
         MAILBOX_VERSION,
@@ -161,7 +139,7 @@ pub fn process(
     );
 
     let id = decoded_msg.id();
-    let ism = recipient_ism(deps.as_ref(), &recipient)?;
+    let ism = ism::recipient(&deps.querier, &recipient)?.unwrap_or(config.get_default_ism());
 
     ensure!(
         !DELIVERIES.has(deps.storage, id.to_vec()),
@@ -176,20 +154,21 @@ pub fn process(
         },
     )?;
 
-    ism_verify(&deps.querier, &ism, metadata, message)?;
+    ensure!(
+        ism::verify(&deps.querier, ism, metadata, message)?,
+        ContractError::VerifyFailed {}
+    );
 
-    let handle_msg = WasmMsg::Execute {
-        contract_addr: recipient.to_string(),
-        msg: to_binary(
-            &HandleMsg {
-                origin: decoded_msg.origin_domain,
-                sender: decoded_msg.sender.clone(),
-                body: decoded_msg.body,
-            }
-            .wrap(),
-        )?,
-        funds: vec![],
-    };
+    let handle_msg = wasm_execute(
+        recipient,
+        &HandleMsg {
+            origin: decoded_msg.origin_domain,
+            sender: decoded_msg.sender.clone(),
+            body: decoded_msg.body,
+        }
+        .wrap(),
+        vec![],
+    )?;
 
     Ok(Response::new().add_message(handle_msg).add_events(vec![
         emit_process_id(id),
@@ -205,113 +184,255 @@ pub fn process(
 mod tests {
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_info},
-        Addr,
+        Addr, QuerierResult, SystemResult, WasmQuery,
     };
 
+    use hpl_interface::types::bech32_encode;
+    use rstest::rstest;
+
     use super::*;
+
+    use crate::state::Config;
 
     const OWNER: &str = "owner";
     const NOT_OWNER: &str = "not_owner";
 
+    const LOCAL_DOMAIN: u32 = 26657;
     const DEST_DOMAIN: u32 = 11155111;
-    const RECIPIENT: &str = "b75d7d24e428c7859440498efe7caa3997cefb08c99bdd581b6b1f9f866096f0";
-    const MSG: &str = "48656c6c6f21";
-    const METADATA: &str = "48656c6c6f21";
 
-    fn hex(v: &str) -> HexBinary {
-        HexBinary::from_hex(v).unwrap()
+    fn addr(v: &str) -> Addr {
+        Addr::unchecked(v)
     }
 
-    #[test]
-    fn test_set_default_ism() {
-        let mut deps = mock_dependencies();
-
-        let owner = Addr::unchecked(OWNER);
-
-        hpl_ownable::initialize(deps.as_mut().storage, &owner).unwrap();
-
-        // Sender is not authorized
-        let sender = NOT_OWNER;
-        let info = mock_info(sender, &[]);
-        let new_default_ism = "new_default_ism".to_string();
-
-        let owner_assert = set_default_ism(deps.as_mut(), info, new_default_ism).unwrap_err();
-
-        assert!(matches!(owner_assert, ContractError::Unauthorized {}));
+    fn gen_bz(len: usize) -> HexBinary {
+        let bz: Vec<_> = (0..len).map(|_| rand::random::<u8>()).collect();
+        bz.into()
     }
 
-    #[test]
-    fn test_set_default_hook() {
+    #[rstest]
+    #[case(addr(OWNER), addr("default_ism"), Ok(()))]
+    #[case(addr(NOT_OWNER), addr("default_ism"), Err(ContractError::Unauthorized{}))]
+    fn test_set_default_ism(
+        #[case] sender: Addr,
+        #[case] new_default_ism: Addr,
+        #[case] expected: Result<(), ContractError>,
+    ) {
+        let expected = expected.map(|_| {
+            Response::new().add_event(emit_default_ism_set(
+                sender.clone(),
+                new_default_ism.clone(),
+            ))
+        });
+
         let mut deps = mock_dependencies();
 
-        let owner = Addr::unchecked(OWNER);
+        CONFIG
+            .save(deps.as_mut().storage, &Default::default())
+            .unwrap();
 
-        hpl_ownable::initialize(deps.as_mut().storage, &owner).unwrap();
+        hpl_ownable::initialize(deps.as_mut().storage, &addr(OWNER)).unwrap();
 
-        // Sender is not authorized
-        let sender = NOT_OWNER;
-        let info = mock_info(sender, &[]);
-        let new_default_hook = "new_default_hook".to_string();
-
-        let owner_assert = set_default_hook(deps.as_mut(), info, new_default_hook).unwrap_err();
-
-        assert!(matches!(owner_assert, ContractError::Unauthorized {}));
+        assert_eq!(
+            expected,
+            set_default_ism(
+                deps.as_mut(),
+                mock_info(sender.as_str(), &[]),
+                new_default_ism.to_string()
+            )
+        );
     }
 
-    #[test]
-    fn test_dispatch() {
+    #[rstest]
+    #[case(addr(OWNER), addr("default_hook"), Ok(()))]
+    #[case(addr(NOT_OWNER), addr("default_hook"), Err(ContractError::Unauthorized{}))]
+    fn test_set_default_hook(
+        #[case] sender: Addr,
+        #[case] new_default_hook: Addr,
+        #[case] expected: Result<(), ContractError>,
+    ) {
+        let expected = expected.map(|_| {
+            Response::new().add_event(emit_default_hook_set(
+                sender.clone(),
+                new_default_hook.clone(),
+            ))
+        });
+
         let mut deps = mock_dependencies();
 
-        let long_recipient_address = HexBinary::from_hex(
-            "b75d7d24e428c7859440498efe7caa3997cefb08c99bdd581b6b1f9f866096f073c8c3b0316abe",
+        CONFIG
+            .save(deps.as_mut().storage, &Default::default())
+            .unwrap();
+
+        hpl_ownable::initialize(deps.as_mut().storage, &addr(OWNER)).unwrap();
+
+        assert_eq!(
+            expected,
+            set_default_hook(
+                deps.as_mut(),
+                mock_info(sender.as_str(), &[]),
+                new_default_hook.to_string()
+            )
+        );
+    }
+
+    #[rstest]
+    #[case(DEST_DOMAIN, gen_bz(20), gen_bz(32), Ok(()))]
+    #[case(DEST_DOMAIN, gen_bz(20), gen_bz(33), Err(ContractError::InvalidAddressLength { len: 33 }))]
+    fn test_dispatch(
+        #[values("osmo", "neutron")] hrp: &str,
+        #[case] dest_domain: u32,
+        #[case] sender: HexBinary,
+        #[case] recipient_addr: HexBinary,
+        #[case] expected: Result<(), ContractError>,
+    ) {
+        let sender = bech32_encode(hrp, sender.as_slice()).unwrap();
+        let msg_body = gen_bz(123);
+
+        let mut deps = mock_dependencies();
+
+        CONFIG
+            .save(
+                deps.as_mut().storage,
+                &Config::new(hrp, LOCAL_DOMAIN)
+                    .with_hook(addr("default_hook"))
+                    .with_ism(addr("default_ism")),
+            )
+            .unwrap();
+        NONCE.save(deps.as_mut().storage, &0u32).unwrap();
+
+        hpl_ownable::initialize(deps.as_mut().storage, &addr(OWNER)).unwrap();
+
+        let dispatch_msg = DispatchMsg::new(dest_domain, recipient_addr, msg_body);
+        let msg = dispatch_msg
+            .clone()
+            .to_msg(
+                MAILBOX_VERSION,
+                NONCE.load(deps.as_ref().storage).unwrap(),
+                LOCAL_DOMAIN,
+                &sender,
+            )
+            .unwrap();
+
+        let res = dispatch(deps.as_mut(), mock_info(sender.as_str(), &[]), dispatch_msg);
+        assert_eq!(res.map(|_| ()), expected);
+
+        if expected.is_ok() {
+            assert_eq!(NONCE.load(deps.as_ref().storage).unwrap(), 1u32);
+            assert_eq!(
+                LATEST_DISPATCHED_ID.load(deps.as_ref().storage).unwrap(),
+                msg.id().to_vec()
+            );
+        }
+    }
+
+    fn test_process_query_handler(query: &WasmQuery) -> QuerierResult {
+        match query {
+            WasmQuery::Smart { contract_addr, msg } => {
+                if let Ok(req) = cosmwasm_std::from_binary::<ism::ISMSpecifierQueryMsg>(msg) {
+                    match req {
+                        ism::ISMSpecifierQueryMsg::InterchainSecurityModule() => {
+                            return SystemResult::Ok(
+                                cosmwasm_std::to_binary(&ism::InterchainSecurityModuleResponse {
+                                    ism: Some(addr("default_ism")),
+                                })
+                                .into(),
+                            );
+                        }
+                    }
+                }
+
+                if let Ok(req) = cosmwasm_std::from_binary::<ism::ISMQueryMsg>(msg) {
+                    assert_eq!(contract_addr, &addr("default_ism"));
+
+                    match req {
+                        ism::ISMQueryMsg::Verify { metadata, .. } => {
+                            return SystemResult::Ok(
+                                cosmwasm_std::to_binary(&ism::VerifyResponse {
+                                    verified: metadata[0] == 1,
+                                })
+                                .into(),
+                            );
+                        }
+                        _ => unreachable!("not in test coverage"),
+                    }
+                }
+
+                unreachable!("not in test coverage")
+            }
+            _ => unimplemented!("only for smart query"),
+        }
+    }
+
+    #[rstest]
+    #[case(MAILBOX_VERSION, LOCAL_DOMAIN, gen_bz(32), false, true)]
+    #[should_panic(expected = "invalid message version: 99")]
+    #[case(99, LOCAL_DOMAIN, gen_bz(32), false, true)]
+    #[should_panic(expected = "message already delivered")]
+    #[case(MAILBOX_VERSION, LOCAL_DOMAIN, gen_bz(32), true, true)]
+    #[should_panic(expected = "invalid destination domain: 11155111")]
+    #[case(MAILBOX_VERSION, DEST_DOMAIN, gen_bz(32), false, true)]
+    #[should_panic(expected = "ism verify failed")]
+    #[case(MAILBOX_VERSION, LOCAL_DOMAIN, gen_bz(32), false, false)]
+    fn test_process_revised(
+        #[values("osmo", "neutron")] hrp: &str,
+        #[case] version: u8,
+        #[case] dest_domain: u32,
+        #[case] recipient_addr: HexBinary,
+        #[case] duplicate: bool,
+        #[case] verified: bool,
+    ) {
+        let sender = gen_bz(32);
+        let sender_addr = bech32_encode(hrp, &sender).unwrap();
+        let msg_body = gen_bz(123);
+
+        let mut deps = mock_dependencies();
+
+        deps.querier.update_wasm(test_process_query_handler);
+
+        CONFIG
+            .save(
+                deps.as_mut().storage,
+                &Config::new(hrp, LOCAL_DOMAIN)
+                    .with_hook(addr("default_hook"))
+                    .with_ism(addr("default_ism")),
+            )
+            .unwrap();
+
+        let msg = Message {
+            version,
+            nonce: 123,
+            origin_domain: DEST_DOMAIN,
+            sender,
+            dest_domain,
+            recipient: recipient_addr,
+            body: msg_body,
+        };
+        let msg_id = msg.id();
+
+        if duplicate {
+            DELIVERIES
+                .save(
+                    deps.as_mut().storage,
+                    msg.id().to_vec(),
+                    &Delivery {
+                        sender: sender_addr.clone(),
+                    },
+                )
+                .unwrap();
+        }
+
+        let _res = process(
+            deps.as_mut(),
+            mock_info(sender_addr.as_str(), &[]),
+            vec![verified.into()].into(),
+            msg.into(),
         )
+        .map_err(|v| v.to_string())
         .unwrap();
 
-        // Invalid address length
-        let invalid_address_length_assert = dispatch(
-            deps.as_mut(),
-            mock_info("owner", &[]),
-            DEST_DOMAIN,
-            long_recipient_address.clone(),
-            hex(MSG),
-            None,
-            None,
-        )
-        .unwrap_err();
-
-        assert_eq!(
-            invalid_address_length_assert,
-            ContractError::InvalidAddressLength {
-                len: long_recipient_address.len()
-            }
-        );
-    }
-
-    #[test]
-    fn test_process() {
-        let mut deps = mock_dependencies();
-
-        let sender = mock_info("sender", &[]);
-
-        // Invalid message version
-        let wrong_version_message: HexBinary = HexBinary::from(Message {
-            version: 99,
-            nonce: 2,
-            origin_domain: 3,
-            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
-            dest_domain: 11155111,
-            recipient: hex(RECIPIENT),
-            body: hex("48656c6c6f21"),
-        });
-        let wrong_decoded_message: Message = wrong_version_message.clone().into();
-        let invalid_message_version_assert =
-            process(deps.as_mut(), sender, hex(METADATA), wrong_version_message).unwrap_err();
-
-        assert_eq!(
-            invalid_message_version_assert,
-            ContractError::InvalidMessageVersion {
-                version: wrong_decoded_message.version
-            }
-        );
+        let delivery = DELIVERIES
+            .load(deps.as_ref().storage, msg_id.to_vec())
+            .unwrap();
+        assert_eq!(delivery.sender, sender_addr);
     }
 }

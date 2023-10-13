@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{ensure, Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, QueryResponse, Response};
 
 use hpl_interface::{
     core::mailbox::{ExecuteMsg, InstantiateMsg, MailboxQueryMsg, QueryMsg},
@@ -40,11 +40,6 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
-    Ok(Response::default())
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -54,51 +49,31 @@ pub fn execute(
     use crate::execute;
     use ExecuteMsg::*;
 
-    ensure!(
-        hpl_pausable::get_pause_info(deps.storage)?,
-        ContractError::Paused {}
-    );
-
     match msg {
         Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
 
         SetDefaultIsm { ism } => execute::set_default_ism(deps, info, ism),
         SetDefaultHook { hook } => execute::set_default_hook(deps, info, hook),
-        Dispatch {
-            dest_domain,
-            recipient_addr,
-            msg_body,
-            hook,
-            metadata,
-        } => execute::dispatch(
-            deps,
-            info,
-            dest_domain,
-            recipient_addr,
-            msg_body,
-            hook,
-            metadata,
-        ),
+
+        Dispatch(msg) => execute::dispatch(deps, info, msg),
         Process { metadata, message } => execute::process(deps, info, metadata, message),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
-    use crate::query;
+    use crate::query::*;
     use MailboxQueryMsg::*;
 
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Base(msg) => match msg {
-            Hrp {} => to_binary(query::get_hrp(deps)),
-            LocalDomain {} => to_binary(query::get_local_domain(deps)),
-            DefaultIsm {} => to_binary(query::get_default_ism(deps)),
-            DefaultHook {} => to_binary(query::get_default_hook(deps)),
-            MessageDelivered { id } => to_binary(query::get_delivered(deps, id)),
-            RecipientIsm { recipient_addr } => {
-                to_binary(query::get_recipient_ism(deps, recipient_addr))
-            }
+            Hrp {} => to_binary(get_hrp(deps)),
+            LocalDomain {} => to_binary(get_local_domain(deps)),
+            DefaultIsm {} => to_binary(get_default_ism(deps)),
+            DefaultHook {} => to_binary(get_default_hook(deps)),
+            MessageDelivered { id } => to_binary(get_delivered(deps, id)),
+            RecipientIsm { recipient_addr } => to_binary(get_recipient_ism(deps, recipient_addr)),
         },
     }
 }

@@ -2,9 +2,8 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
 
-use crate::ContractError;
-
 #[cw_serde]
+#[derive(Default)]
 pub struct Config {
     pub hrp: String,
     pub local_domain: u32,
@@ -12,7 +11,26 @@ pub struct Config {
     pub default_hook: Option<Addr>,
 }
 
+#[allow(dead_code)]
 impl Config {
+    pub fn new(hrp: impl Into<String>, local_domain: u32) -> Self {
+        Self {
+            hrp: hrp.into(),
+            local_domain,
+            ..Default::default()
+        }
+    }
+
+    pub fn with_ism(mut self, default_ism: Addr) -> Self {
+        self.default_ism = Some(default_ism);
+        self
+    }
+
+    pub fn with_hook(mut self, default_hook: Addr) -> Self {
+        self.default_hook = Some(default_hook);
+        self
+    }
+
     pub fn get_default_ism(&self) -> Addr {
         self.default_ism.clone().expect("default_ism not set")
     }
@@ -40,11 +58,3 @@ pub const LATEST_DISPATCHED_ID: Item<Vec<u8>> = Item::new(LATEST_DISPATCHED_ID_K
 
 pub const DELIVERIES_PREFIX: &str = "deliveries";
 pub const DELIVERIES: Map<Vec<u8>, Delivery> = Map::new(DELIVERIES_PREFIX);
-
-pub fn assert_verify_response(resp: bool) -> Result<(), ContractError> {
-    if !resp {
-        return Err(ContractError::VerifyFailed {});
-    }
-
-    Ok(())
-}

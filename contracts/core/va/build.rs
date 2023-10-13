@@ -5,6 +5,8 @@ use cosmwasm_schema::write_api;
 use hpl_interface::core::va::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
+
     write_api! {
         instantiate: InstantiateMsg,
         migrate: MigrateMsg,

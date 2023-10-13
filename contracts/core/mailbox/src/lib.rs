@@ -1,5 +1,4 @@
 pub mod contract;
-mod contract_querier;
 mod error;
 mod event;
 pub mod execute;

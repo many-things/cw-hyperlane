@@ -217,7 +217,7 @@ fn test_pay_for_gas() -> anyhow::Result<()> {
     let gas_paid_over = coin(10 * 10u128.pow(15), testdata.gas_token);
     let gas_amount = 300_000;
 
-    let message_id = HexBinary::from_hex("deadbeefdeadbeefdeadbeef")?.into();
+    let message_id = HexBinary::from_hex("deadbeefdeadbeefdeadbeef")?;
 
     // check missing oracle error
     let err = igp

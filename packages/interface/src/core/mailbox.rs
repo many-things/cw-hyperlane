@@ -1,13 +1,83 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{wasm_execute, CosmosMsg, HexBinary, StdResult};
+use cosmwasm_std::{wasm_execute, Addr, Api, CosmosMsg, HexBinary, StdResult};
 
-use crate::ownable::{OwnableMsg, OwnableQueryMsg};
+use crate::{
+    ownable::{OwnableMsg, OwnableQueryMsg},
+    types,
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     pub hrp: String,
     pub owner: String,
     pub domain: u32,
+}
+
+#[cw_serde]
+pub struct DispatchMsg {
+    pub dest_domain: u32,
+    pub recipient_addr: HexBinary,
+    pub msg_body: HexBinary,
+    pub hook: Option<String>,
+    pub metadata: Option<HexBinary>,
+}
+
+impl DispatchMsg {
+    pub fn new(
+        dest_domain: u32,
+        recipient_addr: impl Into<HexBinary>,
+        msg_body: impl Into<HexBinary>,
+    ) -> Self {
+        Self {
+            dest_domain,
+            recipient_addr: recipient_addr.into(),
+            msg_body: msg_body.into(),
+            hook: None,
+            metadata: None,
+        }
+    }
+
+    pub fn with_hook(mut self, hook: impl Into<String>) -> Self {
+        self.hook = Some(hook.into());
+        self
+    }
+
+    pub fn with_metadata(mut self, metadata: impl Into<HexBinary>) -> Self {
+        self.metadata = Some(metadata.into());
+        self
+    }
+
+    pub fn to_msg(
+        self,
+        version: u8,
+        nonce: u32,
+        origin_domain: u32,
+        sender: impl Into<String>,
+    ) -> StdResult<types::Message> {
+        Ok(types::Message {
+            version,
+            nonce,
+            origin_domain,
+            sender: types::bech32_to_h256(&sender.into())?.to_vec().into(),
+            dest_domain: self.dest_domain,
+            recipient: self.recipient_addr,
+            body: self.msg_body,
+        })
+    }
+
+    pub fn get_hook_addr(&self, api: &dyn Api, default: Option<Addr>) -> StdResult<Option<Addr>> {
+        let addr = self
+            .hook
+            .as_ref()
+            .map(|v| api.addr_validate(v))
+            .transpose()?;
+
+        if addr.is_some() {
+            return Ok(addr);
+        }
+
+        Ok(default)
+    }
 }
 
 #[cw_serde]
@@ -23,13 +93,7 @@ pub enum ExecuteMsg {
         hook: String,
     },
 
-    Dispatch {
-        dest_domain: u32,
-        recipient_addr: HexBinary,
-        msg_body: HexBinary,
-        hook: Option<String>,
-        metadata: Option<HexBinary>,
-    },
+    Dispatch(DispatchMsg),
     Process {
         metadata: HexBinary,
         message: HexBinary,
@@ -46,13 +110,13 @@ pub fn dispatch(
 ) -> StdResult<CosmosMsg> {
     Ok(wasm_execute(
         mailbox,
-        &ExecuteMsg::Dispatch {
+        &ExecuteMsg::Dispatch(DispatchMsg {
             dest_domain,
             recipient_addr,
             msg_body,
             hook,
             metadata,
-        },
+        }),
         vec![],
     )?
     .into())
@@ -101,6 +165,12 @@ pub enum MailboxQueryMsg {
 
     #[returns(RecipientIsmResponse)]
     RecipientIsm { recipient_addr: String },
+}
+
+impl MailboxQueryMsg {
+    pub fn wrap(self) -> QueryMsg {
+        QueryMsg::Base(self)
+    }
 }
 
 #[cw_serde]
