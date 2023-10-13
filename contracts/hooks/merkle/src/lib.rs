@@ -105,7 +105,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
             HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch()),
         },
-        QueryMsg::Base(msg) => match msg {
+        QueryMsg::MerkleHook(msg) => match msg {
             Count {} => to_binary(get_tree_count(deps)),
             Root {} => to_binary(get_tree_root(deps)),
             Branch {} => to_binary(get_tree_branch(deps)),

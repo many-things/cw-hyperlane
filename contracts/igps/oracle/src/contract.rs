@@ -79,7 +79,7 @@ pub fn execute(
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
-        QueryMsg::Base(msg) => match msg {
+        QueryMsg::Oracle(msg) => match msg {
             IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
                 let gas_data = REMOTE_GAS_DATA.load(deps.storage, dest_domain)?;
 

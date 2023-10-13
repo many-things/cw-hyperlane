@@ -31,7 +31,7 @@ pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
 
     // base
-    Base(IgpGasOracleQueryMsg),
+    Oracle(IgpGasOracleQueryMsg),
 }
 
 #[cw_serde]
@@ -43,7 +43,7 @@ pub enum IgpGasOracleQueryMsg {
 
 impl IgpGasOracleQueryMsg {
     pub fn wrap(self) -> QueryMsg {
-        QueryMsg::Base(self)
+        QueryMsg::Oracle(self)
     }
 }
 

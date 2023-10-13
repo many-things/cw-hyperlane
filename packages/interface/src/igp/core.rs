@@ -72,7 +72,7 @@ pub enum QueryMsg {
     Oracle(IgpGasOracleQueryMsg),
 
     // base
-    Base(IgpQueryMsg),
+    Igp(IgpQueryMsg),
 }
 
 #[cw_serde]
@@ -90,7 +90,7 @@ pub enum IgpQueryMsg {
 
 impl IgpQueryMsg {
     pub fn wrap(self) -> QueryMsg {
-        QueryMsg::Base(self)
+        QueryMsg::Igp(self)
     }
 }
 

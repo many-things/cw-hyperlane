@@ -85,15 +85,17 @@ pub enum ExecuteMsg {
     // overrides
     Ownable(OwnableMsg),
 
-    // base
+    // Mailbox
     SetDefaultIsm {
         ism: String,
     },
+
     SetDefaultHook {
         hook: String,
     },
 
     Dispatch(DispatchMsg),
+
     Process {
         metadata: HexBinary,
         message: HexBinary,
@@ -140,8 +142,8 @@ pub enum QueryMsg {
     // overrides
     Ownable(OwnableQueryMsg),
 
-    // base
-    Base(MailboxQueryMsg),
+    // mailbox
+    Mailbox(MailboxQueryMsg),
 }
 
 #[cw_serde]
@@ -168,7 +170,7 @@ pub enum MailboxQueryMsg {
 
 impl MailboxQueryMsg {
     pub fn wrap(self) -> QueryMsg {
-        QueryMsg::Base(self)
+        QueryMsg::Mailbox(self)
     }
 }
 

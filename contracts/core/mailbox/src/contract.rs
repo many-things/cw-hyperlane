@@ -67,7 +67,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
-        QueryMsg::Base(msg) => match msg {
+        QueryMsg::Mailbox(msg) => match msg {
             Hrp {} => to_binary(get_hrp(deps)),
             LocalDomain {} => to_binary(get_local_domain(deps)),
             DefaultIsm {} => to_binary(get_default_ism(deps)),

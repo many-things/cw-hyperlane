@@ -25,7 +25,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
-    Base(MerkleHookQueryMsg),
+    MerkleHook(MerkleHookQueryMsg),
 }
 
 #[cw_serde]

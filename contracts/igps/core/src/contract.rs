@@ -91,7 +91,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 get_exchange_rate_and_gas_price(deps, dest_domain)
             }
         },
-        QueryMsg::Base(msg) => match msg {
+        QueryMsg::Igp(msg) => match msg {
             IgpQueryMsg::Beneficiary {} => todo!(),
             IgpQueryMsg::QuoteGasPayment {
                 dest_domain,
