@@ -28,7 +28,7 @@ pub struct Cw20ModeBridged {
 
 #[cw_serde]
 pub struct Cw20ModeCollateral {
-    pub token: String,
+    pub address: String,
 }
 
 #[cw_serde]

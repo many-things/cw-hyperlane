@@ -38,6 +38,7 @@ schemars.workspace = true
 
 thiserror.workspace = true
 
+hpl-ownable.workspace = true
 hpl-router.workspace = true
 hpl-interface.workspace = true
 

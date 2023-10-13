@@ -35,12 +35,11 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let mode: TokenMode = msg.token.clone().into();
+    let owner = deps.api.addr_validate(&msg.owner)?;
 
     HRP.save(deps.storage, &msg.hrp)?;
     MODE.save(deps.storage, &mode)?;
     MAILBOX.save(deps.storage, &deps.api.addr_validate(&msg.mailbox)?)?;
-
-    let owner = deps.api.addr_validate(&msg.owner)?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
 
