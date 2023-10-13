@@ -219,6 +219,7 @@ mod test {
         SecretKey,
     };
     use rstest::rstest;
+    use serde::de::DeserializeOwned;
 
     use super::*;
 
@@ -323,6 +324,11 @@ mod test {
         bz.into()
     }
 
+    fn query<T: DeserializeOwned>(deps: Deps, msg: QueryMsg) -> T {
+        let res = super::query(deps, mock_env(), msg).unwrap();
+        cosmwasm_std::from_binary(&res).unwrap()
+    }
+
     #[rstest]
     fn test_init(#[values("osmo", "neutron")] hrp: &str) {
         let sender = gen_addr(hrp);
@@ -353,9 +359,53 @@ mod test {
         assert_eq!(HRP.load(deps.as_ref().storage).unwrap(), hrp);
     }
 
-    #[rstest(
-        hrp => ["osmo", "neutron"],
-    )]
+    #[rstest]
+    fn test_query(
+        #[values("osmo", "neutron")] hrp: &str,
+        #[values(0, 4)] validators_len: usize,
+        #[values(0, 4)] locations_len: usize,
+    ) {
+        let mut deps = mock_dependencies();
+
+        HRP.save(deps.as_mut().storage, &hrp.to_string()).unwrap();
+
+        let validators = (0..validators_len)
+            .map(|_| gen_addr(hrp))
+            .collect::<Vec<_>>();
+        for validator in validators {
+            VALIDATORS
+                .save(deps.as_mut().storage, validator.clone(), &Empty {})
+                .unwrap();
+
+            let locations = (0..locations_len)
+                .map(|v| format!("file://foo/bar/{v}"))
+                .collect::<Vec<_>>();
+
+            STORAGE_LOCATIONS
+                .save(deps.as_mut().storage, validator, &locations)
+                .unwrap();
+        }
+
+        let GetAnnouncedValidatorsResponse { validators } =
+            query(deps.as_ref(), QueryMsg::GetAnnouncedValidators {});
+        assert_eq!(validators.len(), validators_len);
+
+        let GetAnnounceStorageLocationsResponse { storage_locations } = query(
+            deps.as_ref(),
+            QueryMsg::GetAnnounceStorageLocations {
+                validators: validators
+                    .iter()
+                    .map(|v| HexBinary::from(bech32_decode(v).unwrap()))
+                    .collect::<Vec<_>>(),
+            },
+        );
+        for (validator, locations) in storage_locations {
+            assert!(validators.contains(&validator));
+            assert_eq!(locations.len(), locations_len);
+        }
+    }
+
+    #[rstest]
     #[case::rand(Announcement::rand(), false)]
     #[case::actual_data_1(Announcement::preset1(), false)]
     #[case::actual_data_2(Announcement::preset2(), false)]
@@ -364,7 +414,7 @@ mod test {
     #[should_panic(expected = "verify failed")]
     #[case::verify(Announcement::fail(), false)]
     fn test_announce(
-        hrp: &str,
+        #[values("osmo", "neutron")] hrp: &str,
         #[case] announcement: Announcement,
         #[case] enable_duplication: bool,
     ) {
