@@ -188,6 +188,7 @@ mod tests {
     };
 
     use hpl_interface::types::bech32_encode;
+    use ibcx_test_utils::{addr, gen_bz};
     use rstest::rstest;
 
     use super::*;
@@ -200,30 +201,11 @@ mod tests {
     const LOCAL_DOMAIN: u32 = 26657;
     const DEST_DOMAIN: u32 = 11155111;
 
-    fn addr(v: &str) -> Addr {
-        Addr::unchecked(v)
-    }
-
-    fn gen_bz(len: usize) -> HexBinary {
-        let bz: Vec<_> = (0..len).map(|_| rand::random::<u8>()).collect();
-        bz.into()
-    }
-
     #[rstest]
-    #[case(addr(OWNER), addr("default_ism"), Ok(()))]
-    #[case(addr(NOT_OWNER), addr("default_ism"), Err(ContractError::Unauthorized{}))]
-    fn test_set_default_ism(
-        #[case] sender: Addr,
-        #[case] new_default_ism: Addr,
-        #[case] expected: Result<(), ContractError>,
-    ) {
-        let expected = expected.map(|_| {
-            Response::new().add_event(emit_default_ism_set(
-                sender.clone(),
-                new_default_ism.clone(),
-            ))
-        });
-
+    #[case(addr(OWNER), addr("default_ism"))]
+    #[should_panic(expected = "unauthorized")]
+    #[case(addr(NOT_OWNER), addr("default_ism"))]
+    fn test_set_default_ism(#[case] sender: Addr, #[case] new_default_ism: Addr) {
         let mut deps = mock_dependencies();
 
         CONFIG
@@ -232,31 +214,24 @@ mod tests {
 
         hpl_ownable::initialize(deps.as_mut().storage, &addr(OWNER)).unwrap();
 
+        let res = set_default_ism(
+            deps.as_mut(),
+            mock_info(sender.as_str(), &[]),
+            new_default_ism.to_string(),
+        )
+        .unwrap();
+
         assert_eq!(
-            expected,
-            set_default_ism(
-                deps.as_mut(),
-                mock_info(sender.as_str(), &[]),
-                new_default_ism.to_string()
-            )
+            res,
+            Response::new().add_event(emit_default_ism_set(sender, new_default_ism))
         );
     }
 
     #[rstest]
-    #[case(addr(OWNER), addr("default_hook"), Ok(()))]
-    #[case(addr(NOT_OWNER), addr("default_hook"), Err(ContractError::Unauthorized{}))]
-    fn test_set_default_hook(
-        #[case] sender: Addr,
-        #[case] new_default_hook: Addr,
-        #[case] expected: Result<(), ContractError>,
-    ) {
-        let expected = expected.map(|_| {
-            Response::new().add_event(emit_default_hook_set(
-                sender.clone(),
-                new_default_hook.clone(),
-            ))
-        });
-
+    #[case(addr(OWNER), addr("default_hook"))]
+    #[should_panic(expected = "unauthorized")]
+    #[case(addr(NOT_OWNER), addr("default_hook"))]
+    fn test_set_default_hook(#[case] sender: Addr, #[case] new_default_hook: Addr) {
         let mut deps = mock_dependencies();
 
         CONFIG
@@ -265,25 +240,28 @@ mod tests {
 
         hpl_ownable::initialize(deps.as_mut().storage, &addr(OWNER)).unwrap();
 
+        let res = set_default_hook(
+            deps.as_mut(),
+            mock_info(sender.as_str(), &[]),
+            new_default_hook.to_string(),
+        )
+        .unwrap();
+
         assert_eq!(
-            expected,
-            set_default_hook(
-                deps.as_mut(),
-                mock_info(sender.as_str(), &[]),
-                new_default_hook.to_string()
-            )
-        );
+            res,
+            Response::new().add_event(emit_default_hook_set(sender, new_default_hook))
+        )
     }
 
     #[rstest]
-    #[case(DEST_DOMAIN, gen_bz(20), gen_bz(32), Ok(()))]
-    #[case(DEST_DOMAIN, gen_bz(20), gen_bz(33), Err(ContractError::InvalidAddressLength { len: 33 }))]
+    #[case(DEST_DOMAIN, gen_bz(20), gen_bz(32))]
+    #[should_panic(expected = "invalid address length: 33")]
+    #[case(DEST_DOMAIN, gen_bz(20), gen_bz(33))]
     fn test_dispatch(
         #[values("osmo", "neutron")] hrp: &str,
         #[case] dest_domain: u32,
         #[case] sender: HexBinary,
         #[case] recipient_addr: HexBinary,
-        #[case] expected: Result<(), ContractError>,
     ) {
         let sender = bech32_encode(hrp, sender.as_slice()).unwrap();
         let msg_body = gen_bz(123);
@@ -313,16 +291,13 @@ mod tests {
             )
             .unwrap();
 
-        let res = dispatch(deps.as_mut(), mock_info(sender.as_str(), &[]), dispatch_msg);
-        assert_eq!(res.map(|_| ()), expected);
+        let _res = dispatch(deps.as_mut(), mock_info(sender.as_str(), &[]), dispatch_msg).unwrap();
 
-        if expected.is_ok() {
-            assert_eq!(NONCE.load(deps.as_ref().storage).unwrap(), 1u32);
-            assert_eq!(
-                LATEST_DISPATCHED_ID.load(deps.as_ref().storage).unwrap(),
-                msg.id().to_vec()
-            );
-        }
+        assert_eq!(NONCE.load(deps.as_ref().storage).unwrap(), 1u32);
+        assert_eq!(
+            LATEST_DISPATCHED_ID.load(deps.as_ref().storage).unwrap(),
+            msg.id().to_vec()
+        );
     }
 
     fn test_process_query_handler(query: &WasmQuery) -> QuerierResult {

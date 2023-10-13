@@ -70,6 +70,7 @@ mod test {
         Addr,
     };
     use hpl_interface::core::mailbox::MailboxQueryMsg;
+    use ibcx_test_utils::{gen_addr, hex};
     use rstest::rstest;
     use serde::de::DeserializeOwned;
 
@@ -105,20 +106,20 @@ mod test {
     }
 
     #[rstest]
-    #[case(Some("ismism"), Some("hookhook"))]
+    #[case(Some(gen_addr("osmo")), Some(gen_addr("neutron")))]
     #[should_panic(expected = "default_ism not set")]
-    #[case(None, Some("hookhook"))]
+    #[case(None, Some(gen_addr("neutron")))]
     #[should_panic(expected = "default_hook not set")]
-    #[case(Some("ismism"), None)]
-    fn test_query_config(#[case] default_ism: Option<&str>, #[case] default_hook: Option<&str>) {
+    #[case(Some(gen_addr("osmo")), None)]
+    fn test_query_config(#[case] default_ism: Option<Addr>, #[case] default_hook: Option<Addr>) {
         let mut deps = mock_dependencies();
 
         CONFIG
             .save(
                 deps.as_mut().storage,
                 &Config {
-                    default_hook: default_hook.map(Addr::unchecked),
-                    default_ism: default_ism.map(Addr::unchecked),
+                    default_hook: default_hook.clone(),
+                    default_ism: default_ism.clone(),
                     ..Config::new("hrp", 123)
                 },
             )
@@ -140,11 +141,9 @@ mod test {
 
     #[rstest]
     #[case(None, false)]
-    #[case(Some("beef"), true)]
-    #[case(Some("deadbeef"), false)]
-    fn test_query_delivered(#[case] message_id: Option<&str>, #[case] delivered: bool) {
-        let message_id = message_id.map(HexBinary::from_hex).transpose().unwrap();
-
+    #[case(Some(hex("beef")), true)]
+    #[case(Some(hex("deadbeef")), false)]
+    fn test_query_delivered(#[case] message_id: Option<HexBinary>, #[case] delivered: bool) {
         let mut deps = mock_dependencies();
 
         if let Some(id) = message_id {
