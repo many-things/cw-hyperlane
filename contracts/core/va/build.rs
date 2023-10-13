@@ -17,6 +17,4 @@ fn main() {
     let mut raw_dir = current_dir().unwrap();
     raw_dir.push("schema");
     remove_dir_all(raw_dir.join("raw")).unwrap();
-
-    println!("cargo:rerun-if-changed=build.rs");
 }
