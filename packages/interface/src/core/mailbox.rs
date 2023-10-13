@@ -135,7 +135,6 @@ pub struct DispatchResponse {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-#[serde(untagged)]
 #[query_responses(nested)]
 pub enum QueryMsg {
     // overrides

@@ -66,7 +66,6 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-#[serde(untagged)]
 #[query_responses(nested)]
 pub enum QueryMsg {
     Ownable(OwnableQueryMsg),

@@ -36,5 +36,4 @@ pub struct GetAnnouncedValidatorsResponse {
     pub validators: Vec<String>,
 }
 
-#[cw_serde]
-pub struct MigrateMsg {}
+

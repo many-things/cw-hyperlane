@@ -33,6 +33,8 @@ bech32.workspace = true
 schemars.workspace = true
 serde.workspace = true
 
+ripemd.workspace = true
+sha2.workspace = true
 sha3.workspace = true
 
 thiserror.workspace = true
