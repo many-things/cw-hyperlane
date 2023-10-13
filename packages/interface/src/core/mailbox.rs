@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{wasm_execute, CosmosMsg, HexBinary, StdResult};
 
 use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
@@ -34,6 +34,34 @@ pub enum ExecuteMsg {
         metadata: HexBinary,
         message: HexBinary,
     },
+}
+
+pub fn dispatch(
+    mailbox: impl Into<String>,
+    dest_domain: u32,
+    recipient_addr: HexBinary,
+    msg_body: HexBinary,
+    hook: Option<String>,
+    metadata: Option<HexBinary>,
+) -> StdResult<CosmosMsg> {
+    Ok(wasm_execute(
+        mailbox,
+        &ExecuteMsg::Dispatch {
+            dest_domain,
+            recipient_addr,
+            msg_body,
+            hook,
+            metadata,
+        },
+        vec![],
+    )?
+    .into())
+}
+
+pub fn process(mailbox: impl Into<String>, metadata: HexBinary, message: HexBinary) -> CosmosMsg {
+    wasm_execute(mailbox, &ExecuteMsg::Process { metadata, message }, vec![])
+        .unwrap()
+        .into()
 }
 
 #[cw_serde]
