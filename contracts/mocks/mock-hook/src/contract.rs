@@ -1,13 +1,12 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, QueryResponse, Response,
-    StdResult, Uint256,
+    to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult, Uint256,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
-use hpl_interface::post_dispatch_hook::{PostDispatchQueryMsg, QuoteDispatchResponse};
+use hpl_interface::hook::{HookQueryMsg, PostDispatchMsg, QuoteDispatchResponse};
 
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 
@@ -20,20 +19,12 @@ pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    SetGasAmount {
-        gas: Uint256,
-    },
-    PostDispatch {
-        metadata: HexBinary,
-        message: HexBinary,
-    },
+    SetGasAmount { gas: Uint256 },
+    PostDispatch(PostDispatchMsg),
 }
 
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum QueryMsg {
-    #[returns(QuoteDispatchResponse)]
-    QuoteDispatch(PostDispatchQueryMsg),
+fn new_event(name: &str) -> Event {
+    Event::new(format!("hpl_mock_hook::{name}"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -47,12 +38,7 @@ pub fn instantiate(
 
     GAS.save(deps.storage, &Uint256::from_u128(DEFAULT_GAS))?;
 
-    Ok(Response::new().add_attribute("method", "instantiate"))
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> StdResult<Response> {
-    Ok(Response::default())
+    Ok(Response::new().add_event(new_event("instantiate")))
 }
 
 /// Handling contract execution
@@ -64,18 +50,20 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::PostDispatch { metadata, message } => Ok(Response::new()
-            .add_event(Event::new("test-hook-post-dispatch"))
-            .add_attribute("gas", GAS.load(deps.storage)?)
-            .add_attribute("sender", info.sender)
-            .add_attribute("message", message.to_string())
-            .add_attribute(
-                "metadata",
-                if metadata.is_empty() {
-                    "0x".to_string()
-                } else {
-                    metadata.to_string()
-                },
+        ExecuteMsg::PostDispatch(PostDispatchMsg { metadata, message }) => Ok(Response::new()
+            .add_event(
+                new_event("post-dispatch")
+                    .add_attribute("gas", GAS.load(deps.storage)?)
+                    .add_attribute("sender", info.sender)
+                    .add_attribute("message", message.to_string())
+                    .add_attribute(
+                        "metadata",
+                        if metadata.is_empty() {
+                            "0x".to_string()
+                        } else {
+                            metadata.to_string()
+                        },
+                    ),
             )),
         ExecuteMsg::SetGasAmount { gas } => {
             GAS.save(deps.storage, &gas)?;
@@ -87,11 +75,12 @@ pub fn execute(
 
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
+pub fn query(_deps: Deps, _env: Env, msg: HookQueryMsg) -> StdResult<QueryResponse> {
     match msg {
-        QueryMsg::QuoteDispatch(_) => {
+        HookQueryMsg::QuoteDispatch(_) => {
             let gas = GAS.load(_deps.storage)?;
             Ok(to_binary(&QuoteDispatchResponse { gas_amount: gas })?)
         }
+        HookQueryMsg::Mailbox {} => unimplemented!("mailbox query not implemented on mock hook"),
     }
 }

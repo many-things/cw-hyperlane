@@ -52,7 +52,7 @@ pub fn query(_deps: Deps, _env: Env, msg: ISMQueryMsg) -> StdResult<QueryRespons
     use ISMQueryMsg::*;
 
     match msg {
-        ModuleType {} => Ok(to_binary(&ISMType::Owned)?),
+        ModuleType {} => Ok(to_binary(&ISMType::Null)?),
         Verify { .. } => Ok(to_binary(&VerifyResponse { verified: true })?),
         VerifyInfo { .. } => Ok(to_binary(&VerifyInfoResponse {
             threshold: 1u8,

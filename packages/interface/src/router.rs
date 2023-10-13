@@ -1,7 +1,6 @@
 use std::marker::PhantomData;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Empty;
 
 use crate::Order;
 
@@ -34,7 +33,7 @@ pub enum RouterQuery<T> {
     },
 
     #[serde(skip)]
-    #[returns(Empty)]
+    #[returns(cosmwasm_std::Empty)]
     Placeholder(PhantomData<T>),
 }
 

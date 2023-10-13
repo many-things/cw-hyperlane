@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
-use hpl_interface::{ism, mailbox, types::bech32_encode};
+use hpl_interface::{core::ExpectedHandleMsg, ism, types::bech32_encode};
 
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 
@@ -49,10 +49,10 @@ pub fn execute(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    msg: mailbox::ExpectedHandlerMsg,
+    msg: ExpectedHandleMsg,
 ) -> StdResult<Response> {
     match msg {
-        mailbox::ExpectedHandlerMsg::Handle(msg) => Ok(Response::default().add_event(
+        ExpectedHandleMsg::Handle(msg) => Ok(Response::default().add_event(
             Event::new("mailbox_msg_received").add_attributes(vec![
                 attr(
                     "sender",
