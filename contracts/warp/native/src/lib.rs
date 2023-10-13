@@ -34,5 +34,5 @@ const MAILBOX_KEY: &str = "mailbox";
 const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
 
 fn new_event(name: &str) -> Event {
-    Event::new(format!("hpl_token_native::{name}"))
+    Event::new(format!("hpl_warp_native::{name}"))
 }

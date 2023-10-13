@@ -7,7 +7,7 @@ use crate::{
     router::{RouterMsg, RouterQuery},
 };
 
-use super::{TokenMode, TokenWarpDefaultQueryMsg};
+use super::{TokenModeMsg, TokenWarpDefaultQueryMsg};
 
 #[cw_serde]
 pub struct DenomUnit {
@@ -31,10 +31,19 @@ pub struct Metadata {
 }
 
 #[cw_serde]
-pub struct InstantiateMsg {
+pub struct NativeModeBriged {
     pub denom: String,
     pub metadata: Option<Metadata>,
-    pub mode: TokenMode,
+}
+
+#[cw_serde]
+pub struct NativeModeCollateral {
+    pub denom: String,
+}
+
+#[cw_serde]
+pub struct InstantiateMsg {
+    pub token: TokenModeMsg<NativeModeBriged, NativeModeCollateral>,
 
     pub hrp: String,
     pub owner: String,

@@ -7,7 +7,7 @@ use crate::{
     router::{self, RouterQuery},
 };
 
-use super::{TokenMode, TokenWarpDefaultQueryMsg};
+use super::{TokenModeMsg, TokenWarpDefaultQueryMsg};
 
 #[cw_serde]
 pub enum TokenOption {
@@ -21,9 +21,19 @@ pub enum TokenOption {
 }
 
 #[cw_serde]
+pub struct Cw20ModeBridged {
+    pub code_id: u64,
+    pub init_msg: Box<cw20_base::msg::InstantiateMsg>,
+}
+
+#[cw_serde]
+pub struct Cw20ModeCollateral {
+    pub token: String,
+}
+
+#[cw_serde]
 pub struct InstantiateMsg {
-    pub token: Option<TokenOption>,
-    pub mode: TokenMode,
+    pub token: TokenModeMsg<Cw20ModeBridged, Cw20ModeCollateral>,
 
     pub hrp: String,
     pub owner: String,

@@ -20,6 +20,21 @@ pub enum TokenType {
 }
 
 #[cw_serde]
+pub enum TokenModeMsg<Bridged, Collateral> {
+    Bridged(Bridged),
+    Collateral(Collateral),
+}
+
+impl<A, B> From<TokenModeMsg<A, B>> for TokenMode {
+    fn from(v: TokenModeMsg<A, B>) -> Self {
+        match v {
+            TokenModeMsg::Bridged(_) => Self::Bridged,
+            TokenModeMsg::Collateral(_) => Self::Collateral,
+        }
+    }
+}
+
+#[cw_serde]
 pub enum TokenMode {
     Bridged,
     Collateral,

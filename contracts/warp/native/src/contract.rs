@@ -12,7 +12,7 @@ use hpl_interface::{
         self,
         native::{ExecuteMsg, InstantiateMsg, QueryMsg},
     },
-    warp::{TokenMode, TokenModeResponse, TokenTypeResponse},
+    warp::{TokenMode, TokenModeMsg, TokenModeResponse, TokenTypeResponse},
 };
 use hpl_ownable::get_owner;
 use hpl_router::get_route;
@@ -34,50 +34,53 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    let mode: TokenMode = msg.token.clone().into();
+
     HRP.save(deps.storage, &msg.hrp)?;
-    MODE.save(deps.storage, &msg.mode)?;
+    MODE.save(deps.storage, &mode)?;
     MAILBOX.save(deps.storage, &deps.api.addr_validate(&msg.mailbox)?)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
 
-    // create native denom if token is bridged
-    let msgs = if msg.mode == TokenMode::Bridged {
-        let mut msgs = vec![];
+    let mut denom = "".into();
 
-        msgs.push(SubMsg::reply_on_success(
-            MsgCreateDenom {
-                sender: env.contract.address.to_string(),
-                subdenom: msg.denom.clone(),
-            },
-            REPLY_ID_CREATE_DENOM,
-        ));
+    let msgs = match msg.token {
+        // create native denom if token is bridged
+        TokenModeMsg::Bridged(token) => {
+            let mut msgs = vec![];
 
-        if let Some(metadata) = msg.metadata {
-            msgs.push(SubMsg::new(conv::to_set_metadata_msg(
-                &env.contract.address,
-                metadata,
-            )));
+            msgs.push(SubMsg::reply_on_success(
+                MsgCreateDenom {
+                    sender: env.contract.address.to_string(),
+                    subdenom: token.denom.clone(),
+                },
+                REPLY_ID_CREATE_DENOM,
+            ));
+
+            if let Some(metadata) = token.metadata {
+                msgs.push(SubMsg::new(conv::to_set_metadata_msg(
+                    &env.contract.address,
+                    metadata,
+                )));
+            }
+
+            msgs
         }
-
-        msgs
-    } else {
         // use denom directly if token is native
-        TOKEN.save(deps.storage, &msg.denom)?;
-
-        vec![]
+        TokenModeMsg::Collateral(token) => {
+            TOKEN.save(deps.storage, &token.denom)?;
+            denom = token.denom;
+            vec![]
+        }
     };
-
-    let mut denom = "";
-    if msg.mode != TokenMode::Bridged {
-        denom = &msg.denom;
-    }
 
     Ok(Response::new().add_submessages(msgs).add_event(
         new_event("instantiate")
             .add_attribute("sender", info.sender)
-            .add_attribute("mode", format!("{}", msg.mode))
+            .add_attribute("owner", owner)
+            .add_attribute("mode", format!("{}", mode))
             .add_attribute("denom", denom),
     ))
 }
