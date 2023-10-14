@@ -6,7 +6,7 @@ pub mod routing_fallback;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{
-    wasm_execute, Coin, CustomQuery, HexBinary, QuerierWrapper, StdResult, Uint256, WasmMsg,
+    wasm_execute, Coin, CustomQuery, HexBinary, QuerierWrapper, StdResult, WasmMsg,
 };
 
 #[cw_serde]
@@ -56,7 +56,7 @@ pub struct MailboxResponse {
 
 #[cw_serde]
 pub struct QuoteDispatchResponse {
-    pub gas_amount: Uint256,
+    pub gas_amount: Option<Coin>,
 }
 
 pub fn post_dispatch(

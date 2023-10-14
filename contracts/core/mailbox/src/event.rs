@@ -17,6 +17,12 @@ pub fn emit_default_hook_set(owner: Addr, new_default_hook: Addr) -> Event {
         .add_attribute("new_default_hook", new_default_hook)
 }
 
+pub fn emit_required_hook_set(owner: Addr, new_required_hook: Addr) -> Event {
+    Event::new("mailbox_required_hook_set")
+        .add_attribute("owner", owner)
+        .add_attribute("new_required_hook", new_required_hook)
+}
+
 pub fn emit_dispatch_id(id: HexBinary) -> Event {
     Event::new("mailbox_dispatch_id").add_attribute("message_id", id.to_hex())
 }

@@ -9,6 +9,7 @@ pub struct Config {
     pub local_domain: u32,
     pub default_ism: Option<Addr>,
     pub default_hook: Option<Addr>,
+    pub required_hook: Option<Addr>,
 }
 
 #[allow(dead_code)]

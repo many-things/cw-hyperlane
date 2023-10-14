@@ -94,6 +94,10 @@ pub enum ExecuteMsg {
         hook: String,
     },
 
+    SetRequiredHook {
+        hook: String,
+    },
+
     Dispatch(DispatchMsg),
 
     Process {

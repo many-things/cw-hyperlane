@@ -28,6 +28,7 @@ pub fn instantiate(
         local_domain: msg.domain,
         default_ism: None,
         default_hook: None,
+        required_hook: None,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -54,6 +55,7 @@ pub fn execute(
 
         SetDefaultIsm { ism } => execute::set_default_ism(deps, info, ism),
         SetDefaultHook { hook } => execute::set_default_hook(deps, info, hook),
+        SetRequiredHook { hook } => execute::set_required_hook(deps, info, hook),
 
         Dispatch(msg) => execute::dispatch(deps, info, msg),
         Process { metadata, message } => execute::process(deps, info, metadata, message),

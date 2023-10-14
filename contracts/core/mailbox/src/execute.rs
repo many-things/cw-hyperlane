@@ -1,12 +1,14 @@
 use cosmwasm_std::{
-    ensure, ensure_eq, to_binary, wasm_execute, DepsMut, HexBinary, MessageInfo, Response,
+    coin, ensure, ensure_eq, to_binary, wasm_execute, Coin, DepsMut, HexBinary, MessageInfo,
+    QuerierWrapper, Response,
 };
+use cw_utils::PaymentError;
 use hpl_interface::{
     core::{
         mailbox::{DispatchMsg, DispatchResponse},
         HandleMsg,
     },
-    hook::post_dispatch,
+    hook::{post_dispatch, quote_dispatch},
     ism,
     types::Message,
 };
@@ -16,11 +18,43 @@ use hpl_ownable::get_owner;
 use crate::{
     event::{
         emit_default_hook_set, emit_default_ism_set, emit_dispatch, emit_dispatch_id, emit_process,
-        emit_process_id,
+        emit_process_id, emit_required_hook_set,
     },
     state::{Delivery, CONFIG, DELIVERIES, LATEST_DISPATCHED_ID, NONCE},
     ContractError, MAILBOX_VERSION,
 };
+
+fn get_required_value(
+    querier: &QuerierWrapper,
+    info: &MessageInfo,
+    hook: impl Into<String>,
+    metadata: HexBinary,
+    msg_body: HexBinary,
+) -> Result<(Coin, Coin), ContractError> {
+    let required_value = quote_dispatch(querier, hook, metadata, msg_body)?
+        .gas_amount
+        .expect("should receive valida gas amount");
+
+    match info.funds.len() {
+        0 => Ok((coin(0u128, &required_value.denom), required_value)),
+        1 => {
+            let gas = &info.funds[0];
+            ensure_eq!(
+                gas.denom,
+                required_value.denom,
+                PaymentError::ExtraDenom(gas.denom.clone())
+            );
+            Ok((
+                gas.clone(),
+                coin(
+                    gas.amount.min(required_value.amount).u128(),
+                    required_value.denom,
+                ),
+            ))
+        }
+        _ => Err(PaymentError::MultipleDenoms {}.into()),
+    }
+}
 
 pub fn set_default_ism(
     deps: DepsMut,
@@ -59,8 +93,31 @@ pub fn set_default_hook(
     let new_default_hook = deps.api.addr_validate(&new_default_hook)?;
     let event = emit_default_hook_set(info.sender, new_default_hook.clone());
 
-    CONFIG.update(deps.storage, |mut config| -> Result<_, ContractError> {
+    CONFIG.update::<_, ContractError>(deps.storage, |mut config| {
         config.default_hook = Some(new_default_hook);
+
+        Ok(config)
+    })?;
+
+    Ok(Response::new().add_event(event))
+}
+
+pub fn set_required_hook(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_required_hook: String,
+) -> Result<Response, ContractError> {
+    ensure_eq!(
+        get_owner(deps.storage)?,
+        info.sender,
+        ContractError::Unauthorized {}
+    );
+
+    let new_required_hook = deps.api.addr_validate(&new_required_hook)?;
+    let event = emit_required_hook_set(info.sender, new_required_hook.clone());
+
+    CONFIG.update::<_, ContractError>(deps.storage, |mut config| {
+        config.required_hook = Some(new_required_hook);
 
         Ok(config)
     })?;
@@ -83,33 +140,53 @@ pub fn dispatch(
         }
     );
 
+    // calculate gas
+    let required_hook = config.required_hook.expect("required_hook not set");
+    let (received_value, required_value) = get_required_value(
+        &deps.querier,
+        &info,
+        required_hook.as_str(),
+        dispatch_msg.metadata.clone().unwrap_or_default(),
+        dispatch_msg.msg_body.clone(),
+    )?;
+
     // interaction
     let hook = dispatch_msg
         .get_hook_addr(deps.api, config.default_hook)?
         .expect("default_hook not set");
-    let hook_metadata = dispatch_msg.metadata.clone();
+    let hook_metadata = dispatch_msg.metadata.clone().unwrap_or_default();
 
     let msg = dispatch_msg.to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
-
-    let message_id = msg.id();
+    let msg_id = msg.id();
 
     // effects
     NONCE.save(deps.storage, &(nonce + 1))?;
-    LATEST_DISPATCHED_ID.save(deps.storage, &message_id.to_vec())?;
+    LATEST_DISPATCHED_ID.save(deps.storage, &msg_id.to_vec())?;
 
     // make message
-    let post_dispatch_msg = post_dispatch(
-        hook,
-        hook_metadata.unwrap_or_default(),
-        msg.clone(),
-        Some(info.funds),
-    )?;
+    let post_dispatch_msgs = vec![
+        post_dispatch(
+            required_hook,
+            hook_metadata.clone(),
+            msg.clone(),
+            Some(vec![required_value.clone()]),
+        )?,
+        post_dispatch(
+            hook,
+            hook_metadata,
+            msg.clone(),
+            Some(vec![coin(
+                (received_value.amount - required_value.amount).u128(),
+                required_value.denom,
+            )]),
+        )?,
+    ];
 
     Ok(Response::new()
-        .add_event(emit_dispatch_id(message_id.clone()))
+        .add_event(emit_dispatch_id(msg_id.clone()))
         .add_event(emit_dispatch(msg))
-        .set_data(to_binary(&DispatchResponse { message_id })?)
-        .add_message(post_dispatch_msg))
+        .set_data(to_binary(&DispatchResponse { message_id: msg_id })?)
+        .add_messages(post_dispatch_msgs))
 }
 
 pub fn process(
