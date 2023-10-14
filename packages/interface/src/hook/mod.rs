@@ -22,6 +22,7 @@ impl PostDispatchMsg {
 }
 
 #[cw_serde]
+#[derive(Default)]
 pub struct QuoteDispatchMsg {
     pub metadata: HexBinary,
     pub message: HexBinary,
