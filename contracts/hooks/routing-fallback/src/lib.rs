@@ -8,6 +8,7 @@ use cosmwasm_std::{
 use cw_storage_plus::Item;
 use hpl_interface::{
     hook::{
+        self,
         routing_fallback::{ExecuteMsg, InstantiateMsg, QueryMsg},
         HookQueryMsg, MailboxResponse, PostDispatchMsg, QuoteDispatchMsg, QuoteDispatchResponse,
     },
@@ -24,11 +25,8 @@ pub enum ContractError {
     #[error("{0}")]
     PaymentError(#[from] cw_utils::PaymentError),
 
-    #[error("Unauthorized")]
+    #[error("unauthorized")]
     Unauthorized {},
-
-    #[error("Hook not registered for dest: {0}")]
-    HookNotRegistered(u32),
 }
 
 // version info for migration info
@@ -158,7 +156,194 @@ pub fn quote_dispatch(
 ) -> Result<QuoteDispatchResponse, ContractError> {
     let (_, routed_hook) = route(deps.storage, &req.message)?;
 
-    let resp: QuoteDispatchResponse = deps.querier.query_wasm_smart(routed_hook, &req.wrap())?;
+    let resp = hook::quote_dispatch(
+        &deps.querier,
+        routed_hook.as_str(),
+        req.metadata,
+        req.message,
+    )?;
 
     Ok(resp)
+}
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
+    use cosmwasm_std::{
+        coin, from_binary,
+        testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
+        Coin, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
+    };
+    use hpl_interface::{hook::ExpectedHookQueryMsg, router::DomainRouteSet};
+    use hpl_ownable::get_owner;
+    use ibcx_test_utils::{addr, gen_bz};
+    use rstest::{fixture, rstest};
+
+    use super::*;
+
+    type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
+
+    fn query<S: Serialize, T: DeserializeOwned>(deps: Deps, msg: S) -> T {
+        let req: QueryMsg = from_binary(&cosmwasm_std::to_binary(&msg).unwrap()).unwrap();
+        let res = crate::query(deps, mock_env(), req)
+            .map_err(|e| e.to_string())
+            .unwrap();
+        from_binary(&res).unwrap()
+    }
+
+    #[fixture]
+    fn deps(
+        #[default(addr("deployer"))] sender: Addr,
+        #[default(addr("owner"))] owner: Addr,
+        #[default(addr("mailbox"))] mailbox: Addr,
+    ) -> TestDeps {
+        let mut deps = mock_dependencies();
+
+        instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(sender.as_str(), &[]),
+            InstantiateMsg {
+                owner: owner.to_string(),
+                mailbox: mailbox.to_string(),
+            },
+        )
+        .unwrap();
+
+        deps
+    }
+
+    fn mock_query_handler(req: &WasmQuery) -> QuerierResult {
+        let req: ExpectedHookQueryMsg = match req {
+            WasmQuery::Smart { msg, .. } => from_binary(msg).unwrap(),
+            _ => unreachable!("wrong query type"),
+        };
+
+        let req = match req {
+            ExpectedHookQueryMsg::Hook(HookQueryMsg::QuoteDispatch(msg)) => msg,
+            _ => unreachable!("wrong query type"),
+        };
+
+        let mut gas_amount = None;
+        if !req.metadata.is_empty() {
+            gas_amount = Some(serde_json_wasm::from_slice(&req.metadata).unwrap());
+        }
+
+        let res = QuoteDispatchResponse { gas_amount };
+        let res = cosmwasm_std::to_binary(&res).unwrap();
+        SystemResult::Ok(ContractResult::Ok(res))
+    }
+
+    #[rstest]
+    fn test_init(deps: TestDeps) {
+        assert_eq!("owner", get_owner(deps.as_ref().storage).unwrap().as_str());
+        assert_eq!(
+            "mailbox",
+            MAILBOX.load(deps.as_ref().storage).unwrap().as_str()
+        );
+    }
+
+    #[rstest]
+    #[case("mailbox", 26657, vec![(26657, "route1"), (26658, "route2")])]
+    #[should_panic(expected = "route not found for 26657")]
+    #[case("mailbox", 26657, vec![])]
+    #[should_panic(expected = "unauthorized")]
+    #[case("owner", 26657, vec![(26657, "route")])]
+    fn test_post_dispatch(
+        mut deps: TestDeps,
+        #[case] sender: &str,
+        #[case] test_domain: u32,
+        #[case] routes: Vec<(u32, &str)>,
+    ) {
+        hpl_router::set_routes(
+            deps.as_mut().storage,
+            &addr(sender),
+            routes
+                .iter()
+                .map(|(dest_domain, hook)| DomainRouteSet {
+                    domain: *dest_domain,
+                    route: Some(addr(hook)),
+                })
+                .collect(),
+        )
+        .unwrap();
+
+        let mut rand_msg: Message = gen_bz(100).into();
+        rand_msg.dest_domain = test_domain;
+
+        let res = post_dispatch(
+            deps.as_mut(),
+            mock_info(sender, &[]),
+            PostDispatchMsg {
+                metadata: HexBinary::default(),
+                message: rand_msg.into(),
+            },
+        )
+        .map_err(|e| e.to_string())
+        .unwrap();
+
+        let event = res
+            .events
+            .iter()
+            .find(|v| v.ty == new_event("post_dispatch").ty)
+            .unwrap();
+
+        assert_eq!(
+            test_domain,
+            event.attributes[0].value.parse::<u32>().unwrap()
+        );
+        assert_eq!(
+            routes.iter().find(|v| v.0 == test_domain).unwrap().1,
+            event.attributes[1].value
+        );
+    }
+
+    #[rstest]
+    fn test_get_mailbox(deps: TestDeps) {
+        let res: MailboxResponse = query(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}));
+        assert_eq!("mailbox", res.mailbox);
+    }
+
+    #[rstest]
+    #[case(26657, Some(coin(123u128, "utest")), vec![(26657, "route1"), (26658, "route2")])]
+    #[should_panic(expected = "route not found for 26657")]
+    #[case(26657, None, vec![])]
+    #[should_panic(expected = "route not found for 26657")]
+    #[case(26657, None, vec![(26658, "route2")])]
+    fn test_quote_dispatch(
+        mut deps: TestDeps,
+        #[case] test_domain: u32,
+        #[case] gas_amount: Option<Coin>,
+        #[case] routes: Vec<(u32, &str)>,
+    ) {
+        deps.querier.update_wasm(mock_query_handler);
+
+        hpl_router::set_routes(
+            deps.as_mut().storage,
+            &addr("owner"),
+            routes
+                .iter()
+                .map(|(dest_domain, hook)| DomainRouteSet {
+                    domain: *dest_domain,
+                    route: Some(addr(hook)),
+                })
+                .collect(),
+        )
+        .unwrap();
+
+        let mut rand_msg: Message = gen_bz(100).into();
+        rand_msg.dest_domain = test_domain;
+
+        let res: QuoteDispatchResponse = query(
+            deps.as_ref(),
+            QueryMsg::Hook(HookQueryMsg::QuoteDispatch(QuoteDispatchMsg {
+                metadata: gas_amount
+                    .clone()
+                    .map(|v| serde_json_wasm::to_vec(&v).unwrap().into())
+                    .unwrap_or_default(),
+                message: rand_msg.into(),
+            })),
+        );
+        assert_eq!(res.gas_amount, gas_amount);
+    }
 }
