@@ -2,8 +2,8 @@
 mod test;
 
 use cosmwasm_std::{
-    to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
-    StdError, StdResult, Storage,
+    ensure_eq, to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse,
+    Response, StdError, StdResult, Storage,
 };
 use cw_storage_plus::Map;
 use hpl_interface::{
@@ -42,6 +42,12 @@ where
     T: Serialize + DeserializeOwned + Clone + Eq,
 {
     use RouterMsg::*;
+
+    ensure_eq!(
+        hpl_ownable::get_owner(deps.storage)?,
+        info.sender,
+        StdError::generic_err("unauthorized")
+    );
 
     match msg {
         SetRoute { set } => {
