@@ -39,6 +39,10 @@ impl Config {
     pub fn get_default_hook(&self) -> Addr {
         self.default_hook.clone().expect("default_hook not set")
     }
+
+    pub fn get_required_hook(&self) -> Addr {
+        self.required_hook.clone().expect("required_hook not set")
+    }
 }
 
 #[cw_serde]

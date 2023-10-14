@@ -168,6 +168,9 @@ pub enum MailboxQueryMsg {
     #[returns(DefaultHookResponse)]
     DefaultHook {},
 
+    #[returns(RequiredHookResponse)]
+    RequiredHook {},
+
     #[returns(RecipientIsmResponse)]
     RecipientIsm { recipient_addr: String },
 }
@@ -201,6 +204,11 @@ pub struct DefaultIsmResponse {
 #[cw_serde]
 pub struct DefaultHookResponse {
     pub default_hook: String,
+}
+
+#[cw_serde]
+pub struct RequiredHookResponse {
+    pub required_hook: String,
 }
 
 #[cw_serde]

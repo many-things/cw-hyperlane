@@ -74,6 +74,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             LocalDomain {} => to_binary(get_local_domain(deps)),
             DefaultIsm {} => to_binary(get_default_ism(deps)),
             DefaultHook {} => to_binary(get_default_hook(deps)),
+            RequiredHook {} => to_binary(get_required_hook(deps)),
             MessageDelivered { id } => to_binary(get_delivered(deps, id)),
             RecipientIsm { recipient_addr } => to_binary(get_recipient_ism(deps, recipient_addr)),
         },

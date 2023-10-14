@@ -2,7 +2,7 @@ use cosmwasm_std::{Deps, HexBinary};
 use hpl_interface::{
     core::mailbox::{
         DefaultHookResponse, DefaultIsmResponse, HrpResponse, LocalDomainResponse,
-        MessageDeliveredResponse, RecipientIsmResponse,
+        MessageDeliveredResponse, RecipientIsmResponse, RequiredHookResponse,
     },
     ism,
 };
@@ -39,6 +39,14 @@ pub fn get_default_hook(deps: Deps) -> Result<DefaultHookResponse, ContractError
 
     Ok(DefaultHookResponse {
         default_hook: config.get_default_hook().into(),
+    })
+}
+
+pub fn get_required_hook(deps: Deps) -> Result<RequiredHookResponse, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    Ok(RequiredHookResponse {
+        required_hook: config.get_required_hook().into(),
     })
 }
 
@@ -101,17 +109,31 @@ mod test {
         query(deps, MailboxQueryMsg::DefaultIsm {})
     }
 
+    fn query_required_hook(deps: Deps) -> RequiredHookResponse {
+        query(deps, MailboxQueryMsg::RequiredHook {})
+    }
+
     fn query_delivered(deps: Deps, id: HexBinary) -> MessageDeliveredResponse {
         query(deps, MailboxQueryMsg::MessageDelivered { id })
     }
 
     #[rstest]
-    #[case(Some(gen_addr("osmo")), Some(gen_addr("neutron")))]
+    #[case(
+        Some(gen_addr("osmo")),
+        Some(gen_addr("neutron")),
+        Some(gen_addr("cosmos"))
+    )]
     #[should_panic(expected = "default_ism not set")]
-    #[case(None, Some(gen_addr("neutron")))]
+    #[case(None, Some(gen_addr("neutron")), Some(gen_addr("cosmos")))]
     #[should_panic(expected = "default_hook not set")]
-    #[case(Some(gen_addr("osmo")), None)]
-    fn test_query_config(#[case] default_ism: Option<Addr>, #[case] default_hook: Option<Addr>) {
+    #[case(Some(gen_addr("osmo")), None, Some(gen_addr("cosmos")))]
+    #[should_panic(expected = "required_hook not set")]
+    #[case(Some(gen_addr("osmo")), Some(gen_addr("neutron")), None)]
+    fn test_query_config(
+        #[case] default_ism: Option<Addr>,
+        #[case] default_hook: Option<Addr>,
+        #[case] required_hook: Option<Addr>,
+    ) {
         let mut deps = mock_dependencies();
 
         CONFIG
@@ -120,6 +142,7 @@ mod test {
                 &Config {
                     default_hook: default_hook.clone(),
                     default_ism: default_ism.clone(),
+                    required_hook: required_hook.clone(),
                     ..Config::new("hrp", 123)
                 },
             )
@@ -133,10 +156,13 @@ mod test {
 
         let default_ism_res = query_default_ism(deps.as_ref()).default_ism;
 
+        let required_hook_res = query_required_hook(deps.as_ref()).required_hook;
+
         assert_eq!(hrp_res, "hrp");
         assert_eq!(local_domain_res, 123);
         assert_eq!(default_hook_res, default_hook.unwrap());
         assert_eq!(default_ism_res, default_ism.unwrap());
+        assert_eq!(required_hook_res, required_hook.unwrap());
     }
 
     #[rstest]
