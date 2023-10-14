@@ -160,7 +160,7 @@ fn mailbox_handle(
 
     if mode == TokenMode::Bridged {
         // push token mint msg if token is bridged
-        msgs.push(conv::to_mint_msg(&env.contract.address, &token, &token_msg.amount).into());
+        msgs.push(conv::to_mint_msg(&env.contract.address, &token, token_msg.amount).into());
     }
 
     // push token send msg
@@ -200,7 +200,7 @@ fn transfer_remote(
 
     if mode == TokenMode::Bridged {
         // push token burn msg if token is bridged
-        msgs.push(conv::to_burn_msg(&env.contract.address, &token, &transfer_amount).into());
+        msgs.push(conv::to_burn_msg(&env.contract.address, &token, transfer_amount).into());
     }
 
     let dispatch_payload = warp::Message {
@@ -211,7 +211,7 @@ fn transfer_remote(
 
     // push mailbox dispatch msg
     msgs.push(mailbox::dispatch(
-        &mailbox,
+        mailbox,
         dest_domain,
         dest_router,
         dispatch_payload.into(),
