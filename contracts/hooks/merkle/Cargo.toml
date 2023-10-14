@@ -37,4 +37,6 @@ hpl-interface.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true
+ibcx-test-utils.workspace = true
+
 anyhow.workspace = true
