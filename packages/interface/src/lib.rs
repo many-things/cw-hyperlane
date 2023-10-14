@@ -84,3 +84,16 @@ pub fn to_binary<T: serde::Serialize, E: Error, F: From<E> + From<StdError>>(
     data.map(|v| cosmwasm_std::to_binary(&v))?
         .map_err(|err| err.into())
 }
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::{from_binary, to_binary};
+    use serde::{de::DeserializeOwned, Serialize};
+
+    pub fn msg_checker<Input: Serialize, Output: DeserializeOwned>(input: Input) -> Output {
+        from_binary::<Output>(&to_binary(&input).unwrap()).unwrap()
+    }
+}
+
+#[cfg(test)]
+pub use test::msg_checker;

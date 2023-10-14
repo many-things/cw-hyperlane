@@ -103,3 +103,34 @@ pub struct BeneficiaryResponse {
 pub struct QuoteGasPaymentResponse {
     pub gas_needed: Uint256,
 }
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::HexBinary;
+
+    use super::*;
+    use crate::{
+        hook::{ExpectedHookQueryMsg, PostDispatchMsg, QuoteDispatchMsg},
+        msg_checker,
+    };
+
+    #[test]
+    fn test_hook_interface() {
+        let _checked: ExecuteMsg = msg_checker(
+            PostDispatchMsg {
+                metadata: HexBinary::default(),
+                message: HexBinary::default(),
+            }
+            .wrap(),
+        );
+
+        let _checked: QueryMsg = msg_checker(ExpectedHookQueryMsg::Hook(HookQueryMsg::Mailbox {}));
+        let _checked: QueryMsg = msg_checker(
+            QuoteDispatchMsg {
+                metadata: HexBinary::default(),
+                message: HexBinary::default(),
+            }
+            .request(),
+        );
+    }
+}
