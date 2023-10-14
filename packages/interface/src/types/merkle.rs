@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn test_default_merkle_tree() {
         for (i, branch) in MerkleTree::default().branch.into_iter().enumerate() {
-            assert_eq!(format!("{}", branch.to_hex()), super::ZERO_HASHES[i]);
+            assert_eq!(branch.to_hex(), super::ZERO_HASHES[i]);
         }
     }
 
