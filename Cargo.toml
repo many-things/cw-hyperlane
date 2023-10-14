@@ -27,7 +27,7 @@ panic = "abort"
 rpath = false
 
 [workspace.package]
-version = "0.0.1"
+version = "0.0.2"
 authors = [
     "byeongsu-hong <hong@byeongsu.dev>",
     "Eric <hashableric@gmail.com>",
