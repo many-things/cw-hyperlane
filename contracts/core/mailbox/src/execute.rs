@@ -260,17 +260,17 @@ pub fn process(
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
-        testing::{mock_dependencies, mock_info},
-        Addr, QuerierResult, SystemResult, WasmQuery,
+        testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
+        Addr, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
     };
 
-    use hpl_interface::types::bech32_encode;
+    use hpl_interface::{core::mailbox::InstantiateMsg, types::bech32_encode};
     use ibcx_test_utils::{addr, gen_bz};
-    use rstest::rstest;
+    use rstest::{fixture, rstest};
 
     use super::*;
 
-    use crate::state::Config;
+    use crate::{contract::instantiate, state::Config};
 
     const OWNER: &str = "owner";
     const NOT_OWNER: &str = "not_owner";
@@ -278,19 +278,36 @@ mod tests {
     const LOCAL_DOMAIN: u32 = 26657;
     const DEST_DOMAIN: u32 = 11155111;
 
+    type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
+
+    #[fixture]
+    fn deps(#[default("deployer")] sender: &str) -> TestDeps {
+        let mut deps = mock_dependencies();
+
+        instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(sender, &[]),
+            InstantiateMsg {
+                hrp: "osmo".to_string(),
+                owner: OWNER.to_string(),
+                domain: LOCAL_DOMAIN,
+            },
+        )
+        .unwrap();
+
+        deps
+    }
+
     #[rstest]
     #[case(addr(OWNER), addr("default_ism"))]
     #[should_panic(expected = "unauthorized")]
     #[case(addr(NOT_OWNER), addr("default_ism"))]
-    fn test_set_default_ism(#[case] sender: Addr, #[case] new_default_ism: Addr) {
-        let mut deps = mock_dependencies();
-
-        CONFIG
-            .save(deps.as_mut().storage, &Default::default())
-            .unwrap();
-
-        hpl_ownable::initialize(deps.as_mut().storage, &addr(OWNER)).unwrap();
-
+    fn test_set_default_ism(
+        mut deps: TestDeps,
+        #[case] sender: Addr,
+        #[case] new_default_ism: Addr,
+    ) {
         let res = set_default_ism(
             deps.as_mut(),
             mock_info(sender.as_str(), &[]),
@@ -308,15 +325,11 @@ mod tests {
     #[case(addr(OWNER), addr("default_hook"))]
     #[should_panic(expected = "unauthorized")]
     #[case(addr(NOT_OWNER), addr("default_hook"))]
-    fn test_set_default_hook(#[case] sender: Addr, #[case] new_default_hook: Addr) {
-        let mut deps = mock_dependencies();
-
-        CONFIG
-            .save(deps.as_mut().storage, &Default::default())
-            .unwrap();
-
-        hpl_ownable::initialize(deps.as_mut().storage, &addr(OWNER)).unwrap();
-
+    fn test_set_default_hook(
+        mut deps: TestDeps,
+        #[case] sender: Addr,
+        #[case] new_default_hook: Addr,
+    ) {
         let res = set_default_hook(
             deps.as_mut(),
             mock_info(sender.as_str(), &[]),
@@ -327,6 +340,28 @@ mod tests {
         assert_eq!(
             res,
             Response::new().add_event(emit_default_hook_set(sender, new_default_hook))
+        )
+    }
+
+    #[rstest]
+    #[case(addr(OWNER), addr("required_hook"))]
+    #[should_panic(expected = "unauthorized")]
+    #[case(addr(NOT_OWNER), addr("required_hook"))]
+    fn test_set_required_hook(
+        mut deps: TestDeps,
+        #[case] sender: Addr,
+        #[case] new_required_hook: Addr,
+    ) {
+        let res = set_required_hook(
+            deps.as_mut(),
+            mock_info(sender.as_str(), &[]),
+            new_required_hook.to_string(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            res,
+            Response::new().add_event(emit_required_hook_set(sender, new_required_hook))
         )
     }
 
