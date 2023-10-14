@@ -106,6 +106,7 @@ pub fn pay_for_gas(
 
     Ok(resp.add_event(emit_pay_for_gas(
         info.sender,
+        dest_domain,
         message_id,
         gas_amount,
         payment_gap,

@@ -27,6 +27,7 @@ pub fn emit_post_dispatch(metadata: HexBinary, message: HexBinary) -> Event {
 
 pub fn emit_pay_for_gas(
     sender: Addr,
+    dest_domain: u32,
     message_id: HexBinary,
     gas_amount: Uint256,
     gas_refunded: Uint128,
@@ -35,6 +36,7 @@ pub fn emit_pay_for_gas(
 ) -> Event {
     Event::new("igp-core-pay-for-gas")
         .add_attribute("sender", sender)
+        .add_attribute("dest_domain", dest_domain.to_string())
         .add_attribute("message_id", message_id.to_hex())
         .add_attribute("gas_amount", gas_amount)
         .add_attribute("gas_refunded", gas_refunded)
