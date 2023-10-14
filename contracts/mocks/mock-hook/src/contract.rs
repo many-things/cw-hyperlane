@@ -2,7 +2,8 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult, Uint256,
+    coin, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
+    Uint256,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
@@ -11,8 +12,13 @@ use hpl_interface::hook::{HookQueryMsg, PostDispatchMsg, QuoteDispatchResponse};
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 
 const DEFAULT_GAS: u128 = 500_000;
+const DEFAULT_GAS_TOKEN: &str = "utest";
+
 const GAS_KEY: &str = "gas";
 const GAS: Item<Uint256> = Item::new(GAS_KEY);
+
+const GAS_TOKEN_KEY: &str = "gas_token";
+const GAS_TOKEN: Item<String> = Item::new(GAS_TOKEN_KEY);
 
 #[cw_serde]
 pub struct InstantiateMsg {}
@@ -37,6 +43,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     GAS.save(deps.storage, &Uint256::from_u128(DEFAULT_GAS))?;
+    GAS_TOKEN.save(deps.storage, &DEFAULT_GAS_TOKEN.to_string())?;
 
     Ok(Response::new().add_event(new_event("instantiate")))
 }
@@ -75,11 +82,15 @@ pub fn execute(
 
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: HookQueryMsg) -> StdResult<QueryResponse> {
+pub fn query(deps: Deps, _env: Env, msg: HookQueryMsg) -> StdResult<QueryResponse> {
     match msg {
         HookQueryMsg::QuoteDispatch(_) => {
-            let gas = GAS.load(_deps.storage)?;
-            Ok(to_binary(&QuoteDispatchResponse { gas_amount: gas })?)
+            let gas = GAS.load(deps.storage)?;
+            let gas_token = GAS_TOKEN.load(deps.storage)?;
+
+            Ok(to_binary(&QuoteDispatchResponse {
+                gas_amount: Some(coin(gas.to_string().parse::<u128>().unwrap(), gas_token)),
+            })?)
         }
         HookQueryMsg::Mailbox {} => unimplemented!("mailbox query not implemented on mock hook"),
     }
