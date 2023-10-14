@@ -4,6 +4,7 @@ use cosmwasm_std::Addr;
 use crate::{
     ownable::{OwnableMsg, OwnableQueryMsg},
     router::{RouterMsg, RouterQuery},
+    Order,
 };
 
 use super::{HookQueryMsg, PostDispatchMsg};
@@ -47,6 +48,34 @@ pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
     Router(RouterQuery<Addr>),
     Hook(HookQueryMsg),
+    CustomRoutingHook(CustomRoutingHookQueryMsg),
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum CustomRoutingHookQueryMsg {
+    #[returns(CustomHookResponse)]
+    CustomHook { dest_domain: u32, recipient: String },
+
+    #[returns(CustomHooksResponse)]
+    CustomHooks {
+        dest_domain: u32,
+        offset: Option<String>,
+        limit: Option<u32>,
+        order: Option<Order>,
+    },
+}
+
+#[cw_serde]
+pub struct CustomHookResponse {
+    pub dest_domain: u32,
+    pub recipient: String,
+    pub hook: String,
+}
+
+#[cw_serde]
+pub struct CustomHooksResponse {
+    pub custom_hooks: Vec<CustomHookResponse>,
 }
 
 #[cfg(test)]
