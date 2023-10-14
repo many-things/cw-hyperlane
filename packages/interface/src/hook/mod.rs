@@ -32,6 +32,10 @@ impl QuoteDispatchMsg {
     pub fn wrap(self) -> HookQueryMsg {
         HookQueryMsg::QuoteDispatch(self)
     }
+
+    pub fn request(self) -> ExpectedHookQueryMsg {
+        ExpectedHookQueryMsg::Hook(self.wrap())
+    }
 }
 
 /// This is the basic message to demonstrate the required interface
@@ -48,6 +52,13 @@ pub enum HookQueryMsg {
 
     #[returns(MailboxResponse)]
     Mailbox {},
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+#[query_responses(nested)]
+pub enum ExpectedHookQueryMsg {
+    Hook(HookQueryMsg),
 }
 
 #[cw_serde]
@@ -89,6 +100,6 @@ pub fn quote_dispatch<C: CustomQuery>(
             metadata: metadata.into(),
             message: message.into(),
         }
-        .wrap(),
+        .request(),
     )
 }
