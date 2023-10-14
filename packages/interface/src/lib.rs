@@ -9,11 +9,14 @@ pub mod core;
 pub mod hook;
 pub mod igp;
 pub mod ism;
+mod macros;
 pub mod ownable;
 pub mod pausable;
 pub mod router;
 pub mod types;
 pub mod warp;
+
+pub use macros::*;
 
 #[cw_serde]
 pub enum Order {
