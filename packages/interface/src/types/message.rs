@@ -85,4 +85,12 @@ mod tests {
         assert_eq!(decode_expected, decode_actual);
         assert_eq!(encode_expected, encode_actual);
     }
+
+    #[test]
+    #[should_panic(expected = "range end index 77 out of range for slice of length 67")]
+    fn test_overflow() {
+        let no = HexBinary::from_hex("00000021500000aef3000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f1600aa36a70000000000000000000000005d56b8a669f50193b543").unwrap();
+
+        let _msg: Message = no.into();
+    }
 }
