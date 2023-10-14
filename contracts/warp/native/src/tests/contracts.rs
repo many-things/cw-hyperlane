@@ -69,9 +69,7 @@ fn test_router_role(#[case] hrp: &str) -> anyhow::Result<()> {
 }
 
 #[rstest]
-#[case("osmo")]
-#[case("neutron")]
-fn test_outbound_transfer(#[case] hrp: &str) -> anyhow::Result<()> {
+fn test_outbound_transfer(#[values("osmo", "neutron")] hrp: &str) -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let mailbox = Addr::unchecked("mailbox");
     let router = Addr::unchecked("router");
@@ -95,21 +93,19 @@ fn test_outbound_transfer(#[case] hrp: &str) -> anyhow::Result<()> {
     }
     .into();
 
-    let dispatch_msg: CosmosMsg = WasmMsg::Execute {
-        contract_addr: mailbox.to_string(),
-        msg: to_binary(&mailbox::ExecuteMsg::Dispatch {
-            dest_domain,
-            recipient_addr: router.as_bytes().to_vec().into(),
-            msg_body: warp::Message {
-                recipient: user_remote.as_bytes().to_vec().into(),
-                amount: Uint256::from_str(&amount.to_string())?,
-                metadata: HexBinary::default(),
-            }
-            .into(),
-        })?,
-        funds: vec![],
-    }
-    .into();
+    let dispatch_msg = mailbox::dispatch(
+        mailbox,
+        dest_domain,
+        router.as_bytes().to_vec().into(),
+        warp::Message {
+            recipient: user_remote.as_bytes().to_vec().into(),
+            amount: Uint256::from_str(&amount.to_string())?,
+            metadata: HexBinary::default(),
+        }
+        .into(),
+        None,
+        None,
+    );
 
     for (mode, routers, expected_resp) in [
         (
