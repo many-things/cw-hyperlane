@@ -4,8 +4,8 @@ use cosmwasm_std::{
     Addr, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
 use hpl_interface::ism::{
-    routing::{ExecuteMsg, ISMSet, InstantiateMsg, QueryMsg, RouteResponse},
-    ModuleTypeResponse, VerifyResponse,
+    routing::{ExecuteMsg, ISMSet, InstantiateMsg, QueryMsg, RouteResponse, RoutingIsmQueryMsg},
+    ISMQueryMsg, ModuleTypeResponse, VerifyResponse,
 };
 use serde::de::DeserializeOwned;
 
@@ -71,7 +71,7 @@ impl ISMRouting {
     }
 
     pub fn get_module_type(&self) -> Result<ModuleTypeResponse, ContractError> {
-        self.query(QueryMsg::ModuleType {})
+        self.query(QueryMsg::ISM(ISMQueryMsg::ModuleType {}))
     }
 
     pub fn query_verify(
@@ -79,10 +79,10 @@ impl ISMRouting {
         metadata: HexBinary,
         message: HexBinary,
     ) -> Result<VerifyResponse, ContractError> {
-        self.query(QueryMsg::Verify { metadata, message })
+        self.query(QueryMsg::ISM(ISMQueryMsg::Verify { metadata, message }))
     }
 
     pub fn query_route(&self, message: HexBinary) -> Result<RouteResponse, ContractError> {
-        self.query(QueryMsg::Route { message })
+        self.query(QueryMsg::RoutingIsm(RoutingIsmQueryMsg::Route { message }))
     }
 }

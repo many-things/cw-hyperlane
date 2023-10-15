@@ -44,6 +44,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
     ISM(ISMQueryMsg),
+    MultisigIsm(MultisigIsmQueryMsg),
 }
 
 #[cw_serde]

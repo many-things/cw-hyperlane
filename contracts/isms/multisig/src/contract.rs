@@ -3,7 +3,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use hpl_interface::ism::{
-    multisig::{ExecuteMsg, InstantiateMsg, QueryMsg},
+    multisig::{ExecuteMsg, InstantiateMsg, MultisigIsmQueryMsg, QueryMsg},
     ISMQueryMsg,
 };
 
@@ -67,6 +67,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
             VerifyInfo {
                 message: raw_message,
             } => query::get_verify_info(deps, raw_message),
+        },
+        QueryMsg::MultisigIsm(msg) => match msg {
+            MultisigIsmQueryMsg::EnrolledValidators { .. } => todo!(),
         },
     }
 }
