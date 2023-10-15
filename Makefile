@@ -1,11 +1,15 @@
 
+clean:
+	@cargo clean
+	@rm -rf ./artifacts
+
 schema:
 	ls ./contracts | xargs -n 1 -t beaker wasm ts-gen
 
 build:
 	cargo wasm
 
-build-dev:
+build-dev: clean
 	cargo cw-optimizoor
 
 check: build-dev
