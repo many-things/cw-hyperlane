@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use hpl_interface::{
     core::{
-        mailbox,
+        mailbox::{self, MailboxQueryMsg},
         va::{
             ExecuteMsg, GetAnnounceStorageLocationsResponse, GetAnnouncedValidatorsResponse,
             InstantiateMsg, QueryMsg,
@@ -39,7 +39,7 @@ pub fn instantiate(
         .querier
         .query_wasm_smart::<mailbox::LocalDomainResponse>(
             &mailbox,
-            &mailbox::MailboxQueryMsg::LocalDomain {},
+            &mailbox::QueryMsg::Mailbox(MailboxQueryMsg::LocalDomain {}),
         )?
         .local_domain;
 
