@@ -1,13 +1,16 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
 
+use crate::ownable::{OwnableMsg, OwnableQueryMsg};
+
+use super::ISMQueryMsg;
 #[allow(unused_imports)]
 use super::{ModuleTypeResponse, VerifyInfoResponse, VerifyResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub addr_prefix: String,
+    pub hrp: String,
 }
 
 #[cw_serde]
@@ -25,30 +28,51 @@ pub struct ThresholdSet {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    Ownable(OwnableMsg),
+
     EnrollValidator { set: ValidatorSet },
     EnrollValidators { set: Vec<ValidatorSet> },
     UnenrollValidator { domain: u32, validator: String },
 
     SetThreshold { set: ThresholdSet },
     SetThresholds { set: Vec<ThresholdSet> },
-
-    InitTransferOwnership { owner: String },
-    FinishTransferOwnership(),
-    RevokeTransferOwnership(),
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
+#[query_responses(nested)]
 pub enum QueryMsg {
-    #[returns(ModuleTypeResponse)]
-    ModuleType {},
+    Ownable(OwnableQueryMsg),
+    ISM(ISMQueryMsg),
+}
 
-    #[returns(VerifyResponse)]
-    Verify {
-        metadata: HexBinary,
-        message: HexBinary,
-    },
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum MultisigIsmQueryMsg {
+    #[returns(EnrolledValidatorsResponse)]
+    EnrolledValidators { domain: u32 },
+}
 
-    #[returns(VerifyInfoResponse)]
-    VerifyInfo { message: HexBinary },
+#[cw_serde]
+pub struct EnrolledValidatorsResponse {
+    pub validators: Vec<String>,
+    pub threshold: u8,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::msg_checker;
+
+    #[test]
+    fn test_ism_interface() {
+        let _checked: QueryMsg = msg_checker(ISMQueryMsg::ModuleType {});
+        let _checked: QueryMsg = msg_checker(ISMQueryMsg::Verify {
+            metadata: HexBinary::default(),
+            message: HexBinary::default(),
+        });
+        let _checked: QueryMsg = msg_checker(ISMQueryMsg::VerifyInfo {
+            message: HexBinary::default(),
+        });
+    }
 }
