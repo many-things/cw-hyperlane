@@ -32,7 +32,7 @@ pub fn quote_gas_price(
     let gas_oracle_set = hpl_router::get_route::<Addr>(storage, dest_domain)?;
     let gas_oracle = gas_oracle_set
         .route
-        .ok_or(ContractError::GasOracleNotFound {})?;
+        .ok_or(ContractError::GasOracleNotFound(dest_domain))?;
 
     let gas_price_resp: GetExchangeRateAndGasPriceResponse = querier.query_wasm_smart(
         gas_oracle,
@@ -77,7 +77,7 @@ pub fn get_exchange_rate_and_gas_price(
     let gas_oracle_set = hpl_router::get_route::<Addr>(deps.storage, dest_domain)?;
     let gas_oracle = gas_oracle_set
         .route
-        .ok_or(ContractError::GasOracleNotFound {})?;
+        .ok_or(ContractError::GasOracleNotFound(dest_domain))?;
 
     Ok(deps.querier.query_wasm_smart(
         gas_oracle,

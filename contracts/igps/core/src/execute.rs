@@ -6,7 +6,6 @@ use cosmwasm_std::{
     coins, ensure, ensure_eq, BankMsg, DepsMut, Env, HexBinary, MessageInfo, Response, Uint128,
     Uint256,
 };
-use cw_utils::PaymentError;
 use hpl_interface::{
     hook::PostDispatchMsg,
     types::{IGPMetadata, Message},
@@ -94,7 +93,7 @@ pub fn pay_for_gas(
     let gas_token = GAS_TOKEN.load(deps.storage)?;
     let received = Uint256::from(cw_utils::must_pay(&info, &gas_token)?);
     let gas_needed = quote_gas_price(deps.storage, &deps.querier, dest_domain, gas_amount)?;
-    ensure!(received >= gas_needed, PaymentError::NonPayable {});
+    ensure!(received >= gas_needed, ContractError::InsufficientFunds {});
 
     let payment_gap = Uint128::from_str(&(received - gas_needed).to_string())?;
 

@@ -4,6 +4,7 @@ use cosmwasm_std::{
     Addr, Coin, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
 use hpl_interface::{
+    hook::PostDispatchMsg,
     igp::{
         core::{
             ExecuteMsg, GasOracleConfig, IgpQueryMsg, InstantiateMsg, QueryMsg,
@@ -39,7 +40,9 @@ impl IGP {
     pub fn init(
         &mut self,
         sender: &Addr,
+        hrp: &str,
         owner: &Addr,
+        mailbox: &Addr,
         gas_token: &str,
         beneficiary: &Addr,
     ) -> Result<Response, ContractError> {
@@ -48,10 +51,11 @@ impl IGP {
             self.env.clone(),
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
+                hrp: hrp.to_string(),
                 owner: owner.to_string(),
+                mailbox: mailbox.to_string(),
                 gas_token: gas_token.to_string(),
                 beneficiary: beneficiary.to_string(),
-                prefix: "osmo".to_string(),
             },
         )
     }
@@ -127,6 +131,18 @@ impl IGP {
                 gas_amount: gas_amount.into(),
                 refund_address: refund_address.to_string(),
             },
+        )
+    }
+
+    pub fn post_dispatch(
+        &mut self,
+        sender: &Addr,
+        metadata: HexBinary,
+        message: HexBinary,
+    ) -> Result<Response, ContractError> {
+        self.execute(
+            mock_info(sender.as_str(), &[]),
+            ExecuteMsg::PostDispatch(PostDispatchMsg { metadata, message }),
         )
     }
 

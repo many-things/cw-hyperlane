@@ -36,6 +36,9 @@ hpl-router.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
+rstest.workspace = true
+ibcx-test-utils.workspace = true
+
 serde.workspace = true
 
 anyhow.workspace = true

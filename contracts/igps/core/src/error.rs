@@ -6,9 +6,12 @@ pub enum ContractError {
     #[error("{0}")]
     PaymentError(#[from] cw_utils::PaymentError),
 
-    #[error("Unauthorized")]
+    #[error("unauthorized")]
     Unauthorized {},
 
-    #[error("Gas oracle not found")]
-    GasOracleNotFound {},
+    #[error("insufficient funds")]
+    InsufficientFunds {},
+
+    #[error("gas oracle not found for {0}")]
+    GasOracleNotFound(u32),
 }
