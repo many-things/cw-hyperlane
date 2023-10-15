@@ -10,7 +10,7 @@ use hpl_interface::{
 };
 use hpl_ownable::get_owner;
 use hpl_router::get_routes;
-use ibcx_test_utils::{addr, gen_addr, gen_bz};
+use ibcx_test_utils::{addr, gen_bz};
 use rstest::{fixture, rstest};
 
 use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP, MAILBOX};
@@ -137,6 +137,14 @@ fn test_set_beneficiary(mut igp: IGP, #[case] sender: Addr) {
     let actual_beneficiary = BENEFICIARY.load(storage).unwrap();
 
     assert_eq!(next_beneficiary, actual_beneficiary);
+}
+
+#[rstest]
+fn test_get_beneficiary(igp: IGP) {
+    let storage = igp.deps_ref().storage;
+    let actual_beneficiary = BENEFICIARY.load(storage).unwrap();
+
+    assert_eq!(addr("beneficiary"), actual_beneficiary);
 }
 
 #[rstest]
