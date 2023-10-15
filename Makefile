@@ -8,5 +8,5 @@ build:
 build-dev:
 	cargo cw-optimizoor
 
-check:
+check: build-dev
 	ls -d ./artifacts/*.wasm | xargs -I x cosmwasm-check x
