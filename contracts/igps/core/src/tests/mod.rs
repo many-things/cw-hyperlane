@@ -139,9 +139,10 @@ impl IGP {
         sender: &Addr,
         metadata: HexBinary,
         message: HexBinary,
+        funds: Vec<Coin>,
     ) -> Result<Response, ContractError> {
         self.execute(
-            mock_info(sender.as_str(), &[]),
+            mock_info(sender.as_str(), &funds),
             ExecuteMsg::PostDispatch(PostDispatchMsg { metadata, message }),
         )
     }

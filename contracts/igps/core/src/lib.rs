@@ -17,7 +17,7 @@ pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // constants
 pub const TOKEN_EXCHANGE_RATE_SCALE: u128 = 10_000_000_000;
-pub const DEFAULT_GAS_USAGE: u64 = 25_000;
+pub const DEFAULT_GAS_USAGE: u128 = 25_000;
 
 pub const HRP_KEY: &str = "hrp";
 pub const HRP: Item<String> = Item::new(HRP_KEY);

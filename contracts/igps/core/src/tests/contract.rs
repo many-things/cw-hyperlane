@@ -1,16 +1,19 @@
 use cosmwasm_std::{
     coin, from_binary,
     testing::{mock_dependencies, mock_env},
-    to_binary, Addr, BankMsg, Coin, ContractResult, QuerierResult, SubMsg, SystemResult, Uint128,
-    Uint256, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, ContractResult, HexBinary, QuerierResult, SubMsg, SystemResult,
+    Uint128, Uint256, WasmQuery,
 };
-use hpl_interface::igp::{core::GasOracleConfig, oracle};
+use hpl_interface::{
+    igp::{core::GasOracleConfig, oracle},
+    types::{IGPMetadata, Message},
+};
 use hpl_ownable::get_owner;
 use hpl_router::get_routes;
-use ibcx_test_utils::{addr, gen_bz};
+use ibcx_test_utils::{addr, gen_addr, gen_bz};
 use rstest::{fixture, rstest};
 
-use crate::{BENEFICIARY, GAS_TOKEN, HRP, MAILBOX};
+use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP, MAILBOX};
 
 use super::IGP;
 
@@ -221,4 +224,92 @@ fn test_pay_for_gas(
     } else {
         assert_eq!(res.messages, vec![]);
     }
+}
+
+#[rstest]
+#[case(addr("mailbox"), true, Some(300_000))]
+#[case(addr("mailbox"), true, None)]
+#[case(addr("mailbox"), false, None)]
+#[should_panic(expected = "unauthorized")]
+#[case(addr("owner"), true, Some(300_000))]
+fn test_post_dispatch(
+    #[values("osmo", "neutron")] hrp: &str,
+    #[with(vec![(1, "oracle/2/150".into())])] igp_routes: (IGP, Vec<(u32, String)>),
+    #[case] sender: Addr,
+    #[case] refund_diff: bool,
+    #[case] gas_limit: Option<u128>,
+) {
+    let (mut igp, _) = igp_routes;
+
+    igp.deps.querier.update_wasm(test_mock_querier);
+
+    HRP.save(igp.deps_mut().storage, &hrp.into()).unwrap();
+
+    let addr_sender = gen_bz(32);
+    let addr_refund = gen_bz(32);
+
+    let metadata = gas_limit
+        .map(|v| {
+            IGPMetadata {
+                gas_limit: Uint256::from_u128(v),
+                refund_address: if refund_diff {
+                    addr_refund.clone()
+                } else {
+                    HexBinary::default()
+                },
+            }
+            .into()
+        })
+        .unwrap_or_default();
+
+    let mut rand_msg: Message = gen_bz(100).into();
+    rand_msg.sender = addr_sender;
+    rand_msg.dest_domain = 1;
+
+    let res = igp
+        .post_dispatch(
+            &sender,
+            metadata,
+            rand_msg.into(),
+            vec![coin(9 * DEC_15, "utest")],
+        )
+        .map_err(|e| e.to_string())
+        .unwrap();
+
+    let event = res
+        .events
+        .into_iter()
+        .find(|v| v.ty == "igp-core-pay-for-gas")
+        .unwrap();
+
+    let gas_amount_log = event
+        .attributes
+        .into_iter()
+        .find(|v| v.key == "gas_amount")
+        .unwrap()
+        .value
+        .parse::<u128>()
+        .unwrap();
+
+    assert_eq!(gas_limit.unwrap_or(DEFAULT_GAS_USAGE), gas_amount_log);
+}
+
+#[rstest]
+#[case(addr("beneficiary"), vec![coin(10, "utest")])]
+#[should_panic(expected = "unauthorized")]
+#[case(addr("owner"), vec![coin(10, "utest")])]
+fn test_claim(mut igp: IGP, #[case] sender: Addr, #[case] funds: Vec<Coin>) {
+    igp.deps
+        .querier
+        .update_balance(mock_env().contract.address, funds.clone());
+
+    let res = igp.claim(&sender).map_err(|e| e.to_string()).unwrap();
+
+    assert_eq!(
+        *res.messages.first().unwrap(),
+        SubMsg::new(BankMsg::Send {
+            to_address: sender.to_string(),
+            amount: funds
+        })
+    )
 }

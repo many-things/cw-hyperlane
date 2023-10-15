@@ -61,15 +61,19 @@ pub fn post_dispatch(
         ContractError::Unauthorized {}
     );
 
-    let igp_metadata: IGPMetadata = req.metadata.clone().into();
     let message: Message = req.message.clone().into();
     let hrp = HRP.load(deps.storage)?;
 
-    let gas_limit = match req.metadata.to_vec().len() < 32 {
-        true => Uint256::from(DEFAULT_GAS_USAGE),
-        false => igp_metadata.gas_limit,
+    let (gas_limit, refund_address) = match req.metadata.to_vec().len() < 32 {
+        true => (Uint256::from(DEFAULT_GAS_USAGE), message.sender_addr(&hrp)?),
+        false => {
+            let igp_metadata: IGPMetadata = req.metadata.clone().into();
+            (
+                igp_metadata.gas_limit,
+                igp_metadata.get_refund_address(&hrp, message.sender_addr(&hrp)?),
+            )
+        }
     };
-    let refund_address = igp_metadata.get_refund_address(&hrp, message.sender_addr(&hrp)?);
 
     Ok(pay_for_gas(
         deps,
