@@ -1,11 +1,27 @@
 use crate::error::ContractError;
-use crate::{DEFAULT_GAS_USAGE, TOKEN_EXCHANGE_RATE_SCALE};
+use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, MAILBOX, TOKEN_EXCHANGE_RATE_SCALE};
 
-use cosmwasm_std::{to_binary, Addr, Deps, QuerierWrapper, QueryResponse, Storage, Uint256};
-use hpl_interface::hook::QuoteDispatchMsg;
-use hpl_interface::igp::core::QuoteGasPaymentResponse;
+use cosmwasm_std::{Addr, Deps, QuerierWrapper, Storage, Uint256};
+use hpl_interface::hook::{MailboxResponse, QuoteDispatchMsg};
+use hpl_interface::igp::core::{BeneficiaryResponse, QuoteGasPaymentResponse};
 use hpl_interface::igp::oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
 use hpl_interface::types::{IGPMetadata, Message};
+
+pub fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+    let mailbox = MAILBOX.load(deps.storage)?;
+
+    Ok(MailboxResponse {
+        mailbox: mailbox.into(),
+    })
+}
+
+pub fn get_beneficiary(deps: Deps) -> Result<BeneficiaryResponse, ContractError> {
+    let beneficairy = BENEFICIARY.load(deps.storage)?;
+
+    Ok(BeneficiaryResponse {
+        beneficiary: beneficairy.into(),
+    })
+}
 
 pub fn quote_gas_price(
     storage: &dyn Storage,
@@ -34,13 +50,16 @@ pub fn quote_gas_payment(
     deps: Deps,
     dest_domain: u32,
     gas_amount: Uint256,
-) -> Result<QueryResponse, ContractError> {
+) -> Result<QuoteGasPaymentResponse, ContractError> {
     let gas_needed = quote_gas_price(deps.storage, &deps.querier, dest_domain, gas_amount)?;
 
-    Ok(to_binary(&QuoteGasPaymentResponse { gas_needed })?)
+    Ok(QuoteGasPaymentResponse { gas_needed })
 }
 
-pub fn quote_dispatch(deps: Deps, req: QuoteDispatchMsg) -> Result<QueryResponse, ContractError> {
+pub fn quote_dispatch(
+    deps: Deps,
+    req: QuoteDispatchMsg,
+) -> Result<QuoteGasPaymentResponse, ContractError> {
     let igp_metadata: IGPMetadata = req.metadata.clone().into();
     let gas_limit = match req.metadata.len() < 32 {
         true => Uint256::from(DEFAULT_GAS_USAGE),
@@ -54,19 +73,14 @@ pub fn quote_dispatch(deps: Deps, req: QuoteDispatchMsg) -> Result<QueryResponse
 pub fn get_exchange_rate_and_gas_price(
     deps: Deps,
     dest_domain: u32,
-) -> Result<QueryResponse, ContractError> {
+) -> Result<GetExchangeRateAndGasPriceResponse, ContractError> {
     let gas_oracle_set = hpl_router::get_route::<Addr>(deps.storage, dest_domain)?;
     let gas_oracle = gas_oracle_set
         .route
         .ok_or(ContractError::GasOracleNotFound {})?;
 
-    let gas_price_resp: GetExchangeRateAndGasPriceResponse = deps.querier.query_wasm_smart(
+    Ok(deps.querier.query_wasm_smart(
         gas_oracle,
         &IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain }.wrap(),
-    )?;
-
-    Ok(to_binary(&GetExchangeRateAndGasPriceResponse {
-        gas_price: gas_price_resp.gas_price,
-        exchange_rate: gas_price_resp.exchange_rate,
-    })?)
+    )?)
 }

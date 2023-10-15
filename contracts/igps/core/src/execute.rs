@@ -1,8 +1,6 @@
 use crate::event::{emit_claim, emit_pay_for_gas, emit_post_dispatch, emit_set_beneficiary};
 use crate::query::quote_gas_price;
-use crate::state::{BENEFICIARY, CONFIG, GAS_TOKEN};
-use crate::ContractError;
-use crate::DEFAULT_GAS_USAGE;
+use crate::{ContractError, BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP, MAILBOX};
 
 use cosmwasm_std::{
     coins, ensure, ensure_eq, BankMsg, DepsMut, Env, HexBinary, MessageInfo, Response, Uint128,
@@ -13,6 +11,7 @@ use hpl_interface::{
     hook::PostDispatchMsg,
     types::{IGPMetadata, Message},
 };
+use hpl_ownable::get_owner;
 
 use std::str::FromStr;
 
@@ -23,7 +22,7 @@ pub fn set_beneficiary(
 ) -> Result<Response, ContractError> {
     ensure_eq!(
         info.sender,
-        hpl_ownable::get_owner(deps.storage)?,
+        get_owner(deps.storage)?,
         ContractError::Unauthorized {}
     );
 
@@ -57,16 +56,21 @@ pub fn post_dispatch(
     info: MessageInfo,
     req: PostDispatchMsg,
 ) -> Result<Response, ContractError> {
+    ensure_eq!(
+        info.sender,
+        MAILBOX.load(deps.storage)?,
+        ContractError::Unauthorized {}
+    );
+
     let igp_metadata: IGPMetadata = req.metadata.clone().into();
     let message: Message = req.message.clone().into();
-    let prefix = CONFIG.load(deps.storage)?.prefix;
+    let hrp = HRP.load(deps.storage)?;
 
     let gas_limit = match req.metadata.to_vec().len() < 32 {
         true => Uint256::from(DEFAULT_GAS_USAGE),
         false => igp_metadata.gas_limit,
     };
-    let refund_address =
-        igp_metadata.get_refund_address(prefix.clone(), message.sender_addr(prefix.as_str())?);
+    let refund_address = igp_metadata.get_refund_address(&hrp, message.sender_addr(&hrp)?);
 
     Ok(pay_for_gas(
         deps,

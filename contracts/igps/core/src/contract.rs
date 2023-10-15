@@ -5,12 +5,9 @@ use cosmwasm_std::{Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Respon
 use hpl_interface::hook::HookQueryMsg;
 use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg};
 use hpl_interface::igp::oracle::IgpGasOracleQueryMsg;
+use hpl_interface::to_binary;
 
-use crate::state::{Config, CONFIG};
-use crate::{
-    state::{BENEFICIARY, GAS_TOKEN},
-    ContractError, CONTRACT_NAME, CONTRACT_VERSION,
-};
+use crate::{ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, GAS_TOKEN, HRP, MAILBOX};
 
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_igp_core::{}", name))
@@ -25,11 +22,17 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    hpl_ownable::initialize(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
+    let owner = deps.api.addr_validate(&msg.owner)?;
+    let mailbox = deps.api.addr_validate(&msg.mailbox)?;
+    let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
 
-    BENEFICIARY.save(deps.storage, &deps.api.addr_validate(&msg.beneficiary)?)?;
+    hpl_ownable::initialize(deps.storage, &owner)?;
+
+    BENEFICIARY.save(deps.storage, &beneficiary)?;
+    MAILBOX.save(deps.storage, &mailbox)?;
+
     GAS_TOKEN.save(deps.storage, &msg.gas_token)?;
-    CONFIG.save(deps.storage, &Config { prefix: msg.prefix })?;
+    HRP.save(deps.storage, &msg.hrp)?;
 
     Ok(Response::new().add_event(
         new_event("initialize")
@@ -83,20 +86,20 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         QueryMsg::Router(msg) => Ok(hpl_router::handle_query(deps, env, msg)?),
 
         QueryMsg::Hook(msg) => match msg {
-            HookQueryMsg::QuoteDispatch(msg) => quote_dispatch(deps, msg),
-            HookQueryMsg::Mailbox {} => todo!(),
+            HookQueryMsg::QuoteDispatch(msg) => to_binary(quote_dispatch(deps, msg)),
+            HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
         },
         QueryMsg::Oracle(msg) => match msg {
             IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
-                get_exchange_rate_and_gas_price(deps, dest_domain)
+                to_binary(get_exchange_rate_and_gas_price(deps, dest_domain))
             }
         },
         QueryMsg::Igp(msg) => match msg {
-            IgpQueryMsg::Beneficiary {} => todo!(),
+            IgpQueryMsg::Beneficiary {} => to_binary(get_beneficiary(deps)),
             IgpQueryMsg::QuoteGasPayment {
                 dest_domain,
                 gas_amount,
-            } => quote_gas_payment(deps, dest_domain, gas_amount),
+            } => to_binary(quote_gas_payment(deps, dest_domain, gas_amount)),
         },
     }
 }

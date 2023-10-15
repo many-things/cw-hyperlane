@@ -138,7 +138,7 @@ impl From<HexBinary> for IGPMetadata {
 }
 
 impl IGPMetadata {
-    pub fn get_refund_address(&self, hrp: String, default: Addr) -> Addr {
+    pub fn get_refund_address(&self, hrp: &str, default: Addr) -> Addr {
         if self.refund_address.to_vec().len() != 20 && self.refund_address.to_vec().len() != 32 {
             return default;
         }
@@ -154,6 +154,6 @@ impl IGPMetadata {
             false => self.refund_address.to_vec(),
         };
 
-        bech32_encode(&hrp, &raw_addr).unwrap()
+        bech32_encode(hrp, &raw_addr).unwrap()
     }
 }
