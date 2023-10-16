@@ -27,8 +27,9 @@ impl Config {
         self
     }
 
-    pub fn with_hook(mut self, default_hook: Addr) -> Self {
+    pub fn with_hook(mut self, default_hook: Addr, required_hook: Addr) -> Self {
         self.default_hook = Some(default_hook);
+        self.required_hook = Some(required_hook);
         self
     }
 
@@ -48,8 +49,7 @@ impl Config {
 #[cw_serde]
 pub struct Delivery {
     pub sender: Addr,
-    // uint48 value?
-    // uint48 timestamp?
+    pub block_number: u64,
 }
 
 pub const CONFIG_KEY: &str = "config";

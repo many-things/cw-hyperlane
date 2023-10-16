@@ -194,6 +194,7 @@ mod test {
                     id.to_vec(),
                     &Delivery {
                         sender: Addr::unchecked("sender"),
+                        block_number: 123,
                     },
                 )
                 .unwrap();

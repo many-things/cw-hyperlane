@@ -59,7 +59,7 @@ pub fn execute(
         SetRequiredHook { hook } => execute::set_required_hook(deps, info, hook),
 
         Dispatch(msg) => execute::dispatch(deps, info, msg),
-        Process { metadata, message } => execute::process(deps, info, metadata, message),
+        Process { metadata, message } => execute::process(deps, env, info, metadata, message),
     }
 }
 

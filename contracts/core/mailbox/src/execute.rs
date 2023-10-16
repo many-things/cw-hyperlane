@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    coin, ensure, ensure_eq, to_binary, wasm_execute, Coin, DepsMut, HexBinary, MessageInfo,
+    coin, ensure, ensure_eq, to_binary, wasm_execute, Coin, DepsMut, Env, HexBinary, MessageInfo,
     QuerierWrapper, Response,
 };
 use cw_utils::PaymentError;
@@ -199,6 +199,7 @@ pub fn dispatch(
 
 pub fn process(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     metadata: HexBinary,
     message: HexBinary,
@@ -236,6 +237,7 @@ pub fn process(
         id.to_vec(),
         &Delivery {
             sender: info.sender,
+            block_number: env.block.height,
         },
     )?;
 
@@ -268,11 +270,17 @@ pub fn process(
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
+        from_binary,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Addr, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
+        Addr, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
     };
 
-    use hpl_interface::{core::mailbox::InstantiateMsg, types::bech32_encode};
+    use hpl_interface::{
+        core::mailbox::InstantiateMsg,
+        hook::{ExpectedHookQueryMsg, HookQueryMsg, QuoteDispatchResponse},
+        ism::IsmQueryMsg,
+        types::bech32_encode,
+    };
     use ibcx_test_utils::{addr, gen_bz};
     use rstest::{fixture, rstest};
 
@@ -287,6 +295,30 @@ mod tests {
     const DEST_DOMAIN: u32 = 11155111;
 
     type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
+
+    fn mock_query_handler(req: &WasmQuery) -> QuerierResult {
+        let (req, _addr) = match req {
+            WasmQuery::Smart { msg, contract_addr } => (from_binary(msg).unwrap(), contract_addr),
+            _ => unreachable!("wrong query type"),
+        };
+
+        let req = match req {
+            ExpectedHookQueryMsg::Hook(HookQueryMsg::QuoteDispatch(msg)) => msg,
+            _ => unreachable!("wrong query type"),
+        };
+
+        let mut gas_amount = None;
+
+        if !req.metadata.is_empty() {
+            let parsed_gas = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
+
+            gas_amount = Some(coin(parsed_gas as u128, "utest"));
+        }
+
+        let res = QuoteDispatchResponse { gas_amount };
+        let res = cosmwasm_std::to_binary(&res).unwrap();
+        SystemResult::Ok(ContractResult::Ok(res))
+    }
 
     #[fixture]
     fn deps(#[default("deployer")] sender: &str) -> TestDeps {
@@ -335,6 +367,7 @@ mod tests {
             mock_info(sender.as_str(), &[]),
             new_default_ism.to_string(),
         )
+        .map_err(|e| e.to_string())
         .unwrap();
 
         assert_eq!(
@@ -357,6 +390,7 @@ mod tests {
             mock_info(sender.as_str(), &[]),
             new_default_hook.to_string(),
         )
+        .map_err(|e| e.to_string())
         .unwrap();
 
         assert_eq!(
@@ -379,6 +413,7 @@ mod tests {
             mock_info(sender.as_str(), &[]),
             new_required_hook.to_string(),
         )
+        .map_err(|e| e.to_string())
         .unwrap();
 
         assert_eq!(
@@ -402,19 +437,27 @@ mod tests {
 
         let mut deps = mock_dependencies();
 
-        CONFIG
-            .save(
-                deps.as_mut().storage,
-                &Config::new(hrp, LOCAL_DOMAIN)
-                    .with_hook(addr("default_hook"))
-                    .with_ism(addr("default_ism")),
-            )
-            .unwrap();
-        NONCE.save(deps.as_mut().storage, &0u32).unwrap();
+        deps.querier.update_wasm(mock_query_handler);
 
-        hpl_ownable::initialize(deps.as_mut().storage, &addr(OWNER)).unwrap();
+        instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(OWNER, &[]),
+            InstantiateMsg {
+                hrp: hrp.to_string(),
+                owner: OWNER.to_string(),
+                domain: LOCAL_DOMAIN,
+            },
+        )
+        .unwrap();
 
-        let dispatch_msg = DispatchMsg::new(dest_domain, recipient_addr, msg_body);
+        set_default_ism(deps.as_mut(), mock_info(OWNER, &[]), "default_ism".into()).unwrap();
+        set_default_hook(deps.as_mut(), mock_info(OWNER, &[]), "default_hook".into()).unwrap();
+        set_required_hook(deps.as_mut(), mock_info(OWNER, &[]), "required_hook".into()).unwrap();
+
+        let dispatch_msg = DispatchMsg::new(dest_domain, recipient_addr, msg_body)
+            .with_metadata(1500u32.to_be_bytes().to_vec());
+
         let msg = dispatch_msg
             .clone()
             .to_msg(
@@ -425,7 +468,13 @@ mod tests {
             )
             .unwrap();
 
-        let _res = dispatch(deps.as_mut(), mock_info(sender.as_str(), &[]), dispatch_msg).unwrap();
+        let _res = dispatch(
+            deps.as_mut(),
+            mock_info(sender.as_str(), &[coin(1500, "utest")]),
+            dispatch_msg,
+        )
+        .map_err(|e| e.to_string())
+        .unwrap();
 
         assert_eq!(NONCE.load(deps.as_ref().storage).unwrap(), 1u32);
         assert_eq!(
@@ -450,11 +499,11 @@ mod tests {
                     }
                 }
 
-                if let Ok(req) = cosmwasm_std::from_binary::<ism::ISMQueryMsg>(msg) {
+                if let Ok(req) = cosmwasm_std::from_binary::<ism::ExpectedIsmQueryMsg>(msg) {
                     assert_eq!(contract_addr, &addr("default_ism"));
 
                     match req {
-                        ism::ISMQueryMsg::Verify { metadata, .. } => {
+                        ism::ExpectedIsmQueryMsg::Ism(IsmQueryMsg::Verify { metadata, .. }) => {
                             return SystemResult::Ok(
                                 cosmwasm_std::to_binary(&ism::VerifyResponse {
                                     verified: metadata[0] == 1,
@@ -502,7 +551,7 @@ mod tests {
             .save(
                 deps.as_mut().storage,
                 &Config::new(hrp, LOCAL_DOMAIN)
-                    .with_hook(addr("default_hook"))
+                    .with_hook(addr("default_hook"), addr("required_hook"))
                     .with_ism(addr("default_ism")),
             )
             .unwrap();
@@ -525,6 +574,7 @@ mod tests {
                     msg.id().to_vec(),
                     &Delivery {
                         sender: sender_addr.clone(),
+                        block_number: mock_env().block.height,
                     },
                 )
                 .unwrap();
@@ -532,6 +582,7 @@ mod tests {
 
         let _res = process(
             deps.as_mut(),
+            mock_env(),
             mock_info(sender_addr.as_str(), &[]),
             vec![verified.into()].into(),
             msg.into(),
