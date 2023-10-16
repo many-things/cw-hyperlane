@@ -10,7 +10,7 @@ use hpl_interface::{
 use crate::{
     error::ContractError,
     event::emit_instantiated,
-    state::{Config, CONFIG},
+    state::{Config, CONFIG, NONCE},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -32,6 +32,7 @@ pub fn instantiate(
     };
 
     CONFIG.save(deps.storage, &config)?;
+    NONCE.save(deps.storage, &0u32)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     hpl_ownable::initialize(deps.storage, &owner)?;

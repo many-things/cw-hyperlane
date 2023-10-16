@@ -300,6 +300,20 @@ mod tests {
     }
 
     #[rstest]
+    fn test_init(deps: TestDeps) {
+        let config = CONFIG.load(deps.as_ref().storage).unwrap();
+
+        assert_eq!(config.hrp, "osmo");
+        assert_eq!(config.local_domain, LOCAL_DOMAIN);
+        assert_eq!(config.default_ism, None);
+        assert_eq!(config.default_hook, None);
+        assert_eq!(config.required_hook, None);
+
+        let nonce = NONCE.load(deps.as_ref().storage).unwrap();
+        assert_eq!(nonce, 0u32);
+    }
+
+    #[rstest]
     #[case(addr(OWNER), addr("default_ism"))]
     #[should_panic(expected = "unauthorized")]
     #[case(addr(NOT_OWNER), addr("default_ism"))]
