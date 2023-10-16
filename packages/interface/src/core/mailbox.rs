@@ -2,6 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{wasm_execute, Addr, Api, CosmosMsg, HexBinary, StdResult};
 
 use crate::{
+    hook::QuoteDispatchResponse,
     ownable::{OwnableMsg, OwnableQueryMsg},
     types,
 };
@@ -146,8 +147,17 @@ pub enum QueryMsg {
     // overrides
     Ownable(OwnableQueryMsg),
 
+    Hook(MailboxHookQueryMsg),
+
     // mailbox
     Mailbox(MailboxQueryMsg),
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum MailboxHookQueryMsg {
+    #[returns(QuoteDispatchResponse)]
+    QuoteDispatch(DispatchMsg),
 }
 
 #[cw_serde]

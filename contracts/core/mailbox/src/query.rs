@@ -1,9 +1,10 @@
 use cosmwasm_std::{Deps, HexBinary};
 use hpl_interface::{
     core::mailbox::{
-        DefaultHookResponse, DefaultIsmResponse, HrpResponse, LocalDomainResponse,
+        DefaultHookResponse, DefaultIsmResponse, DispatchMsg, HrpResponse, LocalDomainResponse,
         MessageDeliveredResponse, NonceResponse, RecipientIsmResponse, RequiredHookResponse,
     },
+    hook::{self, QuoteDispatchResponse},
     ism,
 };
 
@@ -73,6 +74,43 @@ pub fn get_recipient_ism(
     let ism = ism::recipient(&deps.querier, recipient)?.unwrap_or(default_ism);
 
     Ok(RecipientIsmResponse { ism: ism.into() })
+}
+
+pub fn quote_dispatch(
+    deps: Deps,
+    msg: DispatchMsg,
+) -> Result<QuoteDispatchResponse, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    let target_hook = msg
+        .get_hook_addr(deps.api, config.default_hook.clone())?
+        .unwrap();
+    let required_hook = config.get_required_hook();
+
+    let mut required_gas = hook::quote_dispatch(
+        &deps.querier,
+        required_hook,
+        msg.metadata.clone().unwrap(),
+        msg.msg_body.clone(),
+    )?
+    .gas_amount
+    .expect("failed to quote required gas");
+
+    let target_gas = hook::quote_dispatch(
+        &deps.querier,
+        target_hook,
+        msg.metadata.clone().unwrap(),
+        msg.msg_body,
+    )?
+    .gas_amount;
+
+    if let Some(gas) = target_gas {
+        required_gas.amount += gas.amount;
+    }
+
+    Ok(QuoteDispatchResponse {
+        gas_amount: Some(required_gas),
+    })
 }
 
 #[cfg(test)]

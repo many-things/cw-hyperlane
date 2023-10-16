@@ -3,7 +3,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, QueryResponse, Response};
 
 use hpl_interface::{
-    core::mailbox::{ExecuteMsg, InstantiateMsg, MailboxQueryMsg, QueryMsg},
+    core::mailbox::{ExecuteMsg, InstantiateMsg, MailboxHookQueryMsg, MailboxQueryMsg, QueryMsg},
     to_binary,
 };
 
@@ -70,6 +70,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
+        QueryMsg::Hook(msg) => match msg {
+            MailboxHookQueryMsg::QuoteDispatch(msg) => to_binary(quote_dispatch(deps, msg)),
+        },
         QueryMsg::Mailbox(msg) => match msg {
             Hrp {} => to_binary(get_hrp(deps)),
             LocalDomain {} => to_binary(get_local_domain(deps)),
