@@ -14,7 +14,7 @@ use hpl_interface::hook::{
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 
 const DEFAULT_GAS: u128 = 500_000;
-const DEFAULT_GAS_TOKEN: &str = "utest";
+const DEFAULT_GAS_TOKEN: &str = "uosmo";
 
 const GAS_KEY: &str = "gas";
 const GAS: Item<Uint256> = Item::new(GAS_KEY);
