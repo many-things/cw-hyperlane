@@ -173,14 +173,12 @@ fn get_tree_checkpoint(deps: Deps) -> Result<merkle::CheckPointResponse, Contrac
 mod test {
     use super::*;
 
-    use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
     use cosmwasm_std::{
-        from_binary,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
         HexBinary, OwnedDeps,
     };
 
-    use hpl_interface::hook::QuoteDispatchMsg;
+    use hpl_interface::{build_test_executor, build_test_querier, hook::QuoteDispatchMsg};
     use hpl_ownable::get_owner;
     use ibcx_test_utils::gen_bz;
     use rstest::{fixture, rstest};
@@ -189,11 +187,8 @@ mod test {
 
     type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
 
-    fn query<S: Serialize, T: DeserializeOwned>(deps: Deps, msg: S) -> T {
-        let req: QueryMsg = from_binary(&cosmwasm_std::to_binary(&msg).unwrap()).unwrap();
-        let res = crate::query(deps, mock_env(), req).unwrap();
-        from_binary(&res).unwrap()
-    }
+    build_test_executor!(self::execute);
+    build_test_querier!(self::query);
 
     #[fixture]
     fn deps(
@@ -252,41 +247,42 @@ mod test {
     }
 
     #[rstest]
-    fn test_query(deps: TestDeps) {
-        let res: MailboxResponse = query(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}));
+    fn test_queries(deps: TestDeps) {
+        let res: MailboxResponse =
+            test_query(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}));
         assert_eq!("mailbox", res.mailbox.as_str());
 
-        let res: QuoteDispatchResponse = query(
+        let res: QuoteDispatchResponse = test_query(
             deps.as_ref(),
             QueryMsg::Hook(HookQueryMsg::QuoteDispatch(QuoteDispatchMsg::default())),
         );
         assert_eq!(res.gas_amount, None);
 
-        let res: merkle::CountResponse = query(
+        let res: merkle::CountResponse = test_query(
             deps.as_ref(),
             QueryMsg::MerkleHook(MerkleHookQueryMsg::Count {}),
         );
         assert_eq!(res.count, 0);
 
-        let res: merkle::RootResponse = query(
+        let res: merkle::RootResponse = test_query(
             deps.as_ref(),
             QueryMsg::MerkleHook(MerkleHookQueryMsg::Root {}),
         );
         assert_eq!(res.root, MerkleTree::default().root().unwrap());
 
-        let res: merkle::BranchResponse = query(
+        let res: merkle::BranchResponse = test_query(
             deps.as_ref(),
             QueryMsg::MerkleHook(MerkleHookQueryMsg::Branch {}),
         );
         assert_eq!(res.branch, MerkleTree::default().branch);
 
-        let res: merkle::TreeResponse = query(
+        let res: merkle::TreeResponse = test_query(
             deps.as_ref(),
             QueryMsg::MerkleHook(MerkleHookQueryMsg::Tree {}),
         );
         assert_eq!(res.branch, MerkleTree::default().branch);
 
-        let res: merkle::CheckPointResponse = query(
+        let res: merkle::CheckPointResponse = test_query(
             deps.as_ref(),
             QueryMsg::MerkleHook(MerkleHookQueryMsg::CheckPoint {}),
         );

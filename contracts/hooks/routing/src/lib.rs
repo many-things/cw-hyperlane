@@ -252,7 +252,7 @@ mod test {
     #[rstest]
     fn test_get_mailbox(deps: TestDeps) {
         let res: MailboxResponse =
-            test_querier(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}));
+            test_query(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}));
         assert_eq!(MAILBOX, res.mailbox);
     }
 
@@ -315,7 +315,7 @@ mod test {
         let mut rand_msg: Message = gen_bz(100).into();
         rand_msg.dest_domain = test_domain;
 
-        let res: QuoteDispatchResponse = test_querier(
+        let res: QuoteDispatchResponse = test_query(
             deps.as_ref(),
             QueryMsg::Hook(HookQueryMsg::QuoteDispatch(QuoteDispatchMsg {
                 metadata: test_domain.to_be_bytes().to_vec().into(),
