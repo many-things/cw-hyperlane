@@ -2,13 +2,13 @@ use cosmwasm_std::{Deps, HexBinary};
 use hpl_interface::{
     core::mailbox::{
         DefaultHookResponse, DefaultIsmResponse, HrpResponse, LocalDomainResponse,
-        MessageDeliveredResponse, RecipientIsmResponse, RequiredHookResponse,
+        MessageDeliveredResponse, NonceResponse, RecipientIsmResponse, RequiredHookResponse,
     },
     ism,
 };
 
 use crate::{
-    state::{CONFIG, DELIVERIES},
+    state::{CONFIG, DELIVERIES, NONCE},
     ContractError,
 };
 
@@ -54,6 +54,12 @@ pub fn get_delivered(deps: Deps, id: HexBinary) -> Result<MessageDeliveredRespon
     let delivered = DELIVERIES.has(deps.storage, id.to_vec());
 
     Ok(MessageDeliveredResponse { delivered })
+}
+
+pub fn get_nonce(deps: Deps) -> Result<NonceResponse, ContractError> {
+    let nonce = NONCE.load(deps.storage)?;
+
+    Ok(NonceResponse { nonce })
 }
 
 pub fn get_recipient_ism(
@@ -117,6 +123,10 @@ mod test {
         query(deps, MailboxQueryMsg::MessageDelivered { id })
     }
 
+    fn query_nonce(deps: Deps) -> NonceResponse {
+        query(deps, MailboxQueryMsg::Nonce {})
+    }
+
     #[rstest]
     #[case(
         Some(gen_addr("osmo")),
@@ -148,6 +158,8 @@ mod test {
             )
             .unwrap();
 
+        NONCE.save(deps.as_mut().storage, &7u32).unwrap();
+
         let hrp_res = query_hrp(deps.as_ref()).hrp;
 
         let local_domain_res = query_local_domain(deps.as_ref()).local_domain;
@@ -158,11 +170,14 @@ mod test {
 
         let required_hook_res = query_required_hook(deps.as_ref()).required_hook;
 
+        let nonce_res = query_nonce(deps.as_ref()).nonce;
+
         assert_eq!(hrp_res, "hrp");
         assert_eq!(local_domain_res, 123);
         assert_eq!(default_hook_res, default_hook.unwrap());
         assert_eq!(default_ism_res, default_ism.unwrap());
         assert_eq!(required_hook_res, required_hook.unwrap());
+        assert_eq!(nonce_res, 7);
     }
 
     #[rstest]
