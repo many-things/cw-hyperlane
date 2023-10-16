@@ -3,7 +3,7 @@ use cosmwasm_std::HexBinary;
 
 use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
-use super::ISMQueryMsg;
+use super::IsmQueryMsg;
 #[allow(unused_imports)]
 use super::{ModuleTypeResponse, VerifyInfoResponse, VerifyResponse};
 
@@ -43,7 +43,7 @@ pub enum ExecuteMsg {
 #[query_responses(nested)]
 pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
-    ISM(ISMQueryMsg),
+    Ism(IsmQueryMsg),
     MultisigIsm(MultisigIsmQueryMsg),
 }
 
@@ -67,13 +67,19 @@ mod test {
 
     #[test]
     fn test_ism_interface() {
-        let _checked: QueryMsg = msg_checker(ISMQueryMsg::ModuleType {});
-        let _checked: QueryMsg = msg_checker(ISMQueryMsg::Verify {
-            metadata: HexBinary::default(),
-            message: HexBinary::default(),
-        });
-        let _checked: QueryMsg = msg_checker(ISMQueryMsg::VerifyInfo {
-            message: HexBinary::default(),
-        });
+        let _checked: QueryMsg = msg_checker(IsmQueryMsg::ModuleType {}.wrap());
+        let _checked: QueryMsg = msg_checker(
+            IsmQueryMsg::Verify {
+                metadata: HexBinary::default(),
+                message: HexBinary::default(),
+            }
+            .wrap(),
+        );
+        let _checked: QueryMsg = msg_checker(
+            IsmQueryMsg::VerifyInfo {
+                message: HexBinary::default(),
+            }
+            .wrap(),
+        );
     }
 }

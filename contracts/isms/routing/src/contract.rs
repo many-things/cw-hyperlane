@@ -5,7 +5,7 @@ use cw2::set_contract_version;
 use hpl_interface::{
     ism::{
         routing::{ExecuteMsg, InstantiateMsg, QueryMsg, RouteResponse, RoutingIsmQueryMsg},
-        ISMQueryMsg, ModuleTypeResponse, VerifyResponse,
+        IsmQueryMsg, ModuleTypeResponse, VerifyResponse,
     },
     types::Message,
 };
@@ -70,11 +70,11 @@ pub fn execute(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
-    use ISMQueryMsg::*;
+    use IsmQueryMsg::*;
 
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
-        QueryMsg::ISM(msg) => match msg {
+        QueryMsg::Ism(msg) => match msg {
             ModuleType {} => Ok(to_binary(&ModuleTypeResponse {
                 typ: hpl_interface::ism::ISMType::Routing,
             })?),
@@ -87,7 +87,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 
                 let verify_resp: VerifyResponse = deps
                     .querier
-                    .query_wasm_smart(ism, &ISMQueryMsg::Verify { metadata, message })?;
+                    .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message })?;
 
                 Ok(to_binary(&verify_resp)?)
             }
@@ -100,7 +100,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 
                 let verify_resp: VerifyResponse = deps
                     .querier
-                    .query_wasm_smart(ism, &ISMQueryMsg::VerifyInfo { message })?;
+                    .query_wasm_smart(ism, &IsmQueryMsg::VerifyInfo { message })?;
 
                 Ok(to_binary(&verify_resp)?)
             }

@@ -19,7 +19,7 @@ pub enum ISMType {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum ISMQueryMsg {
+pub enum IsmQueryMsg {
     #[returns(ModuleTypeResponse)]
     ModuleType {},
 
@@ -31,6 +31,19 @@ pub enum ISMQueryMsg {
 
     #[returns(VerifyInfoResponse)]
     VerifyInfo { message: HexBinary },
+}
+
+impl IsmQueryMsg {
+    pub fn wrap(self) -> ExpectedIsmQueryMsg {
+        ExpectedIsmQueryMsg::Ism(self)
+    }
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+#[query_responses(nested)]
+pub enum ExpectedIsmQueryMsg {
+    Ism(IsmQueryMsg),
 }
 
 #[cw_serde]
@@ -80,8 +93,10 @@ pub fn verify<C: CustomQuery>(
     metadata: HexBinary,
     message: HexBinary,
 ) -> StdResult<bool> {
-    let verify_resp = querier
-        .query_wasm_smart::<VerifyResponse>(ism, &ISMQueryMsg::Verify { metadata, message })?;
+    let verify_resp = querier.query_wasm_smart::<VerifyResponse>(
+        ism,
+        &IsmQueryMsg::Verify { metadata, message }.wrap(),
+    )?;
 
     Ok(verify_resp.verified)
 }

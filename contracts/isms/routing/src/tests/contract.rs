@@ -1,13 +1,13 @@
 use cosmwasm_std::{to_binary, Addr, ContractResult, HexBinary, SystemResult, WasmQuery};
 use hpl_interface::{
-    ism::{routing::ISMSet, ISMType, VerifyResponse},
+    ism::{routing::IsmSet, ISMType, VerifyResponse},
     types::Message,
 };
 use hpl_ownable::get_owner;
 
 use crate::{state::MODULES, ContractError};
 
-use super::ISMRouting;
+use super::IsmRouting;
 
 fn make_default_message() -> Message {
     Message {
@@ -27,17 +27,17 @@ fn test_init() -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let owner = Addr::unchecked("owner");
     let isms = vec![
-        ISMSet {
+        IsmSet {
             domain: 1,
             address: "ism1".to_string(),
         },
-        ISMSet {
+        IsmSet {
             domain: 2,
             address: "ism2".to_string(),
         },
     ];
 
-    let mut ism = ISMRouting::default();
+    let mut ism = IsmRouting::default();
 
     ism.init(&deployer, &owner, isms)?;
 
@@ -54,11 +54,11 @@ fn test_set() -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let owner = Addr::unchecked("owner");
 
-    let mut ism = ISMRouting::default();
+    let mut ism = IsmRouting::default();
 
     ism.init(&deployer, &owner, vec![])?;
 
-    let target = ISMSet {
+    let target = IsmSet {
         domain: 1,
         address: "ism1".to_string(),
     };
@@ -83,7 +83,7 @@ fn test_query() -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let owner = Addr::unchecked("owner");
 
-    let mut ism = ISMRouting::default();
+    let mut ism = IsmRouting::default();
 
     // register mock handler
     ism.deps.querier.update_wasm(|v| match v {
@@ -103,11 +103,11 @@ fn test_query() -> anyhow::Result<()> {
 
     // init
     let isms = vec![
-        ISMSet {
+        IsmSet {
             domain: chain_a_domain,
             address: "ism1".to_string(),
         },
-        ISMSet {
+        IsmSet {
             domain: chain_b_domain,
             address: "ism2".to_string(),
         },

@@ -4,8 +4,8 @@ use cosmwasm_std::{
     Addr, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
 use hpl_interface::ism::{
-    routing::{ExecuteMsg, ISMSet, InstantiateMsg, QueryMsg, RouteResponse, RoutingIsmQueryMsg},
-    ISMQueryMsg, ModuleTypeResponse, VerifyResponse,
+    routing::{ExecuteMsg, InstantiateMsg, IsmSet, QueryMsg, RouteResponse, RoutingIsmQueryMsg},
+    IsmQueryMsg, ModuleTypeResponse, VerifyResponse,
 };
 use serde::de::DeserializeOwned;
 
@@ -16,12 +16,12 @@ use crate::{
 
 mod contract;
 
-pub struct ISMRouting {
+pub struct IsmRouting {
     pub deps: OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
     pub env: Env,
 }
 
-impl Default for ISMRouting {
+impl Default for IsmRouting {
     fn default() -> Self {
         Self {
             deps: mock_dependencies(),
@@ -30,7 +30,7 @@ impl Default for ISMRouting {
     }
 }
 
-impl ISMRouting {
+impl IsmRouting {
     #[allow(dead_code)]
     pub fn new(deps: OwnedDeps<MockStorage, MockApi, MockQuerier>, env: Env) -> Self {
         Self { deps, env }
@@ -40,7 +40,7 @@ impl ISMRouting {
         &mut self,
         sender: &Addr,
         owner: &Addr,
-        isms: Vec<ISMSet>,
+        isms: Vec<IsmSet>,
     ) -> Result<Response, ContractError> {
         instantiate(
             self.deps.as_mut(),
@@ -63,7 +63,7 @@ impl ISMRouting {
             .map_err(|e| e.into())
     }
 
-    pub fn set(&mut self, sender: &Addr, ism: &ISMSet) -> Result<Response, ContractError> {
+    pub fn set(&mut self, sender: &Addr, ism: &IsmSet) -> Result<Response, ContractError> {
         self.execute(
             mock_info(sender.as_str(), &[]),
             ExecuteMsg::Set { ism: ism.clone() },
@@ -71,7 +71,7 @@ impl ISMRouting {
     }
 
     pub fn get_module_type(&self) -> Result<ModuleTypeResponse, ContractError> {
-        self.query(QueryMsg::ISM(ISMQueryMsg::ModuleType {}))
+        self.query(QueryMsg::Ism(IsmQueryMsg::ModuleType {}))
     }
 
     pub fn query_verify(
@@ -79,7 +79,7 @@ impl ISMRouting {
         metadata: HexBinary,
         message: HexBinary,
     ) -> Result<VerifyResponse, ContractError> {
-        self.query(QueryMsg::ISM(ISMQueryMsg::Verify { metadata, message }))
+        self.query(QueryMsg::Ism(IsmQueryMsg::Verify { metadata, message }))
     }
 
     pub fn query_route(&self, message: HexBinary) -> Result<RouteResponse, ContractError> {

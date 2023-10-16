@@ -4,7 +4,7 @@ use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use hpl_interface::ism::{
     multisig::{ExecuteMsg, InstantiateMsg, MultisigIsmQueryMsg, QueryMsg},
-    ISMQueryMsg,
+    IsmQueryMsg,
 };
 
 use crate::{error::ContractError, execute, state::HRP, CONTRACT_NAME, CONTRACT_VERSION};
@@ -54,11 +54,11 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     use crate::query;
-    use ISMQueryMsg::*;
+    use IsmQueryMsg::*;
 
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
-        QueryMsg::ISM(msg) => match msg {
+        QueryMsg::Ism(msg) => match msg {
             ModuleType {} => query::get_module_type(),
             Verify {
                 metadata: raw_metadata,
