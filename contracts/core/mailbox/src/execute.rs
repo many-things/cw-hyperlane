@@ -163,6 +163,14 @@ pub fn dispatch(
     NONCE.save(deps.storage, &(nonce + 1))?;
     LATEST_DISPATCHED_ID.save(deps.storage, &msg_id.to_vec())?;
 
+    ensure!(
+        received_value.amount >= required_value.amount,
+        ContractError::InsufficientFunds {
+            required: required_value,
+            received: received_value,
+        }
+    );
+
     // make message
     let post_dispatch_msgs = vec![
         post_dispatch(

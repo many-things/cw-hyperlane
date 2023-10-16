@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{Coin, StdError};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -23,6 +23,9 @@ pub enum ContractError {
 
     #[error("invalid destination domain: {domain:?}")]
     InvalidDestinationDomain { domain: u32 },
+
+    #[error("insufficient funds. required: {required}, received: {received}")]
+    InsufficientFunds { required: Coin, received: Coin },
 
     #[error("message already delivered")]
     AlreadyDeliveredMessage {},
