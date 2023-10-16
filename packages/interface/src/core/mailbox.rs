@@ -66,18 +66,13 @@ impl DispatchMsg {
         })
     }
 
-    pub fn get_hook_addr(&self, api: &dyn Api, default: Option<Addr>) -> StdResult<Option<Addr>> {
-        let addr = self
+    pub fn get_hook_addr(&self, api: &dyn Api, default: Addr) -> StdResult<Addr> {
+        Ok(self
             .hook
             .as_ref()
             .map(|v| api.addr_validate(v))
-            .transpose()?;
-
-        if addr.is_some() {
-            return Ok(addr);
-        }
-
-        Ok(default)
+            .transpose()?
+            .unwrap_or(default))
     }
 }
 

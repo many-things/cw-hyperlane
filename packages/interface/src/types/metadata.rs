@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint256};
 
@@ -107,6 +109,37 @@ impl MessageIdMultisigIsmMetadata {
         self.signatures[index * SIGNATURE_LENGTH..(index + 1) * SIGNATURE_LENGTH]
             .to_vec()
             .into()
+    }
+}
+
+#[cw_serde]
+pub struct AggregateIsmMetadata(pub BTreeMap<Addr, HexBinary>);
+
+impl AggregateIsmMetadata {
+    const RANGE_SIZE: usize = 4;
+
+    pub fn from_hex(v: HexBinary, isms: Vec<Addr>) -> Self {
+        Self(
+            isms.into_iter()
+                .enumerate()
+                .map(|(i, ism)| {
+                    let start = i * Self::RANGE_SIZE * 2;
+                    let mid = start + Self::RANGE_SIZE;
+                    let end = mid + Self::RANGE_SIZE;
+
+                    let meta_start = usize::from_be_bytes(v[start..mid].try_into().unwrap());
+                    let meta_end = usize::from_be_bytes(v[mid..end].try_into().unwrap());
+
+                    (ism, v[meta_start..meta_end].to_vec().into())
+                })
+                .collect(),
+        )
+    }
+}
+
+impl From<AggregateIsmMetadata> for HexBinary {
+    fn from(v: AggregateIsmMetadata) -> Self {
+        v.0.into_iter().fold(vec![], |acc, (ism, metaedata)| {})
     }
 }
 
