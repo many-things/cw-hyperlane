@@ -1,12 +1,9 @@
 use cosmwasm_std::{HexBinary, StdError, StdResult};
-use ripemd::Ripemd160;
-use sha2::Sha256;
-use sha3::Keccak256;
 
 const PREFIX: &str = "\x19Ethereum Signed Message:\n";
 
 pub fn keccak256_hash(bz: &[u8]) -> HexBinary {
-    use sha3::Digest;
+    use sha3::{Digest, Keccak256};
 
     let mut hasher = Keccak256::new();
     hasher.update(bz);
@@ -24,7 +21,7 @@ pub fn eth_hash(message: HexBinary) -> StdResult<HexBinary> {
 }
 
 pub fn sha256_digest(bz: impl AsRef<[u8]>) -> StdResult<[u8; 32]> {
-    use sha2::Digest;
+    use sha2::{Digest, Sha256};
 
     let mut hasher = Sha256::new();
 
@@ -38,7 +35,7 @@ pub fn sha256_digest(bz: impl AsRef<[u8]>) -> StdResult<[u8; 32]> {
 }
 
 pub fn ripemd160_digest(bz: impl AsRef<[u8]>) -> StdResult<[u8; 20]> {
-    use ripemd::Digest;
+    use ripemd::{Digest, Ripemd160};
 
     let mut hasher = Ripemd160::new();
 
