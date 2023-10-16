@@ -7,7 +7,9 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
-use hpl_interface::hook::{HookQueryMsg, PostDispatchMsg, QuoteDispatchResponse};
+use hpl_interface::hook::{
+    ExpectedHookQueryMsg, HookQueryMsg, PostDispatchMsg, QuoteDispatchResponse,
+};
 
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 
@@ -82,16 +84,20 @@ pub fn execute(
 
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: HookQueryMsg) -> StdResult<QueryResponse> {
+pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<QueryResponse> {
     match msg {
-        HookQueryMsg::QuoteDispatch(_) => {
-            let gas = GAS.load(deps.storage)?;
-            let gas_token = GAS_TOKEN.load(deps.storage)?;
+        ExpectedHookQueryMsg::Hook(msg) => match msg {
+            HookQueryMsg::QuoteDispatch(_) => {
+                let gas = GAS.load(deps.storage)?;
+                let gas_token = GAS_TOKEN.load(deps.storage)?;
 
-            Ok(to_binary(&QuoteDispatchResponse {
-                gas_amount: Some(coin(gas.to_string().parse::<u128>().unwrap(), gas_token)),
-            })?)
-        }
-        HookQueryMsg::Mailbox {} => unimplemented!("mailbox query not implemented on mock hook"),
+                Ok(to_binary(&QuoteDispatchResponse {
+                    gas_amount: Some(coin(gas.to_string().parse::<u128>().unwrap(), gas_token)),
+                })?)
+            }
+            HookQueryMsg::Mailbox {} => {
+                unimplemented!("mailbox query not implemented on mock hook")
+            }
+        },
     }
 }
