@@ -1,6 +1,5 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Empty, Uint256};
-use hpl_interface::hook::HookConfig;
 use osmosis_test_tube::Wasm;
 use test_tube::{Account, Runner, SigningAccount};
 

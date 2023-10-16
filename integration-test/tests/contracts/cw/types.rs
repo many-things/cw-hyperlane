@@ -51,7 +51,6 @@ impl TryFrom<CodesMap> for Codes {
 
 #[cw_serde]
 pub struct CoreDeployments {
-    pub hub: String,
     pub ism: String,
     pub hook: String,
     pub mailbox: String,
