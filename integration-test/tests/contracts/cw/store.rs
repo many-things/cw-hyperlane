@@ -7,22 +7,23 @@ use super::types::{Codes, CodesMap};
 
 const DEFAULT_ARTIFACTS_PATH: &str = "../target/wasm32-unknown-unknown/release/";
 
-const CONTRACTS: [&str; 15] = [
-    "default_hook",
-    "domain_routing_hook",
-    "hub",
-    "igp_core",
-    "igp_gas_oracle",
+const CONTRACTS: [&str; 16] = [
+    "mailbox",
+    "validator_announce",
+    "hook_merkle",
+    "hook_pausable",
+    "hook_routing",
+    "hook_routing_custom",
+    "hook_routing_fallback",
+    "igp",
+    "igp_oracle",
     "ism_multisig",
     "ism_routing",
-    "mailbox",
     "test_mock_hook",
     "test_mock_ism",
     "test_mock_msg_receiver",
-    "multicall",
-    "token_cw20",
-    "token_native",
-    "validator_announce",
+    "warp_cw20",
+    "warp_native",
 ];
 
 pub fn store_code<'a, R: Runner<'a>>(
