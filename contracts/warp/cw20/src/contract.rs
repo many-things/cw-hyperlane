@@ -143,7 +143,7 @@ fn mailbox_handle(
         MAILBOX.load(deps.storage)?,
         ContractError::Unauthorized
     );
-    // validate message origin
+    // validate origin chain router
     ensure_eq!(
         msg.sender,
         get_route::<HexBinary>(deps.storage, msg.origin)?
