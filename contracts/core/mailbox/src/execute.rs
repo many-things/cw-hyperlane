@@ -474,7 +474,7 @@ mod tests {
     #[case(MAILBOX_VERSION, DEST_DOMAIN, gen_bz(32), false, true)]
     #[should_panic(expected = "ism verify failed")]
     #[case(MAILBOX_VERSION, LOCAL_DOMAIN, gen_bz(32), false, false)]
-    fn test_process_revised(
+    fn test_process(
         #[values("osmo", "neutron")] hrp: &str,
         #[case] version: u8,
         #[case] dest_domain: u32,
