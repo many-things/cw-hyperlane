@@ -33,7 +33,7 @@ fn get_required_value(
 ) -> Result<(Coin, Coin), ContractError> {
     let required_value = quote_dispatch(querier, hook, metadata, msg_body)?
         .gas_amount
-        .expect("should receive valida gas amount");
+        .expect("should receive valid gas amount");
 
     match info.funds.len() {
         0 => Ok((coin(0u128, &required_value.denom), required_value)),
