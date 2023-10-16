@@ -202,17 +202,14 @@ fn transfer_remote(
     };
 
     // push mailbox dispatch msg
-    msgs.push(
-        mailbox::dispatch(
-            mailbox,
-            dest_domain,
-            dest_router,
-            dispatch_payload.into(),
-            None,
-            None,
-        )?
-        .into(),
-    );
+    msgs.push(mailbox::dispatch(
+        mailbox,
+        dest_domain,
+        dest_router,
+        dispatch_payload.into(),
+        None,
+        None,
+    )?);
 
     Ok(Response::new().add_messages(msgs).add_event(
         new_event("transfer-remote")

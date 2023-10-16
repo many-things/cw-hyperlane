@@ -21,11 +21,7 @@ pub fn to_mint_msg(
 }
 
 pub fn to_burn_msg(contract: impl Into<String>, amount: Uint128) -> StdResult<WasmMsg> {
-    Ok(wasm_execute(
-        contract,
-        &Cw20ExecuteMsg::Burn { amount },
-        vec![],
-    )?)
+    wasm_execute(contract, &Cw20ExecuteMsg::Burn { amount }, vec![])
 }
 
 pub fn to_send_msg(

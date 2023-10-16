@@ -2,13 +2,12 @@ use std::str::FromStr;
 
 use cosmwasm_std::{testing::mock_env, to_binary, Addr, Binary, CosmosMsg, Uint256, WasmMsg};
 use hpl_interface::{
-    mailbox,
-    token::{self, TokenMode},
     types::bech32_encode,
+    warp::{self, cw20::TokenOption},
 };
 use rstest::rstest;
 
-use crate::{error::ContractError, msg::TokenOption, state::TOKEN, tests::TokenCW20};
+use crate::{error::ContractError, tests::TokenCW20, TOKEN};
 
 #[rstest]
 #[case("osmo")]
