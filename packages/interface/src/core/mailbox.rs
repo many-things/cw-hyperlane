@@ -171,6 +171,9 @@ pub enum MailboxQueryMsg {
     #[returns(RequiredHookResponse)]
     RequiredHook {},
 
+    #[returns(NonceResponse)]
+    Nonce {},
+
     #[returns(RecipientIsmResponse)]
     RecipientIsm { recipient_addr: String },
 }
@@ -214,4 +217,9 @@ pub struct RequiredHookResponse {
 #[cw_serde]
 pub struct RecipientIsmResponse {
     pub ism: String,
+}
+
+#[cw_serde]
+pub struct NonceResponse {
+    pub nonce: u32,
 }
