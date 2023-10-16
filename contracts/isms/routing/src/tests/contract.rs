@@ -1,6 +1,6 @@
 use cosmwasm_std::{to_binary, Addr, ContractResult, HexBinary, SystemResult, WasmQuery};
 use hpl_interface::{
-    ism::{routing::IsmSet, ISMType, VerifyResponse},
+    ism::{routing::IsmSet, IsmType, VerifyResponse},
     types::Message,
 };
 use hpl_ownable::get_owner;
@@ -116,7 +116,7 @@ fn test_query() -> anyhow::Result<()> {
     ism.init(&deployer, &owner, isms)?;
 
     // check module type query
-    assert_eq!(ISMType::Routing, ism.get_module_type()?.typ);
+    assert_eq!(IsmType::Routing, ism.get_module_type()?.typ);
 
     // check verify query
     let err_not_found = ContractError::RouteNotFound {};

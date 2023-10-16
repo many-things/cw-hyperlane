@@ -1,6 +1,6 @@
-use cosmwasm_std::{to_binary, Deps, HexBinary, QueryResponse};
+use cosmwasm_std::{Deps, HexBinary};
 use hpl_interface::{
-    ism::{ISMType, VerifyInfoResponse, VerifyResponse},
+    ism::{IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse},
     types::{Message, MessageIdMultisigIsmMetadata},
 };
 
@@ -10,15 +10,17 @@ use crate::{
     ContractError,
 };
 
-pub fn get_module_type() -> Result<QueryResponse, ContractError> {
-    Ok(to_binary(&ISMType::LegacyMultisig)?)
+pub fn get_module_type() -> Result<ModuleTypeResponse, ContractError> {
+    Ok(ModuleTypeResponse {
+        typ: IsmType::LegacyMultisig,
+    })
 }
 
 pub fn verify_message(
     deps: Deps,
     raw_metadata: HexBinary,
     raw_message: HexBinary,
-) -> Result<QueryResponse, ContractError> {
+) -> Result<VerifyResponse, ContractError> {
     let metadata: MessageIdMultisigIsmMetadata = raw_metadata.into();
     let message: Message = raw_message.into();
 
@@ -62,33 +64,36 @@ pub fn verify_message(
 
     println!("success: {}", success);
 
-    Ok(to_binary(&VerifyResponse {
+    Ok(VerifyResponse {
         verified: success >= threshold,
-    })?)
+    })
 }
 
-pub fn get_verify_info(deps: Deps, raw_message: HexBinary) -> Result<QueryResponse, ContractError> {
+pub fn get_verify_info(
+    deps: Deps,
+    raw_message: HexBinary,
+) -> Result<VerifyInfoResponse, ContractError> {
     let message: Message = raw_message.into();
 
     let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
     let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
-    Ok(to_binary(&VerifyInfoResponse {
+    Ok(VerifyInfoResponse {
         threshold,
         validators: validators
             .0
             .into_iter()
             .map(|v| v.signer.to_string())
             .collect(),
-    })?)
+    })
 }
 
 #[cfg(test)]
 mod test {
     use crate::state::{ValidatorSet, Validators, THRESHOLD, VALIDATORS};
-    use cosmwasm_std::{testing::mock_dependencies, to_binary, Addr, Binary, HexBinary};
+    use cosmwasm_std::{testing::mock_dependencies, Addr, Binary, HexBinary};
     use hpl_interface::{
-        ism::{ISMType, VerifyInfoResponse, VerifyResponse},
+        ism::{IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse},
         types::{Message, MessageIdMultisigIsmMetadata},
     };
 
@@ -98,7 +103,12 @@ mod test {
     fn test_get_module_type() {
         let result = get_module_type().unwrap();
 
-        assert_eq!(result, to_binary(&ISMType::LegacyMultisig).unwrap());
+        assert_eq!(
+            result,
+            ModuleTypeResponse {
+                typ: IsmType::LegacyMultisig
+            }
+        );
     }
 
     fn hex(v: &str) -> HexBinary {
@@ -158,10 +168,7 @@ mod test {
 
         let fail_result =
             verify_message(deps.as_ref(), fail_metadata.into(), message.into()).unwrap();
-        assert_eq!(
-            fail_result,
-            to_binary(&VerifyResponse { verified: false }).unwrap()
-        );
+        assert_eq!(fail_result, VerifyResponse { verified: false });
     }
 
     #[test]
@@ -197,10 +204,7 @@ mod test {
             .unwrap();
 
         let success_result = verify_message(deps.as_ref(), raw_metadata, raw_message).unwrap();
-        assert_eq!(
-            success_result,
-            to_binary(&VerifyResponse { verified: true }).unwrap()
-        );
+        assert_eq!(success_result, VerifyResponse { verified: true });
     }
 
     #[test]
@@ -245,15 +249,14 @@ mod test {
         let success_result = get_verify_info(deps.as_ref(), message.into()).unwrap();
         assert_eq!(
             success_result,
-            to_binary(&VerifyInfoResponse {
+            VerifyInfoResponse {
                 threshold: 2,
                 validators: vec![
                     "osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k".to_string(),
                     "osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat".to_string(),
                     "osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd".to_string(),
                 ]
-            })
-            .unwrap()
+            }
         );
     }
 }

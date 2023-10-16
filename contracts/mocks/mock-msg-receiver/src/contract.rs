@@ -67,9 +67,9 @@ pub fn execute(
 
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: ism::ISMSpecifierQueryMsg) -> StdResult<QueryResponse> {
+pub fn query(_deps: Deps, _env: Env, msg: ism::IsmSpecifierQueryMsg) -> StdResult<QueryResponse> {
     match msg {
-        ism::ISMSpecifierQueryMsg::InterchainSecurityModule() => {
+        ism::IsmSpecifierQueryMsg::InterchainSecurityModule() => {
             Ok(to_binary(&ism::InterchainSecurityModuleResponse {
                 ism: None,
             })?)

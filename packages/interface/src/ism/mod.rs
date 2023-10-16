@@ -6,7 +6,7 @@ use cosmwasm_std::{Addr, CustomQuery, HexBinary, QuerierWrapper, StdResult};
 
 #[cw_serde]
 #[repr(u32)]
-pub enum ISMType {
+pub enum IsmType {
     Unused = 0,
     Routing = 1,
     Aggregation = 2,
@@ -48,7 +48,7 @@ pub enum ExpectedIsmQueryMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum ISMSpecifierQueryMsg {
+pub enum IsmSpecifierQueryMsg {
     #[returns(InterchainSecurityModuleResponse)]
     InterchainSecurityModule(),
 }
@@ -56,7 +56,7 @@ pub enum ISMSpecifierQueryMsg {
 #[cw_serde]
 pub struct ModuleTypeResponse {
     #[serde(rename = "type")]
-    pub typ: ISMType,
+    pub typ: IsmType,
 }
 
 #[cw_serde]
@@ -81,7 +81,7 @@ pub fn recipient<C: CustomQuery>(
 ) -> StdResult<Option<Addr>> {
     let res = querier.query_wasm_smart::<InterchainSecurityModuleResponse>(
         recipient,
-        &ISMSpecifierQueryMsg::InterchainSecurityModule(),
+        &IsmSpecifierQueryMsg::InterchainSecurityModule(),
     )?;
 
     Ok(res.ism)

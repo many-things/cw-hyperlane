@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use hpl_interface::ism::{
-    ExpectedIsmQueryMsg, ISMType, IsmQueryMsg, VerifyInfoResponse, VerifyResponse,
+    ExpectedIsmQueryMsg, IsmQueryMsg, IsmType, VerifyInfoResponse, VerifyResponse,
 };
 
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
@@ -55,7 +55,7 @@ pub fn query(_deps: Deps, _env: Env, msg: ExpectedIsmQueryMsg) -> StdResult<Quer
 
     match msg {
         ExpectedIsmQueryMsg::Ism(msg) => match msg {
-            ModuleType {} => Ok(to_binary(&ISMType::Null)?),
+            ModuleType {} => Ok(to_binary(&IsmType::Null)?),
             Verify { .. } => Ok(to_binary(&VerifyResponse { verified: true })?),
             VerifyInfo { .. } => Ok(to_binary(&VerifyInfoResponse {
                 threshold: 1u8,

@@ -1,6 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{ensure_eq, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{
+    ensure_eq, to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response,
+};
 use cw2::set_contract_version;
 use hpl_interface::{
     ism::{
@@ -69,14 +71,14 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     use IsmQueryMsg::*;
 
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Ism(msg) => match msg {
             ModuleType {} => Ok(to_binary(&ModuleTypeResponse {
-                typ: hpl_interface::ism::ISMType::Routing,
+                typ: hpl_interface::ism::IsmType::Routing,
             })?),
             Verify { metadata, message } => {
                 let decoded = Message::from(message.clone());
