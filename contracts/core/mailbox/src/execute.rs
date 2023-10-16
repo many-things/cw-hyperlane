@@ -30,26 +30,29 @@ fn get_required_value(
     hook: impl Into<String>,
     metadata: HexBinary,
     msg_body: HexBinary,
-) -> Result<(Coin, Coin), ContractError> {
-    let required_value = quote_dispatch(querier, hook, metadata, msg_body)?
-        .gas_amount
-        .expect("should receive valid gas amount");
+) -> Result<(Option<Coin>, Option<Coin>), ContractError> {
+    let required = quote_dispatch(querier, hook, metadata, msg_body)?.gas_amount;
 
     match info.funds.len() {
-        0 => Ok((coin(0u128, &required_value.denom), required_value)),
+        0 => Ok((None, None)),
         1 => {
-            let gas = &info.funds[0];
+            let received = &info.funds[0];
             ensure_eq!(
-                gas.denom,
+                received.denom,
                 required_value.denom,
-                PaymentError::ExtraDenom(gas.denom.clone())
+                PaymentError::ExtraDenom(received.denom.clone())
             );
+
+            if received.amount <= required.amount {
+                return Ok((Some(received), None));
+            }
+
             Ok((
-                gas.clone(),
-                coin(
-                    gas.amount.min(required_value.amount).u128(),
-                    required_value.denom,
-                ),
+                required,
+                Some(coin(
+                    (received.amount - required.amount).u128(),
+                    required.denom,
+                )),
             ))
         }
         _ => Err(PaymentError::MultipleDenoms {}.into()),
@@ -134,7 +137,7 @@ pub fn dispatch(
     let nonce = NONCE.load(deps.storage)?;
 
     ensure!(
-        dispatch_msg.recipient_addr.len() <= 32,
+        dispatch_msg.recipient_addr.len() == 32,
         ContractError::InvalidAddressLength {
             len: dispatch_msg.recipient_addr.len()
         }
@@ -142,7 +145,7 @@ pub fn dispatch(
 
     // calculate gas
     let required_hook = config.required_hook.expect("required_hook not set");
-    let (received_value, required_value) = get_required_value(
+    let (required_value, hook_value) = get_required_value(
         &deps.querier,
         &info,
         required_hook.as_str(),
@@ -151,9 +154,7 @@ pub fn dispatch(
     )?;
 
     // interaction
-    let hook = dispatch_msg
-        .get_hook_addr(deps.api, config.default_hook)?
-        .expect("default_hook not set");
+    let hook = dispatch_msg.get_hook_addr(deps.api, config.get_default_hook())?;
     let hook_metadata = dispatch_msg.metadata.clone().unwrap_or_default();
 
     let msg = dispatch_msg.to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
@@ -177,17 +178,9 @@ pub fn dispatch(
             required_hook,
             hook_metadata.clone(),
             msg.clone(),
-            Some(vec![required_value.clone()]),
+            required_value.map(|v| vec![v]),
         )?,
-        post_dispatch(
-            hook,
-            hook_metadata,
-            msg.clone(),
-            Some(vec![coin(
-                (received_value.amount - required_value.amount).u128(),
-                required_value.denom,
-            )]),
-        )?,
+        post_dispatch(hook, hook_metadata, msg.clone(), Some(vec![hook_value]))?,
     ];
 
     Ok(Response::new()
