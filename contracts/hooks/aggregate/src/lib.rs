@@ -7,11 +7,11 @@ use cosmwasm_std::{
 use cw_storage_plus::Item;
 use hpl_interface::{
     hook::{
-        aggregate::{self, AggeregateHookQueryMsg, ExecuteMsg, InstantiateMsg, QueryMsg},
+        aggregate::{AggregateHookQueryMsg, ExecuteMsg, HooksResponse, InstantiateMsg, QueryMsg},
         HookQueryMsg, MailboxResponse, PostDispatchMsg, QuoteDispatchResponse,
     },
     to_binary,
-    types::{MerkleTree, Message},
+    types::Message,
 };
 
 #[derive(thiserror::Error, Debug, PartialEq)]
@@ -63,7 +63,7 @@ pub fn instantiate(
     hpl_ownable::initialize(deps.storage, &owner)?;
 
     MAILBOX.save(deps.storage, &mailbox)?;
-    HOOKS.save(deps.storage, hooks)?;
+    HOOKS.save(deps.storage, &hooks)?;
 
     Ok(Response::new().add_event(
         new_event("initialize")
@@ -91,11 +91,7 @@ pub fn execute(
 
             let decoded_msg: Message = message.into();
 
-            MESSAGE_TREE.update(deps.storage, |mut tree| {
-                tree.insert(decoded_msg.id())?;
-
-                Ok::<_, ContractError>(tree)
-            })?;
+            // aggregate it
 
             // do nothing
             Ok(Response::new().add_event(
@@ -107,20 +103,14 @@ pub fn execute(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
-    use AggeregateHookQueryMsg::*;
-
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
             HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch()),
         },
-        QueryMsg::MerkleHook(msg) => match msg {
-            Count {} => to_binary(get_tree_count(deps)),
-            Root {} => to_binary(get_tree_root(deps)),
-            Branch {} => to_binary(get_tree_branch(deps)),
-            Tree {} => to_binary(get_tree(deps)),
-            CheckPoint {} => to_binary(get_tree_checkpoint(deps)),
+        QueryMsg::AggregateHook(msg) => match msg {
+            AggregateHookQueryMsg::Hooks {} => to_binary(get_hooks(deps)),
         },
     }
 }
@@ -135,96 +125,12 @@ fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
     Ok(QuoteDispatchResponse { gas_amount: None })
 }
 
-fn get_tree_count(deps: Deps) -> Result<merkle::CountResponse, ContractError> {
-    let tree = MESSAGE_TREE.load(deps.storage)?;
-
-    Ok(merkle::CountResponse {
-        count: tree.count as u32,
+fn get_hooks(deps: Deps) -> Result<HooksResponse, ContractError> {
+    Ok(HooksResponse {
+        hooks: HOOKS
+            .load(deps.storage)?
+            .into_iter()
+            .map(|v| v.into())
+            .collect(),
     })
-}
-
-fn get_tree_root(deps: Deps) -> Result<merkle::RootResponse, ContractError> {
-    let tree = MESSAGE_TREE.load(deps.storage)?;
-
-    Ok(merkle::RootResponse { root: tree.root()? })
-}
-
-fn get_tree_branch(deps: Deps) -> Result<merkle::BranchResponse, ContractError> {
-    let tree = MESSAGE_TREE.load(deps.storage)?;
-
-    Ok(merkle::BranchResponse {
-        branch: tree.branch,
-    })
-}
-
-fn get_tree(deps: Deps) -> Result<merkle::TreeResponse, ContractError> {
-    let tree = MESSAGE_TREE.load(deps.storage)?;
-
-    Ok(merkle::TreeResponse {
-        branch: tree.branch,
-        count: tree.count as u32,
-    })
-}
-
-fn get_tree_checkpoint(deps: Deps) -> Result<merkle::CheckPointResponse, ContractError> {
-    let tree = MESSAGE_TREE.load(deps.storage)?;
-
-    Ok(merkle::CheckPointResponse {
-        root: tree.root()?,
-        count: tree.count as u32,
-    })
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    use cosmwasm_std::{
-        testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        HexBinary, OwnedDeps,
-    };
-
-    use hpl_interface::{build_test_executor, build_test_querier, hook::QuoteDispatchMsg};
-    use hpl_ownable::get_owner;
-    use ibcx_test_utils::gen_bz;
-    use rstest::{fixture, rstest};
-
-    use crate::{execute, instantiate};
-
-    type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
-
-    build_test_executor!(self::execute);
-    build_test_querier!(self::query);
-
-    #[fixture]
-    fn deps(
-        #[default(Addr::unchecked("deployer"))] sender: Addr,
-        #[default(Addr::unchecked("owner"))] owner: Addr,
-        #[default(Addr::unchecked("mailbox"))] mailbox: Addr,
-    ) -> TestDeps {
-        let mut deps = mock_dependencies();
-
-        instantiate(
-            deps.as_mut(),
-            mock_env(),
-            mock_info(sender.as_str(), &[]),
-            InstantiateMsg {
-                owner: owner.to_string(),
-                mailbox: mailbox.to_string(),
-                hooks: vec![],
-            },
-        )
-        .unwrap();
-
-        deps
-    }
-
-    #[rstest]
-    fn test_init(deps: TestDeps) {
-        assert_eq!("owner", get_owner(deps.as_ref().storage).unwrap().as_str());
-        assert_eq!(
-            "mailbox",
-            MAILBOX.load(deps.as_ref().storage).unwrap().as_str()
-        );
-    }
 }

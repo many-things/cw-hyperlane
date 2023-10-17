@@ -25,12 +25,12 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
-    AggregateHook(AggeregateHookQueryMsg),
+    AggregateHook(AggregateHookQueryMsg),
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum AggeregateHookQueryMsg {
+pub enum AggregateHookQueryMsg {
     #[returns(HooksResponse)]
     Hooks {},
 }
@@ -42,6 +42,8 @@ pub struct HooksResponse {
 
 #[cfg(test)]
 mod test {
+    use cosmwasm_std::HexBinary;
+
     use super::*;
     use crate::{
         hook::{ExpectedHookQueryMsg, PostDispatchMsg, QuoteDispatchMsg},

@@ -137,11 +137,13 @@ impl AggregateIsmMetadata {
     }
 }
 
-impl From<AggregateIsmMetadata> for HexBinary {
-    fn from(v: AggregateIsmMetadata) -> Self {
-        v.0.into_iter().fold(vec![], |acc, (ism, metaedata)| {})
-    }
-}
+// impl From<AggregateIsmMetadata> for HexBinary {
+//     fn from(v: AggregateIsmMetadata) -> Self {
+//         v.0.into_iter().fold(vec![], |acc, (ism, metaedata)| {
+
+//         })
+//     }
+// }
 
 #[cw_serde]
 pub struct IGPMetadata {
