@@ -10,7 +10,6 @@ use super::{HookQueryMsg, PostDispatchMsg};
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub mailbox: String,
     pub paused: bool,
 }
 

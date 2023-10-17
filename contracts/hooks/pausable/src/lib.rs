@@ -1,10 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, Addr, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
-    StdError,
+    ensure, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdError,
 };
-use cw_storage_plus::Item;
 use hpl_interface::{
     hook::{
         pausable::{ExecuteMsg, InstantiateMsg, QueryMsg},
@@ -32,9 +30,6 @@ pub enum ContractError {
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const MAILBOX_KEY: &str = "mailbox";
-pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
-
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_hook_pausable::{}", name))
 }
@@ -49,18 +44,14 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
-    let mailbox = deps.api.addr_validate(&msg.mailbox)?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
     hpl_pausable::initialize(deps.storage, &msg.paused)?;
 
-    MAILBOX.save(deps.storage, &mailbox)?;
-
     Ok(Response::new().add_event(
         new_event("initialize")
             .add_attribute("sender", info.sender)
-            .add_attribute("owner", owner)
-            .add_attribute("mailbox", mailbox),
+            .add_attribute("owner", owner),
     ))
 }
 
@@ -75,12 +66,6 @@ pub fn execute(
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::Pausable(msg) => Ok(hpl_pausable::handle(deps, env, info, msg)?),
         ExecuteMsg::PostDispatch(_) => {
-            ensure_eq!(
-                MAILBOX.load(deps.storage)?,
-                info.sender,
-                ContractError::Unauthorized {}
-            );
-
             ensure!(
                 !hpl_pausable::get_pause_info(deps.storage)?,
                 ContractError::Paused {}
@@ -104,9 +89,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
     }
 }
 
-fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     Ok(MailboxResponse {
-        mailbox: MAILBOX.load(deps.storage)?.into(),
+        mailbox: "unrestricted".to_string(),
     })
 }
 
@@ -120,7 +105,7 @@ mod test {
     use cosmwasm_std::{
         from_binary,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        HexBinary, OwnedDeps,
+        Addr, HexBinary, OwnedDeps,
     };
     use hpl_interface::hook::{PostDispatchMsg, QuoteDispatchMsg};
     use hpl_ownable::get_owner;
@@ -142,7 +127,6 @@ mod test {
     fn deps(
         #[default(addr("deployer"))] sender: Addr,
         #[default(addr("owner"))] owner: Addr,
-        #[default(addr("mailbox"))] mailbox: Addr,
         #[default(false)] paused: bool,
     ) -> TestDeps {
         let mut deps = mock_dependencies();
@@ -153,7 +137,6 @@ mod test {
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
                 owner: owner.to_string(),
-                mailbox: mailbox.to_string(),
                 paused,
             },
         )
@@ -166,18 +149,12 @@ mod test {
     fn test_init(deps: TestDeps) {
         assert!(!get_pause_info(deps.as_ref().storage).unwrap());
         assert_eq!("owner", get_owner(deps.as_ref().storage).unwrap().as_str());
-        assert_eq!(
-            "mailbox",
-            MAILBOX.load(deps.as_ref().storage).unwrap().as_str()
-        );
     }
 
     #[rstest]
-    #[case("mailbox", false)]
-    #[should_panic(expected = "hook paused")]
-    #[case("mailbox", true)]
-    #[should_panic(expected = "unauthorized")]
     #[case("owner", false)]
+    #[should_panic(expected = "hook paused")]
+    #[case("owner", true)]
     fn test_post_dispatch(mut deps: TestDeps, #[case] sender: &str, #[case] paused: bool) {
         if paused {
             hpl_pausable::pause(deps.as_mut().storage, &addr("owner")).unwrap();
@@ -199,7 +176,7 @@ mod test {
     #[rstest]
     fn test_query(deps: TestDeps) {
         let res: MailboxResponse = query(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}));
-        assert_eq!("mailbox", res.mailbox.as_str());
+        assert_eq!("unrestricted", res.mailbox.as_str());
 
         let res: QuoteDispatchResponse = query(
             deps.as_ref(),
