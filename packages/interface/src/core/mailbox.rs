@@ -181,8 +181,10 @@ pub enum MailboxQueryMsg {
 
     #[returns(RecipientIsmResponse)]
     RecipientIsm { recipient_addr: String },
-}
 
+    #[returns(LatestDispatchedIdResponse)]
+    LatestDispatchId {},
+}
 impl MailboxQueryMsg {
     pub fn wrap(self) -> QueryMsg {
         QueryMsg::Mailbox(self)
@@ -227,4 +229,9 @@ pub struct RecipientIsmResponse {
 #[cw_serde]
 pub struct NonceResponse {
     pub nonce: u32,
+}
+
+#[cw_serde]
+pub struct LatestDispatchedIdResponse {
+    pub message_id: HexBinary,
 }

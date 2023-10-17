@@ -82,6 +82,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             MessageDelivered { id } => to_binary(get_delivered(deps, id)),
             RecipientIsm { recipient_addr } => to_binary(get_recipient_ism(deps, recipient_addr)),
             Nonce {} => to_binary(get_nonce(deps)),
+            LatestDispatchId {} => to_binary(get_latest_dispatch_id(deps)),
         },
     }
 }

@@ -5,6 +5,7 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::Item;
 use hpl_interface::{
+    core::mailbox::{LatestDispatchedIdResponse, MailboxQueryMsg},
     hook::{
         merkle::{self, ExecuteMsg, InstantiateMsg, MerkleHookQueryMsg, QueryMsg},
         HookQueryMsg, MailboxResponse, PostDispatchMsg, QuoteDispatchResponse,
@@ -77,13 +78,25 @@ pub fn execute(
     match msg {
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::PostDispatch(PostDispatchMsg { message, .. }) => {
-            ensure_eq!(
-                MAILBOX.load(deps.storage)?,
-                info.sender,
-                ContractError::Unauthorized {}
-            );
+            let mailbox = MAILBOX.load(deps.storage)?;
+
+            ensure_eq!(mailbox, info.sender, ContractError::Unauthorized {});
+
+            let latest_dispatch_id = deps
+                .querier
+                .query_wasm_smart::<LatestDispatchedIdResponse>(
+                    &mailbox,
+                    &MailboxQueryMsg::LatestDispatchId {}.wrap(),
+                )?
+                .message_id;
 
             let decoded_msg: Message = message.into();
+
+            ensure_eq!(
+                latest_dispatch_id,
+                decoded_msg.id(),
+                ContractError::Unauthorized {}
+            );
 
             let mut tree = MESSAGE_TREE.load(deps.storage)?;
             tree.insert(decoded_msg.id())?;
@@ -178,13 +191,16 @@ mod test {
     use super::*;
 
     use cosmwasm_std::{
+        from_binary,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        HexBinary, OwnedDeps,
+        HexBinary, OwnedDeps, WasmQuery,
     };
 
-    use hpl_interface::{build_test_executor, build_test_querier, hook::QuoteDispatchMsg};
+    use hpl_interface::{
+        build_test_executor, build_test_querier, core::mailbox, hook::QuoteDispatchMsg,
+    };
     use hpl_ownable::get_owner;
-    use ibcx_test_utils::gen_bz;
+    use ibcx_test_utils::hex;
     use rstest::{fixture, rstest};
 
     use crate::{execute, instantiate};
@@ -229,18 +245,50 @@ mod test {
         );
     }
 
+    const TEST_MESSAGE: &str = "dc7b240deb74cca40636435ade8514b7ac35176e085f810e92dbc8bdb54a3d554ef32b9f724df19861d7e9b89a8ed11a4ecb35512f58b18b6607689cb9ba36dcf0f4af3cc1c7128c6cf0b47ea1f1aa07a4fe64502edd9a2b2e2dddf770776040efa24f19";
+    const TEST_MESSAGE_FAIL: &str = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+
     #[rstest]
-    #[case("mailbox")]
+    #[case("mailbox", None)]
     #[should_panic(expected = "unauthorized")]
-    #[case("owner")]
-    fn test_post_dispatch(mut deps: TestDeps, #[case] sender: &str) {
+    #[case("owner", None)]
+    #[should_panic(expected = "unauthorized")]
+    #[case("mailbox", Some(hex(TEST_MESSAGE_FAIL)))]
+    fn test_post_dispatch(
+        mut deps: TestDeps,
+        #[case] sender: &str,
+        #[case] message: Option<HexBinary>,
+    ) {
+        deps.querier.update_wasm(|query| {
+            use cosmwasm_std::{to_binary, ContractResult, SystemResult};
+
+            let (_contract_addr, msg) = match query {
+                WasmQuery::Smart { contract_addr, msg } => {
+                    (contract_addr, from_binary(msg).unwrap())
+                }
+                _ => unreachable!("noo"),
+            };
+
+            match msg {
+                mailbox::QueryMsg::Mailbox(MailboxQueryMsg::LatestDispatchId {}) => {
+                    let res = LatestDispatchedIdResponse {
+                        message_id: hex(
+                            "a6d8af738f99da8a0a8a3611e6c777bc9ebf42b1f685a5ff6b1ff1f2b7b70f45",
+                        ),
+                    };
+                    SystemResult::Ok(ContractResult::Ok(to_binary(&res).unwrap()))
+                }
+                _ => unreachable!("unwrap noo"),
+            }
+        });
+
         let res = execute(
             deps.as_mut(),
             mock_env(),
             mock_info(sender, &[]),
             ExecuteMsg::PostDispatch(PostDispatchMsg {
                 metadata: HexBinary::default(),
-                message: gen_bz(100),
+                message: message.unwrap_or(hex(TEST_MESSAGE)),
             }),
         )
         .map_err(|e| e.to_string())

@@ -1,15 +1,16 @@
 use cosmwasm_std::{Deps, HexBinary};
 use hpl_interface::{
     core::mailbox::{
-        DefaultHookResponse, DefaultIsmResponse, DispatchMsg, HrpResponse, LocalDomainResponse,
-        MessageDeliveredResponse, NonceResponse, RecipientIsmResponse, RequiredHookResponse,
+        DefaultHookResponse, DefaultIsmResponse, DispatchMsg, HrpResponse,
+        LatestDispatchedIdResponse, LocalDomainResponse, MessageDeliveredResponse, NonceResponse,
+        RecipientIsmResponse, RequiredHookResponse,
     },
     hook::{self, QuoteDispatchResponse},
     ism,
 };
 
 use crate::{
-    state::{CONFIG, DELIVERIES, NONCE},
+    state::{CONFIG, DELIVERIES, LATEST_DISPATCHED_ID, NONCE},
     ContractError,
 };
 
@@ -76,6 +77,14 @@ pub fn get_recipient_ism(
     Ok(RecipientIsmResponse { ism: ism.into() })
 }
 
+pub fn get_latest_dispatch_id(deps: Deps) -> Result<LatestDispatchedIdResponse, ContractError> {
+    let latest_dispatched_id = LATEST_DISPATCHED_ID.load(deps.storage)?.into();
+
+    Ok(LatestDispatchedIdResponse {
+        message_id: latest_dispatched_id,
+    })
+}
+
 pub fn quote_dispatch(
     deps: Deps,
     msg: DispatchMsg,
@@ -120,7 +129,7 @@ mod test {
         Addr,
     };
     use hpl_interface::core::mailbox::MailboxQueryMsg;
-    use ibcx_test_utils::{gen_addr, hex};
+    use ibcx_test_utils::{gen_addr, gen_bz, hex};
     use rstest::rstest;
     use serde::de::DeserializeOwned;
 
@@ -240,5 +249,20 @@ mod test {
             query_delivered(deps.as_ref(), HexBinary::from_hex("beef").unwrap()).delivered,
             delivered
         );
+    }
+
+    #[rstest]
+    fn test_query_latest_dispatched_id() {
+        let mut deps = mock_dependencies();
+
+        let rand_id = gen_bz(32).to_vec();
+
+        LATEST_DISPATCHED_ID
+            .save(deps.as_mut().storage, &rand_id)
+            .unwrap();
+
+        let res: LatestDispatchedIdResponse =
+            query(deps.as_ref(), MailboxQueryMsg::LatestDispatchId {});
+        assert_eq!(res.message_id, rand_id);
     }
 }
