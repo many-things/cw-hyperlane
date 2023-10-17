@@ -27,25 +27,20 @@ pub fn verify_message(
     let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
     let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
-    let mut signatures: Vec<HexBinary> = Vec::new();
-    for i in 0..metadata.signatures_len().unwrap() {
-        signatures.push(metadata.signature_at(i))
-    }
-
     let verifiable_cases = validators
         .0
         .into_iter()
         .map(|v| {
-            signatures
-                .clone()
-                .into_iter()
-                .map(|s| (v.signer_pubkey.clone(), s))
+            metadata
+                .signatures
+                .iter()
+                .map(|s| (v.signer_pubkey.clone(), s.clone()))
                 .collect::<Vec<(HexBinary, HexBinary)>>()
         })
         .fold(vec![], |acc, item| acc.into_iter().chain(item).collect());
 
     let multisig_hash = multisig_hash(
-        domain_hash(message.origin_domain, metadata.origin_mailbox)?.to_vec(),
+        domain_hash(message.origin_domain, metadata.origin_merkle_tree)?.to_vec(),
         metadata.merkle_root.to_vec(),
         0,
         message.id().to_vec(),
@@ -61,8 +56,6 @@ pub fn verify_message(
                 .unwrap() as u8
         })
         .sum();
-
-    println!("success: {}", success);
 
     Ok(VerifyResponse {
         verified: success >= threshold,
@@ -161,7 +154,9 @@ mod test {
         let fail_signatures = hex("65a7fc45f77bb968620bf8f1f1845a1d2555f392c7c6ec0eb712429dd52cbea932dbe005e7e0c1e48ff17554f165bb4914b706a13d5cba1f5d41b7b3b142293300");
 
         let fail_metadata = MessageIdMultisigIsmMetadata {
-            origin_mailbox: hex("0000000000000000000000000000000000000000000000000000000000000000"),
+            origin_merkle_tree: hex(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            ),
             merkle_root: hex("0000000000000000000000000000000000000000000000000000000000000000"),
             signatures: fail_signatures,
         };

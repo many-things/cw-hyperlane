@@ -65,20 +65,30 @@ impl MerkleRootMultisigIsmMetadata {
 
 #[cw_serde]
 pub struct MessageIdMultisigIsmMetadata {
-    pub origin_mailbox: HexBinary,
-    // byte32
+    pub origin_merkle_tree: HexBinary,
+
     pub merkle_root: HexBinary,
-    //bytes32
-    pub signatures: HexBinary, // 65 * length
+
+    pub merkle_index: HexBinary,
+
+    pub signatures: Vec<HexBinary>,
 }
 
 impl From<MessageIdMultisigIsmMetadata> for HexBinary {
     fn from(v: MessageIdMultisigIsmMetadata) -> Self {
-        v.origin_mailbox
+        v.origin_merkle_tree
             .to_vec()
             .iter()
             .chain(v.merkle_root.to_vec().iter())
-            .chain(v.signatures.to_vec().iter())
+            .chain(v.merkle_index.to_vec().iter())
+            .chain(
+                v.signatures
+                    .iter()
+                    .map(|x| x.to_vec())
+                    .flatten()
+                    .collect::<Vec<_>>()
+                    .iter(),
+            )
             .cloned()
             .collect::<Vec<u8>>()
             .into()
@@ -87,28 +97,18 @@ impl From<MessageIdMultisigIsmMetadata> for HexBinary {
 
 impl From<HexBinary> for MessageIdMultisigIsmMetadata {
     fn from(v: HexBinary) -> Self {
-        Self {
-            origin_mailbox: v[0..32].to_vec().into(),
-            merkle_root: v[32..64].to_vec().into(),
-            signatures: v[64..].to_vec().into(),
-        }
-    }
-}
-
-impl MessageIdMultisigIsmMetadata {
-    pub fn signatures_len(&self) -> Result<usize, &'static str> {
-        if self.signatures.len() % SIGNATURE_LENGTH != 0 {
-            return Err("Invalid signatures length");
-        }
-
-        Ok(self.signatures.len() / SIGNATURE_LENGTH)
-    }
-
-    pub fn signature_at(&self, index: usize) -> HexBinary {
-        // FIXME: handle index out of length
-        self.signatures[index * SIGNATURE_LENGTH..(index + 1) * SIGNATURE_LENGTH]
+        let signatures = v[68..]
             .to_vec()
-            .into()
+            .chunks_exact(65)
+            .map(|v| v.into())
+            .collect::<Vec<HexBinary>>();
+
+        Self {
+            origin_merkle_tree: v[0..32].to_vec().into(),
+            merkle_root: v[32..64].to_vec().into(),
+            merkle_index: v[64..68].to_vec().into(),
+            signatures,
+        }
     }
 }
 
