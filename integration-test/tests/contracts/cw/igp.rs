@@ -59,12 +59,6 @@ impl Igp {
             .data
             .address;
 
-        let dest_domains = self
-            .oracle_configs
-            .iter()
-            .map(|v| v.remote_domain)
-            .collect::<Vec<_>>();
-
         wasm.execute(
             &igp,
             &igp::core::ExecuteMsg::Router(RouterMsg::SetRoutes {

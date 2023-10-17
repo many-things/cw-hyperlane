@@ -1,38 +1,14 @@
-use cosmwasm_std::Binary;
+use cosmwasm_std::{Binary, HexBinary};
 use ethers::types::Address;
 use ethers::utils::hex::FromHex;
-use hpl_interface::{ism::multisig::ValidatorSet, types::metadata::MessageIdMultisigIsmMetadata};
+use hpl_interface::{
+    ism::multisig::ValidatorSet,
+    types::{bech32_encode, pub_to_addr, MessageIdMultisigIsmMetadata},
+};
 use k256::{
     ecdsa::{RecoveryId, SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
 };
-use ripemd::Ripemd160;
-use sha2::{Digest, Sha256};
-
-pub fn sha256_digest(bz: impl AsRef<[u8]>) -> [u8; 32] {
-    let mut hasher = Sha256::new();
-
-    hasher.update(bz);
-
-    hasher.finalize().as_slice().try_into().unwrap()
-}
-
-pub fn ripemd160_digest(bz: impl AsRef<[u8]>) -> [u8; 20] {
-    let mut hasher = Ripemd160::new();
-
-    hasher.update(bz);
-
-    hasher.finalize().as_slice().try_into().unwrap()
-}
-
-fn pub_to_addr(pub_key: Binary, prefix: &str) -> String {
-    let sha_hash = sha256_digest(pub_key);
-    let rip_hash = ripemd160_digest(sha_hash);
-
-    let addr = hpl_interface::types::bech32_encode(prefix, &rip_hash).unwrap();
-
-    addr.to_string()
-}
 
 #[derive(Clone)]
 pub struct TestValidator {
@@ -57,12 +33,21 @@ impl TestValidator {
         Self { priv_key, pub_key }
     }
 
-    fn pub_key_to_binary(&self) -> Binary {
-        Binary(self.pub_key.to_encoded_point(true).as_bytes().to_vec())
+    fn pub_key_to_binary(&self) -> HexBinary {
+        self.pub_key
+            .to_encoded_point(true)
+            .as_bytes()
+            .to_vec()
+            .into()
     }
 
     pub fn addr(&self, hrp: &str) -> String {
-        pub_to_addr(self.pub_key_to_binary(), hrp)
+        bech32_encode(
+            hrp,
+            pub_to_addr(self.pub_key_to_binary()).unwrap().as_slice(),
+        )
+        .unwrap()
+        .into()
     }
 
     pub fn to_val(&self, domain: u32, hrp: &str) -> ValidatorSet {
@@ -126,7 +111,7 @@ impl TestValidators {
             .collect::<Vec<_>>()
     }
 
-    pub fn sign(&self, num: u8, digest: [u8; 32]) -> Vec<Binary> {
+    pub fn sign(&self, num: u8, digest: [u8; 32]) -> Vec<HexBinary> {
         let num = num as usize;
         assert!(self.validators.len() >= num);
 
@@ -135,7 +120,7 @@ impl TestValidators {
             .map(|v| {
                 let (mut signature, recov_id) = v.sign(digest);
                 signature.0.extend(vec![recov_id.to_byte()]);
-                signature
+                signature.into()
             })
             .collect::<Vec<_>>();
 
@@ -144,16 +129,17 @@ impl TestValidators {
 
     pub fn make_metadata(
         &self,
-        origin_mailbox: Address,
+        origin_merkle_tree: Address,
         merkle_root: [u8; 32],
+        merkle_index: u32,
         message_id: [u8; 32],
         is_passed: bool,
     ) -> eyre::Result<MessageIdMultisigIsmMetadata> {
         let mut addr = [0u8; 32];
-        addr[32 - origin_mailbox.0.len()..].copy_from_slice(&origin_mailbox.0);
+        addr[32 - origin_merkle_tree.0.len()..].copy_from_slice(&origin_merkle_tree.0);
 
         let multisig_hash = hpl_ism_multisig::multisig_hash(
-            hpl_ism_multisig::domain_hash(self.domain, Binary(addr.to_vec()))?.to_vec(),
+            hpl_ism_multisig::domain_hash(self.domain, addr.to_vec().into())?.to_vec(),
             merkle_root.to_vec(),
             0,
             message_id.to_vec(),
@@ -168,11 +154,10 @@ impl TestValidators {
         };
 
         Ok(MessageIdMultisigIsmMetadata {
-            origin_mailbox: Binary::from(addr),
-            merkle_root: Binary::from(merkle_root),
-            signatures: signatures.iter().fold(Binary::default(), |acc, item| {
-                Binary([acc.0, item.0.clone()].concat())
-            }),
+            origin_merkle_tree: origin_merkle_tree.0.to_vec().into(),
+            merkle_root: merkle_root.to_vec().into(),
+            merkle_index: merkle_index.to_be_bytes().to_vec().into(),
+            signatures,
         })
     }
 }

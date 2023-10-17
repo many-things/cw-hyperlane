@@ -132,7 +132,7 @@ pub fn deploy_warp_route_bridged<'a, R: Runner<'a>>(
             token: warp::TokenModeMsg::Bridged(Cw20ModeBridged {
                 code_id: codes.cw20_base,
                 init_msg: Box::new(warp::cw20::Cw20InitMsg {
-                    name: denom,
+                    name: denom.clone(),
                     symbol: denom,
                     decimals: 6,
                     initial_balances: vec![],

@@ -4,7 +4,7 @@ mod contracts;
 mod event;
 mod validator;
 
-use cosmwasm_std::{attr, Attribute, Binary, HexBinary, Uint128};
+use cosmwasm_std::{attr, Attribute, Binary, Uint128};
 use ethers::{
     prelude::parse_log, providers::Middleware, signers::Signer, types::TransactionReceipt,
 };
@@ -125,6 +125,7 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
         "osmo",
         DOMAIN_OSMO,
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
+        &[],
     )?;
 
     // init Anvil env
@@ -149,6 +150,7 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
     let ism_metadata = osmo.get_validator_set(DOMAIN_EVM)?.make_metadata(
         anvil1.core.mailbox.address(),
         anvil1.core.mailbox.root().await?,
+        anvil1.core.mailbox.count().await? - 1,
         dispatch_id.message_id,
         true,
     )?;
@@ -156,9 +158,9 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
     // process
     let process_res = Wasm::new(osmo.app).execute(
         &osmo.core.mailbox,
-        &hpl_interface::mailbox::ExecuteMsg::Process {
+        &mailbox::ExecuteMsg::Process {
             metadata: ism_metadata.into(),
-            message: HexBinary::from(dispatch.message.to_vec()),
+            message: dispatch.message.to_vec().into(),
         },
         &[],
         &osmo.acc_owner,

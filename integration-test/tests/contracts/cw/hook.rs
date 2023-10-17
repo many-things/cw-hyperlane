@@ -119,7 +119,6 @@ impl Hook {
         wasm: &Wasm<'a, R>,
         codes: &Codes,
         owner: String,
-        mailbox: String,
         deployer: &SigningAccount,
     ) -> eyre::Result<String> {
         let hook = wasm
@@ -195,9 +194,7 @@ impl Hook {
             Hook::Mock { gas } => Self::deploy_mock(wasm, codes, gas, deployer),
             Hook::Igp(igp) => Ok(igp.deploy(wasm, codes, mailbox, deployer)?.core),
             Hook::Merkle { owner } => Self::deploy_merkle(wasm, codes, owner, mailbox, deployer),
-            Hook::Pausable { owner } => {
-                Self::deploy_pausable(wasm, codes, owner, mailbox, deployer)
-            }
+            Hook::Pausable { owner } => Self::deploy_pausable(wasm, codes, owner, deployer),
             Hook::Routing { owner, routes } => Self::deploy_routing(
                 wasm,
                 codes.hook_routing,
@@ -217,7 +214,7 @@ impl Hook {
                     codes.hook_routing_custom,
                     codes,
                     owner,
-                    mailbox,
+                    mailbox.clone(),
                     routes,
                     deployer,
                 )?;
@@ -228,7 +225,7 @@ impl Hook {
                         Ok(RegisterCustomHookMsg {
                             dest_domain: k.0,
                             recipient: k.1.to_string(),
-                            hook: v.deploy(wasm, codes, mailbox, deployer)?,
+                            hook: v.deploy(wasm, codes, mailbox.clone(), deployer)?,
                         })
                     })
                     .collect::<eyre::Result<_>>()?;
@@ -252,7 +249,7 @@ impl Hook {
                     codes.hook_routing_fallback,
                     codes,
                     owner,
-                    mailbox,
+                    mailbox.clone(),
                     routes,
                     deployer,
                 )?;
