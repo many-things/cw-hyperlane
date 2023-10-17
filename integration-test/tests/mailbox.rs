@@ -13,7 +13,7 @@ use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 use hpl_interface::{
     core::mailbox::{self, DispatchMsg},
     igp::oracle::RemoteGasDataConfig,
-    types::{bech32_decode, bech32_encode, bech32_to_h256, IGPMetadata},
+    types::{bech32_decode, bech32_encode, bech32_to_h256},
 };
 use test_tube::Runner;
 
@@ -125,7 +125,11 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
         "osmo",
         DOMAIN_OSMO,
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
-        &[],
+        &[RemoteGasDataConfig {
+            remote_domain: DOMAIN_EVM,
+            token_exchange_rate: Uint128::from(1u128 * 10u128.pow(4)),
+            gas_price: Uint128::from(1u128 * 10u128.pow(9)),
+        }],
     )?;
 
     // init Anvil env

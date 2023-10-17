@@ -81,6 +81,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 typ: hpl_interface::ism::IsmType::Routing,
             })?),
             Verify { metadata, message } => {
+                deps.api.debug(&format!(
+                    "ism_routing::verify: metadata: {:?}, message: {:?}",
+                    metadata, message
+                ));
+
                 let decoded = Message::from(message.clone());
 
                 let ism = MODULES
@@ -89,7 +94,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 
                 let verify_resp: VerifyResponse = deps
                     .querier
-                    .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message })?;
+                    .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message }.wrap())?;
 
                 Ok(to_binary(&verify_resp)?)
             }

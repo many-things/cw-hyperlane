@@ -230,6 +230,8 @@ pub fn process(
     let id = decoded_msg.id();
     let ism = ism::recipient(&deps.querier, &recipient)?.unwrap_or(config.get_default_ism());
 
+    deps.api.debug(&format!("mailbox::process: ism: {}", &ism));
+
     ensure!(
         !DELIVERIES.has(deps.storage, id.to_vec()),
         ContractError::AlreadyDeliveredMessage {}
@@ -244,10 +246,12 @@ pub fn process(
         },
     )?;
 
-    ensure!(
-        ism::verify(&deps.querier, ism, metadata, decoded_msg.clone().into())?,
-        ContractError::VerifyFailed {}
-    );
+    let verify = ism::verify(&deps.querier, ism, metadata, decoded_msg.clone().into())?;
+
+    deps.api
+        .debug(&format!("mailbox::process: verify: {}", verify));
+
+    ensure!(verify, ContractError::VerifyFailed {});
 
     let handle_msg = wasm_execute(
         recipient,
