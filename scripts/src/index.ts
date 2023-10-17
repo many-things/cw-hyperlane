@@ -3,7 +3,7 @@ import { loadWasmFileDigest, getWasmPath } from "./load_wasm";
 import { loadContext, saveContext } from "./load_context";
 import { getTargetContract, getTargetContractName } from "./contracts";
 import { CodeUpdate, CodeCreate, Context } from "./types";
-import * as readline from 'readline';
+import * as readline from "readline";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
@@ -12,59 +12,74 @@ import { CONTAINER } from "./ioc";
 import { runMigrations } from "./migrations";
 
 colors.enable();
-const NETWORK = "osmo-test-5";
+const NETWORK_ID = process.env.NETWORK_ID || "osmo-test-5";
+const NETWORK_URL =
+  process.env.NETWORK_URL || "https://rpc.osmotest5.osmosis.zone";
 
 function askQuestion(query: string) {
   const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
+    input: process.stdin,
+    output: process.stdout,
   });
 
-  return new Promise(resolve => rl.question(`${query} [Y/n] `, ans => {
+  return new Promise((resolve) =>
+    rl.question(`${query} [Y/n] `, (ans) => {
       rl.close();
-      resolve(ans.toLowerCase() == 'y' ? true : false);
-  }))
+      resolve(ans.toLowerCase() == "y" ? true : false);
+    })
+  );
 }
 
-async function getSigningClient(): Promise<{ client: SigningCosmWasmClient, address: string }> {
-  const mnemonic = process.env['SIGNING_MNEMONIC'] as string;
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {prefix: 'osmo'});
-  const [{address}] = await wallet.getAccounts();
-
-  const client = await SigningCosmWasmClient.connectWithSigner('https://rpc.osmotest5.osmosis.zone/', wallet, {
-    gasPrice: GasPrice.fromString('0.025uosmo'),
+async function getSigningClient(): Promise<{
+  client: SigningCosmWasmClient;
+  address: string;
+}> {
+  const mnemonic = process.env["SIGNING_MNEMONIC"] as string;
+  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
+    prefix: "osmo",
   });
+  const [{ address }] = await wallet.getAccounts();
+
+  const client = await SigningCosmWasmClient.connectWithSigner(
+    NETWORK_URL,
+    wallet,
+    {
+      gasPrice: GasPrice.fromString("0.025uosmo"),
+    }
+  );
   return { client, address };
 }
 
 async function main() {
   const digest = await loadWasmFileDigest();
-  const context = await loadContext(NETWORK);
+  const context = await loadContext(NETWORK_ID);
   const targetContractName = getTargetContractName();
 
-  const {client, address} = await getSigningClient();
+  const { client, address } = await getSigningClient();
   context.address = address;
 
   CONTAINER.bind(Context).toConstantValue(context);
   const contracts = getTargetContract(context, client, address, CONTAINER);
   console.log("check exist contracts....");
 
-  const codeChanges = targetContractName.map((contractName) => {
-    const ctxContract = context.contracts[contractName];
-    const currentDigest = digest[getWasmPath(contractName)];
-    if (ctxContract === undefined) {
-      return {
-        contractName,
-        digest: currentDigest,
-      } as CodeCreate;
-    } else if (ctxContract.digest != currentDigest) {
-      return {
-        contractName,
-        codeId: ctxContract.codeId,
-        digest: currentDigest,
-      } as CodeUpdate;
-    }
-  }).filter(v => v !== undefined);
+  const codeChanges = targetContractName
+    .map((contractName) => {
+      const ctxContract = context.contracts[contractName];
+      const currentDigest = digest[getWasmPath(contractName)];
+      if (ctxContract === undefined) {
+        return {
+          contractName,
+          digest: currentDigest,
+        } as CodeCreate;
+      } else if (ctxContract.digest != currentDigest) {
+        return {
+          contractName,
+          codeId: ctxContract.codeId,
+          digest: currentDigest,
+        } as CodeUpdate;
+      }
+    })
+    .filter((v) => v !== undefined);
 
   if (codeChanges.length !== 0) {
     console.log(`Found ${codeChanges.length} contracts to upload.\n`);
@@ -72,10 +87,20 @@ async function main() {
     codeChanges.forEach((v) => {
       if (v === undefined) return;
 
-      if ('codeId' in v) {
-        console.log("UPDATE".yellow, `${v.contractName} (${v.codeId})`.padEnd(30), '|', v.digest);
+      if ("codeId" in v) {
+        console.log(
+          "UPDATE".yellow,
+          `${v.contractName} (${v.codeId})`.padEnd(30),
+          "|",
+          v.digest
+        );
       } else {
-        console.log("CREATE".green, `${v.contractName}`.padEnd(30), '|', v.digest);
+        console.log(
+          "CREATE".green,
+          `${v.contractName}`.padEnd(30),
+          "|",
+          v.digest
+        );
         creationExists = true;
       }
     });
@@ -88,7 +113,7 @@ async function main() {
     } else if (askUpload) {
       console.log("\nuploading...\n");
 
-      for(let v of codeChanges) {
+      for (let v of codeChanges) {
         if (v === undefined) return;
 
         const contract = contracts[v.contractName];
@@ -97,24 +122,24 @@ async function main() {
         process.stdout.write("[UPLOAD]".gray);
         process.stdout.write(` ${v.contractName} ... `);
 
-        try{
+        try {
           contract.digest = v.digest;
-          const contractContext = await contract.uplaod();
+          const contractContext = await contract.upload();
           context.contracts[v.contractName] = contractContext;
           saveContext("osmo-test-5", context);
 
           console.log("OK".green, "as", contractContext.codeId);
-        } catch(e) {
+        } catch (e) {
           const err = e as AxiosError;
           console.log("FAILED".red, "=>", err);
         }
-      };
+      }
     }
   } else {
     console.log("No contracts to upload.");
   }
 
-  runMigrations(NETWORK, false);
+  runMigrations(NETWORK_ID, false);
 }
 
 main();
