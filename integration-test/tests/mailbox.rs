@@ -4,13 +4,17 @@ mod contracts;
 mod event;
 mod validator;
 
-use cosmwasm_std::{attr, Attribute, Binary, HexBinary};
+use cosmwasm_std::{attr, Attribute, Binary, HexBinary, Uint128};
 use ethers::{
     prelude::parse_log, providers::Middleware, signers::Signer, types::TransactionReceipt,
 };
 use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 
-use hpl_interface::types::{bech32_decode, bech32_encode, bech32_to_h256};
+use hpl_interface::{
+    core::mailbox::{self, DispatchMsg},
+    igp::oracle::RemoteGasDataConfig,
+    types::{bech32_decode, bech32_encode, bech32_to_h256},
+};
 use test_tube::Runner;
 
 use crate::{
@@ -48,11 +52,13 @@ where
     // dispatch
     let dispatch_res = Wasm::new(cosmos.app).execute(
         &cosmos.core.mailbox,
-        &hpl_interface::mailbox::ExecuteMsg::Dispatch {
+        &mailbox::ExecuteMsg::Dispatch(DispatchMsg {
             dest_domain: DOMAIN_EVM,
             recipient_addr: receiver.into(),
             msg_body: msg_body.into(),
-        },
+            hook: None,
+            metadata: None,
+        }),
         &[],
         &cosmos.acc_tester,
     )?;
@@ -80,6 +86,11 @@ async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
         "osmo",
         DOMAIN_OSMO,
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
+        &[RemoteGasDataConfig {
+            remote_domain: DOMAIN_EVM,
+            token_exchange_rate: Uint128::from(1u128 * 10u128.pow(9)),
+            gas_price: Uint128::from(1u128 * 10u128.pow(9)),
+        }],
     )?;
 
     // TODO: leave this until Neutron supports test-tube properly

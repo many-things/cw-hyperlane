@@ -16,7 +16,6 @@ use hpl_interface::{
         TokenMode, TokenModeMsg, TokenModeResponse, TokenTypeResponse,
     },
 };
-use hpl_ownable::get_owner;
 use hpl_router::get_route;
 
 use crate::{

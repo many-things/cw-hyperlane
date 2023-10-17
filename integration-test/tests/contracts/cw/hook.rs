@@ -127,7 +127,6 @@ impl Hook {
                 codes.hook_pausable,
                 &hook::pausable::InstantiateMsg {
                     owner,
-                    mailbox,
                     paused: false,
                 },
                 Some(deployer.address().as_str()),
@@ -155,10 +154,7 @@ impl Hook {
         let hook = wasm
             .instantiate(
                 code,
-                &InstantiateMsg {
-                    owner,
-                    mailbox: mailbox.clone(),
-                },
+                &InstantiateMsg { owner },
                 Some(deployer.address().as_str()),
                 Some("cw-hpl-domain-routing-hook"),
                 &[],
