@@ -85,15 +85,15 @@ pub fn execute(
 
             let decoded_msg: Message = message.into();
 
-            MESSAGE_TREE.update(deps.storage, |mut tree| {
-                tree.insert(decoded_msg.id())?;
-
-                Ok::<_, ContractError>(tree)
-            })?;
+            let mut tree = MESSAGE_TREE.load(deps.storage)?;
+            tree.insert(decoded_msg.id())?;
+            MESSAGE_TREE.save(deps.storage, &tree)?;
 
             // do nothing
             Ok(Response::new().add_event(
-                new_event("post_dispatch").add_attribute("message_id", decoded_msg.id().to_hex()),
+                new_event("post_dispatch")
+                    .add_attribute("message_id", decoded_msg.id().to_hex())
+                    .add_attribute("index", tree.count.to_string()),
             ))
         }
     }
@@ -244,6 +244,7 @@ mod test {
 
         let tree = MESSAGE_TREE.load(deps.as_ref().storage).unwrap();
         assert_ne!(tree, MerkleTree::default());
+        assert_eq!(tree.count, 1);
     }
 
     #[rstest]
