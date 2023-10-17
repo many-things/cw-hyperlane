@@ -1,11 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, wasm_execute, Addr, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
-    QueryResponse, Response, StdError, Storage,
+    wasm_execute, Addr, Deps, DepsMut, Env, Event, HexBinary, MessageInfo, QueryResponse, Response,
+    StdError, Storage,
 };
 
-use cw_storage_plus::Item;
 use hpl_interface::{
     hook::{
         self,
@@ -35,9 +34,6 @@ pub enum ContractError {
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const MAILBOX_KEY: &str = "mailbox";
-pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
-
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_hook_routing::{}", name))
 }
@@ -52,11 +48,8 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
-    let mailbox = deps.api.addr_validate(&msg.mailbox)?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
-
-    MAILBOX.save(deps.storage, &mailbox)?;
 
     Ok(Response::new().add_event(
         new_event("initialize")
@@ -91,9 +84,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
     }
 }
 
-fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     Ok(MailboxResponse {
-        mailbox: MAILBOX.load(deps.storage)?.into(),
+        mailbox: "unrestricted".to_string(),
     })
 }
 
@@ -127,15 +120,9 @@ fn route(storage: &dyn Storage, message: &HexBinary) -> Result<(Message, Addr), 
 
 fn post_dispatch(
     deps: DepsMut,
-    info: MessageInfo,
+    _info: MessageInfo,
     req: PostDispatchMsg,
 ) -> Result<Response, ContractError> {
-    ensure_eq!(
-        MAILBOX.load(deps.storage)?,
-        info.sender,
-        ContractError::Unauthorized {}
-    );
-
     let (decoded_msg, routed_hook) = route(deps.storage, &req.message)?;
 
     let hook_msg = wasm_execute(&routed_hook, &req.wrap(), vec![])?;
@@ -171,7 +158,6 @@ mod test {
 
     const OWNER: &str = "owner";
     const DEPLOYER: &str = "deployer";
-    const MAILBOX: &str = "mailbox";
 
     build_test_querier!(crate::query);
 
@@ -203,7 +189,6 @@ mod test {
     fn deps(
         #[default(addr(DEPLOYER))] sender: Addr,
         #[default(addr(OWNER))] owner: Addr,
-        #[default(addr(MAILBOX))] mailbox: Addr,
     ) -> TestDeps {
         let mut deps = mock_dependencies();
 
@@ -213,7 +198,6 @@ mod test {
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
                 owner: owner.to_string(),
-                mailbox: mailbox.to_string(),
             },
         )
         .unwrap();
@@ -246,22 +230,19 @@ mod test {
     #[rstest]
     fn test_init(deps: TestDeps) {
         assert_eq!(OWNER, get_owner(deps.as_ref().storage).unwrap());
-        assert_eq!(MAILBOX, get_mailbox(deps.as_ref()).unwrap().mailbox);
     }
 
     #[rstest]
     fn test_get_mailbox(deps: TestDeps) {
         let res: MailboxResponse =
             test_query(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}));
-        assert_eq!(MAILBOX, res.mailbox);
+        assert_eq!("unrestricted", res.mailbox);
     }
 
     #[rstest]
-    #[case(MAILBOX, 26657)]
-    #[should_panic(expected = "route not found for 12345")]
-    #[case(MAILBOX, 12345)]
-    #[should_panic(expected = "unauthorized")]
     #[case(OWNER, 26657)]
+    #[should_panic(expected = "route not found for 12345")]
+    #[case(OWNER, 12345)]
     fn test_post_dispatch(
         deps_routes: (TestDeps, Routes),
         #[case] sender: &str,

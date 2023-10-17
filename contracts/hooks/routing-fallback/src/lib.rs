@@ -33,9 +33,6 @@ pub enum ContractError {
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const MAILBOX_KEY: &str = "mailbox";
-pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
-
 pub const FALLBACK_HOOK_KEY: &str = "fallback_hook";
 pub const FALLBACK_HOOK: Item<Addr> = Item::new(FALLBACK_HOOK_KEY);
 
@@ -53,11 +50,8 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
-    let mailbox = deps.api.addr_validate(&msg.mailbox)?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
-
-    MAILBOX.save(deps.storage, &mailbox)?;
 
     Ok(Response::new().add_event(
         new_event("initialize")
@@ -109,9 +103,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
     }
 }
 
-fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     Ok(MailboxResponse {
-        mailbox: MAILBOX.load(deps.storage)?.into(),
+        mailbox: "unrestricted".to_string(),
     })
 }
 
@@ -129,15 +123,9 @@ fn route(storage: &dyn Storage, message: &HexBinary) -> Result<(Message, Addr), 
 
 pub fn post_dispatch(
     deps: DepsMut,
-    info: MessageInfo,
+    _info: MessageInfo,
     req: PostDispatchMsg,
 ) -> Result<Response, ContractError> {
-    ensure_eq!(
-        MAILBOX.load(deps.storage)?,
-        info.sender,
-        ContractError::Unauthorized {}
-    );
-
     let (decoded_msg, routed_hook) = route(deps.storage, &req.message)?;
 
     let hook_msg = wasm_execute(&routed_hook, &req.wrap(), vec![])?;
@@ -226,7 +214,6 @@ mod test {
     fn deps(
         #[default(addr(DEPLOYER))] sender: Addr,
         #[default(addr(OWNER))] owner: Addr,
-        #[default(addr(MAILBOX))] mailbox: Addr,
         #[default(addr(FALLBACK_HOOK))] fallback_hook: Addr,
     ) -> TestDeps {
         let mut deps = mock_dependencies();
@@ -237,7 +224,6 @@ mod test {
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
                 owner: owner.to_string(),
-                mailbox: mailbox.to_string(),
             },
         )
         .unwrap();
@@ -280,21 +266,18 @@ mod test {
     #[rstest]
     fn test_init(deps: TestDeps) {
         assert_eq!(OWNER, get_owner(deps.as_ref().storage).unwrap());
-        assert_eq!(MAILBOX, get_mailbox(deps.as_ref()).unwrap().mailbox);
     }
 
     #[rstest]
     fn test_get_mailbox(deps: TestDeps) {
         let res: MailboxResponse =
             test_query(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}));
-        assert_eq!(MAILBOX, res.mailbox);
+        assert_eq!("unrestricted", res.mailbox);
     }
 
     #[rstest]
     #[case(MAILBOX, ROUTE1)]
-    #[case(MAILBOX, (12345, FALLBACK_HOOK))]
-    #[should_panic(expected = "unauthorized")]
-    #[case(OWNER, ROUTE1)]
+    #[case(OWNER, (12345, FALLBACK_HOOK))]
     fn test_post_dispatch(
         deps_routes: (TestDeps, Routes),
         #[case] sender: &str,
