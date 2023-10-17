@@ -88,8 +88,8 @@ async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
         &[RemoteGasDataConfig {
             remote_domain: DOMAIN_EVM,
-            token_exchange_rate: Uint128::from(1u128 * 10u128.pow(4)),
-            gas_price: Uint128::from(1u128 * 10u128.pow(9)),
+            token_exchange_rate: Uint128::from(10u128.pow(4)),
+            gas_price: Uint128::from(10u128.pow(9)),
         }],
     )?;
 
@@ -127,8 +127,8 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
         &[RemoteGasDataConfig {
             remote_domain: DOMAIN_EVM,
-            token_exchange_rate: Uint128::from(1u128 * 10u128.pow(4)),
-            gas_price: Uint128::from(1u128 * 10u128.pow(9)),
+            token_exchange_rate: Uint128::from(10u128.pow(4)),
+            gas_price: Uint128::from(10u128.pow(9)),
         }],
     )?;
 
