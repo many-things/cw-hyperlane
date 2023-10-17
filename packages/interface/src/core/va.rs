@@ -35,5 +35,3 @@ pub struct GetAnnounceStorageLocationsResponse {
 pub struct GetAnnouncedValidatorsResponse {
     pub validators: Vec<String>,
 }
-
-

@@ -1,4 +1,3 @@
-pub mod aggregate;
 pub mod multisig;
 pub mod routing;
 
