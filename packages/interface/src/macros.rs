@@ -28,7 +28,7 @@ macro_rules! build_test_executor {
             sender: &cosmwasm_std::Addr,
             msg: S,
             funds: Vec<cosmwasm_std::Coin>,
-        ) -> Response {
+        ) -> cosmwasm_std::Response {
             $handler(
                 deps,
                 cosmwasm_std::testing::mock_env(),

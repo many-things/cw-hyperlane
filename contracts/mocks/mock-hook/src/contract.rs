@@ -101,3 +101,26 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
         },
     }
 }
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::{from_binary, to_binary, HexBinary};
+    use hpl_interface::hook::{ExpectedHookMsg, PostDispatchMsg};
+
+    use super::ExecuteMsg;
+
+    #[test]
+    fn test_schema() {
+        // no need to test query - because it uses ExecptedHookQueryMsg directly!
+
+        // test execute
+        let _: ExecuteMsg = from_binary(
+            &to_binary(&ExpectedHookMsg::PostDispatch(PostDispatchMsg {
+                metadata: HexBinary::default(),
+                message: HexBinary::default(),
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+}
