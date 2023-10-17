@@ -58,8 +58,6 @@ pub fn deploy_core<'a, R: Runner<'a>>(
         },
     )?;
 
-    println!("mailbox: {}", mailbox);
-
     // set default ism, hook, igp
 
     let default_ism = default_ism.deploy(wasm, codes, deployer)?;

@@ -90,12 +90,6 @@ pub fn execute(
 
             let decoded_msg: Message = message.into();
 
-            deps.api.debug(&format!(
-                "hook_merkle::post_dispatch: id: {}, actual: {}",
-                latest_dispatch_id,
-                decoded_msg.id().to_hex()
-            ));
-
             ensure_eq!(
                 latest_dispatch_id,
                 decoded_msg.id(),

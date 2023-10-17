@@ -75,7 +75,7 @@ pub fn post_dispatch(
         }
     };
 
-    let res = pay_for_gas(
+    Ok(pay_for_gas(
         &deps,
         info,
         message.id(),
@@ -83,12 +83,7 @@ pub fn post_dispatch(
         gas_limit,
         refund_address.to_string(),
     )?
-    .add_event(emit_post_dispatch(req.metadata, req.message));
-
-    deps.api
-        .debug(&format!("igp::post_dispatch: res: {:?}", res));
-
-    Ok(res)
+    .add_event(emit_post_dispatch(req.metadata, req.message)))
 }
 
 pub fn pay_for_gas(
