@@ -2,7 +2,10 @@ use cosmwasm_schema::{cw_serde, serde::Serialize};
 use hpl_interface::core::mailbox;
 use test_tube::{Account, Runner, SigningAccount, Wasm};
 
+use crate::contracts::cw::igp::IgpDeployment;
+
 use super::{
+    igp::Igp,
     types::{Codes, CoreDeployments},
     Hook, Ism,
 };
@@ -33,8 +36,10 @@ pub fn deploy_core<'a, R: Runner<'a>>(
     codes: &Codes,
     origin_domain: u32,
     hrp: &str,
-    test_ism: Ism,
-    test_hook: Hook,
+    test_igp: Igp,
+    test_default_ism: Ism,
+    test_default_hook: Hook,
+    test_required_hook: Hook,
 ) -> eyre::Result<CoreDeployments> {
     // Deploy mailbox
     let mailbox = instantiate(
@@ -49,20 +54,39 @@ pub fn deploy_core<'a, R: Runner<'a>>(
         },
     )?;
 
-    // set default ism, hook
-    let ism = test_ism.deploy(wasm, codes, deployer)?;
-    let hook = test_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
+    // set default ism, hook, igp
+    let IgpDeployment {
+        core: igp,
+        oracle: igp_oracle,
+    } = test_igp.deploy(wasm, codes, mailbox.clone(), deployer)?;
+
+    let default_ism = test_default_ism.deploy(wasm, codes, deployer)?;
+    let default_hook = test_default_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
+    let required_hook = test_required_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
 
     wasm.execute(
         &mailbox,
-        &mailbox::ExecuteMsg::SetDefaultIsm { ism: ism.clone() },
+        &mailbox::ExecuteMsg::SetDefaultIsm {
+            ism: default_ism.clone(),
+        },
         &[],
         deployer,
     )?;
 
     wasm.execute(
         &mailbox,
-        &mailbox::ExecuteMsg::SetDefaultHook { hook: hook.clone() },
+        &mailbox::ExecuteMsg::SetDefaultHook {
+            hook: default_hook.clone(),
+        },
+        &[],
+        deployer,
+    )?;
+
+    wasm.execute(
+        &mailbox,
+        &mailbox::ExecuteMsg::SetRequiredHook {
+            hook: required_hook.clone(),
+        },
         &[],
         deployer,
     )?;
@@ -89,9 +113,12 @@ pub fn deploy_core<'a, R: Runner<'a>>(
         .address;
 
     Ok(CoreDeployments {
-        ism,
-        hook,
         mailbox,
+        igp,
+        igp_oracle,
+        default_ism,
+        default_hook,
+        required_hook,
         msg_receiver,
     })
 }

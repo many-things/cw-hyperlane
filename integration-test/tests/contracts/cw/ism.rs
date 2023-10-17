@@ -105,7 +105,7 @@ impl Ism {
                     isms: isms
                         .into_iter()
                         .map(|(domain, ism)| {
-                            Ok(hpl_interface::ism::routing::ISMSet {
+                            Ok(hpl_interface::ism::routing::IsmSet {
                                 domain,
                                 address: ism.deploy(wasm, codes, deployer)?,
                             })
