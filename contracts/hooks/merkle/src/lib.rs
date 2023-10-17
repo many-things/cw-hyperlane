@@ -230,7 +230,7 @@ mod test {
     #[should_panic(expected = "unauthorized")]
     #[case("owner")]
     fn test_post_dispatch(mut deps: TestDeps, #[case] sender: &str) {
-        execute(
+        let res = execute(
             deps.as_mut(),
             mock_env(),
             mock_info(sender, &[]),
@@ -241,6 +241,18 @@ mod test {
         )
         .map_err(|e| e.to_string())
         .unwrap();
+
+        assert_eq!(
+            res.events
+                .iter()
+                .find(|v| v.ty == "hpl_hook_merkle::post_dispatch")
+                .unwrap()
+                .attributes
+                .last()
+                .unwrap()
+                .value,
+            "1"
+        );
 
         let tree = MESSAGE_TREE.load(deps.as_ref().storage).unwrap();
         assert_ne!(tree, MerkleTree::default());
