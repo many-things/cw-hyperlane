@@ -90,11 +90,14 @@ pub fn execute(
             MESSAGE_TREE.save(deps.storage, &tree)?;
 
             // do nothing
-            Ok(Response::new().add_event(
-                new_event("post_dispatch")
-                    .add_attribute("message_id", decoded_msg.id().to_hex())
-                    .add_attribute("index", tree.count.to_string()),
-            ))
+            Ok(Response::new()
+                .add_event(
+                    new_event("post_dispatch")
+                        .add_attribute("message_id", decoded_msg.id().to_hex()),
+                )
+                .add_event(
+                    new_event("inserted_into_tree").add_attribute("index", tree.count.to_string()),
+                ))
         }
     }
 }
@@ -245,7 +248,7 @@ mod test {
         assert_eq!(
             res.events
                 .iter()
-                .find(|v| v.ty == "hpl_hook_merkle::post_dispatch")
+                .find(|v| v.ty == "hpl_hook_merkle::inserted_into_tree")
                 .unwrap()
                 .attributes
                 .last()
