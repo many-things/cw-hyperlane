@@ -82,9 +82,7 @@ pub fn quote_dispatch(
 ) -> Result<QuoteDispatchResponse, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    let target_hook = msg
-        .get_hook_addr(deps.api, config.default_hook.clone())?
-        .unwrap();
+    let target_hook = msg.get_hook_addr(deps.api, config.get_default_hook())?;
     let required_hook = config.get_required_hook();
 
     let mut required_gas = hook::quote_dispatch(
