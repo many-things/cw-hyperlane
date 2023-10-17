@@ -156,6 +156,10 @@ pub fn dispatch(
         dispatch_msg.metadata.clone().unwrap_or_default(),
         dispatch_msg.msg_body.clone(),
     )?;
+    let (required_hook_value, hook_value) = (
+        required_hook_value.map(|v| vec![v]),
+        hook_value.map(|v| vec![v]),
+    );
 
     // interaction
     let hook = dispatch_msg.get_hook_addr(deps.api, config.get_default_hook())?;
@@ -174,14 +178,9 @@ pub fn dispatch(
             required_hook,
             hook_metadata.clone(),
             msg.clone(),
-            required_hook_value.map(|v| vec![v]),
+            required_hook_value,
         )?,
-        post_dispatch(
-            hook,
-            hook_metadata,
-            msg.clone(),
-            hook_value.map(|v| vec![v]),
-        )?,
+        post_dispatch(hook, hook_metadata, msg.clone(), hook_value)?,
     ];
 
     Ok(Response::new()
@@ -200,7 +199,7 @@ pub fn process(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    let decoded_msg: Message = message.clone().into();
+    let decoded_msg: Message = message.into();
     let recipient = decoded_msg.recipient_addr(&config.hrp)?;
 
     ensure_eq!(
@@ -236,7 +235,7 @@ pub fn process(
     )?;
 
     ensure!(
-        ism::verify(&deps.querier, ism, metadata, message)?,
+        ism::verify(&deps.querier, ism, metadata, decoded_msg.clone().into())?,
         ContractError::VerifyFailed {}
     );
 
