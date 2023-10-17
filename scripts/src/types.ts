@@ -89,7 +89,8 @@ export abstract class BaseContract implements Contract {
       this.codeId!,
       instantiateMsg,
       this.contractName,
-      "auto"
+      "auto",
+      { admin: this.signer }
     );
 
     this.address = contract.contractAddress;

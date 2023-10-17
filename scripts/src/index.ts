@@ -13,8 +13,10 @@ import { runMigrations } from "./migrations";
 
 colors.enable();
 const NETWORK_ID = process.env.NETWORK_ID || "osmo-test-5";
+const NETWORK_HRP = process.env.NETWORK_HRP || "osmo";
 const NETWORK_URL =
   process.env.NETWORK_URL || "https://rpc.osmotest5.osmosis.zone";
+const NETWORK_GAS = process.env.NETWORK_GAS || "0.025uosmo";
 
 function askQuestion(query: string) {
   const rl = readline.createInterface({
@@ -36,7 +38,7 @@ async function getSigningClient(): Promise<{
 }> {
   const mnemonic = process.env["SIGNING_MNEMONIC"] as string;
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
-    prefix: "osmo",
+    prefix: NETWORK_HRP,
   });
   const [{ address }] = await wallet.getAccounts();
 
@@ -44,7 +46,7 @@ async function getSigningClient(): Promise<{
     NETWORK_URL,
     wallet,
     {
-      gasPrice: GasPrice.fromString("0.025uosmo"),
+      gasPrice: GasPrice.fromString(NETWORK_GAS),
     }
   );
   return { client, address };
@@ -126,7 +128,7 @@ async function main() {
           contract.digest = v.digest;
           const contractContext = await contract.upload();
           context.contracts[v.contractName] = contractContext;
-          saveContext("osmo-test-5", context);
+          saveContext(NETWORK_ID, context);
 
           console.log("OK".green, "as", contractContext.codeId);
         } catch (e) {
