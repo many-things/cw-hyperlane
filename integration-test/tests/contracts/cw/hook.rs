@@ -10,12 +10,14 @@ use ibcx_test_utils::addr;
 use osmosis_test_tube::Wasm;
 use test_tube::{Account, Runner, SigningAccount};
 
-use super::types::Codes;
+use super::{igp::Igp, types::Codes};
 
 pub enum Hook {
     Mock {
         gas: Uint256,
     },
+
+    Igp(Igp),
 
     Merkle {
         owner: String,
@@ -195,6 +197,7 @@ impl Hook {
     ) -> eyre::Result<String> {
         match self {
             Hook::Mock { gas } => Self::deploy_mock(wasm, codes, gas, deployer),
+            Hook::Igp(igp) => Ok(igp.deploy(wasm, codes, mailbox, deployer)?.core),
             Hook::Merkle { owner } => Self::deploy_merkle(wasm, codes, owner, mailbox, deployer),
             Hook::Pausable { owner } => {
                 Self::deploy_pausable(wasm, codes, owner, mailbox, deployer)

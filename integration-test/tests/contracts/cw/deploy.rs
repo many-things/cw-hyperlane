@@ -2,10 +2,7 @@ use cosmwasm_schema::{cw_serde, serde::Serialize};
 use hpl_interface::core::mailbox;
 use test_tube::{Account, Runner, SigningAccount, Wasm};
 
-use crate::contracts::cw::igp::IgpDeployment;
-
 use super::{
-    igp::Igp,
     types::{Codes, CoreDeployments},
     Hook, Ism,
 };
@@ -36,10 +33,9 @@ pub fn deploy_core<'a, R: Runner<'a>>(
     codes: &Codes,
     origin_domain: u32,
     hrp: &str,
-    test_igp: Igp,
-    test_default_ism: Ism,
-    test_default_hook: Hook,
-    test_required_hook: Hook,
+    default_ism: Ism,
+    default_hook: Hook,
+    required_hook: Hook,
 ) -> eyre::Result<CoreDeployments> {
     // Deploy mailbox
     let mailbox = instantiate(
@@ -55,14 +51,9 @@ pub fn deploy_core<'a, R: Runner<'a>>(
     )?;
 
     // set default ism, hook, igp
-    let IgpDeployment {
-        core: igp,
-        oracle: igp_oracle,
-    } = test_igp.deploy(wasm, codes, mailbox.clone(), deployer)?;
-
-    let default_ism = test_default_ism.deploy(wasm, codes, deployer)?;
-    let default_hook = test_default_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
-    let required_hook = test_required_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
+    let default_ism = default_ism.deploy(wasm, codes, deployer)?;
+    let default_hook = default_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
+    let required_hook = required_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
 
     wasm.execute(
         &mailbox,
@@ -97,25 +88,18 @@ pub fn deploy_core<'a, R: Runner<'a>>(
         pub hrp: String,
     }
 
-    let msg_receiver = wasm
-        .instantiate(
-            codes.test_mock_msg_receiver,
-            &ReceiverInitMsg {
-                hrp: hrp.to_string(),
-            },
-            None,
-            None,
-            &[],
-            deployer,
-        )
-        .unwrap()
-        .data
-        .address;
+    let msg_receiver = instantiate(
+        wasm,
+        codes.test_mock_msg_receiver,
+        deployer,
+        "test_mock_msg_receiver",
+        &ReceiverInitMsg {
+            hrp: hrp.to_string(),
+        },
+    )?;
 
     Ok(CoreDeployments {
         mailbox,
-        igp,
-        igp_oracle,
         default_ism,
         default_hook,
         required_hook,
