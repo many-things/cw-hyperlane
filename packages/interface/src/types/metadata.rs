@@ -84,8 +84,7 @@ impl From<MessageIdMultisigIsmMetadata> for HexBinary {
             .chain(
                 v.signatures
                     .iter()
-                    .map(|x| x.to_vec())
-                    .flatten()
+                    .flat_map(|x| x.to_vec())
                     .collect::<Vec<_>>()
                     .iter(),
             )
@@ -99,7 +98,7 @@ impl From<HexBinary> for MessageIdMultisigIsmMetadata {
     fn from(v: HexBinary) -> Self {
         let signatures = v[68..]
             .to_vec()
-            .chunks_exact(65)
+            .chunks_exact(SIGNATURE_LENGTH)
             .map(|v| v.into())
             .collect::<Vec<HexBinary>>();
 
@@ -190,5 +189,29 @@ impl IGPMetadata {
         };
 
         bech32_encode(hrp, &raw_addr).unwrap()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use ibcx_test_utils::hex;
+
+    use super::*;
+
+    #[test]
+    fn test_message_id_multisig_metadata() {
+        let testdata = hex("fadafdf4db5e6264d450bafa5951b2180b8fe8aac2e012f280784ae841e9a7f732a2601709a27a5e370a59f98a67b5da6baa522b6421edf2ea240d94d84511a800000000df4eaf1947af0858139b90054561d5ab2a423b4ad8d75a5ec7f9e860fd3de1bb3924e2593e29b595aae2717538c0af6d6ae9fc20477da49d223a0d928a1efb311bdf4eaf1947af0858139b90054561d5ab2a423b4ad8d75a5ec7f9e860fd3de1bb3924e2593e29b595aae2717538c0af6d6ae9fc20477da49d223a0d928a1efb311b");
+
+        let metadata: MessageIdMultisigIsmMetadata = testdata.clone().into();
+
+        assert_eq!(metadata.signatures.len(), 2);
+        assert_eq!(
+            metadata.signatures.iter().flat_map(|v| v.to_vec()).count(),
+            SIGNATURE_LENGTH * 2
+        );
+
+        let recovered: HexBinary = metadata.into();
+
+        assert_eq!(recovered, testdata);
     }
 }

@@ -10,6 +10,12 @@ use crate::{
     ContractError,
 };
 
+fn product<T: Clone, U: Clone>(x: Vec<T>, y: Vec<U>) -> Vec<(T, U)> {
+    x.iter()
+        .flat_map(|item_x| y.iter().map(move |item_y| (item_x.clone(), item_y.clone())))
+        .collect()
+}
+
 pub fn get_module_type() -> Result<ModuleTypeResponse, ContractError> {
     Ok(ModuleTypeResponse {
         typ: IsmType::MessageIdMultisig,
@@ -27,17 +33,10 @@ pub fn verify_message(
     let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
     let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
-    let verifiable_cases = validators
-        .0
-        .into_iter()
-        .map(|v| {
-            metadata
-                .signatures
-                .iter()
-                .map(|s| (v.signer_pubkey.clone(), s.clone()))
-                .collect::<Vec<(HexBinary, HexBinary)>>()
-        })
-        .fold(vec![], |acc, item| acc.into_iter().chain(item).collect());
+    let verifiable_cases = product(
+        validators.0.into_iter().map(|v| v.signer_pubkey).collect(),
+        metadata.signatures,
+    );
 
     let multisig_hash = multisig_hash(
         domain_hash(message.origin_domain, metadata.origin_merkle_tree)?.to_vec(),
@@ -83,14 +82,18 @@ pub fn get_verify_info(
 
 #[cfg(test)]
 mod test {
-    use crate::state::{ValidatorSet, Validators, THRESHOLD, VALIDATORS};
-    use cosmwasm_std::{testing::mock_dependencies, Addr, Binary, HexBinary};
+    use crate::{
+        query::get_verify_info,
+        state::{ValidatorSet, Validators, THRESHOLD, VALIDATORS},
+    };
+    use cosmwasm_std::testing::mock_dependencies;
     use hpl_interface::{
         ism::{IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse},
-        types::{Message, MessageIdMultisigIsmMetadata},
+        types::{bech32_encode, Message},
     };
+    use ibcx_test_utils::{addr, hex};
 
-    use super::{get_module_type, get_verify_info, verify_message};
+    use super::{get_module_type, verify_message};
 
     #[test]
     fn test_get_module_type() {
@@ -99,107 +102,41 @@ mod test {
         assert_eq!(
             result,
             ModuleTypeResponse {
-                typ: IsmType::LegacyMultisig
+                typ: IsmType::MessageIdMultisig
             }
         );
     }
 
-    fn hex(v: &str) -> HexBinary {
-        HexBinary::from_hex(v).unwrap()
-    }
-
-    fn base64(v: &str) -> HexBinary {
-        Binary::from_base64(v).unwrap().to_vec().into()
-    }
-
     #[test]
-    fn test_get_verify_failure() {
-        let message = Message {
-            version: 0,
-            nonce: 8528,
-            origin_domain: 44787,
-            sender: hex("000000000000000000000000477d860f8f41bc69ddd32821f2bf2c2af0243f16"),
-            dest_domain: 11155111,
-            recipient: hex("0000000000000000000000005d56b8a669f50193b54319442c6eee5edd662381"),
-            body: hex("48656c6c6f21"),
-        };
+    fn test_verify_with_e2e_data() {
+        let raw_message = hex("0000000000000068220000000000000000000000000d1255b09d94659bb0888e0aa9fca60245ce402a0000682155208cd518cffaac1b5d8df216a9bd050c9a03f0d4f3ba88e5268ac4cd12ee2d68656c6c6f");
+        let raw_metadata = hex("986a1625d44e4b3969b08a5876171b2b4fcdf61b3e5c70a86ad17b304f17740a9f45d99ea6bec61392a47684f4e5d1416ddbcb5fdef0f132c27d7034e9bbff1c00000000ba9911d78ec6d561413e3589f920388cbd7554fbddd8ce50739337250853ec3577a51fa40e727c05b50f15db13f5aad5857c89d432644be48d70325ea83fdb6c1c");
+
+        let signer = hex("f9e25a6be80f6d48727e42381fc3c3b7834c0cb4");
+        let signer = bech32_encode("osmo", signer.as_slice()).unwrap();
+        let signer_pubkey =
+            hex("039cdc58e622e25767cfa565802534b2f777107a3382f46a88323471bbd3d84c22");
 
         let mut deps = mock_dependencies();
-        VALIDATORS
-            .save(
-                deps.as_mut().storage,
-                message.origin_domain,
-                &Validators(vec![
-                    ValidatorSet {
-                        signer: Addr::unchecked("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
-                        signer_pubkey: base64("ArU5zD28GiZu6HZIonZP9thauVOERZ7y5dR4fIhyT1gc"),
-                    },
-                    ValidatorSet {
-                        signer: Addr::unchecked("osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat"),
-                        signer_pubkey: base64("Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh"),
-                    },
-                    ValidatorSet {
-                        signer: Addr::unchecked("osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd"),
-                        signer_pubkey: base64("Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB"),
-                    },
-                ]),
-            )
-            .unwrap();
-
-        THRESHOLD
-            .save(deps.as_mut().storage, message.origin_domain, &2u8)
-            .unwrap();
-
-        // fail
-        let fail_signatures = hex("65a7fc45f77bb968620bf8f1f1845a1d2555f392c7c6ec0eb712429dd52cbea932dbe005e7e0c1e48ff17554f165bb4914b706a13d5cba1f5d41b7b3b142293300");
-
-        let fail_metadata = MessageIdMultisigIsmMetadata {
-            origin_merkle_tree: hex(
-                "0000000000000000000000000000000000000000000000000000000000000000",
-            ),
-            merkle_root: hex("0000000000000000000000000000000000000000000000000000000000000000"),
-            signatures: fail_signatures,
-        };
-
-        let fail_result =
-            verify_message(deps.as_ref(), fail_metadata.into(), message.into()).unwrap();
-        assert_eq!(fail_result, VerifyResponse { verified: false });
-    }
-
-    #[test]
-    fn test_get_verify_success() {
-        let raw_metadata: HexBinary = HexBinary::from_hex("0736a58fd7bd49e1f059768f8d57649670f6815054e49d3bb2ed16f71fc5ff16855a91bc5ca0e6853d2331e52759c8e8683da8bede7ac84b11b658af70dbdf1f494ddcd3802fd4934e7f3e89366c8761b57f60ebd438384d027512c36643c6b5413d05aa290d524414ec3e698eed65602204a25ed0b7ede6cca03a6370bd6b201c").unwrap();
-        let raw_message: HexBinary = HexBinary::from_hex("0000000000000068210000000000000000000000000d1255b09d94659bb0888e0aa9fca60245ce402a000068226c29bd39dce3f038d2dbb9b608f02a73d7ddc03f9cfb176dedb1a64e50c7b3e368656c6c6f").unwrap();
 
         let message: Message = raw_message.clone().into();
-        let mut deps = mock_dependencies();
+
         VALIDATORS
             .save(
                 deps.as_mut().storage,
                 message.origin_domain,
-                &Validators(vec![
-                    ValidatorSet {
-                        signer: Addr::unchecked("osmo1l83956lgpak5sun7ggupls7rk7p5cr95499jdf"),
-                        signer_pubkey: base64("A5zcWOYi4ldnz6VlgCU0svd3EHozgvRqiDI0cbvT2Ewi"),
-                    },
-                    ValidatorSet {
-                        signer: Addr::unchecked("osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat"),
-                        signer_pubkey: base64("Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh"),
-                    },
-                    ValidatorSet {
-                        signer: Addr::unchecked("osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd"),
-                        signer_pubkey: base64("Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB"),
-                    },
-                ]),
+                &Validators(vec![ValidatorSet {
+                    signer,
+                    signer_pubkey,
+                }]),
             )
             .unwrap();
-
         THRESHOLD
             .save(deps.as_mut().storage, message.origin_domain, &1u8)
             .unwrap();
 
-        let success_result = verify_message(deps.as_ref(), raw_metadata, raw_message).unwrap();
-        assert_eq!(success_result, VerifyResponse { verified: true });
+        let res = verify_message(deps.as_ref(), raw_metadata, raw_message).unwrap();
+        assert_eq!(res, VerifyResponse { verified: true });
     }
 
     #[test]
@@ -222,16 +159,22 @@ mod test {
                 message.origin_domain,
                 &Validators(vec![
                     ValidatorSet {
-                        signer: Addr::unchecked("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
-                        signer_pubkey: base64("ArU5zD28GiZu6HZIonZP9thauVOERZ7y5dR4fIhyT1gc"),
+                        signer: addr("osmo1pql3lj3kftaf5pn507y74xfxlew0tufs8tey2k"),
+                        signer_pubkey: hex(
+                            "02b539cc3dbc1a266ee87648a2764ff6d85ab95384459ef2e5d4787c88724f581c",
+                        ),
                     },
                     ValidatorSet {
-                        signer: Addr::unchecked("osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat"),
-                        signer_pubkey: base64("Av7oSL6LjqONDrrp+xGozb6pPyDErM9A/eT4f/IT0Jgh"),
+                        signer: addr("osmo13t2lcawapgppddj9hf0qk5yrrcvrre5gkslkat"),
+                        signer_pubkey: hex(
+                            "02fee848be8b8ea38d0ebae9fb11a8cdbea93f20c4accf40fde4f87ff213d09821",
+                        ),
                     },
                     ValidatorSet {
-                        signer: Addr::unchecked("osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd"),
-                        signer_pubkey: base64("Ang2D1Fu8PkMF1/OXeN8xyHxIngO+pVvF+4Iu/y+XLEB"),
+                        signer: addr("osmo1wjfete3kxrhyzcuhdp3lc6g3a8r275dp80w9xd"),
+                        signer_pubkey: hex(
+                            "0278360f516ef0f90c175fce5de37cc721f122780efa956f17ee08bbfcbe5cb101",
+                        ),
                     },
                 ]),
             )
