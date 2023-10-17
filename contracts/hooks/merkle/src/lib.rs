@@ -99,6 +99,7 @@ pub fn execute(
             );
 
             let mut tree = MESSAGE_TREE.load(deps.storage)?;
+            let index = tree.count;
             tree.insert(decoded_msg.id())?;
             MESSAGE_TREE.save(deps.storage, &tree)?;
 
@@ -107,10 +108,10 @@ pub fn execute(
                 .add_event(
                     new_event("post_dispatch")
                         .add_attribute("message_id", decoded_msg.id().to_hex())
-                        .add_attribute("index", tree.count.to_string()),
+                        .add_attribute("index", index.to_string()),
                 )
                 .add_event(
-                    new_event("inserted_into_tree").add_attribute("index", tree.count.to_string()),
+                    new_event("inserted_into_tree").add_attribute("index", index.to_string()),
                 ))
         }
     }
@@ -303,12 +304,12 @@ mod test {
                 .last()
                 .unwrap()
                 .value,
-            "1"
+            "0"
         );
 
         let tree = MESSAGE_TREE.load(deps.as_ref().storage).unwrap();
         assert_ne!(tree, MerkleTree::default());
-        assert_eq!(tree.count, 1);
+        assert_eq!(tree.count, 0);
     }
 
     #[rstest]
