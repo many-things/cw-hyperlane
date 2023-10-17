@@ -56,8 +56,8 @@ impl Ism {
             .instantiate(
                 codes.ism_multisig,
                 &hpl_interface::ism::multisig::InstantiateMsg {
+                    hrp: hrp.to_string(),
                     owner: deployer.address(),
-                    addr_prefix: hrp.to_string(),
                 },
                 None,
                 None,

@@ -1,5 +1,12 @@
+use std::collections::BTreeMap;
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Empty, Uint256};
+use hpl_interface::{
+    hook::{self, routing_custom::RegisterCustomHookMsg},
+    router::{DomainRouteSet, RouterMsg},
+};
+use ibcx_test_utils::addr;
 use osmosis_test_tube::Wasm;
 use test_tube::{Account, Runner, SigningAccount};
 
@@ -10,9 +17,33 @@ pub enum Hook {
         gas: Uint256,
     },
 
+    Merkle {
+        owner: String,
+    },
+
+    Pausable {
+        owner: String,
+    },
+
     Routing {
         owner: String,
         routes: Vec<(u32, Self)>,
+    },
+
+    RoutingCustom {
+        owner: String,
+        routes: Vec<(u32, Self)>,
+        custom_hooks: BTreeMap<(u32, Addr), Self>,
+    },
+
+    RoutingFallback {
+        owner: String,
+        routes: Vec<(u32, Self)>,
+        fallback_hook: Box<Self>,
+    },
+
+    Aggregate {
+        hooks: Vec<Self>,
     },
 }
 
@@ -60,19 +91,68 @@ impl Hook {
         Ok(hook)
     }
 
+    fn deploy_merkle<'a, R: Runner<'a>>(
+        wasm: &Wasm<'a, R>,
+        codes: &Codes,
+        owner: String,
+        mailbox: String,
+        deployer: &SigningAccount,
+    ) -> eyre::Result<String> {
+        let hook = wasm
+            .instantiate(
+                codes.hook_merkle,
+                &hook::merkle::InstantiateMsg { owner, mailbox },
+                Some(deployer.address().as_str()),
+                Some("cw-hpl-hook-merkle"),
+                &[],
+                deployer,
+            )?
+            .data
+            .address;
+
+        Ok(hook)
+    }
+
+    fn deploy_pausable<'a, R: Runner<'a>>(
+        wasm: &Wasm<'a, R>,
+        codes: &Codes,
+        owner: String,
+        mailbox: String,
+        deployer: &SigningAccount,
+    ) -> eyre::Result<String> {
+        let hook = wasm
+            .instantiate(
+                codes.hook_pausable,
+                &hook::pausable::InstantiateMsg {
+                    owner,
+                    mailbox,
+                    paused: false,
+                },
+                Some(deployer.address().as_str()),
+                Some("cw-hpl-hook-pausable"),
+                &[],
+                deployer,
+            )?
+            .data
+            .address;
+
+        Ok(hook)
+    }
+
     fn deploy_routing<'a, R: Runner<'a>>(
         wasm: &Wasm<'a, R>,
+        code: u64,
         codes: &Codes,
         owner: String,
         mailbox: String,
         routes: Vec<(u32, Self)>,
         deployer: &SigningAccount,
     ) -> eyre::Result<String> {
-        use hpl_interface::domain_routing_hook::*;
+        use hpl_interface::hook::routing::*;
 
         let hook = wasm
             .instantiate(
-                codes.domain_routing_hook,
+                code,
                 &InstantiateMsg {
                     owner,
                     mailbox: mailbox.clone(),
@@ -88,16 +168,17 @@ impl Hook {
         let routes = routes
             .into_iter()
             .map(|(domain, hook)| {
-                Ok(HookConfig {
-                    destination: domain,
-                    hook: Addr::unchecked(hook.deploy(wasm, codes, mailbox.clone(), deployer)?),
+                let hook_addr = hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
+                Ok(DomainRouteSet {
+                    domain,
+                    route: Some(addr(&hook_addr)),
                 })
             })
             .collect::<eyre::Result<_>>()?;
 
         wasm.execute(
             &hook,
-            &ExecuteMsg::SetHooks { hooks: routes },
+            &ExecuteMsg::Router(RouterMsg::SetRoutes { set: routes }),
             &[],
             deployer,
         )?;
@@ -114,9 +195,83 @@ impl Hook {
     ) -> eyre::Result<String> {
         match self {
             Hook::Mock { gas } => Self::deploy_mock(wasm, codes, gas, deployer),
-            Hook::Routing { owner, routes } => {
-                Self::deploy_routing(wasm, codes, owner, mailbox, routes, deployer)
+            Hook::Merkle { owner } => Self::deploy_merkle(wasm, codes, owner, mailbox, deployer),
+            Hook::Pausable { owner } => {
+                Self::deploy_pausable(wasm, codes, owner, mailbox, deployer)
             }
+            Hook::Routing { owner, routes } => Self::deploy_routing(
+                wasm,
+                codes.hook_routing,
+                codes,
+                owner,
+                mailbox,
+                routes,
+                deployer,
+            ),
+            Hook::RoutingCustom {
+                owner,
+                routes,
+                custom_hooks,
+            } => {
+                let hook_addr = Self::deploy_routing(
+                    wasm,
+                    codes.hook_routing_custom,
+                    codes,
+                    owner,
+                    mailbox,
+                    routes,
+                    deployer,
+                )?;
+
+                let custom_hooks = custom_hooks
+                    .into_iter()
+                    .map(|(k, v)| {
+                        Ok(RegisterCustomHookMsg {
+                            dest_domain: k.0,
+                            recipient: k.1.to_string(),
+                            hook: v.deploy(wasm, codes, mailbox, deployer)?,
+                        })
+                    })
+                    .collect::<eyre::Result<_>>()?;
+
+                wasm.execute(
+                    &hook_addr,
+                    &hook::routing_custom::ExecuteMsg::RegisterCustomHooks(custom_hooks),
+                    &[],
+                    deployer,
+                )?;
+
+                Ok(hook_addr)
+            }
+            Hook::RoutingFallback {
+                owner,
+                routes,
+                fallback_hook,
+            } => {
+                let hook_addr = Self::deploy_routing(
+                    wasm,
+                    codes.hook_routing_fallback,
+                    codes,
+                    owner,
+                    mailbox,
+                    routes,
+                    deployer,
+                )?;
+
+                let fallback_hook = fallback_hook.deploy(wasm, codes, mailbox, deployer)?;
+
+                wasm.execute(
+                    &hook_addr,
+                    &hook::routing_fallback::ExecuteMsg::SetFallbackHook {
+                        hook: fallback_hook,
+                    },
+                    &[],
+                    deployer,
+                )?;
+
+                Ok(hook_addr)
+            }
+            Hook::Aggregate { hooks } => todo!(),
         }
     }
 }
