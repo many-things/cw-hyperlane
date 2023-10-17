@@ -92,14 +92,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Router(msg) => {
-            ensure_eq!(
-                info.sender,
-                get_owner(deps.storage)?,
-                ContractError::Unauthorized {}
-            );
-            Ok(hpl_router::handle(deps, env, info, msg)?)
-        }
+        ExecuteMsg::Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
         ExecuteMsg::Handle(msg) => mailbox_handle(deps, env, info, msg),
         ExecuteMsg::TransferRemote {
             dest_domain,

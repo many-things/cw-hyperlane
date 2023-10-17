@@ -84,15 +84,7 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        Router(msg) => {
-            ensure_eq!(
-                info.sender,
-                get_owner(deps.storage)?,
-                ContractError::Unauthorized
-            );
-
-            Ok(hpl_router::handle(deps, env, info, msg)?)
-        }
+        Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
         Handle(msg) => mailbox_handle(deps, info, msg),
         Receive(msg) => {
             ensure_eq!(
