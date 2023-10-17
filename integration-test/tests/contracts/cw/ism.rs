@@ -56,8 +56,8 @@ impl Ism {
             .instantiate(
                 codes.ism_multisig,
                 &hpl_interface::ism::multisig::InstantiateMsg {
+                    hrp: hrp.to_string(),
                     owner: deployer.address(),
-                    addr_prefix: hrp.to_string(),
                 },
                 None,
                 None,
@@ -105,7 +105,7 @@ impl Ism {
                     isms: isms
                         .into_iter()
                         .map(|(domain, ism)| {
-                            Ok(hpl_interface::ism::routing::ISMSet {
+                            Ok(hpl_interface::ism::routing::IsmSet {
                                 domain,
                                 address: ism.deploy(wasm, codes, deployer)?,
                             })

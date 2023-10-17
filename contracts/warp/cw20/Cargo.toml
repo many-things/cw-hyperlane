@@ -1,5 +1,5 @@
 [package]
-name = "hpl-token-cw20"
+name = "hpl-warp-cw20"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -38,6 +38,7 @@ schemars.workspace = true
 
 thiserror.workspace = true
 
+hpl-ownable.workspace = true
 hpl-router.workspace = true
 hpl-interface.workspace = true
 

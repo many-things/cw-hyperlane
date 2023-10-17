@@ -1,12 +1,13 @@
-use cosmwasm_std::{to_binary, Addr, Binary, ContractResult, HexBinary, SystemResult, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, ContractResult, HexBinary, SystemResult, WasmQuery};
 use hpl_interface::{
-    ism::{routing::ISMSet, ISMType, VerifyResponse},
-    types::message::Message,
+    ism::{routing::IsmSet, IsmType, VerifyResponse},
+    types::Message,
 };
+use hpl_ownable::get_owner;
 
 use crate::{state::MODULES, ContractError};
 
-use super::ISMRouting;
+use super::IsmRouting;
 
 fn make_default_message() -> Message {
     Message {
@@ -17,7 +18,7 @@ fn make_default_message() -> Message {
         nonce: 0,
         origin_domain: 0,
         dest_domain: 0,
-        body: Binary::default(),
+        body: Default::default(),
     }
 }
 
@@ -26,22 +27,22 @@ fn test_init() -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let owner = Addr::unchecked("owner");
     let isms = vec![
-        ISMSet {
+        IsmSet {
             domain: 1,
             address: "ism1".to_string(),
         },
-        ISMSet {
+        IsmSet {
             domain: 2,
             address: "ism2".to_string(),
         },
     ];
 
-    let mut ism = ISMRouting::default();
+    let mut ism = IsmRouting::default();
 
     ism.init(&deployer, &owner, isms)?;
 
     let storage = ism.deps.as_ref().storage;
-    assert_eq!(owner, hpl_ownable::OWNER.load(storage)?);
+    assert_eq!(owner, get_owner(storage)?);
     assert_eq!(Addr::unchecked("ism1"), MODULES.load(storage, 1)?);
     assert_eq!(Addr::unchecked("ism2"), MODULES.load(storage, 2)?);
 
@@ -53,11 +54,11 @@ fn test_set() -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let owner = Addr::unchecked("owner");
 
-    let mut ism = ISMRouting::default();
+    let mut ism = IsmRouting::default();
 
     ism.init(&deployer, &owner, vec![])?;
 
-    let target = ISMSet {
+    let target = IsmSet {
         domain: 1,
         address: "ism1".to_string(),
     };
@@ -82,7 +83,7 @@ fn test_query() -> anyhow::Result<()> {
     let deployer = Addr::unchecked("deployer");
     let owner = Addr::unchecked("owner");
 
-    let mut ism = ISMRouting::default();
+    let mut ism = IsmRouting::default();
 
     // register mock handler
     ism.deps.querier.update_wasm(|v| match v {
@@ -102,11 +103,11 @@ fn test_query() -> anyhow::Result<()> {
 
     // init
     let isms = vec![
-        ISMSet {
+        IsmSet {
             domain: chain_a_domain,
             address: "ism1".to_string(),
         },
-        ISMSet {
+        IsmSet {
             domain: chain_b_domain,
             address: "ism2".to_string(),
         },
@@ -115,7 +116,7 @@ fn test_query() -> anyhow::Result<()> {
     ism.init(&deployer, &owner, isms)?;
 
     // check module type query
-    assert_eq!(ISMType::Routing, ism.get_module_type()?.typ);
+    assert_eq!(IsmType::Routing, ism.get_module_type()?.typ);
 
     // check verify query
     let err_not_found = ContractError::RouteNotFound {};

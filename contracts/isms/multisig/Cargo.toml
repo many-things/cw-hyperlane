@@ -34,7 +34,9 @@ schemars.workspace = true
 
 thiserror.workspace = true
 
+hpl-ownable.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
+ibcx-test-utils.workspace = true
 cw-multi-test.workspace = true

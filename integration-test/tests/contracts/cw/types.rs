@@ -13,22 +13,30 @@ impl FromIterator<(String, u64)> for CodesMap {
 
 #[cw_serde]
 pub struct Codes {
-    pub default_hook: u64,
-    pub domain_routing_hook: u64,
-    pub hub: u64,
-    pub igp_core: u64,
-    pub igp_gas_oracle: u64,
+    pub mailbox: u64,
+    #[serde(rename = "validator_announce")]
+    pub va: u64,
+
+    pub hook_merkle: u64,
+    pub hook_pausable: u64,
+    pub hook_routing: u64,
+    pub hook_routing_custom: u64,
+    pub hook_routing_fallback: u64,
+
+    pub igp: u64,
+    pub igp_oracle: u64,
+
     pub ism_multisig: u64,
     pub ism_routing: u64,
-    pub mailbox: u64,
+
     pub test_mock_hook: u64,
     pub test_mock_ism: u64,
     pub test_mock_msg_receiver: u64,
-    pub multicall: u64,
-    pub token_cw20: u64,
-    pub token_native: u64,
-    #[serde(rename = "validator_announce")]
-    pub va: u64,
+
+    pub warp_cw20: u64,
+    pub warp_native: u64,
+
+    pub cw20_base: u64,
 }
 
 impl TryFrom<CodesMap> for Codes {
@@ -45,9 +53,12 @@ impl TryFrom<CodesMap> for Codes {
 
 #[cw_serde]
 pub struct CoreDeployments {
-    pub hub: String,
-    pub ism: String,
-    pub hook: String,
     pub mailbox: String,
+    pub default_ism: String,
+    pub default_hook: String,
+    pub required_hook: String,
     pub msg_receiver: String,
 }
+
+#[cw_serde]
+pub struct WarpDeployments(pub BTreeMap<String, String>);

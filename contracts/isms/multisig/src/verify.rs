@@ -1,6 +1,6 @@
 use crate::error::ContractError;
 use bech32::ToBase32;
-use cosmwasm_std::Binary;
+use cosmwasm_std::HexBinary;
 use ripemd::{Digest, Ripemd160};
 use sha2::Sha256;
 
@@ -28,7 +28,7 @@ pub fn ripemd160_digest(bz: impl AsRef<[u8]>) -> Result<[u8; 20], ContractError>
         .map_err(|_| ContractError::WrongLength {})
 }
 
-pub fn pub_to_addr(pub_key: Binary, prefix: &str) -> Result<String, ContractError> {
+pub fn pub_to_addr(pub_key: HexBinary, prefix: &str) -> Result<String, ContractError> {
     let sha_hash = sha256_digest(pub_key)?;
     let rip_hash = ripemd160_digest(sha_hash)?;
 

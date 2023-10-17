@@ -1,14 +1,17 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{ensure_eq, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{
+    ensure_eq, to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response,
+};
 use cw2::set_contract_version;
 use hpl_interface::{
     ism::{
-        routing::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, RouteResponse},
-        ISMQueryMsg, ModuleTypeResponse, VerifyResponse,
+        routing::{ExecuteMsg, InstantiateMsg, QueryMsg, RouteResponse, RoutingIsmQueryMsg},
+        IsmQueryMsg, ModuleTypeResponse, VerifyResponse,
     },
-    types::message::Message,
+    types::Message,
 };
+use hpl_ownable::get_owner;
 
 use crate::{error::ContractError, state::MODULES, CONTRACT_NAME, CONTRACT_VERSION};
 
@@ -21,7 +24,9 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    hpl_ownable::OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
+    let owner = deps.api.addr_validate(&msg.owner)?;
+
+    hpl_ownable::initialize(deps.storage, &owner)?;
 
     for ism in msg.isms {
         MODULES.save(
@@ -37,11 +42,6 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -51,11 +51,11 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        Ownership(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
+        Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         Set { ism } => {
             ensure_eq!(
+                get_owner(deps.storage)?,
                 info.sender,
-                hpl_ownable::OWNER.load(deps.storage)?,
                 ContractError::Unauthorized {}
             );
 
@@ -71,35 +71,58 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
-    use QueryMsg::*;
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+    use IsmQueryMsg::*;
 
     match msg {
-        ModuleType {} => Ok(to_binary(&ModuleTypeResponse {
-            typ: hpl_interface::ism::ISMType::Routing,
-        })?),
-        Verify { metadata, message } => {
-            let decoded = Message::from(message.clone());
+        QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
+        QueryMsg::Ism(msg) => match msg {
+            ModuleType {} => Ok(to_binary(&ModuleTypeResponse {
+                typ: hpl_interface::ism::IsmType::Routing,
+            })?),
+            Verify { metadata, message } => {
+                deps.api.debug(&format!(
+                    "ism_routing::verify: metadata: {:?}, message: {:?}",
+                    metadata, message
+                ));
 
-            let ism = MODULES
-                .may_load(deps.storage, decoded.origin_domain)?
-                .ok_or(ContractError::RouteNotFound {})?;
+                let decoded = Message::from(message.clone());
 
-            let verify_resp: VerifyResponse = deps
-                .querier
-                .query_wasm_smart(ism, &ISMQueryMsg::Verify { metadata, message })?;
+                let ism = MODULES
+                    .may_load(deps.storage, decoded.origin_domain)?
+                    .ok_or(ContractError::RouteNotFound {})?;
 
-            Ok(to_binary(&verify_resp)?)
-        }
-        Route { message } => {
-            let decoded = Message::from(message);
+                let verify_resp: VerifyResponse = deps
+                    .querier
+                    .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message }.wrap())?;
 
-            let ism = MODULES
-                .may_load(deps.storage, decoded.origin_domain)?
-                .ok_or(ContractError::RouteNotFound {})?
-                .to_string();
+                Ok(to_binary(&verify_resp)?)
+            }
+            VerifyInfo { message } => {
+                let decoded = Message::from(message.clone());
 
-            Ok(to_binary(&RouteResponse { ism })?)
-        }
+                let ism = MODULES
+                    .may_load(deps.storage, decoded.origin_domain)?
+                    .ok_or(ContractError::RouteNotFound {})?;
+
+                let verify_resp: VerifyResponse = deps
+                    .querier
+                    .query_wasm_smart(ism, &IsmQueryMsg::VerifyInfo { message })?;
+
+                Ok(to_binary(&verify_resp)?)
+            }
+        },
+        QueryMsg::RoutingIsm(msg) => match msg {
+            RoutingIsmQueryMsg::Route { message } => {
+                let decoded = Message::from(message);
+
+                let ism = MODULES
+                    .may_load(deps.storage, decoded.origin_domain)?
+                    .ok_or(ContractError::RouteNotFound {})?
+                    .to_string();
+
+                Ok(to_binary(&RouteResponse { ism })?)
+            }
+        },
     }
 }

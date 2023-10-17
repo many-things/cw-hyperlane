@@ -1,18 +1,19 @@
-use cosmwasm_std::{DepsMut, Event, MessageInfo, Response, StdResult};
+use cosmwasm_std::{ensure_eq, DepsMut, Event, MessageInfo, Response, StdResult};
 use hpl_interface::ism::multisig::ThresholdSet;
+use hpl_ownable::get_owner;
 
-use crate::{
-    event::emit_set_threshold,
-    state::{assert_owned, THRESHOLD},
-    ContractError,
-};
+use crate::{event::emit_set_threshold, state::THRESHOLD, ContractError};
 
 pub fn set_threshold(
     deps: DepsMut,
     info: MessageInfo,
     threshold: ThresholdSet,
 ) -> Result<Response, ContractError> {
-    assert_owned(deps.storage, info.sender)?;
+    ensure_eq!(
+        get_owner(deps.storage)?,
+        info.sender,
+        ContractError::Unauthorized
+    );
     THRESHOLD.save(deps.storage, threshold.domain, &threshold.threshold)?;
 
     Ok(Response::new().add_event(emit_set_threshold(threshold.domain, threshold.threshold)))
@@ -23,7 +24,11 @@ pub fn set_thresholds(
     info: MessageInfo,
     thresholds: Vec<ThresholdSet>,
 ) -> Result<Response, ContractError> {
-    assert_owned(deps.storage, info.sender)?;
+    ensure_eq!(
+        get_owner(deps.storage)?,
+        info.sender,
+        ContractError::Unauthorized
+    );
 
     let events: Vec<Event> = thresholds
         .into_iter()
@@ -43,19 +48,12 @@ mod test {
         Addr, Storage,
     };
 
-    use crate::state::{Config, CONFIG};
-
     use super::*;
     const ADDR1_VAULE: &str = "addr1";
     const ADDR2_VAULE: &str = "addr2";
 
     fn mock_owner(storage: &mut dyn Storage, owner: Addr) {
-        let config = Config {
-            owner,
-            addr_prefix: String::new(),
-        };
-
-        CONFIG.save(storage, &config).unwrap();
+        hpl_ownable::initialize(storage, &owner).unwrap();
     }
 
     #[test]

@@ -5,7 +5,9 @@ use cosmwasm_std::{
     to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response, StdResult,
 };
 use cw2::set_contract_version;
-use hpl_interface::ism::{ISMQueryMsg, ISMType, VerifyInfoResponse, VerifyResponse};
+use hpl_interface::ism::{
+    ExpectedIsmQueryMsg, IsmQueryMsg, IsmType, VerifyInfoResponse, VerifyResponse,
+};
 
 use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 
@@ -48,15 +50,17 @@ pub fn execute(
 
 /// Handling contract query
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: ISMQueryMsg) -> StdResult<QueryResponse> {
-    use ISMQueryMsg::*;
+pub fn query(_deps: Deps, _env: Env, msg: ExpectedIsmQueryMsg) -> StdResult<QueryResponse> {
+    use IsmQueryMsg::*;
 
     match msg {
-        ModuleType {} => Ok(to_binary(&ISMType::Owned)?),
-        Verify { .. } => Ok(to_binary(&VerifyResponse { verified: true })?),
-        VerifyInfo { .. } => Ok(to_binary(&VerifyInfoResponse {
-            threshold: 1u8,
-            validators: vec!["".to_string()],
-        })?),
+        ExpectedIsmQueryMsg::Ism(msg) => match msg {
+            ModuleType {} => Ok(to_binary(&IsmType::Null)?),
+            Verify { .. } => Ok(to_binary(&VerifyResponse { verified: true })?),
+            VerifyInfo { .. } => Ok(to_binary(&VerifyInfoResponse {
+                threshold: 1u8,
+                validators: vec!["".to_string()],
+            })?),
+        },
     }
 }

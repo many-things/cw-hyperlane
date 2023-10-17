@@ -1,25 +1,40 @@
+use std::marker::PhantomData;
+
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
+
+use crate::Order;
 
 #[cw_serde]
-pub struct RouterSet {
+pub struct DomainRouteSet<T> {
     pub domain: u32,
-    pub router: Binary,
+    pub route: Option<T>,
 }
 
 #[cw_serde]
-pub enum RouterMsg {
-    EnrollRemoteRouter { set: RouterSet },
-    EnrollRemoteRouters { set: Vec<RouterSet> },
+pub enum RouterMsg<T> {
+    SetRoute { set: DomainRouteSet<T> },
+    SetRoutes { set: Vec<DomainRouteSet<T>> },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum RouterQuery {
+pub enum RouterQuery<T> {
     #[returns(DomainsResponse)]
     Domains {},
-    #[returns(RouterResponse)]
-    Router { domain: u32 },
+
+    #[returns(RouteResponse<T>)]
+    GetRoute { domain: u32 },
+
+    #[returns(RoutesResponse<T>)]
+    ListRoutes {
+        offset: Option<u32>,
+        limit: Option<u32>,
+        order: Option<Order>,
+    },
+
+    #[serde(skip)]
+    #[returns(cosmwasm_std::Empty)]
+    Placeholder(PhantomData<T>),
 }
 
 #[cw_serde]
@@ -28,6 +43,11 @@ pub struct DomainsResponse {
 }
 
 #[cw_serde]
-pub struct RouterResponse {
-    pub router: Binary,
+pub struct RouteResponse<T> {
+    pub route: DomainRouteSet<T>,
+}
+
+#[cw_serde]
+pub struct RoutesResponse<T> {
+    pub routes: Vec<DomainRouteSet<T>>,
 }

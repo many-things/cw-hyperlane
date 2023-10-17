@@ -1,58 +1,96 @@
-use crate::constant::DEFAULT_GAS_USAGE;
 use crate::error::ContractError;
-use crate::execute::quote_gas_price;
-use crate::state::GAS_ORACLE;
-use cosmwasm_std::{to_binary, Deps, QueryResponse, Uint256};
-use hpl_interface::igp_core::{GetExchangeRateAndGasPriceResponse, QuoteGasPaymentResponse};
-use hpl_interface::igp_gas_oracle;
-use hpl_interface::post_dispatch_hook::PostDispatchQueryMsg;
-use hpl_interface::types::message::Message;
-use hpl_interface::types::metadata::IGPMetadata;
+use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, MAILBOX, TOKEN_EXCHANGE_RATE_SCALE};
+
+use cosmwasm_std::{coin, Addr, Deps, QuerierWrapper, Storage, Uint256};
+use hpl_interface::hook::{MailboxResponse, QuoteDispatchMsg, QuoteDispatchResponse};
+use hpl_interface::igp::core::{BeneficiaryResponse, QuoteGasPaymentResponse};
+use hpl_interface::igp::oracle::{self, GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
+use hpl_interface::types::{IGPMetadata, Message};
+
+pub fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+    let mailbox = MAILBOX.load(deps.storage)?;
+
+    Ok(MailboxResponse {
+        mailbox: mailbox.into(),
+    })
+}
+
+pub fn get_beneficiary(deps: Deps) -> Result<BeneficiaryResponse, ContractError> {
+    let beneficairy = BENEFICIARY.load(deps.storage)?;
+
+    Ok(BeneficiaryResponse {
+        beneficiary: beneficairy.into(),
+    })
+}
+
+pub fn quote_gas_price(
+    storage: &dyn Storage,
+    querier: &QuerierWrapper,
+    dest_domain: u32,
+    gas_amount: Uint256,
+) -> Result<Uint256, ContractError> {
+    let gas_oracle_set = hpl_router::get_route::<Addr>(storage, dest_domain)?;
+    let gas_oracle = gas_oracle_set
+        .route
+        .ok_or(ContractError::GasOracleNotFound(dest_domain))?;
+
+    let gas_price_resp: GetExchangeRateAndGasPriceResponse = querier.query_wasm_smart(
+        gas_oracle,
+        &oracle::QueryMsg::Oracle(IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain }),
+    )?;
+
+    let dest_gas_cost = gas_amount * Uint256::from(gas_price_resp.gas_price);
+    let gas_needed = (dest_gas_cost * Uint256::from(gas_price_resp.exchange_rate))
+        / Uint256::from(TOKEN_EXCHANGE_RATE_SCALE);
+
+    Ok(gas_needed)
+}
 
 pub fn quote_gas_payment(
     deps: Deps,
     dest_domain: u32,
     gas_amount: Uint256,
-) -> Result<QueryResponse, ContractError> {
+) -> Result<QuoteGasPaymentResponse, ContractError> {
     let gas_needed = quote_gas_price(deps.storage, &deps.querier, dest_domain, gas_amount)?;
 
-    Ok(to_binary(&QuoteGasPaymentResponse { gas_needed })?)
+    Ok(QuoteGasPaymentResponse { gas_needed })
+}
+
+pub fn quote_dispatch(
+    deps: Deps,
+    req: QuoteDispatchMsg,
+) -> Result<QuoteDispatchResponse, ContractError> {
+    let gas_limit = match req.metadata.len() < 32 {
+        true => Uint256::from(DEFAULT_GAS_USAGE),
+        false => {
+            let igp_metadata: IGPMetadata = req.metadata.clone().into();
+            igp_metadata.gas_limit
+        }
+    };
+
+    let igp_message: Message = req.message.into();
+
+    let quote_res = quote_gas_payment(deps, igp_message.dest_domain, gas_limit);
+
+    Ok(QuoteDispatchResponse {
+        gas_amount: Some(coin(
+            quote_res?.gas_needed.to_string().parse::<u128>()?,
+            GAS_TOKEN.load(deps.storage)?,
+        )),
+    })
 }
 
 pub fn get_exchange_rate_and_gas_price(
     deps: Deps,
     dest_domain: u32,
-) -> Result<QueryResponse, ContractError> {
-    let gas_oracle = GAS_ORACLE
-        .may_load(deps.storage, dest_domain)?
-        .ok_or(ContractError::GasOracleNotFound {})?;
+) -> Result<GetExchangeRateAndGasPriceResponse, ContractError> {
+    let gas_oracle_set = hpl_router::get_route::<Addr>(deps.storage, dest_domain)?;
+    let gas_oracle = gas_oracle_set
+        .route
+        .ok_or(ContractError::GasOracleNotFound(dest_domain))?;
 
-    let gas_price_resp: igp_gas_oracle::GetExchangeRateAndGasPriceResponse =
-        deps.querier.query_wasm_smart(
-            gas_oracle,
-            &igp_gas_oracle::QueryMsg::GetExchangeRateAndGasPrice { dest_domain },
-        )?;
-
-    Ok(to_binary(&GetExchangeRateAndGasPriceResponse {
-        gas_price: gas_price_resp.gas_price,
-        exchange_rate: gas_price_resp.exchange_rate,
-    })?)
-}
-
-pub fn quote_dispatch(
-    deps: Deps,
-    msg: PostDispatchQueryMsg,
-) -> Result<QueryResponse, ContractError> {
-    match msg {
-        PostDispatchQueryMsg::QuoteDispatch { metadata, message } => {
-            let igp_metadata: IGPMetadata = metadata.clone().into();
-            let gas_limit = match metadata.len() < 32 {
-                true => Uint256::from(DEFAULT_GAS_USAGE),
-                false => igp_metadata.gas_limit,
-            };
-            let igp_message: Message = message.into();
-
-            quote_gas_payment(deps, igp_message.dest_domain, gas_limit)
-        }
-    }
+    Ok(deps.querier.query_wasm_smart(
+        gas_oracle,
+        &IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain }.wrap(),
+    )?)
 }

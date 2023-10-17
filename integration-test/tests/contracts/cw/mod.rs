@@ -1,5 +1,6 @@
 mod deploy;
 mod hook;
+mod igp;
 mod ism;
 mod setup;
 mod store;

@@ -27,7 +27,7 @@ panic = "abort"
 rpath = false
 
 [workspace.package]
-version = "0.0.1"
+version = "0.0.6-rc1"
 authors = [
     "byeongsu-hong <hong@byeongsu.dev>",
     "Eric <hashableric@gmail.com>",
@@ -84,27 +84,32 @@ cw-multi-test = "0.17.0"
 rstest = "0.18.2"
 test-tube = { version = "0.1.7" }
 osmosis-test-tube = { version = "19.2.0" }
+ibcx-test-utils = { version = "0.1.2" }
 
 tokio = { version = "1", features = ["full"] }
 ethers = "2.0.7"
 
 # workspace aliases (./contracts)
-hpl-hub = { path = "./contracts/core/hub" }
 hpl-mailbox = { path = "./contracts/core/mailbox" }
+hpl-validator-announce = { path = "./contracts/core/va" }
 
-hpl-default-hook = { path = './contracts/hooks/default-hook' }
-hpl-domain-routing-hook = { path = "./contracts/hooks/domain-routing-hook" }
+hpl-hook-merkle = { path = "./contracts/hooks/merkle" }
+hpl-hook-pausable = { path = "./contracts/hooks/pausable" }
+hpl-hook-routing = { path = "./contracts/hooks/routing" }
+hpl-hook-routing-custom = { path = "./contracts/hooks/routing-custom" }
+hpl-hook-routing-fallback = { path = "./contracts/hooks/routing-fallback" }
 
-hpl-igp-core = { path = "./contracts/igps/core" }
-hpl-igp-gas-oracle = { path = "./contracts/igps/gas-oracle" }
+hpl-igp = { path = "./contracts/igps/core" }
+hpl-igp-oracle = { path = "./contracts/igps/oracle" }
 
 hpl-ism-multisig = { path = "./contracts/isms/multisig" }
 hpl-ism-routing = { path = "./contracts/isms/routing" }
 
-hpl-token-cw20 = { path = "./contracts/warp/cw20" }
-hpl-token-native = { path = "./contracts/warp/native" }
+hpl-warp-cw20 = { path = "./contracts/warp/cw20" }
+hpl-warp-native = { path = "./contracts/warp/native" }
 
 # workspace aliases (./packages)
-hpl-router = { path = "./packages/router" }
 hpl-ownable = { path = "./packages/ownable" }
+hpl-pausable = { path = "./packages/pausable" }
+hpl-router = { path = "./packages/router" }
 hpl-interface = { path = "./packages/interface" }

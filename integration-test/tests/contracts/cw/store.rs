@@ -7,22 +7,23 @@ use super::types::{Codes, CodesMap};
 
 const DEFAULT_ARTIFACTS_PATH: &str = "../target/wasm32-unknown-unknown/release/";
 
-const CONTRACTS: [&str; 15] = [
-    "default_hook",
-    "domain_routing_hook",
-    "hub",
-    "igp_core",
-    "igp_gas_oracle",
+const CONTRACTS: [&str; 16] = [
+    "mailbox",
+    "validator_announce",
+    "hook_merkle",
+    "hook_pausable",
+    "hook_routing",
+    "hook_routing_custom",
+    "hook_routing_fallback",
+    "igp",
+    "igp_oracle",
     "ism_multisig",
     "ism_routing",
-    "mailbox",
     "test_mock_hook",
     "test_mock_ism",
     "test_mock_msg_receiver",
-    "multicall",
-    "token_cw20",
-    "token_native",
-    "validator_announce",
+    "warp_cw20",
+    "warp_native",
 ];
 
 pub fn store_code<'a, R: Runner<'a>>(
@@ -34,7 +35,7 @@ pub fn store_code<'a, R: Runner<'a>>(
         .map(|v| v.into())
         .unwrap_or(DEFAULT_ARTIFACTS_PATH.into());
 
-    let artifacts = CONTRACTS
+    let mut artifacts = CONTRACTS
         .into_iter()
         .map(|name| {
             let filename = format!("hpl_{name}.wasm");
@@ -46,6 +47,17 @@ pub fn store_code<'a, R: Runner<'a>>(
             Ok((name.to_string(), code_id))
         })
         .collect::<eyre::Result<CodesMap>>()?;
+
+    // precompiles
+    {
+        let name = "cw20_base";
+        let code = std::fs::read(format!("./cw/{name}.wasm"))?;
+        let store_resp = wasm.store_code(&code, None, deployer)?;
+
+        artifacts
+            .0
+            .insert(name.to_string(), store_resp.data.code_id);
+    }
 
     artifacts.try_into()
 }

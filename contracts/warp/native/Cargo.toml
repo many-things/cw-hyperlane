@@ -1,5 +1,5 @@
 [package]
-name = "hpl-token-native"
+name = "hpl-warp-native"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -39,6 +39,7 @@ serde-json-wasm.workspace = true
 
 thiserror.workspace = true
 
+hpl-ownable.workspace = true
 hpl-router.workspace = true
 hpl-interface.workspace = true
 

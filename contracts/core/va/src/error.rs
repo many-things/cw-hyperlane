@@ -9,15 +9,9 @@ pub enum ContractError {
     #[error("{0}")]
     RecoverPubkeyError(#[from] RecoverPubkeyError),
 
-    #[error("Unauthorized")]
+    #[error("unauthorized")]
     Unauthorized {},
 
-    #[error("WrongLength")]
-    WrongLength {},
-
-    #[error("InvalidPubKey")]
-    InvalidPubKey {},
-
-    #[error("VerifyFailed")]
+    #[error("verify failed")]
     VerifyFailed {},
 }

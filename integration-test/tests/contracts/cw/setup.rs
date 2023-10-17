@@ -1,12 +1,14 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
 use cosmwasm_std::{coin, Coin};
+use hpl_interface::igp::oracle::RemoteGasDataConfig;
 use test_tube::{Account, Module, Runner, SigningAccount, Wasm};
 
 use crate::validator::TestValidators;
 
 use super::{
-    deploy_core, prepare_routing_hook, prepare_routing_ism, store_code, types::CoreDeployments,
+    deploy_core, igp::Igp, prepare_routing_hook, prepare_routing_ism, store_code,
+    types::CoreDeployments, Hook,
 };
 
 const DEFAULT_GAS: u128 = 300_000;
@@ -44,25 +46,40 @@ pub fn setup_env<'a, R: Runner<'a>>(
     hrp: &str,
     domain: u32,
     validators: &[TestValidators],
+    oracle_config: &[RemoteGasDataConfig],
 ) -> eyre::Result<Env<'a, R>> {
     let owner = acc_gen(app, &[coin(1_000_000u128.pow(3), "uosmo")]);
     let deployer = acc_gen(app, &[coin(1_000_000u128.pow(3), "uosmo")]);
     let tester = acc_gen(app, &[coin(1_000_000u128.pow(3), "uosmo")]);
 
-    let ism = prepare_routing_ism(
+    let default_ism = prepare_routing_ism(
         validators
             .iter()
             .map(|v| (v.domain, hrp, v.clone()))
             .collect(),
     );
-    let hook = prepare_routing_hook(
-        deployer.address(),
-        validators.iter().map(|v| (v.domain, DEFAULT_GAS)).collect(),
-    );
+    let default_hook =
+        prepare_routing_hook(validators.iter().map(|v| (v.domain, DEFAULT_GAS)).collect());
+    let required_hook = Hook::Igp(Igp {
+        hrp: hrp.to_string(),
+        gas_token: "uosmo".to_string(),
+        beneficiary: deployer.address(),
+        oracle_configs: oracle_config.to_vec(),
+    });
 
     let wasm = Wasm::new(app);
     let codes = store_code(&wasm, &deployer, artifacts)?;
-    let core = deploy_core(&wasm, &deployer, &codes, domain, hrp, ism, hook)?;
+    let core = deploy_core(
+        &wasm,
+        &owner,
+        &deployer,
+        &codes,
+        domain,
+        hrp,
+        default_ism,
+        default_hook,
+        required_hook,
+    )?;
 
     Ok(Env {
         validators: validators.iter().map(|v| (v.domain, v.clone())).collect(),

@@ -1,4 +1,12 @@
-use cosmwasm_schema::cw_serde;
+use std::collections::BTreeMap;
+
+use cosmwasm_schema::{cw_serde, serde::Serialize};
+use cosmwasm_std::HexBinary;
+use hpl_interface::{
+    core::mailbox,
+    router::{DomainRouteSet, RouterMsg},
+    warp::{self, cw20::Cw20ModeBridged},
+};
 use test_tube::{Account, Runner, SigningAccount, Wasm};
 
 use super::{
@@ -6,65 +14,79 @@ use super::{
     Hook, Ism,
 };
 
-pub fn deploy_core<'a, R: Runner<'a>>(
+fn instantiate<'a, M: Serialize, R: Runner<'a>>(
     wasm: &Wasm<'a, R>,
+    code: u64,
     deployer: &SigningAccount,
-    codes: &Codes,
-    origin_domain: u32,
-    hrp: &str,
-    test_ism: Ism,
-    test_hook: Hook,
-) -> eyre::Result<CoreDeployments> {
-    // deploy hub
-    let hub = wasm
+    name: &str,
+    msg: &M,
+) -> eyre::Result<String> {
+    Ok(wasm
         .instantiate(
-            codes.hub,
-            &hpl_interface::hub::InstantiateMsg {
-                origin_domain,
-                mailbox_code: codes.mailbox,
-            },
-            Some(deployer.address().as_str()),
-            Some("cw-hpl-hub"),
+            code,
+            msg,
+            Some(&deployer.address()),
+            Some(name),
             &[],
             deployer,
         )?
         .data
-        .address;
+        .address)
+}
 
-    // deploy mailbox through hub
-    let mailbox_deploy_res = wasm.execute(
-        &hub,
-        &hpl_interface::hub::ExecuteMsg::Instantiate {
+pub fn deploy_core<'a, R: Runner<'a>>(
+    wasm: &Wasm<'a, R>,
+    owner: &SigningAccount,
+    deployer: &SigningAccount,
+    codes: &Codes,
+    origin_domain: u32,
+    hrp: &str,
+    default_ism: Ism,
+    default_hook: Hook,
+    required_hook: Hook,
+) -> eyre::Result<CoreDeployments> {
+    // Deploy mailbox
+    let mailbox = instantiate(
+        wasm,
+        codes.mailbox,
+        deployer,
+        "mailbox",
+        &mailbox::InstantiateMsg {
+            hrp: hrp.to_string(),
             owner: deployer.address(),
-            default_ism: deployer.address(),  // temporary
-            default_hook: deployer.address(), // temporary
+            domain: origin_domain,
+        },
+    )?;
+
+    // set default ism, hook, igp
+
+    let default_ism = default_ism.deploy(wasm, codes, deployer)?;
+    let default_hook = default_hook.deploy(wasm, codes, mailbox.clone(), owner, deployer)?;
+    let required_hook = required_hook.deploy(wasm, codes, mailbox.clone(), owner, deployer)?;
+
+    wasm.execute(
+        &mailbox,
+        &mailbox::ExecuteMsg::SetDefaultIsm {
+            ism: default_ism.clone(),
         },
         &[],
         deployer,
     )?;
 
-    let mailbox_deploy_evt = mailbox_deploy_res
-        .events
-        .into_iter()
-        .find(|v| v.ty == "wasm-mailbox_instantiated")
-        .unwrap();
-
-    let mailbox = mailbox_deploy_evt.attributes.get(0).unwrap().value.clone();
-
-    // set default ism, hook
-    let ism = test_ism.deploy(wasm, codes, deployer)?;
-    let hook = test_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
-
     wasm.execute(
         &mailbox,
-        &hpl_interface::mailbox::ExecuteMsg::SetDefaultISM { ism: ism.clone() },
+        &mailbox::ExecuteMsg::SetDefaultHook {
+            hook: default_hook.clone(),
+        },
         &[],
         deployer,
     )?;
 
     wasm.execute(
         &mailbox,
-        &hpl_interface::mailbox::ExecuteMsg::SetDefaultHook { hook: hook.clone() },
+        &mailbox::ExecuteMsg::SetRequiredHook {
+            hook: required_hook.clone(),
+        },
         &[],
         deployer,
     )?;
@@ -75,26 +97,132 @@ pub fn deploy_core<'a, R: Runner<'a>>(
         pub hrp: String,
     }
 
-    let msg_receiver = wasm
-        .instantiate(
-            codes.test_mock_msg_receiver,
-            &ReceiverInitMsg {
-                hrp: hrp.to_string(),
-            },
-            None,
-            None,
-            &[],
-            deployer,
-        )
-        .unwrap()
-        .data
-        .address;
+    let msg_receiver = instantiate(
+        wasm,
+        codes.test_mock_msg_receiver,
+        deployer,
+        "test_mock_msg_receiver",
+        &ReceiverInitMsg {
+            hrp: hrp.to_string(),
+        },
+    )?;
 
     Ok(CoreDeployments {
-        hub,
-        ism,
-        hook,
         mailbox,
+        default_ism,
+        default_hook,
+        required_hook,
         msg_receiver,
     })
+}
+
+#[allow(dead_code)]
+pub fn deploy_warp_route_bridged<'a, R: Runner<'a>>(
+    wasm: &Wasm<'a, R>,
+    owner: &SigningAccount,
+    deployer: &SigningAccount,
+    mailbox: &str,
+    hrp: &str,
+    codes: &Codes,
+    denom: String,
+) -> eyre::Result<String> {
+    instantiate(
+        wasm,
+        codes.warp_cw20,
+        deployer,
+        "warp-cw20",
+        &warp::cw20::InstantiateMsg {
+            token: warp::TokenModeMsg::Bridged(Cw20ModeBridged {
+                code_id: codes.cw20_base,
+                init_msg: Box::new(warp::cw20::Cw20InitMsg {
+                    name: denom.clone(),
+                    symbol: denom,
+                    decimals: 6,
+                    initial_balances: vec![],
+                    mint: None,
+                    marketing: None,
+                }),
+            }),
+            hrp: hrp.to_string(),
+            owner: owner.address(),
+            mailbox: mailbox.to_string(),
+        },
+    )
+}
+
+#[allow(dead_code)]
+pub fn deploy_warp_route_collateral<'a, R: Runner<'a>>(
+    wasm: &Wasm<'a, R>,
+    owner: &SigningAccount,
+    deployer: &SigningAccount,
+    mailbox: &str,
+    hrp: &str,
+    codes: &Codes,
+    denom: String,
+) -> eyre::Result<String> {
+    if denom.starts_with(format!("{hrp}1").as_str()) {
+        // cw20
+        let route = instantiate(
+            wasm,
+            codes.warp_cw20,
+            deployer,
+            &format!("warp-cw20-{denom}"),
+            &warp::cw20::InstantiateMsg {
+                token: warp::TokenModeMsg::Collateral(warp::cw20::Cw20ModeCollateral {
+                    address: denom,
+                }),
+                hrp: hrp.to_string(),
+                owner: owner.address(),
+                mailbox: mailbox.to_string(),
+            },
+        )?;
+
+        Ok(route)
+    } else {
+        // native
+        let route = instantiate(
+            wasm,
+            codes.warp_native,
+            deployer,
+            &format!("warp-native-{denom}"),
+            &warp::native::InstantiateMsg {
+                token: warp::TokenModeMsg::Collateral(warp::native::NativeModeCollateral { denom }),
+                hrp: hrp.to_string(),
+                owner: owner.address(),
+                mailbox: mailbox.to_string(),
+            },
+        )?;
+
+        Ok(route)
+    }
+}
+
+#[allow(dead_code)]
+pub fn link_warp_route<'a, R: Runner<'a>>(
+    wasm: &Wasm<'a, R>,
+    owner: &SigningAccount,
+    origin: String,
+    remotes: BTreeMap<u32, HexBinary>,
+) -> eyre::Result<()> {
+    #[cw_serde]
+    pub enum ExpectedExecuteMsg {
+        Router(RouterMsg<HexBinary>),
+    }
+
+    wasm.execute(
+        &origin,
+        &ExpectedExecuteMsg::Router(RouterMsg::SetRoutes {
+            set: remotes
+                .into_iter()
+                .map(|(domain, route)| DomainRouteSet {
+                    domain,
+                    route: Some(route),
+                })
+                .collect(),
+        }),
+        &[],
+        owner,
+    )?;
+
+    Ok(())
 }

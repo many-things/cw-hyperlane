@@ -1,17 +1,24 @@
 use cosmwasm_std::{
     from_binary,
     testing::{mock_info, MockApi, MockQuerier, MockStorage},
-    Addr, Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, OwnedDeps, Response,
+    Addr, Coin, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
-use hpl_interface::igp_core::{
-    ExecuteMsg, GasOracleConfig, GetExchangeRateAndGasPriceResponse, InstantiateMsg, QueryMsg,
-    QuoteGasPaymentResponse,
+use hpl_interface::{
+    hook::PostDispatchMsg,
+    igp::{
+        core::{
+            ExecuteMsg, GasOracleConfig, IgpQueryMsg, InstantiateMsg, QueryMsg,
+            QuoteGasPaymentResponse,
+        },
+        oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg},
+    },
+    router::{DomainRouteSet, RouterMsg},
 };
 use serde::de::DeserializeOwned;
 
 use crate::{
     contract::{execute, instantiate, query},
-    error::ContractError,
+    ContractError,
 };
 
 mod contract;
@@ -33,7 +40,9 @@ impl IGP {
     pub fn init(
         &mut self,
         sender: &Addr,
+        hrp: &str,
         owner: &Addr,
+        mailbox: &Addr,
         gas_token: &str,
         beneficiary: &Addr,
     ) -> Result<Response, ContractError> {
@@ -42,10 +51,11 @@ impl IGP {
             self.env.clone(),
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
+                hrp: hrp.to_string(),
                 owner: owner.to_string(),
+                mailbox: mailbox.to_string(),
                 gas_token: gas_token.to_string(),
                 beneficiary: beneficiary.to_string(),
-                prefix: "osmo".to_string(),
             },
         )
     }
@@ -75,7 +85,15 @@ impl IGP {
     ) -> Result<Response, ContractError> {
         self.execute(
             mock_info(sender.as_str(), &[]),
-            ExecuteMsg::SetGasOracles { configs },
+            ExecuteMsg::Router(RouterMsg::<Addr>::SetRoutes {
+                set: configs
+                    .into_iter()
+                    .map(|v| DomainRouteSet {
+                        domain: v.remote_domain,
+                        route: Some(Addr::unchecked(v.gas_oracle)),
+                    })
+                    .collect(),
+            }),
         )
     }
 
@@ -100,7 +118,7 @@ impl IGP {
         &mut self,
         sender: &Addr,
         funds: &[Coin],
-        message_id: &Binary,
+        message_id: &HexBinary,
         dest_domain: u32,
         gas_amount: u128,
         refund_address: &Addr,
@@ -116,21 +134,39 @@ impl IGP {
         )
     }
 
+    pub fn post_dispatch(
+        &mut self,
+        sender: &Addr,
+        metadata: HexBinary,
+        message: HexBinary,
+        funds: Vec<Coin>,
+    ) -> Result<Response, ContractError> {
+        self.execute(
+            mock_info(sender.as_str(), &funds),
+            ExecuteMsg::PostDispatch(PostDispatchMsg { metadata, message }),
+        )
+    }
+
     pub fn get_quote_gas_payment(
         &self,
         dest_domain: u32,
         gas_amount: u128,
     ) -> Result<QuoteGasPaymentResponse, ContractError> {
-        self.query(QueryMsg::QuoteGasPayment {
-            dest_domain,
-            gas_amount: gas_amount.into(),
-        })
+        self.query(
+            IgpQueryMsg::QuoteGasPayment {
+                dest_domain,
+                gas_amount: gas_amount.into(),
+            }
+            .wrap(),
+        )
     }
 
     pub fn get_exchange_rate_and_gas_price(
         &self,
         dest_domain: u32,
     ) -> Result<GetExchangeRateAndGasPriceResponse, ContractError> {
-        self.query(QueryMsg::GetExchangeRateAndGasPrice { dest_domain })
+        self.query(QueryMsg::Oracle(
+            IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain },
+        ))
     }
 }

@@ -1,13 +1,14 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
 
-use crate::ownable::OwnableMsg;
+use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
+use super::IsmQueryMsg;
 #[allow(unused_imports)]
 use super::{ModuleTypeResponse, VerifyResponse};
 
 #[cw_serde]
-pub struct ISMSet {
+pub struct IsmSet {
     pub domain: u32,
     pub address: String,
 }
@@ -15,28 +16,28 @@ pub struct ISMSet {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub isms: Vec<ISMSet>,
+    pub isms: Vec<IsmSet>,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Ownership(OwnableMsg),
+    Ownable(OwnableMsg),
 
-    Set { ism: ISMSet },
+    Set { ism: IsmSet },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
+#[query_responses(nested)]
 pub enum QueryMsg {
-    #[returns(ModuleTypeResponse)]
-    ModuleType {},
+    Ownable(OwnableQueryMsg),
+    Ism(IsmQueryMsg),
+    RoutingIsm(RoutingIsmQueryMsg),
+}
 
-    #[returns(VerifyResponse)]
-    Verify {
-        metadata: HexBinary,
-        message: HexBinary,
-    },
-
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum RoutingIsmQueryMsg {
     #[returns(RouteResponse)]
     Route { message: HexBinary },
 }
@@ -46,5 +47,28 @@ pub struct RouteResponse {
     pub ism: String,
 }
 
-#[cw_serde]
-pub struct MigrateMsg {}
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::HexBinary;
+
+    use super::*;
+    use crate::{ism::IsmQueryMsg, msg_checker};
+
+    #[test]
+    fn test_ism_interface() {
+        let _checked: QueryMsg = msg_checker(IsmQueryMsg::ModuleType {}.wrap());
+        let _checked: QueryMsg = msg_checker(
+            IsmQueryMsg::Verify {
+                metadata: HexBinary::default(),
+                message: HexBinary::default(),
+            }
+            .wrap(),
+        );
+        let _checked: QueryMsg = msg_checker(
+            IsmQueryMsg::VerifyInfo {
+                message: HexBinary::default(),
+            }
+            .wrap(),
+        );
+    }
+}

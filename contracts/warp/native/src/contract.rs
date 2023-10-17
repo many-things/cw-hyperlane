@@ -1,24 +1,27 @@
-use std::str::FromStr;
-
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, ensure_ne, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
-    MessageInfo, QueryResponse, Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
+    ensure_eq, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo, QueryResponse, Reply,
+    Response, SubMsg, Uint256,
 };
 use hpl_interface::{
-    router::{DomainsResponse, RouterResponse},
-    token::{self, TokenMode, TokenType, TokenTypeNative},
-    token_native::{ExecuteMsg, QueryMsg, TokenModeResponse, TokenTypeResponse},
+    core::mailbox,
+    to_binary,
     types::bech32_encode,
+    warp::{
+        self,
+        native::{ExecuteMsg, InstantiateMsg, QueryMsg},
+    },
+    warp::{TokenMode, TokenModeMsg, TokenModeResponse, TokenTypeResponse},
 };
+use hpl_router::get_route;
 
 use crate::{
+    conv,
     error::ContractError,
-    msg::{InstantiateMsg, MigrateMsg},
-    proto::{self, MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint, MsgSetDenomMetadata},
-    state::{HRP, MAILBOX, MODE, OWNER, TOKEN},
-    CONTRACT_NAME, CONTRACT_VERSION, REPLY_ID_CREATE_DENOM,
+    new_event,
+    proto::{MsgCreateDenom, MsgCreateDenomResponse},
+    CONTRACT_NAME, CONTRACT_VERSION, HRP, MAILBOX, MODE, REPLY_ID_CREATE_DENOM, TOKEN,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -30,61 +33,53 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    let mode: TokenMode = msg.token.clone().into();
+    let owner = deps.api.addr_validate(&msg.owner)?;
+
     HRP.save(deps.storage, &msg.hrp)?;
-    MODE.save(deps.storage, &msg.mode)?;
-    OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
+    MODE.save(deps.storage, &mode)?;
     MAILBOX.save(deps.storage, &deps.api.addr_validate(&msg.mailbox)?)?;
 
-    let mut resp = Response::new();
+    hpl_ownable::initialize(deps.storage, &owner)?;
 
-    // create native denom if token is bridged
-    if msg.mode == TokenMode::Bridged {
-        resp = resp.add_submessage(SubMsg::reply_on_success(
-            MsgCreateDenom {
-                sender: env.contract.address.to_string(),
-                subdenom: msg.denom.clone(),
-            },
-            REPLY_ID_CREATE_DENOM,
-        ));
+    let mut denom = "".into();
 
-        if let Some(metadata) = msg.metadata {
-            resp = resp.add_message(MsgSetDenomMetadata {
-                sender: env.contract.address.to_string(),
-                metadata: Some(proto::Metadata {
-                    description: metadata.description,
-                    denom_units: metadata
-                        .denom_units
-                        .into_iter()
-                        .map(|v| proto::DenomUnit {
-                            denom: v.denom,
-                            exponent: v.exponent,
-                            aliases: v.aliases,
-                        })
-                        .collect(),
-                    base: metadata.base,
-                    display: metadata.display,
-                    name: metadata.name,
-                    symbol: metadata.symbol,
-                }),
-            });
-        }
-    } else {
-        // use denom directly if token is native
-        TOKEN.save(deps.storage, &msg.denom)?;
-    }
+    let msgs = match msg.token {
+        // create native denom if token is bridged
+        TokenModeMsg::Bridged(token) => {
+            let mut msgs = vec![];
 
-    Ok(resp.add_event(
-        Event::new("hpl::token-native::init")
-            .add_attribute("creator", info.sender)
-            .add_attribute("mode", format!("{}", msg.mode))
-            .add_attribute(
-                "denom",
-                if msg.mode == TokenMode::Bridged {
-                    ""
-                } else {
-                    &msg.denom
+            msgs.push(SubMsg::reply_on_success(
+                MsgCreateDenom {
+                    sender: env.contract.address.to_string(),
+                    subdenom: token.denom.clone(),
                 },
-            ),
+                REPLY_ID_CREATE_DENOM,
+            ));
+
+            if let Some(metadata) = token.metadata {
+                msgs.push(SubMsg::new(conv::to_set_metadata_msg(
+                    &env.contract.address,
+                    metadata,
+                )));
+            }
+
+            msgs
+        }
+        // use denom directly if token is native
+        TokenModeMsg::Collateral(token) => {
+            TOKEN.save(deps.storage, &token.denom)?;
+            denom = token.denom;
+            vec![]
+        }
+    };
+
+    Ok(Response::new().add_submessages(msgs).add_event(
+        new_event("instantiate")
+            .add_attribute("sender", info.sender)
+            .add_attribute("owner", owner)
+            .add_attribute("mode", format!("{}", mode))
+            .add_attribute("denom", denom),
     ))
 }
 
@@ -96,145 +91,27 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Router(msg) => {
-            ensure_eq!(
-                info.sender,
-                OWNER.load(deps.storage)?,
-                ContractError::Unauthorized {}
-            );
-            Ok(hpl_router::handle(deps, env, info, msg)?)
-        }
-        ExecuteMsg::Handle(msg) => {
-            ensure_eq!(
-                info.sender,
-                MAILBOX.load(deps.storage)?,
-                ContractError::Unauthorized
-            );
-            ensure_eq!(
-                Binary::from(msg.sender),
-                hpl_router::get_router(deps.storage, msg.origin)?,
-                ContractError::Unauthorized
-            );
-
-            let token_msg: token::Message = msg.body.into();
-            let recipient = bech32_encode(&HRP.load(deps.storage)?, &token_msg.recipient)?;
-
-            let token = TOKEN.load(deps.storage)?;
-            let mode = MODE.load(deps.storage)?;
-
-            let mut msgs: Vec<CosmosMsg> = vec![];
-
-            if mode == TokenMode::Bridged {
-                // push token mint msg if token is bridged
-                msgs.push(
-                    MsgMint {
-                        sender: env.contract.address.to_string(),
-                        amount: Some(proto::Coin {
-                            denom: token.clone(),
-                            amount: token_msg.amount.to_string(),
-                        }),
-                    }
-                    .into(),
-                );
-            }
-
-            // push token send msg
-            msgs.push(
-                BankMsg::Send {
-                    to_address: recipient.to_string(),
-                    amount: vec![Coin {
-                        denom: token.clone(),
-                        amount: Uint128::from_str(&token_msg.amount.to_string())?,
-                    }],
-                }
-                .into(),
-            );
-
-            Ok(Response::new().add_messages(msgs).add_event(
-                Event::new("hpl::token-native::handle")
-                    .add_attribute("recipient", recipient)
-                    .add_attribute("token", token)
-                    .add_attribute("amount", token_msg.amount),
-            ))
-        }
+        ExecuteMsg::Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
+        ExecuteMsg::Handle(msg) => mailbox_handle(deps, env, info, msg),
         ExecuteMsg::TransferRemote {
             dest_domain,
             recipient,
-        } => {
-            let token = TOKEN.load(deps.storage)?;
-            let mode = MODE.load(deps.storage)?;
-            let mailbox = MAILBOX.load(deps.storage)?;
-            let paid = cw_utils::must_pay(&info, &token)?;
-
-            let dest_router = hpl_router::get_router(deps.storage, dest_domain)?;
-            ensure_ne!(
-                dest_router,
-                Binary::default(),
-                ContractError::NoRouter {
-                    domain: dest_domain
-                }
-            );
-
-            let mut msgs: Vec<CosmosMsg> = vec![];
-
-            if mode == TokenMode::Bridged {
-                // push token burn msg if token is bridged
-                msgs.push(
-                    MsgBurn {
-                        sender: env.contract.address.to_string(),
-                        amount: Some(proto::Coin {
-                            denom: token.clone(),
-                            amount: paid.to_string(),
-                        }),
-                    }
-                    .into(),
-                );
-            }
-
-            let dispatch_payload = token::Message {
-                recipient: recipient.clone(),
-                amount: Uint256::from_str(&paid.to_string())?,
-                metadata: Binary::default(),
-            };
-
-            // push mailbox dispatch msg
-            msgs.push(
-                WasmMsg::Execute {
-                    contract_addr: mailbox.to_string(),
-                    msg: to_binary(&hpl_interface::mailbox::ExecuteMsg::Dispatch {
-                        dest_domain,
-                        recipient_addr: dest_router.into(),
-                        msg_body: dispatch_payload.into(),
-                    })?,
-                    funds: vec![],
-                }
-                .into(),
-            );
-
-            Ok(Response::new().add_messages(msgs).add_event(
-                Event::new("hpl::token-native::transfer-remote")
-                    .add_attribute("sender", info.sender)
-                    .add_attribute("recipient", recipient.to_base64())
-                    .add_attribute("token", token)
-                    .add_attribute("amount", paid.to_string()),
-            ))
-        }
+        } => transfer_remote(deps, env, info, dest_domain, recipient),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    let reply_data = msg.result.unwrap().data.unwrap();
+
     match msg.id {
         REPLY_ID_CREATE_DENOM => {
-            let reply_data = msg.result.unwrap().data.unwrap();
             let reply: MsgCreateDenomResponse = reply_data.try_into()?;
 
             TOKEN.save(deps.storage, &reply.new_token_denom)?;
 
             let resp = Response::new().add_event(
-                Event::new("hpl::token-native::reply-init")
-                    .add_attribute("method", "reply_instantiate")
-                    .add_attribute("new_denom", reply.new_token_denom),
+                new_event("reply-instantiate").add_attribute("denom", reply.new_token_denom),
             );
 
             Ok(resp)
@@ -244,28 +121,129 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
     }
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
-    match msg {
-        QueryMsg::Domains {} => Ok(to_binary(&DomainsResponse {
-            domains: hpl_router::get_domains(deps.storage)?,
-        })?),
-        QueryMsg::Router { domain } => Ok(to_binary(&RouterResponse {
-            router: hpl_router::get_router(deps.storage, domain)?,
-        })?),
+fn mailbox_handle(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: hpl_interface::core::HandleMsg,
+) -> Result<Response, ContractError> {
+    // validate mailbox
+    ensure_eq!(
+        info.sender,
+        MAILBOX.load(deps.storage)?,
+        ContractError::Unauthorized
+    );
+    // validate message origin - this should be registered route
+    ensure_eq!(
+        msg.sender,
+        get_route::<HexBinary>(deps.storage, msg.origin)?
+            .route
+            .expect("route not found"),
+        ContractError::Unauthorized
+    );
 
-        QueryMsg::TokenType {} => Ok(to_binary(&TokenTypeResponse {
-            typ: TokenType::Native(TokenTypeNative::Fungible {
-                denom: TOKEN.load(deps.storage)?,
-            }),
-        })?),
-        QueryMsg::TokenMode {} => Ok(to_binary(&TokenModeResponse {
-            mode: MODE.load(deps.storage)?,
-        })?),
+    let token_msg: warp::Message = msg.body.into();
+    let recipient = bech32_encode(&HRP.load(deps.storage)?, &token_msg.recipient)?;
+
+    let token = TOKEN.load(deps.storage)?;
+    let mode = MODE.load(deps.storage)?;
+
+    let mut msgs: Vec<CosmosMsg> = vec![];
+
+    if mode == TokenMode::Bridged {
+        // push token mint msg if token is bridged
+        msgs.push(conv::to_mint_msg(&env.contract.address, &token, token_msg.amount).into());
     }
+
+    // push token send msg
+    msgs.push(
+        conv::to_send_msg(
+            &recipient,
+            vec![conv::to_coin_u256(token_msg.amount, &token)?],
+        )
+        .into(),
+    );
+
+    Ok(Response::new().add_messages(msgs).add_event(
+        new_event("handle")
+            .add_attribute("recipient", recipient)
+            .add_attribute("token", token)
+            .add_attribute("amount", token_msg.amount),
+    ))
+}
+
+fn transfer_remote(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    dest_domain: u32,
+    recipient: HexBinary,
+) -> Result<Response, ContractError> {
+    let token = TOKEN.load(deps.storage)?;
+    let mode = MODE.load(deps.storage)?;
+    let mailbox = MAILBOX.load(deps.storage)?;
+    let transfer_amount = cw_utils::must_pay(&info, &token)?;
+
+    let dest_router = get_route::<HexBinary>(deps.storage, dest_domain)?
+        .route
+        .expect("route not found");
+
+    let mut msgs: Vec<CosmosMsg> = vec![];
+
+    if mode == TokenMode::Bridged {
+        // push token burn msg if token is bridged
+        msgs.push(conv::to_burn_msg(&env.contract.address, &token, transfer_amount).into());
+    }
+
+    let dispatch_payload = warp::Message {
+        recipient: recipient.clone(),
+        amount: Uint256::from_uint128(transfer_amount),
+        metadata: HexBinary::default(),
+    };
+
+    // push mailbox dispatch msg
+    msgs.push(mailbox::dispatch(
+        mailbox,
+        dest_domain,
+        dest_router,
+        dispatch_payload.into(),
+        None,
+        None,
+    )?);
+
+    Ok(Response::new().add_messages(msgs).add_event(
+        new_event("transfer-remote")
+            .add_attribute("sender", info.sender)
+            .add_attribute("recipient", recipient.to_hex())
+            .add_attribute("token", token)
+            .add_attribute("amount", transfer_amount.to_string()),
+    ))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+    use warp::TokenWarpDefaultQueryMsg::*;
+
+    match msg {
+        QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
+        QueryMsg::Router(msg) => Ok(hpl_router::handle_query(deps, env, msg)?),
+        QueryMsg::TokenDefault(msg) => match msg {
+            TokenType {} => to_binary(get_token_type(deps)),
+            TokenMode {} => to_binary(get_token_mode(deps)),
+        },
+    }
+}
+
+fn get_token_type(deps: Deps) -> Result<TokenTypeResponse, ContractError> {
+    let denom = TOKEN.load(deps.storage)?;
+
+    Ok(TokenTypeResponse {
+        typ: warp::TokenType::Native(warp::TokenTypeNative::Fungible { denom }),
+    })
+}
+
+fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
+    let mode = MODE.load(deps.storage)?;
+
+    Ok(TokenModeResponse { mode })
 }

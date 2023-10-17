@@ -1,11 +1,11 @@
 import { injectable } from "inversify";
-import { Context, HplHubInstantiateMsg, HplIgpCoreInstantiateMsg, HplIsmMultisigInstantiateMsg, Migration } from "../types";
-import HplHub from "../contracts/hpl_hub";
+import { Context, Migration } from "../types";
 import HplMailbox from "../contracts/hpl_mailbox";
-import HplIgpGasOracle from "../contracts/hpl_igp_gas_oracle";
-import HplIgpCore from "../contracts/hpl_igp_core";
+import HplIgpGasOracle from "../contracts/hpl_igp_oracle";
+import HplIgpCore from "../contracts/hpl_igp";
 import HplIsmMultisig from "../contracts/hpl_ism_multisig";
-
+import HplHookMerkle from "../contracts/hpl_hook_merkle";
+import HplTestMockHook from "../contracts/hpl_test_mock_hook";
 
 @injectable()
 export default class InitializeStandalone implements Migration {
@@ -14,41 +14,58 @@ export default class InitializeStandalone implements Migration {
 
   constructor(
     private ctx: Context,
-    private hub: HplHub,
     private mailbox: HplMailbox,
-    private gas_oracle: HplIgpGasOracle,
-    private igp_core: HplIgpCore,
+    private hook_merkle: HplHookMerkle,
+    private igp: HplIgpCore,
+    private igp_oracle: HplIgpGasOracle,
     private ism_multisig: HplIsmMultisig,
+    private test_mock_hook: HplTestMockHook
   ) {}
 
   run = async (): Promise<Context> => {
-    // init hub
-    const hubInit: HplHubInstantiateMsg = {
-      origin_domain: 4337,
-      mailbox_code: this.mailbox.codeId!,
-    };
-    this.ctx.contracts[this.hub.contractName] = await this.hub.instantiate(hubInit);
+    // init mailbox
+    this.ctx.contracts[this.mailbox.contractName] =
+      await this.mailbox.instantiate({
+        hrp: "dual",
+        owner: this.ctx.address!,
+        domain: 33333,
+      });
 
-    // init gas oracle
-    this.ctx.contracts[this.gas_oracle.contractName] = await this.gas_oracle.instantiate({});
+    // init merkle hook - (required hook)
+    this.ctx.contracts[this.hook_merkle.contractName] =
+      await this.hook_merkle.instantiate({
+        owner: this.ctx.address!,
+        mailbox: this.ctx.contracts[this.mailbox.contractName].address,
+      });
 
-    // init gas core
-    const igpInit: HplIgpCoreInstantiateMsg = {
+    // init mock hook - (default hook)
+    this.ctx.contracts[this.test_mock_hook.contractName] =
+      await this.test_mock_hook.instantiate({});
+
+    // init igp oracle
+    this.ctx.contracts[this.igp_oracle.contractName] =
+      await this.igp_oracle.instantiate({});
+
+    // init igp
+    this.ctx.contracts[this.igp.contractName] = await this.igp.instantiate({
+      hrp: "dual",
       owner: this.ctx.address!,
-      gas_token: "osmo",
-      beneficiary: this.ctx.address!,
-    }
-    this.ctx.contracts[this.igp_core.contractName] = await this.igp_core.instantiate(igpInit);
+      mailbox: this.ctx.contracts[this.mailbox.contractName].address,
+      gas_token: "token",
+      beneficairy: this.ctx.address!,
+    });
 
     // init ism multisig
-    const ismMultisigInit: HplIsmMultisigInstantiateMsg = {
-      owner: this.ctx.address!,
-      addr_prefix: "osmo",
-    };
-    this.ctx.contracts[this.ism_multisig.contractName] = await this.ism_multisig.instantiate(ismMultisigInit);
+    this.ctx.contracts[this.ism_multisig.contractName] =
+      await this.ism_multisig.instantiate({
+        hrp: "dual",
+        owner: this.ctx.address!,
+      });
 
     return this.ctx;
-  }
+  };
 
-  setContext = (ctx: Context) => { this.ctx = ctx }
+  setContext = (ctx: Context) => {
+    this.ctx = ctx;
+  };
 }

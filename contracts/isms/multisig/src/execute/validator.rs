@@ -1,19 +1,20 @@
-use cosmwasm_std::{Binary, DepsMut, Event, MessageInfo, Response};
+use cosmwasm_std::{ensure_eq, DepsMut, Event, HexBinary, MessageInfo, Response};
 use hpl_interface::ism::multisig::ValidatorSet as MsgValidatorSet;
+use hpl_ownable::get_owner;
 
 use crate::{
     event::{emit_enroll_validator, emit_unenroll_validator},
-    state::{assert_owned, ValidatorSet, Validators, CONFIG, VALIDATORS},
+    state::{ValidatorSet, Validators, HRP, VALIDATORS},
     verify::{self},
     ContractError,
 };
 
 fn assert_pubkey_validate(
     validator: String,
-    pubkey: Binary,
-    addr_prefix: String,
+    pubkey: HexBinary,
+    hrp: &str,
 ) -> Result<(), ContractError> {
-    let pub_to_addr = verify::pub_to_addr(pubkey, &addr_prefix)?;
+    let pub_to_addr = verify::pub_to_addr(pubkey, hrp)?;
 
     if validator != pub_to_addr {
         return Err(ContractError::ValidatorPubKeyMismatched {});
@@ -27,13 +28,16 @@ pub fn enroll_validator(
     info: MessageInfo,
     msg: MsgValidatorSet,
 ) -> Result<Response, ContractError> {
-    assert_owned(deps.storage, info.sender)?;
+    ensure_eq!(
+        info.sender,
+        get_owner(deps.storage)?,
+        ContractError::Unauthorized {}
+    );
 
-    let config = CONFIG.load(deps.storage)?;
     assert_pubkey_validate(
         msg.validator.clone(),
         msg.validator_pubkey.clone(),
-        config.addr_prefix,
+        HRP.load(deps.storage)?.as_str(),
     )?;
 
     let candidate = deps.api.addr_validate(&msg.validator)?;
@@ -68,17 +72,17 @@ pub fn enroll_validators(
     info: MessageInfo,
     validators: Vec<MsgValidatorSet>,
 ) -> Result<Response, ContractError> {
-    assert_owned(deps.storage, info.sender)?;
+    ensure_eq!(
+        info.sender,
+        get_owner(deps.storage)?,
+        ContractError::Unauthorized {}
+    );
 
-    let config = CONFIG.load(deps.storage)?;
+    let hrp = HRP.load(deps.storage)?;
     let mut events: Vec<Event> = Vec::new();
 
     for msg in validators.into_iter() {
-        assert_pubkey_validate(
-            msg.validator.clone(),
-            msg.validator_pubkey.clone(),
-            config.addr_prefix.clone(),
-        )?;
+        assert_pubkey_validate(msg.validator.clone(), msg.validator_pubkey.clone(), &hrp)?;
 
         let candidate = deps.api.addr_validate(&msg.validator)?;
         let validators_state = VALIDATORS.may_load(deps.storage, msg.domain)?;
@@ -116,7 +120,11 @@ pub fn unenroll_validator(
     domain: u32,
     validator: String,
 ) -> Result<Response, ContractError> {
-    assert_owned(deps.storage, info.sender)?;
+    ensure_eq!(
+        info.sender,
+        get_owner(deps.storage)?,
+        ContractError::Unauthorized {}
+    );
 
     let unenroll_target = deps.api.addr_validate(&validator)?;
     let validators = VALIDATORS
@@ -146,37 +154,27 @@ mod test {
         Addr, Storage,
     };
 
-    use crate::state::{Config, CONFIG};
-
     use super::*;
     const ADDR1_VAULE: &str = "addr1";
     const ADDR2_VAULE: &str = "addr2";
 
     const VALIDATOR_ADDR: &str = "osmo1q28uzwtvvvlkz6k84gd7flu576x2l2ry9506p5";
-    const VALIDATOR_PUBKEY: &str = "AzpZu8TLfx5xEFQeVL4f+N5qu3X+Fq2uokLFLQ16OEuv";
+    const VALIDATOR_PUBKEY: &str =
+        "033a59bbc4cb7f1e7110541e54be1ff8de6abb75fe16adaea242c52d0d7a384baf";
 
     fn mock_owner(storage: &mut dyn Storage, owner: Addr) {
-        let config = Config {
-            owner,
-            addr_prefix: "osmo".to_string(),
-        };
-
-        CONFIG.save(storage, &config).unwrap();
+        hpl_ownable::initialize(storage, &owner).unwrap();
     }
 
     #[test]
     fn test_assert_pubkey_validate() {
         let validator = String::from(VALIDATOR_ADDR);
-        let validator_pubkey = Binary::from_base64(VALIDATOR_PUBKEY).unwrap();
-        let addr_prefix = String::from("osmo");
+        let validator_pubkey = HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap();
+        let hrp = String::from("osmo");
 
         // fail
-        let invalid_validator = assert_pubkey_validate(
-            "test".to_string(),
-            validator_pubkey.clone(),
-            addr_prefix.clone(),
-        )
-        .unwrap_err();
+        let invalid_validator =
+            assert_pubkey_validate("test".to_string(), validator_pubkey.clone(), &hrp).unwrap_err();
 
         assert!(matches!(
             invalid_validator,
@@ -184,7 +182,7 @@ mod test {
         ));
 
         // success
-        assert_pubkey_validate(validator, validator_pubkey, addr_prefix).unwrap();
+        assert_pubkey_validate(validator, validator_pubkey, &hrp).unwrap();
     }
 
     #[test]
@@ -194,10 +192,13 @@ mod test {
 
         mock_owner(deps.as_mut().storage, owner.clone());
 
+        HRP.save(deps.as_mut().storage, &"data".to_string())
+            .unwrap();
+
         let msg = MsgValidatorSet {
             domain: 1u32,
             validator: "test".to_string(),
-            validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+            validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
         };
 
         // unauthorized
@@ -209,7 +210,7 @@ mod test {
         let valid_message = MsgValidatorSet {
             domain: 1u32,
             validator: VALIDATOR_ADDR.to_string(),
-            validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+            validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
         };
         VALIDATORS
             .save(
@@ -237,11 +238,14 @@ mod test {
         let validator: String = VALIDATOR_ADDR.to_string();
         let domain: u32 = 1;
 
+        HRP.save(deps.as_mut().storage, &"data".to_string())
+            .unwrap();
+
         mock_owner(deps.as_mut().storage, owner.clone());
         let msg = MsgValidatorSet {
             domain,
             validator: validator.clone(),
-            validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+            validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
         };
 
         // validators not exist
@@ -287,16 +291,19 @@ mod test {
 
         mock_owner(deps.as_mut().storage, owner);
 
+        HRP.save(deps.as_mut().storage, &"data".to_string())
+            .unwrap();
+
         let msg = vec![
             MsgValidatorSet {
                 domain: 1u32,
                 validator: String::from(VALIDATOR_ADDR),
-                validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+                validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
             },
             MsgValidatorSet {
                 domain: 1u32,
                 validator: String::from(VALIDATOR_ADDR),
-                validator_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+                validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
             },
         ];
 
@@ -314,8 +321,11 @@ mod test {
         let mut deps = mock_dependencies();
         let owner = Addr::unchecked(ADDR1_VAULE);
         let validator = String::from(VALIDATOR_ADDR);
-        let validator_pubkey = Binary::from_base64(VALIDATOR_PUBKEY).unwrap();
+        let validator_pubkey = HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap();
         mock_owner(deps.as_mut().storage, owner.clone());
+
+        HRP.save(deps.as_mut().storage, &"data".to_string())
+            .unwrap();
 
         let msg = vec![
             MsgValidatorSet {
@@ -406,7 +416,7 @@ mod test {
                 1u32,
                 &Validators(vec![ValidatorSet {
                     signer: Addr::unchecked(ADDR2_VAULE),
-                    signer_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+                    signer_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
                 }]),
             )
             .unwrap();
@@ -434,7 +444,7 @@ mod test {
                 domain,
                 &Validators(vec![ValidatorSet {
                     signer: Addr::unchecked(validator.clone()),
-                    signer_pubkey: Binary::from_base64(VALIDATOR_PUBKEY).unwrap(),
+                    signer_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
                 }]),
             )
             .unwrap();

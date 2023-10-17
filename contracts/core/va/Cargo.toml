@@ -39,6 +39,10 @@ thiserror.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
-anyhow.workspace = true
+rstest.workspace = true
+ibcx-test-utils.workspace = true
+
 sha3.workspace = true
 digest.workspace = true
+
+anyhow.workspace = true

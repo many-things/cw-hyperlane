@@ -33,4 +33,6 @@ cosmwasm-schema.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
+rstest.workspace = true
+
 anyhow.workspace = true
