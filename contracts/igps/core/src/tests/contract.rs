@@ -30,7 +30,9 @@ fn test_mock_querier(v: &WasmQuery) -> QuerierResult {
 
     match *split.first().unwrap() {
         "oracle" => match msg {
-            oracle::IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { .. } => {
+            oracle::QueryMsg::Oracle(
+                oracle::IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { .. },
+            ) => {
                 let gas_price = split.pop().unwrap().parse::<u128>().unwrap();
                 let exchange_rate = split.pop().unwrap().parse::<u128>().unwrap();
 
@@ -42,6 +44,7 @@ fn test_mock_querier(v: &WasmQuery) -> QuerierResult {
 
                 SystemResult::Ok(ContractResult::Ok(res))
             }
+            _ => unreachable!("unsupported query"),
         },
         _ => unreachable!("unsupported query"),
     }
@@ -131,7 +134,9 @@ fn test_set_gas_oracles(mut igp: IGP, #[case] sender: Addr) {
 fn test_set_beneficiary(mut igp: IGP, #[case] sender: Addr) {
     let next_beneficiary = Addr::unchecked("next-beneficiary");
 
-    igp.set_beneficiary(&sender, &next_beneficiary).unwrap();
+    igp.set_beneficiary(&sender, &next_beneficiary)
+        .map_err(|e| e.to_string())
+        .unwrap();
 
     let storage = igp.deps_ref().storage;
     let actual_beneficiary = BENEFICIARY.load(storage).unwrap();
@@ -160,7 +165,10 @@ fn test_get_quote_gas_payment(
 
     igp.deps.querier.update_wasm(test_mock_querier);
 
-    let resp = igp.get_quote_gas_payment(dest_domain, gas_amount).unwrap();
+    let resp = igp
+        .get_quote_gas_payment(dest_domain, gas_amount)
+        .map_err(|e| e.to_string())
+        .unwrap();
     assert_eq!(resp.gas_needed, Uint256::from_u128(9 * 10u128.pow(15)))
 }
 
@@ -176,7 +184,10 @@ fn test_gas_exchange(
 
     igp.deps.querier.update_wasm(test_mock_querier);
 
-    let resp = igp.get_exchange_rate_and_gas_price(dest_domain).unwrap();
+    let resp = igp
+        .get_exchange_rate_and_gas_price(dest_domain)
+        .map_err(|e| e.to_string())
+        .unwrap();
     assert_eq!(resp.gas_price, Uint128::new(150 * DEC_9));
     assert_eq!(resp.exchange_rate, Uint128::new(2 * DEC_9));
 }

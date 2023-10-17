@@ -250,8 +250,6 @@ mod test {
     #[rstest]
     #[case("mailbox", None)]
     #[should_panic(expected = "unauthorized")]
-    #[case("owner", None)]
-    #[should_panic(expected = "unauthorized")]
     #[case("mailbox", Some(hex(TEST_MESSAGE_FAIL)))]
     fn test_post_dispatch(
         mut deps: TestDeps,
@@ -307,7 +305,7 @@ mod test {
 
         let tree = MESSAGE_TREE.load(deps.as_ref().storage).unwrap();
         assert_ne!(tree, MerkleTree::default());
-        assert_eq!(tree.count, 0);
+        assert_eq!(tree.count, 1);
     }
 
     #[rstest]

@@ -116,6 +116,7 @@ pub fn deploy_core<'a, R: Runner<'a>>(
     })
 }
 
+#[allow(dead_code)]
 pub fn deploy_warp_route_bridged<'a, R: Runner<'a>>(
     wasm: &Wasm<'a, R>,
     owner: &SigningAccount,
@@ -149,6 +150,7 @@ pub fn deploy_warp_route_bridged<'a, R: Runner<'a>>(
     )
 }
 
+#[allow(dead_code)]
 pub fn deploy_warp_route_collateral<'a, R: Runner<'a>>(
     wasm: &Wasm<'a, R>,
     owner: &SigningAccount,
@@ -195,6 +197,7 @@ pub fn deploy_warp_route_collateral<'a, R: Runner<'a>>(
     }
 }
 
+#[allow(dead_code)]
 pub fn link_warp_route<'a, R: Runner<'a>>(
     wasm: &Wasm<'a, R>,
     owner: &SigningAccount,

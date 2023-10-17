@@ -192,6 +192,9 @@ mod test {
 
         mock_owner(deps.as_mut().storage, owner.clone());
 
+        HRP.save(deps.as_mut().storage, &"data".to_string())
+            .unwrap();
+
         let msg = MsgValidatorSet {
             domain: 1u32,
             validator: "test".to_string(),
@@ -234,6 +237,9 @@ mod test {
         let owner = Addr::unchecked(ADDR1_VAULE);
         let validator: String = VALIDATOR_ADDR.to_string();
         let domain: u32 = 1;
+
+        HRP.save(deps.as_mut().storage, &"data".to_string())
+            .unwrap();
 
         mock_owner(deps.as_mut().storage, owner.clone());
         let msg = MsgValidatorSet {
@@ -285,6 +291,9 @@ mod test {
 
         mock_owner(deps.as_mut().storage, owner);
 
+        HRP.save(deps.as_mut().storage, &"data".to_string())
+            .unwrap();
+
         let msg = vec![
             MsgValidatorSet {
                 domain: 1u32,
@@ -314,6 +323,9 @@ mod test {
         let validator = String::from(VALIDATOR_ADDR);
         let validator_pubkey = HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap();
         mock_owner(deps.as_mut().storage, owner.clone());
+
+        HRP.save(deps.as_mut().storage, &"data".to_string())
+            .unwrap();
 
         let msg = vec![
             MsgValidatorSet {

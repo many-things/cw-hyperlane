@@ -12,6 +12,7 @@ use test_tube::{Account, Runner, SigningAccount};
 
 use super::{igp::Igp, types::Codes};
 
+#[allow(dead_code)]
 pub enum Hook {
     Mock {
         gas: Uint256,
@@ -43,6 +44,7 @@ pub enum Hook {
 }
 
 impl Hook {
+    #[allow(dead_code)]
     pub fn mock(gas: Uint256) -> Self {
         Self::Mock { gas }
     }
@@ -264,7 +266,7 @@ impl Hook {
 
                 Ok(hook_addr)
             }
-            Hook::Aggregate { hooks } => todo!(),
+            Hook::Aggregate { .. } => todo!(),
         }
     }
 }
@@ -272,7 +274,7 @@ impl Hook {
 pub fn prepare_routing_hook(routes: Vec<(u32, u128)>) -> Hook {
     let routes = routes
         .into_iter()
-        .map(|(domain, gas)| (domain, Hook::Merkle {}))
+        .map(|(domain, _)| (domain, Hook::Merkle {}))
         .collect();
 
     Hook::routing(routes)

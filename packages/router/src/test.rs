@@ -117,6 +117,8 @@ fn test_handle() -> anyhow::Result<()> {
 
     let mut router = Router::default();
 
+    hpl_ownable::initialize(router.deps.as_mut().storage, &owner)?;
+
     router.set_route(&owner, set_a.domain, set_a.route.clone().unwrap())?;
     router.set_routes(&owner, &[(set_b.domain, set_b.route.clone().unwrap())])?;
 
@@ -143,6 +145,8 @@ fn test_check() -> anyhow::Result<()> {
     let owner = Addr::unchecked("owner");
 
     let mut router = Router::default();
+
+    hpl_ownable::initialize(router.deps.as_mut().storage, &owner)?;
 
     let domain_t = 1;
     let router_t = Binary(b"test".to_vec());
