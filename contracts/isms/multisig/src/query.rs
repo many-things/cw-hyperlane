@@ -12,7 +12,7 @@ use crate::{
 
 pub fn get_module_type() -> Result<ModuleTypeResponse, ContractError> {
     Ok(ModuleTypeResponse {
-        typ: IsmType::LegacyMultisig,
+        typ: IsmType::MessageIdMultisig,
     })
 }
 
