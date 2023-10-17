@@ -57,3 +57,6 @@ pub struct CoreDeployments {
     pub required_hook: String,
     pub msg_receiver: String,
 }
+
+#[cw_serde]
+pub struct WarpDeployments(pub BTreeMap<String, String>);

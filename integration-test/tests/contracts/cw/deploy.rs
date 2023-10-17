@@ -1,9 +1,16 @@
+use std::collections::BTreeMap;
+
 use cosmwasm_schema::{cw_serde, serde::Serialize};
-use hpl_interface::core::mailbox;
+use cosmwasm_std::HexBinary;
+use hpl_interface::{
+    core::mailbox,
+    router::{DomainRouteSet, RouterMsg},
+    warp,
+};
 use test_tube::{Account, Runner, SigningAccount, Wasm};
 
 use super::{
-    types::{Codes, CoreDeployments},
+    types::{Codes, CoreDeployments, WarpDeployments},
     Hook, Ism,
 };
 
@@ -105,4 +112,87 @@ pub fn deploy_core<'a, R: Runner<'a>>(
         required_hook,
         msg_receiver,
     })
+}
+
+pub fn deploy_warp_route<'a, R: Runner<'a>>(
+    wasm: &Wasm<'a, R>,
+    owner: &SigningAccount,
+    deployer: &SigningAccount,
+    mailbox: &str,
+    hrp: &str,
+    codes: &Codes,
+    denoms: Vec<String>,
+) -> eyre::Result<WarpDeployments> {
+    let mut deployments = BTreeMap::new();
+
+    for denom in denoms {
+        if denom.starts_with(format!("{hrp}1").as_str()) {
+            // cw20
+            let route = instantiate(
+                wasm,
+                codes.warp_cw20,
+                deployer,
+                &format!("warp-cw20-{denom}"),
+                &warp::cw20::InstantiateMsg {
+                    token: warp::TokenModeMsg::Collateral(warp::cw20::Cw20ModeCollateral {
+                        address: denom,
+                    }),
+                    hrp: hrp.to_string(),
+                    owner: owner.address(),
+                    mailbox: mailbox.to_string(),
+                },
+            )?;
+
+            deployments.insert(denom, route);
+        } else {
+            // native
+            let route = instantiate(
+                wasm,
+                codes.warp_native,
+                deployer,
+                &format!("warp-native-{denom}"),
+                &warp::native::InstantiateMsg {
+                    token: warp::TokenModeMsg::Collateral(warp::native::NativeModeCollateral {
+                        denom,
+                    }),
+                    hrp: hrp.to_string(),
+                    owner: owner.address(),
+                    mailbox: mailbox.to_string(),
+                },
+            )?;
+
+            deployments.insert(denom, route);
+        }
+    }
+
+    Ok(WarpDeployments(deployments))
+}
+
+pub fn link_warp_route<'a, R: Runner<'a>>(
+    wasm: &Wasm<'a, R>,
+    owner: &SigningAccount,
+    origin: String,
+    remotes: BTreeMap<u32, HexBinary>,
+) -> eyre::Result<()> {
+    #[cw_serde]
+    pub enum ExpectedExecuteMsg {
+        Router(RouterMsg<HexBinary>),
+    }
+
+    wasm.execute(
+        &origin,
+        &ExpectedExecuteMsg::Router(RouterMsg::SetRoutes {
+            set: remotes
+                .into_iter()
+                .map(|(domain, route)| DomainRouteSet {
+                    domain,
+                    route: Some(route),
+                })
+                .collect(),
+        }),
+        &[],
+        owner,
+    )?;
+
+    Ok(())
 }
