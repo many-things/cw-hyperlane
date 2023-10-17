@@ -32,23 +32,27 @@ fn get_required_value(
     msg_body: HexBinary,
 ) -> Result<(Option<Coin>, Option<Coin>), ContractError> {
     let required = quote_dispatch(querier, hook, metadata, msg_body)?.gas_amount;
+    let required = match required {
+        Some(v) => v,
+        None => return Ok((None, None)),
+    };
 
     match info.funds.len() {
         0 => Ok((None, None)),
         1 => {
             let received = &info.funds[0];
             ensure_eq!(
-                received.denom,
-                required_value.denom,
-                PaymentError::ExtraDenom(received.denom.clone())
+                &received.denom,
+                &required.denom,
+                PaymentError::ExtraDenom(received.clone().denom)
             );
 
             if received.amount <= required.amount {
-                return Ok((Some(received), None));
+                return Ok((Some(received.clone()), None));
             }
 
             Ok((
-                required,
+                Some(required.clone()),
                 Some(coin(
                     (received.amount - required.amount).u128(),
                     required.denom,
@@ -144,8 +148,8 @@ pub fn dispatch(
     );
 
     // calculate gas
-    let required_hook = config.required_hook.expect("required_hook not set");
-    let (required_value, hook_value) = get_required_value(
+    let required_hook = config.get_required_hook();
+    let (required_hook_value, hook_value) = get_required_value(
         &deps.querier,
         &info,
         required_hook.as_str(),
@@ -164,23 +168,20 @@ pub fn dispatch(
     NONCE.save(deps.storage, &(nonce + 1))?;
     LATEST_DISPATCHED_ID.save(deps.storage, &msg_id.to_vec())?;
 
-    ensure!(
-        received_value.amount >= required_value.amount,
-        ContractError::InsufficientFunds {
-            required: required_value,
-            received: received_value,
-        }
-    );
-
     // make message
     let post_dispatch_msgs = vec![
         post_dispatch(
             required_hook,
             hook_metadata.clone(),
             msg.clone(),
-            required_value.map(|v| vec![v]),
+            required_hook_value.map(|v| vec![v]),
         )?,
-        post_dispatch(hook, hook_metadata, msg.clone(), Some(vec![hook_value]))?,
+        post_dispatch(
+            hook,
+            hook_metadata,
+            msg.clone(),
+            hook_value.map(|v| vec![v]),
+        )?,
     ];
 
     Ok(Response::new()
