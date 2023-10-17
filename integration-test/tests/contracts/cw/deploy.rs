@@ -5,12 +5,12 @@ use cosmwasm_std::HexBinary;
 use hpl_interface::{
     core::mailbox,
     router::{DomainRouteSet, RouterMsg},
-    warp,
+    warp::{self, cw20::Cw20ModeBridged},
 };
 use test_tube::{Account, Runner, SigningAccount, Wasm};
 
 use super::{
-    types::{Codes, CoreDeployments, WarpDeployments},
+    types::{Codes, CoreDeployments},
     Hook, Ism,
 };
 
@@ -114,58 +114,83 @@ pub fn deploy_core<'a, R: Runner<'a>>(
     })
 }
 
-pub fn deploy_warp_route<'a, R: Runner<'a>>(
+pub fn deploy_warp_route_bridged<'a, R: Runner<'a>>(
     wasm: &Wasm<'a, R>,
     owner: &SigningAccount,
     deployer: &SigningAccount,
     mailbox: &str,
     hrp: &str,
     codes: &Codes,
-    denoms: Vec<String>,
-) -> eyre::Result<WarpDeployments> {
-    let mut deployments = BTreeMap::new();
+    denom: String,
+) -> eyre::Result<String> {
+    instantiate(
+        wasm,
+        codes.warp_cw20,
+        deployer,
+        "warp-cw20",
+        &warp::cw20::InstantiateMsg {
+            token: warp::TokenModeMsg::Bridged(Cw20ModeBridged {
+                code_id: codes.cw20_base,
+                init_msg: Box::new(warp::cw20::Cw20InitMsg {
+                    name: denom,
+                    symbol: denom,
+                    decimals: 6,
+                    initial_balances: vec![],
+                    mint: None,
+                    marketing: None,
+                }),
+            }),
+            hrp: hrp.to_string(),
+            owner: owner.address(),
+            mailbox: mailbox.to_string(),
+        },
+    )
+}
 
-    for denom in denoms {
-        if denom.starts_with(format!("{hrp}1").as_str()) {
-            // cw20
-            let route = instantiate(
-                wasm,
-                codes.warp_cw20,
-                deployer,
-                &format!("warp-cw20-{denom}"),
-                &warp::cw20::InstantiateMsg {
-                    token: warp::TokenModeMsg::Collateral(warp::cw20::Cw20ModeCollateral {
-                        address: denom,
-                    }),
-                    hrp: hrp.to_string(),
-                    owner: owner.address(),
-                    mailbox: mailbox.to_string(),
-                },
-            )?;
+pub fn deploy_warp_route_collateral<'a, R: Runner<'a>>(
+    wasm: &Wasm<'a, R>,
+    owner: &SigningAccount,
+    deployer: &SigningAccount,
+    mailbox: &str,
+    hrp: &str,
+    codes: &Codes,
+    denom: String,
+) -> eyre::Result<String> {
+    if denom.starts_with(format!("{hrp}1").as_str()) {
+        // cw20
+        let route = instantiate(
+            wasm,
+            codes.warp_cw20,
+            deployer,
+            &format!("warp-cw20-{denom}"),
+            &warp::cw20::InstantiateMsg {
+                token: warp::TokenModeMsg::Collateral(warp::cw20::Cw20ModeCollateral {
+                    address: denom,
+                }),
+                hrp: hrp.to_string(),
+                owner: owner.address(),
+                mailbox: mailbox.to_string(),
+            },
+        )?;
 
-            deployments.insert(denom, route);
-        } else {
-            // native
-            let route = instantiate(
-                wasm,
-                codes.warp_native,
-                deployer,
-                &format!("warp-native-{denom}"),
-                &warp::native::InstantiateMsg {
-                    token: warp::TokenModeMsg::Collateral(warp::native::NativeModeCollateral {
-                        denom,
-                    }),
-                    hrp: hrp.to_string(),
-                    owner: owner.address(),
-                    mailbox: mailbox.to_string(),
-                },
-            )?;
+        Ok(route)
+    } else {
+        // native
+        let route = instantiate(
+            wasm,
+            codes.warp_native,
+            deployer,
+            &format!("warp-native-{denom}"),
+            &warp::native::InstantiateMsg {
+                token: warp::TokenModeMsg::Collateral(warp::native::NativeModeCollateral { denom }),
+                hrp: hrp.to_string(),
+                owner: owner.address(),
+                mailbox: mailbox.to_string(),
+            },
+        )?;
 
-            deployments.insert(denom, route);
-        }
+        Ok(route)
     }
-
-    Ok(WarpDeployments(deployments))
 }
 
 pub fn link_warp_route<'a, R: Runner<'a>>(

@@ -9,6 +9,8 @@ use crate::{
 
 use super::{TokenModeMsg, TokenWarpDefaultQueryMsg};
 
+pub use cw20_base::msg::InstantiateMsg as Cw20InitMsg;
+
 #[cw_serde]
 pub enum TokenOption {
     Create {

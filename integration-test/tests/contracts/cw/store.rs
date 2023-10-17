@@ -35,7 +35,7 @@ pub fn store_code<'a, R: Runner<'a>>(
         .map(|v| v.into())
         .unwrap_or(DEFAULT_ARTIFACTS_PATH.into());
 
-    let artifacts = CONTRACTS
+    let mut artifacts = CONTRACTS
         .into_iter()
         .map(|name| {
             let filename = format!("hpl_{name}.wasm");
@@ -47,6 +47,17 @@ pub fn store_code<'a, R: Runner<'a>>(
             Ok((name.to_string(), code_id))
         })
         .collect::<eyre::Result<CodesMap>>()?;
+
+    // precompiles
+    {
+        let name = "cw20_base";
+        let code = std::fs::read(format!("./cw/{name}.wasm"))?;
+        let store_resp = wasm.store_code(&code, None, deployer)?;
+
+        artifacts
+            .0
+            .insert(name.to_string(), store_resp.data.code_id);
+    }
 
     artifacts.try_into()
 }

@@ -35,6 +35,8 @@ pub struct Codes {
 
     pub warp_cw20: u64,
     pub warp_native: u64,
+
+    pub cw20_base: u64,
 }
 
 impl TryFrom<CodesMap> for Codes {
