@@ -93,7 +93,8 @@ pub fn execute(
             Ok(Response::new()
                 .add_event(
                     new_event("post_dispatch")
-                        .add_attribute("message_id", decoded_msg.id().to_hex()),
+                        .add_attribute("message_id", decoded_msg.id().to_hex())
+                        .add_attribute("index", tree.count.to_string()),
                 )
                 .add_event(
                     new_event("inserted_into_tree").add_attribute("index", tree.count.to_string()),
