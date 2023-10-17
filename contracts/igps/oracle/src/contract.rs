@@ -19,15 +19,16 @@ use crate::{
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
-    _msg: InstantiateMsg,
+    _info: MessageInfo,
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    hpl_ownable::initialize(deps.storage, &info.sender)?;
+    let owner = deps.api.addr_validate(&msg.owner)?;
 
-    Ok(Response::new()
-        .add_event(Event::new("init-igp-gas-oracle").add_attribute("owner", info.sender)))
+    hpl_ownable::initialize(deps.storage, &owner)?;
+
+    Ok(Response::new().add_event(Event::new("init-igp-gas-oracle").add_attribute("owner", owner)))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

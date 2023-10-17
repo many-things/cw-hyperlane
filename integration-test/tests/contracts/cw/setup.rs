@@ -58,13 +58,10 @@ pub fn setup_env<'a, R: Runner<'a>>(
             .map(|v| (v.domain, hrp, v.clone()))
             .collect(),
     );
-    let default_hook = prepare_routing_hook(
-        deployer.address(),
-        validators.iter().map(|v| (v.domain, DEFAULT_GAS)).collect(),
-    );
+    let default_hook =
+        prepare_routing_hook(validators.iter().map(|v| (v.domain, DEFAULT_GAS)).collect());
     let required_hook = Hook::Igp(Igp {
         hrp: hrp.to_string(),
-        owner: owner.address(),
         gas_token: "uosmo".to_string(),
         beneficiary: deployer.address(),
         oracle_configs: oracle_config.to_vec(),
@@ -74,6 +71,7 @@ pub fn setup_env<'a, R: Runner<'a>>(
     let codes = store_code(&wasm, &deployer, artifacts)?;
     let core = deploy_core(
         &wasm,
+        &owner,
         &deployer,
         &codes,
         domain,

@@ -8,10 +8,11 @@ use crate::{error::ContractError, tests::IGPGasOracle};
 
 #[test]
 fn test_gas_data() -> anyhow::Result<()> {
+    let owner = Addr::unchecked("owner");
     let deployer = Addr::unchecked("deployer");
 
     let mut oracle = IGPGasOracle::new(mock_dependencies(), mock_env());
-    oracle.init(&deployer)?;
+    oracle.init(&deployer, &owner)?;
 
     // test single
     let gas_config = RemoteGasDataConfig {
@@ -20,7 +21,7 @@ fn test_gas_data() -> anyhow::Result<()> {
         gas_price: Uint128::new(9120321),
     };
 
-    oracle.set_remote_gas_data(&deployer, gas_config.clone())?;
+    oracle.set_remote_gas_data(&owner, gas_config.clone())?;
 
     let ret = oracle.get_exchange_rate_and_gas_price(gas_config.remote_domain)?;
     assert_eq!(ret.exchange_rate, gas_config.token_exchange_rate);
@@ -33,7 +34,7 @@ fn test_gas_data() -> anyhow::Result<()> {
         gas_price: Uint128::new(9120321),
     };
 
-    oracle.set_remote_gas_data_configs(&deployer, vec![gas_config.clone()])?;
+    oracle.set_remote_gas_data_configs(&owner, vec![gas_config.clone()])?;
 
     let ret = oracle.get_exchange_rate_and_gas_price(gas_config.remote_domain)?;
     assert_eq!(ret.exchange_rate, gas_config.token_exchange_rate);
@@ -44,11 +45,12 @@ fn test_gas_data() -> anyhow::Result<()> {
 
 #[test]
 fn test_set_remote_gas_data_configs() -> anyhow::Result<()> {
+    let owner = Addr::unchecked("owner");
     let deployer = Addr::unchecked("deployer");
     let abuser = Addr::unchecked("abuser");
 
     let mut oracle = IGPGasOracle::new(mock_dependencies(), mock_env());
-    oracle.init(&deployer)?;
+    oracle.init(&deployer, &owner)?;
 
     // fail - sender is not owner
     let err = oracle
@@ -57,18 +59,19 @@ fn test_set_remote_gas_data_configs() -> anyhow::Result<()> {
     assert!(matches!(err, ContractError::Unauthorized {}));
 
     // ok
-    oracle.set_remote_gas_data_configs(&deployer, vec![])?;
+    oracle.set_remote_gas_data_configs(&owner, vec![])?;
 
     Ok(())
 }
 
 #[test]
 fn test_set_remote_gas_data() -> anyhow::Result<()> {
+    let owner = Addr::unchecked("owner");
     let deployer = Addr::unchecked("deployer");
     let abuser = Addr::unchecked("abuser");
 
     let mut oracle = IGPGasOracle::new(mock_dependencies(), mock_env());
-    oracle.init(&deployer)?;
+    oracle.init(&deployer, &owner)?;
 
     let gas_config = RemoteGasDataConfig {
         remote_domain: 1u32,
@@ -83,7 +86,7 @@ fn test_set_remote_gas_data() -> anyhow::Result<()> {
     assert!(matches!(err, ContractError::Unauthorized {}));
 
     // ok
-    oracle.set_remote_gas_data(&deployer, gas_config)?;
+    oracle.set_remote_gas_data(&owner, gas_config)?;
 
     Ok(())
 }

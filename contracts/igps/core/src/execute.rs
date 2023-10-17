@@ -75,19 +75,24 @@ pub fn post_dispatch(
         }
     };
 
-    Ok(pay_for_gas(
-        deps,
+    let res = pay_for_gas(
+        &deps,
         info,
         message.id(),
         message.dest_domain,
         gas_limit,
         refund_address.to_string(),
     )?
-    .add_event(emit_post_dispatch(req.metadata, req.message)))
+    .add_event(emit_post_dispatch(req.metadata, req.message));
+
+    deps.api
+        .debug(&format!("igp::post_dispatch: res: {:?}", res));
+
+    Ok(res)
 }
 
 pub fn pay_for_gas(
-    deps: DepsMut,
+    deps: &DepsMut,
     info: MessageInfo,
     message_id: HexBinary,
     dest_domain: u32,

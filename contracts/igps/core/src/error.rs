@@ -6,6 +6,9 @@ pub enum ContractError {
     #[error("{0}")]
     PaymentError(#[from] cw_utils::PaymentError),
 
+    #[error("{0}")]
+    ParseIntError(#[from] std::num::ParseIntError),
+
     #[error("unauthorized")]
     Unauthorized {},
 

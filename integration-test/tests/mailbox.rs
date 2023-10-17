@@ -4,7 +4,7 @@ mod contracts;
 mod event;
 mod validator;
 
-use cosmwasm_std::{attr, Attribute, Binary, Uint128};
+use cosmwasm_std::{attr, coin, Attribute, Binary, Uint128};
 use ethers::{
     prelude::parse_log, providers::Middleware, signers::Signer, types::TransactionReceipt,
 };
@@ -13,7 +13,7 @@ use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 use hpl_interface::{
     core::mailbox::{self, DispatchMsg},
     igp::oracle::RemoteGasDataConfig,
-    types::{bech32_decode, bech32_encode, bech32_to_h256},
+    types::{bech32_decode, bech32_encode, bech32_to_h256, IGPMetadata},
 };
 use test_tube::Runner;
 
@@ -59,7 +59,7 @@ where
             hook: None,
             metadata: None,
         }),
-        &[],
+        &[coin(56_000_000, "uosmo")],
         &cosmos.acc_tester,
     )?;
 
@@ -88,7 +88,7 @@ async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
         &[RemoteGasDataConfig {
             remote_domain: DOMAIN_EVM,
-            token_exchange_rate: Uint128::from(1u128 * 10u128.pow(9)),
+            token_exchange_rate: Uint128::from(1u128 * 10u128.pow(4)),
             gas_price: Uint128::from(1u128 * 10u128.pow(9)),
         }],
     )?;

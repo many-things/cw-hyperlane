@@ -34,12 +34,14 @@ where
         self.env = env
     }
 
-    pub fn init(&mut self, sender: &Addr) -> Result<Response, ContractError> {
+    pub fn init(&mut self, sender: &Addr, owner: &Addr) -> Result<Response, ContractError> {
         instantiate(
             self.deps.as_mut(),
             self.env.clone(),
             mock_info(sender.as_str(), &[]),
-            InstantiateMsg {},
+            InstantiateMsg {
+                owner: owner.into(),
+            },
         )
     }
 

@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    coin, ensure, ensure_eq, to_binary, wasm_execute, Coin, DepsMut, Env, HexBinary, MessageInfo,
-    QuerierWrapper, Response,
+    coin, ensure, ensure_eq, to_binary, wasm_execute, Coin, Deps, DepsMut, Env, HexBinary,
+    MessageInfo, Response,
 };
 use cw_utils::PaymentError;
 use hpl_interface::{
@@ -25,13 +25,13 @@ use crate::{
 };
 
 fn get_required_value(
-    querier: &QuerierWrapper,
+    deps: Deps,
     info: &MessageInfo,
     hook: impl Into<String>,
     metadata: HexBinary,
     msg_body: HexBinary,
 ) -> Result<(Option<Coin>, Option<Coin>), ContractError> {
-    let required = quote_dispatch(querier, hook, metadata, msg_body)?.gas_amount;
+    let required = quote_dispatch(&deps.querier, hook, metadata, msg_body)?.gas_amount;
     let required = match required {
         Some(v) => v,
         None => return Ok((None, None)),
@@ -41,6 +41,12 @@ fn get_required_value(
         0 => Ok((None, None)),
         1 => {
             let received = &info.funds[0];
+
+            deps.api.debug(&format!(
+                "mailbox::dispatch: required: {:?}, received: {:?}",
+                required, received
+            ));
+
             ensure_eq!(
                 &received.denom,
                 &required.denom,
@@ -149,12 +155,19 @@ pub fn dispatch(
 
     // calculate gas
     let required_hook = config.get_required_hook();
+
+    let msg =
+        dispatch_msg
+            .clone()
+            .to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
+    let msg_id = msg.id();
+
     let (required_hook_value, hook_value) = get_required_value(
-        &deps.querier,
+        deps.as_ref(),
         &info,
         required_hook.as_str(),
         dispatch_msg.metadata.clone().unwrap_or_default(),
-        dispatch_msg.msg_body.clone(),
+        msg.clone().into(),
     )?;
     let (required_hook_value, hook_value) = (
         required_hook_value.map(|v| vec![v]),
@@ -163,10 +176,7 @@ pub fn dispatch(
 
     // interaction
     let hook = dispatch_msg.get_hook_addr(deps.api, config.get_default_hook())?;
-    let hook_metadata = dispatch_msg.metadata.clone().unwrap_or_default();
-
-    let msg = dispatch_msg.to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
-    let msg_id = msg.id();
+    let hook_metadata = dispatch_msg.metadata.unwrap_or_default();
 
     // effects
     NONCE.save(deps.storage, &(nonce + 1))?;

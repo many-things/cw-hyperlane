@@ -1,10 +1,10 @@
 use crate::error::ContractError;
-use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, MAILBOX, TOKEN_EXCHANGE_RATE_SCALE};
+use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, MAILBOX, TOKEN_EXCHANGE_RATE_SCALE};
 
-use cosmwasm_std::{Addr, Deps, QuerierWrapper, Storage, Uint256};
-use hpl_interface::hook::{MailboxResponse, QuoteDispatchMsg};
+use cosmwasm_std::{coin, Addr, Deps, QuerierWrapper, Storage, Uint256};
+use hpl_interface::hook::{MailboxResponse, QuoteDispatchMsg, QuoteDispatchResponse};
 use hpl_interface::igp::core::{BeneficiaryResponse, QuoteGasPaymentResponse};
-use hpl_interface::igp::oracle::{GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
+use hpl_interface::igp::oracle::{self, GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
 use hpl_interface::types::{IGPMetadata, Message};
 
 pub fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
@@ -36,7 +36,7 @@ pub fn quote_gas_price(
 
     let gas_price_resp: GetExchangeRateAndGasPriceResponse = querier.query_wasm_smart(
         gas_oracle,
-        &IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain },
+        &oracle::QueryMsg::Oracle(IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain }),
     )?;
 
     let dest_gas_cost = gas_amount * Uint256::from(gas_price_resp.gas_price);
@@ -59,15 +59,25 @@ pub fn quote_gas_payment(
 pub fn quote_dispatch(
     deps: Deps,
     req: QuoteDispatchMsg,
-) -> Result<QuoteGasPaymentResponse, ContractError> {
-    let igp_metadata: IGPMetadata = req.metadata.clone().into();
+) -> Result<QuoteDispatchResponse, ContractError> {
     let gas_limit = match req.metadata.len() < 32 {
         true => Uint256::from(DEFAULT_GAS_USAGE),
-        false => igp_metadata.gas_limit,
+        false => {
+            let igp_metadata: IGPMetadata = req.metadata.clone().into();
+            igp_metadata.gas_limit
+        }
     };
+
     let igp_message: Message = req.message.into();
 
-    quote_gas_payment(deps, igp_message.dest_domain, gas_limit)
+    let quote_res = quote_gas_payment(deps, igp_message.dest_domain, gas_limit);
+
+    Ok(QuoteDispatchResponse {
+        gas_amount: Some(coin(
+            quote_res?.gas_needed.to_string().parse::<u128>()?,
+            GAS_TOKEN.load(deps.storage)?,
+        )),
+    })
 }
 
 pub fn get_exchange_rate_and_gas_price(

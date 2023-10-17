@@ -4,7 +4,9 @@ use cosmwasm_std::Uint128;
 use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub owner: String,
+}
 
 #[cw_serde]
 pub struct RemoteGasDataConfig {

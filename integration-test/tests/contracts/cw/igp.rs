@@ -10,7 +10,6 @@ use super::types::Codes;
 #[derive(Clone)]
 pub struct Igp {
     pub hrp: String,
-    pub owner: String,
     pub gas_token: String,
     pub beneficiary: String,
     pub oracle_configs: Vec<RemoteGasDataConfig>,
@@ -27,6 +26,7 @@ impl Igp {
         wasm: &Wasm<'a, R>,
         codes: &Codes,
         mailbox: String,
+        owner: &SigningAccount,
         deployer: &SigningAccount,
     ) -> eyre::Result<IgpDeployment> {
         let igp = wasm
@@ -34,7 +34,7 @@ impl Igp {
                 codes.igp,
                 &igp::core::InstantiateMsg {
                     hrp: self.hrp,
-                    owner: self.owner,
+                    owner: owner.address(),
                     mailbox,
                     gas_token: self.gas_token,
                     beneficiary: self.beneficiary,
@@ -50,7 +50,9 @@ impl Igp {
         let igp_oracle = wasm
             .instantiate(
                 codes.igp_oracle,
-                &igp::oracle::InstantiateMsg {},
+                &igp::oracle::InstantiateMsg {
+                    owner: owner.address(),
+                },
                 Some(deployer.address().as_str()),
                 Some("cw-hpl-igp-oracle"),
                 &[],
@@ -72,17 +74,19 @@ impl Igp {
                     .collect(),
             }),
             &[],
-            deployer,
+            owner,
         )?;
 
-        wasm.execute(
-            &igp_oracle,
-            &igp::oracle::ExecuteMsg::SetRemoteGasDataConfigs {
-                configs: self.oracle_configs,
-            },
-            &[],
-            deployer,
-        )?;
+        if self.oracle_configs.len() > 0 {
+            wasm.execute(
+                &igp_oracle,
+                &igp::oracle::ExecuteMsg::SetRemoteGasDataConfigs {
+                    configs: self.oracle_configs,
+                },
+                &[],
+                owner,
+            )?;
+        }
 
         Ok(IgpDeployment {
             core: igp,

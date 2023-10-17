@@ -67,7 +67,7 @@ pub fn execute(
             gas_amount,
             refund_address,
         } => execute::pay_for_gas(
-            deps,
+            &deps,
             info,
             message_id,
             dest_domain,

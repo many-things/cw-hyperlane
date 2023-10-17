@@ -80,8 +80,6 @@ pub fn execute(
         ExecuteMsg::PostDispatch(PostDispatchMsg { message, .. }) => {
             let mailbox = MAILBOX.load(deps.storage)?;
 
-            ensure_eq!(mailbox, info.sender, ContractError::Unauthorized {});
-
             let latest_dispatch_id = deps
                 .querier
                 .query_wasm_smart::<LatestDispatchedIdResponse>(
@@ -91,6 +89,12 @@ pub fn execute(
                 .message_id;
 
             let decoded_msg: Message = message.into();
+
+            deps.api.debug(&format!(
+                "hook_merkle::post_dispatch: id: {}, actual: {}",
+                latest_dispatch_id,
+                decoded_msg.id().to_hex()
+            ));
 
             ensure_eq!(
                 latest_dispatch_id,

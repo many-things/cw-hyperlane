@@ -36,6 +36,7 @@ fn instantiate<'a, M: Serialize, R: Runner<'a>>(
 
 pub fn deploy_core<'a, R: Runner<'a>>(
     wasm: &Wasm<'a, R>,
+    owner: &SigningAccount,
     deployer: &SigningAccount,
     codes: &Codes,
     origin_domain: u32,
@@ -57,10 +58,13 @@ pub fn deploy_core<'a, R: Runner<'a>>(
         },
     )?;
 
+    println!("mailbox: {}", mailbox);
+
     // set default ism, hook, igp
+
     let default_ism = default_ism.deploy(wasm, codes, deployer)?;
-    let default_hook = default_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
-    let required_hook = required_hook.deploy(wasm, codes, mailbox.clone(), deployer)?;
+    let default_hook = default_hook.deploy(wasm, codes, mailbox.clone(), owner, deployer)?;
+    let required_hook = required_hook.deploy(wasm, codes, mailbox.clone(), owner, deployer)?;
 
     wasm.execute(
         &mailbox,
