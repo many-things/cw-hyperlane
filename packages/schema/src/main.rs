@@ -4,169 +4,42 @@ use std::{
 };
 
 use cosmwasm_schema::generate_api;
-use cosmwasm_std::Empty;
 use hpl_interface::{
     core as hpl_core, hook as hpl_hook, igp as hpl_igp, ism as hpl_ism, warp as hpl_warp,
 };
 
+macro_rules! fetch_api {
+    ($module:ty, $name:tt) => {
+        generate_api! {
+            name: $name,
+            instantiate: $module::InstantiateMsg,
+            execute: $module::ExecuteMsg,
+            query: $module::QueryMsg,
+        }
+    };
+}
+
 pub fn main() {
-    let mut apis = vec![];
-
-    {
-        use hpl_core::mailbox::*;
-
-        apis.push(generate_api! {
-            name: "hpl_mailbox",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_core::va::*;
-
-        apis.push(generate_api! {
-            name: "hpl_validator_announce",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_hook::merkle::*;
-
-        apis.push(generate_api! {
-            name: "hpl_hook_merkle",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_hook::pausable::*;
-
-        apis.push(generate_api! {
-            name: "hpl_hook_pausable",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_hook::routing::*;
-
-        apis.push(generate_api! {
-            name: "hpl_hook_routing",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_hook::routing_custom::*;
-
-        apis.push(generate_api! {
-            name: "hpl_hook_routing_custom",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_hook::routing_fallback::*;
-
-        apis.push(generate_api! {
-            name: "hpl_hook_routing_fallback",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_igp::core::*;
-
-        apis.push(generate_api! {
-            name: "hpl_igp",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_igp::oracle::*;
-
-        apis.push(generate_api! {
-            name: "hpl_igp_oracle",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_ism::multisig::*;
-
-        apis.push(generate_api! {
-            name: "hpl_ism_multisig",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_ism::routing::*;
-
-        apis.push(generate_api! {
-            name: "hpl_ism_routing",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_warp::cw20::*;
-
-        apis.push(generate_api! {
-            name: "hpl_warp_cw20",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
-
-    {
-        use hpl_warp::native::*;
-
-        apis.push(generate_api! {
-            name: "hpl_warp_native",
-            instantiate: InstantiateMsg,
-            migrate: Empty,
-            execute: ExecuteMsg,
-            query: QueryMsg,
-        });
-    }
+    let apis = vec![
+        // core
+        fetch_api!(hpl_core::mailbox, "mailbox"),
+        fetch_api!(hpl_core::va, "validator_announce"),
+        // hooks
+        fetch_api!(hpl_hook::merkle, "hook_merkle"),
+        fetch_api!(hpl_hook::pausable, "hook_pausable"),
+        fetch_api!(hpl_hook::routing, "hook_routing"),
+        fetch_api!(hpl_hook::routing_custom, "hook_routing_custom"),
+        fetch_api!(hpl_hook::routing_fallback, "hook_routing_fallback"),
+        // igps
+        fetch_api!(hpl_igp::core, "igp"),
+        fetch_api!(hpl_igp::oracle, "igp_oracle"),
+        // isms
+        fetch_api!(hpl_ism::multisig, "ism_multisig"),
+        fetch_api!(hpl_ism::routing, "ism_routing"),
+        // warps
+        fetch_api!(hpl_warp::cw20, "warp_cw20"),
+        fetch_api!(hpl_warp::native, "warp_native"),
+    ];
 
     let mut base = current_dir().unwrap();
     base.push("schema");
@@ -178,6 +51,7 @@ pub fn main() {
         let filename = api.contract_name.clone();
         let api_str = api.render().to_string().unwrap();
 
-        write(base.join(format!("{filename}.json")), api_str).unwrap();
+        create_dir_all(base.join(&filename)).unwrap();
+        write(base.join(format!("{filename}/{filename}.json")), api_str).unwrap();
     }
 }
