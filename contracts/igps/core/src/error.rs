@@ -1,4 +1,4 @@
-use cosmwasm_std::{Coin, Uint256};
+use cosmwasm_std::Uint256;
 
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum ContractError {
