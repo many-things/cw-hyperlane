@@ -29,11 +29,11 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Load toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
+      - name: Install Rust
+        run: rustup update stable
+
+      - name: Install target
+        run: rustup target add wasm32-unknown-unknown
 
       - run: cargo test --workspace --exclude hpl-tests
 
@@ -47,11 +47,8 @@ jobs:
       - name: Install Rust
         run: rustup update stable
 
-      - name: Load toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
+      - name: Install target
+        run: rustup target add wasm32-unknown-unknown
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
