@@ -34,6 +34,7 @@ fn instantiate<'a, M: Serialize, R: Runner<'a>>(
         .address)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn deploy_core<'a, R: Runner<'a>>(
     wasm: &Wasm<'a, R>,
     owner: &SigningAccount,
