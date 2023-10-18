@@ -37,36 +37,38 @@ fn get_required_value(
         None => return Ok((None, None)),
     };
 
-    match info.funds.len() {
-        0 => Ok((None, None)),
-        1 => {
-            let received = &info.funds[0];
-
-            deps.api.debug(&format!(
-                "mailbox::dispatch: required: {:?}, received: {:?}",
-                required, received
-            ));
-
-            ensure_eq!(
-                &received.denom,
-                &required.denom,
-                PaymentError::ExtraDenom(received.clone().denom)
-            );
-
-            if received.amount <= required.amount {
-                return Ok((Some(received.clone()), None));
-            }
-
-            Ok((
-                Some(required.clone()),
-                Some(coin(
-                    (received.amount - required.amount).u128(),
-                    required.denom,
-                )),
-            ))
-        }
-        _ => Err(PaymentError::MultipleDenoms {}.into()),
+    if info.funds.is_empty() {
+        return Ok((None, None));
     }
+
+    if info.funds.len() > 1 {
+        return Err(PaymentError::MultipleDenoms {}.into());
+    }
+
+    let received = &info.funds[0];
+
+    deps.api.debug(&format!(
+        "mailbox::dispatch: required: {:?}, received: {:?}",
+        required, received
+    ));
+
+    ensure_eq!(
+        &received.denom,
+        &required.denom,
+        PaymentError::ExtraDenom(received.clone().denom)
+    );
+
+    if received.amount <= required.amount {
+        return Ok((Some(received.clone()), None));
+    }
+
+    Ok((
+        Some(required.clone()),
+        Some(coin(
+            (received.amount - required.amount).u128(),
+            required.denom,
+        )),
+    ))
 }
 
 pub fn set_default_ism(

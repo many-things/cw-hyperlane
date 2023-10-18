@@ -158,6 +158,7 @@ mod test {
     const ADDR1_VAULE: &str = "addr1";
     const ADDR2_VAULE: &str = "addr2";
 
+    const VAL_HRP: &str = "osmo";
     const VALIDATOR_ADDR: &str = "osmo1q28uzwtvvvlkz6k84gd7flu576x2l2ry9506p5";
     const VALIDATOR_PUBKEY: &str =
         "033a59bbc4cb7f1e7110541e54be1ff8de6abb75fe16adaea242c52d0d7a384baf";
@@ -192,8 +193,7 @@ mod test {
 
         mock_owner(deps.as_mut().storage, owner.clone());
 
-        HRP.save(deps.as_mut().storage, &"data".to_string())
-            .unwrap();
+        HRP.save(deps.as_mut().storage, &VAL_HRP.into()).unwrap();
 
         let msg = MsgValidatorSet {
             domain: 1u32,
@@ -238,8 +238,7 @@ mod test {
         let validator: String = VALIDATOR_ADDR.to_string();
         let domain: u32 = 1;
 
-        HRP.save(deps.as_mut().storage, &"data".to_string())
-            .unwrap();
+        HRP.save(deps.as_mut().storage, &VAL_HRP.into()).unwrap();
 
         mock_owner(deps.as_mut().storage, owner.clone());
         let msg = MsgValidatorSet {
@@ -291,8 +290,7 @@ mod test {
 
         mock_owner(deps.as_mut().storage, owner);
 
-        HRP.save(deps.as_mut().storage, &"data".to_string())
-            .unwrap();
+        HRP.save(deps.as_mut().storage, &VAL_HRP.into()).unwrap();
 
         let msg = vec![
             MsgValidatorSet {
@@ -324,8 +322,7 @@ mod test {
         let validator_pubkey = HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap();
         mock_owner(deps.as_mut().storage, owner.clone());
 
-        HRP.save(deps.as_mut().storage, &"data".to_string())
-            .unwrap();
+        HRP.save(deps.as_mut().storage, &VAL_HRP.into()).unwrap();
 
         let msg = vec![
             MsgValidatorSet {

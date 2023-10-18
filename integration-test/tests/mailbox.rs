@@ -88,28 +88,15 @@ async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
         &[RemoteGasDataConfig {
             remote_domain: DOMAIN_EVM,
-            token_exchange_rate: Uint128::from(1u128 * 10u128.pow(4)),
-            gas_price: Uint128::from(1u128 * 10u128.pow(9)),
+            token_exchange_rate: Uint128::from(10u128.pow(4)),
+            gas_price: Uint128::from(10u128.pow(9)),
         }],
     )?;
-
-    // TODO: leave this until Neutron supports test-tube properly
-    // // init Neutron env
-    // let ntrn_app = OsmosisTestApp::new();
-    // let ntrn = cw::setup_env(
-    //     &ntrn_app,
-    //     |app, coins| app.init_account(coins).unwrap(),
-    //     None::<&str>,
-    //     "neutron",
-    //     DOMAIN_NTRN,
-    //     &[TestValidators::new(DOMAIN_EVM, 5, 3)],
-    // )?;
 
     // init Anvil env
     let anvil1 = eth::setup_env(DOMAIN_EVM).await?;
 
     let _ = send_msg(&anvil1, &osmo).await?;
-    // let _ = send_msg(&anvil1, &ntrn).await?;
 
     Ok(())
 }
@@ -127,8 +114,8 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
         &[TestValidators::new(DOMAIN_EVM, 5, 3)],
         &[RemoteGasDataConfig {
             remote_domain: DOMAIN_EVM,
-            token_exchange_rate: Uint128::from(1u128 * 10u128.pow(4)),
-            gas_price: Uint128::from(1u128 * 10u128.pow(9)),
+            token_exchange_rate: Uint128::from(10u128.pow(4)),
+            gas_price: Uint128::from(10u128.pow(9)),
         }],
     )?;
 

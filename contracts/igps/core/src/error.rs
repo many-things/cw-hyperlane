@@ -1,3 +1,5 @@
+use cosmwasm_std::Uint256;
+
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
@@ -12,8 +14,11 @@ pub enum ContractError {
     #[error("unauthorized")]
     Unauthorized {},
 
-    #[error("insufficient funds")]
-    InsufficientFunds {},
+    #[error("insufficient funds: needed {gas_needed:?}, but only received {received:?}")]
+    InsufficientFunds {
+        received: Uint256,
+        gas_needed: Uint256,
+    },
 
     #[error("gas oracle not found for {0}")]
     GasOracleNotFound(u32),
