@@ -76,7 +76,11 @@ pub struct MessageIdMultisigIsmMetadata {
 
 impl From<MessageIdMultisigIsmMetadata> for HexBinary {
     fn from(v: MessageIdMultisigIsmMetadata) -> Self {
-        v.origin_merkle_tree
+        let mut origin_merkle_tree = [0u8; 32];
+        origin_merkle_tree[32 - v.origin_merkle_tree.len()..]
+            .copy_from_slice(&v.origin_merkle_tree);
+
+        origin_merkle_tree
             .to_vec()
             .iter()
             .chain(v.merkle_root.to_vec().iter())
