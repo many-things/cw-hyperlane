@@ -39,6 +39,7 @@ ripemd.workspace = true
 hex-literal.workspace = true
 ibcx-test-utils.workspace = true
 
+hpl-ownable.workspace = true
 hpl-ism-multisig.workspace = true
 hpl-interface.workspace = true
 

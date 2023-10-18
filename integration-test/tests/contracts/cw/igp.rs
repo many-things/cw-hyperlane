@@ -77,7 +77,7 @@ impl Igp {
             owner,
         )?;
 
-        if self.oracle_configs.len() > 0 {
+        if !self.oracle_configs.is_empty() {
             wasm.execute(
                 &igp_oracle,
                 &igp::oracle::ExecuteMsg::SetRemoteGasDataConfigs {

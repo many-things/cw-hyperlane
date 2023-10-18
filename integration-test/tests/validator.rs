@@ -1,10 +1,14 @@
-use cosmwasm_std::{Binary, HexBinary};
-use ethers::types::Address;
+use cosmwasm_std::{
+    testing::{mock_dependencies, mock_info},
+    Binary, HexBinary,
+};
+use ethers::types::{Address, H160};
 use ethers::utils::hex::FromHex;
 use hpl_interface::{
-    ism::multisig::ValidatorSet,
-    types::{bech32_encode, pub_to_addr, MessageIdMultisigIsmMetadata},
+    ism::multisig::{ThresholdSet, ValidatorSet},
+    types::{bech32_encode, pub_to_addr, Message, MessageIdMultisigIsmMetadata},
 };
+use ibcx_test_utils::{addr, gen_bz};
 use k256::{
     ecdsa::{RecoveryId, SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
@@ -160,4 +164,56 @@ impl TestValidators {
             signatures,
         })
     }
+}
+
+#[test]
+fn test_validator() {
+    let hrp = "osmo";
+    let owner = addr("owner");
+    let validators = TestValidators::new(2, 5, 3);
+
+    let mut deps = mock_dependencies();
+
+    hpl_ownable::initialize(deps.as_mut().storage, &owner).unwrap();
+
+    hpl_ism_multisig::state::HRP
+        .save(deps.as_mut().storage, &hrp.to_string())
+        .unwrap();
+
+    hpl_ism_multisig::execute::enroll_validators(
+        deps.as_mut(),
+        mock_info(owner.as_str(), &[]),
+        validators.to_set(hrp),
+    )
+    .unwrap();
+
+    hpl_ism_multisig::execute::set_threshold(
+        deps.as_mut(),
+        mock_info(owner.as_str(), &[]),
+        ThresholdSet {
+            domain: validators.domain,
+            threshold: validators.threshold,
+        },
+    )
+    .unwrap();
+
+    let mut message: Message = gen_bz(100).into();
+    message.origin_domain = validators.domain;
+
+    let message_id = message.id();
+
+    let metadata = validators
+        .make_metadata(
+            H160::from_slice(gen_bz(20).as_slice()),
+            gen_bz(32).as_slice().try_into().unwrap(),
+            1,
+            message_id.as_slice().try_into().unwrap(),
+            true,
+        )
+        .unwrap();
+
+    let res =
+        hpl_ism_multisig::query::verify_message(deps.as_ref(), metadata.into(), message.into())
+            .unwrap();
+    assert!(res.verified);
 }
