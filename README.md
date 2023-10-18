@@ -4,6 +4,37 @@
 
 > This project is under active development...!
 
+## Prerequisites
+
+- rust (wasm32-wasm32-unknown target)
+- go 1.20 or higher
+- grcov
+
+## How to build
+
+```bash
+cargo build
+
+cargo wasm
+```
+
+## How to test
+
+```bash
+# testing
+cargo test
+
+# coverage
+export RUSTFLAGS="-Cinstrument-coverage"
+export LLVM_PROFILE_FILE="eddy-%p-%m.profraw"
+
+cargo build
+
+cargo test
+
+grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./target/debug/coverage/
+```
+
 ## Deploy Sequence
 
 1. Deploy [Mailbox](./contracts/core/mailbox)
