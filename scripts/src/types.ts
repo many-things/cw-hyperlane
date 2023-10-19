@@ -144,7 +144,8 @@ export interface HplIsmRoutingInstantiateMsg {
 
 export interface HplMailboxInstantiateMsg {
   owner: string;
-  default_ism: string;
+  hrp: string;
+  domain: number;
 }
 
 export interface HplMulticallInstantiateMsg {

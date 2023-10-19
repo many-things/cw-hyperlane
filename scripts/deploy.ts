@@ -115,7 +115,9 @@ async function main() {
   );
 
   // init igp oracle
-  ctx.contracts[igp_oracle.contractName] = await igp_oracle.instantiate({});
+  ctx.contracts[igp_oracle.contractName] = await igp_oracle.instantiate({
+    owner: ctx.address!,
+  });
 
   // init igp
   ctx.contracts[igp.contractName] = await igp.instantiate({
@@ -125,6 +127,7 @@ async function main() {
     gas_token: "token",
     beneficiary: ctx.address!,
   });
+
 
   // init ism multisig
   ctx.contracts[ism_multisig.contractName] = await ism_multisig.instantiate({

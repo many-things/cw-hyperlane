@@ -1,0 +1,74 @@
+{
+  "contracts": {
+    "hpl_hook_merkle": {
+      "address": "dual14d3zf0r548p6y77cjj7xjzfre8p89wuakczkfq7xlx02qvcdxz6s0sug8t",
+      "codeId": 18,
+      "digest": "84e4158274c725603dbfaa5a0346aa817943b941fa19d954f58f5342dbb3f288"
+    },
+    "hpl_hook_pausable": {
+      "codeId": 19,
+      "digest": "7ef41a13d8a724ef05a046eccebab163255ba4b6fdca12d9ff68bb1935ab8e98"
+    },
+    "hpl_hook_routing": {
+      "codeId": 20,
+      "digest": "334c77dcf7d248e8a98a9507c74f769807affb66f147d043fe4838b5ff24cf62"
+    },
+    "hpl_hook_routing_custom": {
+      "codeId": 21,
+      "digest": "41d085ffef5596334de5c92384018fd36ca20e7d74d432012f7e0f2bf8c7e4f7"
+    },
+    "hpl_hook_routing_fallback": {
+      "codeId": 22,
+      "digest": "4a1ec89ec67ef2d2ec74e818a8ff4fc5cc52cb8b2df1ee2c1bfd70bdd81d8b6a"
+    },
+    "hpl_igp": {
+      "address": "dual1xvcthy3yrjaeg4y29c5zd2ckefgx99h2ge5ppxtwslnvyqwar7aqqrzy4q",
+      "codeId": 23,
+      "digest": "21e75442e807415de5c865fff4afc3687d733c0c2cd49b54930753a2f691560b"
+    },
+    "hpl_igp_oracle": {
+      "address": "dual1e7kn2n6p9qsxxkght69s485dxeln29u8kq75r06lywmv9j7kh4lqn3xmvm",
+      "codeId": 24,
+      "digest": "270bc1baf053e1ff814bc0b01b12d5bc819e6a34f450cafa3323816351652e8b"
+    },
+    "hpl_ism_multisig": {
+      "address": "dual1jwedcsjxv8e3umnnqm5cvtylg0han2wfqwlw9n27n2kns0vjgneq8d6m2a",
+      "codeId": 25,
+      "digest": "dc7e476318aa2009edabc3c0c6b04decabaf43a971c4799d4a50b052ff20e316"
+    },
+    "hpl_ism_routing": {
+      "codeId": 26,
+      "digest": "413ba21e5d072d10d5b3f3c24fd96d9e9e606c5754914831b12495e876c5f9db"
+    },
+    "hpl_mailbox": {
+      "address": "dual1rrrplhegwfk23avmh5d32hxxrq6jnm945xusark6vwgjd6y63a3smrw96v",
+      "codeId": 27,
+      "digest": "0e62de40002ec2558d445e3af15b61e35a4bc3c2de252fa094d96dbc4b291b5b"
+    },
+    "hpl_test_mock_hook": {
+      "address": "dual1q5wmfzl6gfe629cc5yacluerphf8d5gq8j2d52pn7ua70279mvlq39cetg",
+      "codeId": 28,
+      "digest": "59027553d171e5e207236939471dba44b9e51561b1a493aebd37bbd67b07e1ea"
+    },
+    "hpl_test_mock_msg_receiver": {
+      "address": "dual18ncy2mk2fd9zmyqyv3fcmnduvlhrg2tjccn2gyw2nlfendmlvj0qc8wlvg",
+      "codeId": 29,
+      "digest": "8db692f36c505800dc9b4649cc47348801b95741813f692ad76e917cbed34998"
+    },
+    "hpl_validator_announce": {
+      "address": "dual1djhfxdhd2t29l0kr06pt2rrnm8qr4fch70rqesdpydnw6mctvatqe74l0u",
+      "codeId": 30,
+      "digest": "985256fe982396359d3d257a4a6ed924a3ebb042b9df041dd012ad6aa61a29bd"
+    },
+    "hpl_warp_cw20": {
+      "codeId": 31,
+      "digest": "a339d7c6f7e1d4428086a342ed7b2f124579775e97ea44e2ca209440ada85c19"
+    },
+    "hpl_warp_native": {
+      "codeId": 32,
+      "digest": "eed9d7dfa18163de64893cfe88e038cfc82e487561c94b142978efdacc1f9dff"
+    }
+  },
+  "address": "dual1dwnrgwsf5c9vqjxsax04pdm0mx007yrraj2dgn",
+  "latestMigration": "mailbox_related"
+}

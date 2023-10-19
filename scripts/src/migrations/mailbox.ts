@@ -18,7 +18,8 @@ export default class MailboxMigration implements Migration {
   run = async (): Promise<Context> => {
     const mailboxInit: HplMailboxInstantiateMsg = {
       owner: this.ctx.address!,
-      default_ism: this.ism_multisig.address!,
+      hrp: "dual",
+      domain: 33333,
     }
     this.ctx.contracts[this.mailbox.contractName] = await this.mailbox.instantiate(mailboxInit);
     return this.ctx;
