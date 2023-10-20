@@ -6,9 +6,6 @@ pub mod contract;
 mod conv;
 pub mod error;
 
-#[cfg(test)]
-mod tests;
-
 // reply message
 pub const REPLY_ID_CREATE_DENOM: u64 = 0;
 

@@ -43,6 +43,8 @@ hpl-router.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
+osmosis-test-tube.workspace = true
+ibcx-test-utils.workspace = true
 rstest.workspace = true
 anyhow.workspace = true
 k256.workspace = true
