@@ -1,3 +1,4 @@
+pub mod aggregate;
 pub mod merkle;
 pub mod pausable;
 pub mod routing;

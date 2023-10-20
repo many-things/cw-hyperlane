@@ -46,7 +46,7 @@ pub fn verify_message(
     let multisig_hash = multisig_hash(
         domain_hash(message.origin_domain, metadata.origin_merkle_tree)?.to_vec(),
         metadata.merkle_root.to_vec(),
-        metadata.merkle_index.to_vec(),
+        0,
         message.id().to_vec(),
     )?;
 
