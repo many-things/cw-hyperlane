@@ -241,21 +241,34 @@ fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
 
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use hpl_interface::warp::cw20::{Cw20ModeBridged, Cw20ModeCollateral};
+    use cosmwasm_std::{
+        testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
+        Binary, Empty, OwnedDeps, Uint128,
+    };
+    use hpl_interface::{
+        core::HandleMsg,
+        router::DomainRouteSet,
+        warp::cw20::{Cw20ModeBridged, Cw20ModeCollateral},
+    };
+    use hpl_router::set_routes;
+    use ibcx_test_utils::{addr, gen_bz};
     use rstest::{fixture, rstest};
 
+
+    
     use super::*;
 
     const DEPLOYER: &str = "sender";
     const OWNER: &str = "owner";
     const MAILBOX: &str = "mailbox";
+    const TOKEN: &str = "token";
 
     const CW20_BRIDGED_CODE_ID: u64 = 1;
     const CW20_BRIDGED_NAME: &str = "cw20-created";
     const CW20_COLLATERAL_ADDRESS: &str = "cw20-exisiting";
 
     type Cw20TokenMode = TokenModeMsg<Cw20ModeBridged, Cw20ModeCollateral>;
+    type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
 
     #[fixture]
     fn token_mode_bridge() -> Cw20TokenMode {
@@ -280,20 +293,21 @@ mod test {
         })
     }
 
-    #[rstest]
-    #[case(token_mode_bridge())]
-    #[case(token_mode_collateral())]
-    fn test_init(#[values("osmo", "neutron")] hrp: &str, #[case] token_mode: Cw20TokenMode) {
+    #[fixture]
+    fn deps(
+        #[default(vec![])] routes: Vec<(u32, HexBinary)>,
+        #[default("osmo")] hrp: &str,
+        #[default(Some(TOKEN))] token: Option<&str>,
+        token_mode_collateral: Cw20TokenMode,
+    ) -> (TestDeps, Response) {
         let mut deps = mock_dependencies();
-
-        let mode = token_mode.clone().into();
 
         let res = instantiate(
             deps.as_mut(),
             mock_env(),
             mock_info(DEPLOYER, &[]),
             InstantiateMsg {
-                token: token_mode.clone(),
+                token: token_mode_collateral,
                 hrp: hrp.to_string(),
                 owner: OWNER.to_string(),
                 mailbox: MAILBOX.to_string(),
@@ -301,7 +315,39 @@ mod test {
         )
         .unwrap();
 
+        if let Some(token) = token {
+            super::TOKEN
+                .save(deps.as_mut().storage, &addr(token))
+                .unwrap();
+        }
+
+        if !routes.is_empty() {
+            set_routes(
+                deps.as_mut().storage,
+                &addr(OWNER),
+                routes
+                    .into_iter()
+                    .map(|v| DomainRouteSet {
+                        domain: v.0,
+                        route: Some(v.1),
+                    })
+                    .collect(),
+            )
+            .unwrap();
+        }
+
+        (deps, res)
+    }
+
+    #[rstest]
+    #[case(token_mode_bridge())]
+    #[case(token_mode_collateral())]
+    fn test_init(#[values("osmo", "neutron")] hrp: &str, #[case] token_mode: Cw20TokenMode) {
+        let (deps, res) = deps(vec![], hrp, None, token_mode.clone());
+
         let storage = deps.as_ref().storage;
+        let mode = token_mode.clone().into();
+
         assert_eq!(super::HRP.load(storage).unwrap(), hrp);
         assert_eq!(super::MODE.load(storage).unwrap(), mode);
         assert_eq!(super::MAILBOX.load(storage).unwrap(), MAILBOX);
@@ -326,6 +372,174 @@ mod test {
             TokenModeMsg::Collateral(v) => {
                 assert_eq!(super::TOKEN.load(storage).unwrap(), v.address);
                 assert!(res.messages.is_empty())
+            }
+        }
+    }
+
+    enum Method {
+        Handle,
+        Receive,
+    }
+
+    fn default_cw20_receive_msg() -> Cw20ReceiveMsg {
+        Cw20ReceiveMsg {
+            sender: Default::default(),
+            amount: Default::default(),
+            msg: Default::default(),
+        }
+    }
+
+    #[rstest]
+    #[should_panic(expected = "unauthorized")]
+    #[case(MAILBOX, Method::Receive)]
+    #[should_panic(expected = "unauthorized")]
+    #[case(TOKEN, Method::Handle)]
+    fn test_execute_authority(
+        deps: (TestDeps, Response),
+        #[case] sender: &str,
+        #[case] method: Method,
+    ) {
+        let (mut deps, _) = deps;
+
+        let info = mock_info(sender, &[]);
+
+        let msg = match method {
+            Method::Handle => ExecuteMsg::Handle(HandleMsg::default()),
+            Method::Receive => ExecuteMsg::Receive(default_cw20_receive_msg()),
+        };
+
+        execute(deps.as_mut(), mock_env(), info, msg)
+            .map_err(|v| v.to_string())
+            .unwrap();
+    }
+
+    #[rstest]
+    #[case(1, gen_bz(32), token_mode_bridge())]
+    #[case(1, gen_bz(32), token_mode_collateral())]
+    #[should_panic(expected = "route not found")]
+    #[case(2, gen_bz(32), token_mode_collateral())]
+    fn test_mailbox_handle(
+        #[values("osmo", "neutron")] hrp: &str,
+        #[case] domain: u32,
+        #[case] route: HexBinary,
+        #[case] token_mode: Cw20TokenMode,
+    ) {
+        let (mut deps, _) = deps(
+            vec![(1, route.clone())],
+            hrp,
+            Some(TOKEN),
+            token_mode.clone(),
+        );
+
+        let sender = MAILBOX;
+
+        let warp_msg = warp::Message {
+            recipient: gen_bz(32),
+            amount: Uint256::from_u128(100),
+            metadata: HexBinary::default(),
+        };
+
+        let handle_msg = HandleMsg {
+            origin: domain,
+            sender: route,
+            body: warp_msg.clone().into(),
+        };
+
+        let res = mailbox_handle(deps.as_mut(), mock_info(sender, &[]), handle_msg).unwrap();
+        let msg = &res.messages.get(0).unwrap().msg;
+
+        match token_mode {
+            TokenModeMsg::Bridged(_) => {
+                assert_eq!(
+                    cosmwasm_std::to_binary(msg).unwrap(),
+                    cosmwasm_std::to_binary(&CosmosMsg::<Empty>::Wasm(
+                        conv::to_mint_msg(
+                            TOKEN,
+                            bech32_encode(hrp, warp_msg.recipient.as_slice()).unwrap(),
+                            warp_msg.amount
+                        )
+                        .unwrap()
+                    ))
+                    .unwrap()
+                )
+            }
+            TokenModeMsg::Collateral(_) => {
+                assert_eq!(
+                    cosmwasm_std::to_binary(msg).unwrap(),
+                    cosmwasm_std::to_binary(&CosmosMsg::<Empty>::Wasm(
+                        conv::to_send_msg(
+                            TOKEN,
+                            bech32_encode(hrp, warp_msg.recipient.as_slice()).unwrap(),
+                            warp_msg.amount
+                        )
+                        .unwrap()
+                    ))
+                    .unwrap()
+                );
+            }
+        }
+    }
+
+    #[rstest]
+    #[case(1, gen_bz(32), token_mode_bridge())]
+    #[case(1, gen_bz(32), token_mode_collateral())]
+    #[should_panic(expected = "route not found")]
+    #[case(2, gen_bz(32), token_mode_collateral())]
+    fn test_transfer_remote(
+        #[values("osmo", "neutron")] hrp: &str,
+        #[case] domain: u32,
+        #[case] route: HexBinary,
+        #[case] token_mode: Cw20TokenMode,
+    ) {
+        let (mut deps, _) = deps(
+            vec![(1, route.clone())],
+            hrp,
+            Some(TOKEN),
+            token_mode.clone(),
+        );
+
+        let sender = addr("sender");
+        let recipient = gen_bz(32);
+
+        let receive_msg = Cw20ReceiveMsg {
+            sender: sender.to_string(),
+            amount: Uint128::new(100),
+            msg: Binary::default(),
+        };
+
+        let res = transfer_remote(deps.as_mut(), receive_msg, domain, recipient.clone()).unwrap();
+        let msgs = res
+            .messages
+            .clone()
+            .into_iter()
+            .map(|v| v.msg)
+            .collect::<Vec<_>>();
+
+        let warp_msg = warp::Message {
+            recipient,
+            amount: Uint256::from_u128(100),
+            metadata: HexBinary::default(),
+        };
+
+        let dispatch_msg =
+            mailbox::dispatch(MAILBOX, domain, route, warp_msg.into(), None, None).unwrap();
+
+        match token_mode {
+            TokenModeMsg::Bridged(_) => {
+                assert_eq!(
+                    cosmwasm_std::to_binary(&msgs).unwrap(),
+                    cosmwasm_std::to_binary(&vec![
+                        CosmosMsg::from(conv::to_burn_msg(TOKEN, Uint128::new(100)).unwrap()),
+                        dispatch_msg,
+                    ])
+                    .unwrap(),
+                );
+            }
+            TokenModeMsg::Collateral(_) => {
+                assert_eq!(
+                    cosmwasm_std::to_binary(&msgs).unwrap(),
+                    cosmwasm_std::to_binary(&vec![dispatch_msg]).unwrap(),
+                );
             }
         }
     }

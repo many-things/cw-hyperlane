@@ -5,6 +5,7 @@ pub mod mailbox;
 pub mod va;
 
 #[cw_serde]
+#[derive(Default)]
 pub struct HandleMsg {
     pub origin: u32,
     pub sender: HexBinary,
