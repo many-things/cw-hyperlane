@@ -25,7 +25,7 @@ async function main() {
       },
     },
   });
-  console.log(res);
+  console.log(res.events.filter((v) => v.type.startsWith("wasm")));
 
   const warp_native_ibc = fetcher.get(HplWarpNative, "hpl_warp_native_ibc");
 
@@ -40,7 +40,7 @@ async function main() {
       },
     },
   });
-  console.log(res);
+  console.log(res.events.filter((v) => v.type.startsWith("wasm")));
 }
 
 main().catch(console.error);
