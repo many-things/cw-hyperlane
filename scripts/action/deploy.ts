@@ -1,21 +1,18 @@
-import {
-  ExecuteResult,
-  SigningCosmWasmClient,
-} from "@cosmjs/cosmwasm-stargate";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
 
-import { loadContext } from "./src/load_context";
-import HplMailbox from "./src/contracts/hpl_mailbox";
-import { BaseContract, Context } from "./src/types";
-import HplHookMerkle from "./src/contracts/hpl_hook_merkle";
-import HplTestMockHook from "./src/contracts/hpl_test_mock_hook";
-import HplIgpGasOracle from "./src/contracts/hpl_igp_oracle";
-import HplIgp from "./src/contracts/hpl_igp";
-import HplIsmMultisig from "./src/contracts/hpl_ism_multisig";
+import { loadContext } from "../src/load_context";
+import HplMailbox from "../src/contracts/hpl_mailbox";
+import { Context } from "../src/types";
+import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
+import HplTestMockHook from "../src/contracts/hpl_test_mock_hook";
+import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
+import HplIgp from "../src/contracts/hpl_igp";
+import HplIsmMultisig from "../src/contracts/hpl_ism_multisig";
 import { writeFileSync } from "fs";
-import HplValidatorAnnounce from "./src/contracts/hpl_validator_announce";
-import HplTestMockMsgReceiver from "./src/contracts/hpl_test_mock_msg_receiver";
+import HplValidatorAnnounce from "../src/contracts/hpl_validator_announce";
+import HplTestMockMsgReceiver from "../src/contracts/hpl_test_mock_msg_receiver";
 
 const NETWORK_ID = process.env.NETWORK_ID || "osmo-test-5";
 const NETWORK_HRP = process.env.NETWORK_HRP || "osmo";
@@ -115,7 +112,9 @@ async function main() {
   );
 
   // init igp oracle
-  ctx.contracts[igp_oracle.contractName] = await igp_oracle.instantiate({});
+  ctx.contracts[igp_oracle.contractName] = await igp_oracle.instantiate({
+    owner: ctx.address!,
+  });
 
   // init igp
   ctx.contracts[igp.contractName] = await igp.instantiate({

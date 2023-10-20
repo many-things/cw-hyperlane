@@ -23,24 +23,24 @@ export default class MailboxMigration implements Migration {
   ) {}
 
   run = async (): Promise<Context> => {
-    const routingMsgs: HplIsmRoutingInstantiateMsg = {
-      owner: this.ctx.address!,
-      isms: [
-        {
-          domain: 4337,
-          address: this.mailbox.address!,
-        },
-      ],
-    };
-    this.ctx.contracts[this.ismRouting.contractName] =
-      await this.ismRouting.instantiate(routingMsgs);
+    // const routingMsgs: HplIsmRoutingInstantiateMsg = {
+    //   owner: this.ctx.address!,
+    //   isms: [
+    //     {
+    //       domain: 4337,
+    //       address: this.mailbox.address!,
+    //     },
+    //   ],
+    // };
+    // this.ctx.contracts[this.ismRouting.contractName] =
+    //   await this.ismRouting.instantiate(routingMsgs);
 
-    const vaMsg: HplValidatorAnnounceInstantiateMsg = {
-      addr_prefix: "osmo",
-      mailbox: this.mailbox.address!,
-      local_domain: 4337,
-    };
-    this.ctx.contracts[this.va.contractName] = await this.va.instantiate(vaMsg);
+    // const vaMsg: HplValidatorAnnounceInstantiateMsg = {
+    //   addr_prefix: "osmo",
+    //   mailbox: this.mailbox.address!,
+    //   local_domain: 4337,
+    // };
+    // this.ctx.contracts[this.va.contractName] = await this.va.instantiate(vaMsg);
 
     return this.ctx;
   };

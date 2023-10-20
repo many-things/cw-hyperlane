@@ -4,19 +4,13 @@ import { loadContext, saveContext } from "./load_context";
 import { getTargetContract, getTargetContractName } from "./contracts";
 import { CodeUpdate, CodeCreate, Context } from "./types";
 import * as readline from "readline";
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
-import { GasPrice } from "@cosmjs/stargate";
+
 import { AxiosError } from "axios";
 import { CONTAINER } from "./ioc";
 import { runMigrations } from "./migrations";
+import { config, getSigningClient } from "./config";
 
 colors.enable();
-const NETWORK_ID = process.env.NETWORK_ID || "osmo-test-5";
-const NETWORK_HRP = process.env.NETWORK_HRP || "osmo";
-const NETWORK_URL =
-  process.env.NETWORK_URL || "https://rpc.osmotest5.osmosis.zone";
-const NETWORK_GAS = process.env.NETWORK_GAS || "0.025uosmo";
 
 function askQuestion(query: string) {
   const rl = readline.createInterface({
@@ -32,36 +26,21 @@ function askQuestion(query: string) {
   );
 }
 
-async function getSigningClient(): Promise<{
-  client: SigningCosmWasmClient;
-  address: string;
-}> {
-  const mnemonic = process.env["SIGNING_MNEMONIC"] as string;
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
-    prefix: NETWORK_HRP,
-  });
-  const [{ address }] = await wallet.getAccounts();
-
-  const client = await SigningCosmWasmClient.connectWithSigner(
-    NETWORK_URL,
-    wallet,
-    {
-      gasPrice: GasPrice.fromString(NETWORK_GAS),
-    }
-  );
-  return { client, address };
-}
-
 async function main() {
   const digest = await loadWasmFileDigest();
-  const context = await loadContext(NETWORK_ID);
+  const context = loadContext(config.network.id);
   const targetContractName = getTargetContractName();
 
-  const { client, address } = await getSigningClient();
-  context.address = address;
+  const client = await getSigningClient(config);
+  context.address = client.signer;
 
   CONTAINER.bind(Context).toConstantValue(context);
-  const contracts = getTargetContract(context, client, address, CONTAINER);
+  const contracts = getTargetContract(
+    context,
+    client.wasm,
+    client.signer,
+    CONTAINER
+  );
   console.log("check exist contracts....");
 
   const codeChanges = targetContractName
@@ -128,7 +107,7 @@ async function main() {
           contract.digest = v.digest;
           const contractContext = await contract.upload();
           context.contracts[v.contractName] = contractContext;
-          saveContext(NETWORK_ID, context);
+          saveContext(config.network.id, context);
 
           console.log("OK".green, "as", contractContext.codeId);
         } catch (e) {
@@ -141,7 +120,7 @@ async function main() {
     console.log("No contracts to upload.");
   }
 
-  runMigrations(NETWORK_ID, false);
+  runMigrations(config.network.id, false);
 }
 
 main();

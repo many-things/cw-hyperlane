@@ -44,7 +44,9 @@ export default class InitializeStandalone implements Migration {
 
     // init igp oracle
     this.ctx.contracts[this.igp_oracle.contractName] =
-      await this.igp_oracle.instantiate({});
+      await this.igp_oracle.instantiate({
+        owner: this.ctx.address!,
+      });
 
     // init igp
     this.ctx.contracts[this.igp.contractName] = await this.igp.instantiate({
@@ -52,7 +54,7 @@ export default class InitializeStandalone implements Migration {
       owner: this.ctx.address!,
       mailbox: this.ctx.contracts[this.mailbox.contractName].address,
       gas_token: "token",
-      beneficairy: this.ctx.address!,
+      beneficiary: this.ctx.address!,
     });
 
     // init ism multisig
