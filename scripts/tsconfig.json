@@ -15,5 +15,5 @@
     "outDir": "dist",
     "declaration": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["src/**/*.ts", "*.ts", "deploy/**/*.ts"]
+  "include": ["src/**/*.ts", "*.ts", "action/**/*.ts"]
 }

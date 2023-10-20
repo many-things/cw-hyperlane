@@ -4,6 +4,7 @@ import { config, getSigningClient } from "../src/config";
 import HplWarpNative from "../src/contracts/hpl_warp_native";
 import HplIsmMultisig from "../src/contracts/hpl_ism_multisig";
 import { ContractFetcher } from "./fetch";
+import { addPad } from "../src/conv";
 
 async function main() {
   const client = await getSigningClient(config);
@@ -34,8 +35,7 @@ async function main() {
       set_route: {
         set: {
           domain: 5,
-          route:
-            "000000000000000000000000aB7011fa44868E023C869635eE33875629Aec8db",
+          route: addPad("0xaB7011fa44868E023C869635eE33875629Aec8db"),
         },
       },
     },

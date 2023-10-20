@@ -99,12 +99,25 @@ export abstract class BaseContract implements Contract {
     return this.getContractContext();
   }
 
-  public async execute(msg: any): Promise<ExecuteResult> {
+  // overloads
+  public async execute(msg: any): Promise<ExecuteResult>;
+  public async execute(
+    msg: any,
+    funds: { denom: string; amount: string }[]
+  ): Promise<ExecuteResult>;
+
+  // implementation
+  public async execute(
+    msg: any,
+    funds?: { denom: string; amount: string }[]
+  ): Promise<ExecuteResult> {
     const res = await this.client.execute(
       this.signer,
       this.address!,
       msg,
-      "auto"
+      "auto",
+      undefined,
+      funds
     );
 
     return res;

@@ -35,6 +35,9 @@ dependencies:
   colors:
     specifier: ^1.4.0
     version: 1.4.0
+  commander:
+    specifier: ^11.1.0
+    version: 11.1.0
   inversify:
     specifier: ^6.0.1
     version: 6.0.1
@@ -707,6 +710,11 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       delayed-stream: 1.0.0
+    dev: false
+
+  /commander@11.1.0:
+    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
+    engines: {node: '>=16'}
     dev: false
 
   /cosmjs-types@0.8.0:
