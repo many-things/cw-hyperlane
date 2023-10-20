@@ -1,4 +1,7 @@
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import {
+  ExecuteResult,
+  SigningCosmWasmClient,
+} from "@cosmjs/cosmwasm-stargate";
 import { getWasmPath } from "./load_wasm";
 import fs from "fs";
 
@@ -83,11 +86,10 @@ export abstract class BaseContract implements Contract {
   }
 
   public async instantiate(msg: any): Promise<ContractContext> {
-    const instantiateMsg = msg as HplMailboxInstantiateMsg;
     const contract = await this.client.instantiate(
       this.signer,
       this.codeId!,
-      instantiateMsg,
+      msg,
       this.contractName,
       "auto",
       { admin: this.signer }
@@ -95,6 +97,23 @@ export abstract class BaseContract implements Contract {
 
     this.address = contract.contractAddress;
     return this.getContractContext();
+  }
+
+  public async execute(msg: any): Promise<ExecuteResult> {
+    const res = await this.client.execute(
+      this.signer,
+      this.address!,
+      msg,
+      "auto"
+    );
+
+    return res;
+  }
+
+  public async query<T>(msg: any): Promise<T> {
+    const res = await this.client.queryContractSmart(this.address!, msg);
+
+    return res;
   }
 }
 

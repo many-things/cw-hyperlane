@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "es2021",
-      "webworker"
-    ],
+    "lib": ["es2021", "webworker"],
     "module": "commonjs",
     "target": "es2021",
     "strict": true,
@@ -16,8 +13,7 @@
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
     "outDir": "dist",
-    "declaration": true                       /* Skip type checking all .d.ts files. */
+    "declaration": true /* Skip type checking all .d.ts files. */
   },
-  "include": [ "src/**/*.ts", "*.ts" ],
+  "include": ["src/**/*.ts", "*.ts", "deploy/**/*.ts"]
 }
-
