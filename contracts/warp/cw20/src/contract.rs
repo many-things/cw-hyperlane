@@ -246,6 +246,7 @@ mod test {
         Binary, Empty, OwnedDeps, Uint128,
     };
     use hpl_interface::{
+        build_test_executor, build_test_querier,
         core::HandleMsg,
         router::DomainRouteSet,
         warp::cw20::{Cw20ModeBridged, Cw20ModeCollateral},
@@ -254,9 +255,10 @@ mod test {
     use ibcx_test_utils::{addr, gen_bz};
     use rstest::{fixture, rstest};
 
-
-    
     use super::*;
+
+    build_test_querier!(super::query);
+    build_test_executor!(super::execute);
 
     const DEPLOYER: &str = "sender";
     const OWNER: &str = "owner";
@@ -337,6 +339,30 @@ mod test {
         }
 
         (deps, res)
+    }
+
+    #[rstest]
+    #[case(token_mode_bridge())]
+    #[case(token_mode_collateral())]
+    fn test_queries(#[values("osmo", "neutron")] hrp: &str, #[case] token_mode: Cw20TokenMode) {
+        let (deps, _) = deps(vec![], hrp, Some(TOKEN), token_mode.clone());
+
+        let res: warp::TokenTypeResponse = test_query(
+            deps.as_ref(),
+            QueryMsg::TokenDefault(warp::TokenWarpDefaultQueryMsg::TokenType {}),
+        );
+        assert_eq!(
+            res.typ,
+            warp::TokenType::CW20 {
+                contract: TOKEN.into()
+            }
+        );
+
+        let res: warp::TokenModeResponse = test_query(
+            deps.as_ref(),
+            QueryMsg::TokenDefault(warp::TokenWarpDefaultQueryMsg::TokenMode {}),
+        );
+        assert_eq!(res.mode, token_mode.into());
     }
 
     #[rstest]
@@ -445,7 +471,12 @@ mod test {
             body: warp_msg.clone().into(),
         };
 
-        let res = mailbox_handle(deps.as_mut(), mock_info(sender, &[]), handle_msg).unwrap();
+        let res = test_execute(
+            deps.as_mut(),
+            &addr(sender),
+            ExecuteMsg::Handle(handle_msg),
+            vec![],
+        );
         let msg = &res.messages.get(0).unwrap().msg;
 
         match token_mode {
