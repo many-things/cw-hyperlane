@@ -84,6 +84,7 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
+        Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
         Handle(msg) => mailbox_handle(deps, info, msg),
         Receive(msg) => {

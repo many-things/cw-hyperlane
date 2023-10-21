@@ -90,10 +90,13 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    use ExecuteMsg::*;
+
     match msg {
-        ExecuteMsg::Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
-        ExecuteMsg::Handle(msg) => mailbox_handle(deps, env, info, msg),
-        ExecuteMsg::TransferRemote {
+        Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
+        Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
+        Handle(msg) => mailbox_handle(deps, env, info, msg),
+        TransferRemote {
             dest_domain,
             recipient,
         } => transfer_remote(deps, env, info, dest_domain, recipient),
