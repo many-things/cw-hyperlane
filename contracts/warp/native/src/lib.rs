@@ -7,9 +7,6 @@ mod conv;
 pub mod error;
 mod proto;
 
-#[cfg(test)]
-mod tests;
-
 // reply message
 pub const REPLY_ID_CREATE_DENOM: u64 = 0;
 

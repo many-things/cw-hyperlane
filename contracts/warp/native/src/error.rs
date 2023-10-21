@@ -12,15 +12,15 @@ pub enum ContractError {
     #[error("{0}")]
     RecoverPubkeyError(#[from] RecoverPubkeyError),
 
-    #[error("Unauthorized")]
+    #[error("unauthorized")]
     Unauthorized,
 
-    #[error("WrongLength")]
+    #[error("wrong length")]
     WrongLength,
 
-    #[error("InvalidReplyId")]
+    #[error("invalid reply id")]
     InvalidReplyId,
 
-    #[error("NoRouter domain:{domain:?}")]
+    #[error("no route for domain {domain:?}")]
     NoRouter { domain: u32 },
 }

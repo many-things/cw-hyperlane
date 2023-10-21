@@ -244,7 +244,7 @@ fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
 mod test {
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Binary, Empty, OwnedDeps, Uint128,
+        Empty, OwnedDeps, Uint128,
     };
     use hpl_interface::{
         build_test_executor, build_test_querier,
@@ -428,16 +428,12 @@ mod test {
     ) {
         let (mut deps, _) = deps;
 
-        let info = mock_info(sender, &[]);
-
         let msg = match method {
             Method::Handle => ExecuteMsg::Handle(HandleMsg::default()),
             Method::Receive => ExecuteMsg::Receive(default_cw20_receive_msg()),
         };
 
-        execute(deps.as_mut(), mock_env(), info, msg)
-            .map_err(|v| v.to_string())
-            .unwrap();
+        test_execute(deps.as_mut(), &addr(sender), msg, vec![]);
     }
 
     #[rstest]
@@ -536,10 +532,19 @@ mod test {
         let receive_msg = Cw20ReceiveMsg {
             sender: sender.to_string(),
             amount: Uint128::new(100),
-            msg: Binary::default(),
+            msg: cosmwasm_std::to_binary(&ReceiveMsg::TransferRemote {
+                dest_domain: domain,
+                recipient: recipient.clone(),
+            })
+            .unwrap(),
         };
 
-        let res = transfer_remote(deps.as_mut(), receive_msg, domain, recipient.clone()).unwrap();
+        let res = test_execute(
+            deps.as_mut(),
+            &addr(TOKEN),
+            ExecuteMsg::Receive(receive_msg),
+            vec![],
+        );
         let msgs = res
             .messages
             .clone()
