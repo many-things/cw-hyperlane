@@ -44,18 +44,24 @@ pub fn instantiate(
 
     let (msgs, denom) = match msg.token {
         TokenModeMsg::Bridged(token) => {
+            let mut token_init_msg = token.init_msg;
+            token_init_msg.mint = Some(cw20::MinterResponse {
+                minter: env.contract.address.to_string(),
+                cap: None,
+            });
+
             let msgs = vec![SubMsg::reply_on_success(
                 WasmMsg::Instantiate {
                     admin: Some(env.contract.address.to_string()),
                     code_id: token.code_id,
-                    msg: cosmwasm_std::to_binary(&token.init_msg)?,
+                    msg: cosmwasm_std::to_binary(&token_init_msg)?,
                     funds: vec![],
                     label: "token warp cw20".to_string(),
                 },
                 REPLY_ID_CREATE_DENOM,
             )];
 
-            (msgs, token.init_msg.name)
+            (msgs, token_init_msg.name)
         }
         TokenModeMsg::Collateral(token) => {
             let token_addr = deps.api.addr_validate(&token.address)?;
