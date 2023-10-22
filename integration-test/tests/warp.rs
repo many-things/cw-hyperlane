@@ -75,7 +75,7 @@ async fn test_cw20_bridged() -> eyre::Result<()> {
         &osmo.core.mailbox,
         "osmo",
         &osmo.codes,
-        "cw20-denom".into(),
+        "denomdenom".into(),
         warp::TokenType::CW20 {
             contract: "".into(),
         },
@@ -120,8 +120,7 @@ async fn test_native_collateral(#[case] denom: &str) -> eyre::Result<()> {
 }
 
 #[rstest]
-#[case("ibc/B5CB286F69D48B2C4F6F8D8CF59011C40590DCF8A91617A5FBA9FF0A7B21307F")]
-#[case("uosmo")]
+#[case("utest")]
 #[tokio::test]
 async fn test_native_bridged(#[case] denom: &str) -> eyre::Result<()> {
     let osmo_app = OsmosisTestApp::new();

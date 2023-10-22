@@ -42,9 +42,7 @@ pub fn instantiate(
 
     hpl_ownable::initialize(deps.storage, &owner)?;
 
-    let mut denom = "".into();
-
-    let msgs = match msg.token {
+    let (msgs, denom) = match msg.token {
         // create native denom if token is bridged
         TokenModeMsg::Bridged(token) => {
             let mut msgs = vec![];
@@ -64,13 +62,12 @@ pub fn instantiate(
                 )));
             }
 
-            msgs
+            (msgs, token.denom)
         }
         // use denom directly if token is native
         TokenModeMsg::Collateral(token) => {
             TOKEN.save(deps.storage, &token.denom)?;
-            denom = token.denom;
-            vec![]
+            (vec![], token.denom)
         }
     };
 

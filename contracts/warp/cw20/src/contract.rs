@@ -42,11 +42,9 @@ pub fn instantiate(
 
     hpl_ownable::initialize(deps.storage, &owner)?;
 
-    let mut denom = "".into();
-
-    let msgs = match msg.token {
+    let (msgs, denom) = match msg.token {
         TokenModeMsg::Bridged(token) => {
-            vec![SubMsg::reply_on_success(
+            let msgs = vec![SubMsg::reply_on_success(
                 WasmMsg::Instantiate {
                     admin: Some(env.contract.address.to_string()),
                     code_id: token.code_id,
@@ -55,13 +53,14 @@ pub fn instantiate(
                     label: "token warp cw20".to_string(),
                 },
                 REPLY_ID_CREATE_DENOM,
-            )]
+            )];
+
+            (msgs, token.init_msg.name)
         }
         TokenModeMsg::Collateral(token) => {
             let token_addr = deps.api.addr_validate(&token.address)?;
             TOKEN.save(deps.storage, &token_addr)?;
-            denom = token_addr.to_string();
-            vec![]
+            (vec![], token_addr.into())
         }
     };
 
