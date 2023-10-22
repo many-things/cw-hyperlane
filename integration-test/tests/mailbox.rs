@@ -132,7 +132,7 @@ where
         sorted(vec![
             Attribute {
                 key: "_contract_address".to_string(),
-                value: to.core.msg_receiver,
+                value: to.core.msg_receiver.clone(),
             },
             attr("sender", sender),
             attr(
