@@ -110,9 +110,8 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
             TOKEN.save(deps.storage, &reply.new_token_denom)?;
 
-            let resp = Response::new().add_event(
-                new_event("reply-instantiate").add_attribute("denom", reply.new_token_denom),
-            );
+            let resp = Response::new()
+                .add_event(new_event("reply-init").add_attribute("denom", reply.new_token_denom));
 
             Ok(resp)
         }
