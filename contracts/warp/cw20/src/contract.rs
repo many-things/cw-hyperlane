@@ -274,7 +274,7 @@ mod test {
     type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
 
     #[fixture]
-    fn token_mode_bridge() -> Cw20TokenMode {
+    fn token_mode_bridged() -> Cw20TokenMode {
         TokenModeMsg::Bridged(Cw20ModeBridged {
             code_id: CW20_BRIDGED_CODE_ID,
             init_msg: cw20_base::msg::InstantiateMsg {
@@ -343,7 +343,7 @@ mod test {
     }
 
     #[rstest]
-    #[case(token_mode_bridge())]
+    #[case(token_mode_bridged())]
     #[case(token_mode_collateral())]
     fn test_queries(#[values("osmo", "neutron")] hrp: &str, #[case] token_mode: Cw20TokenMode) {
         let (deps, _) = deps(vec![], hrp, Some(TOKEN), token_mode.clone());
@@ -367,7 +367,7 @@ mod test {
     }
 
     #[rstest]
-    #[case(token_mode_bridge())]
+    #[case(token_mode_bridged())]
     #[case(token_mode_collateral())]
     fn test_init(#[values("osmo", "neutron")] hrp: &str, #[case] token_mode: Cw20TokenMode) {
         let (deps, res) = deps(vec![], hrp, None, token_mode.clone());
@@ -437,7 +437,7 @@ mod test {
     }
 
     #[rstest]
-    #[case(1, gen_bz(32), token_mode_bridge())]
+    #[case(1, gen_bz(32), token_mode_bridged())]
     #[case(1, gen_bz(32), token_mode_collateral())]
     #[should_panic(expected = "route not found")]
     #[case(2, gen_bz(32), token_mode_collateral())]
@@ -509,7 +509,7 @@ mod test {
     }
 
     #[rstest]
-    #[case(1, gen_bz(32), token_mode_bridge())]
+    #[case(1, gen_bz(32), token_mode_bridged())]
     #[case(1, gen_bz(32), token_mode_collateral())]
     #[should_panic(expected = "route not found")]
     #[case(2, gen_bz(32), token_mode_collateral())]
