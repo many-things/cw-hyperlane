@@ -8,14 +8,17 @@ use cosmwasm_std::{attr, coin, Attribute, Binary, Uint128};
 use ethers::{
     prelude::parse_log, providers::Middleware, signers::Signer, types::TransactionReceipt,
 };
-use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
+use osmosis_test_tube::{
+    osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse, Account, Module,
+    OsmosisTestApp, Wasm,
+};
 
 use hpl_interface::{
     core::mailbox::{self, DispatchMsg},
     igp::oracle::RemoteGasDataConfig,
     types::{bech32_decode, bech32_encode, bech32_to_h256},
 };
-use test_tube::Runner;
+use test_tube::{ExecuteResponse, Runner};
 
 use crate::{
     constants::*,
@@ -35,9 +38,9 @@ fn sorted(mut attrs: Vec<Attribute>) -> Vec<Attribute> {
     attrs
 }
 
-async fn send_msg<'a, M, S, R>(
-    anvil: &eth::Env<M, S>,
-    cosmos: &cw::Env<'a, R>,
+async fn send_msg_cw_to_evm<'a, M, S, R>(
+    from: &cw::Env<'a, R>,
+    to: &eth::Env<M, S>,
 ) -> eyre::Result<TransactionReceipt>
 where
     M: Middleware + 'static,
@@ -45,13 +48,13 @@ where
     R: Runner<'a>,
 {
     let mut receiver = [0u8; 32];
-    receiver[12..].copy_from_slice(&anvil.core.msg_receiver.address().0);
-    let _sender = bech32_decode(cosmos.acc_tester.address().as_str())?;
+    receiver[12..].copy_from_slice(&to.core.msg_receiver.address().0);
+    let _sender = bech32_decode(from.acc_tester.address().as_str())?;
     let msg_body = b"hello world";
 
     // dispatch
-    let dispatch_res = Wasm::new(cosmos.app).execute(
-        &cosmos.core.mailbox,
+    let dispatch_res = Wasm::new(from.app).execute(
+        &from.core.mailbox,
         &mailbox::ExecuteMsg::Dispatch(DispatchMsg {
             dest_domain: DOMAIN_EVM,
             recipient_addr: receiver.into(),
@@ -60,19 +63,87 @@ where
             metadata: None,
         }),
         &[coin(56_000_000, "uosmo")],
-        &cosmos.acc_tester,
+        &from.acc_tester,
     )?;
 
     let dispatch = parse_dispatch_from_res(&dispatch_res.events);
     let _dispatch_id = parse_dispatch_id_from_res(&dispatch_res.events);
 
-    let process_tx = anvil
+    let process_tx = to
         .core
         .mailbox
         .process(vec![].into(), Binary::from(dispatch.message).0.into());
     let process_tx_res = process_tx.send().await?.await?.unwrap();
 
     Ok(process_tx_res)
+}
+
+async fn send_msg_evm_to_cw<'a, M, S, R>(
+    from: &eth::Env<M, S>,
+    to: &cw::Env<'a, R>,
+) -> eyre::Result<ExecuteResponse<MsgExecuteContractResponse>>
+where
+    M: Middleware + 'static,
+    S: Signer + 'static,
+    R: Runner<'a>,
+{
+    // prepare message arguments
+    let sender = bech32_encode("osmo", from.acc_owner.address().as_bytes())?;
+    let receiver = bech32_to_h256(&to.core.msg_receiver)?;
+    let msg_body = b"hello world";
+
+    // dispatch
+    let dispatch_tx_call = from
+        .core
+        .mailbox
+        .dispatch(DOMAIN_OSMO, receiver, msg_body.into());
+    let dispatch_res = dispatch_tx_call.send().await?.await?.unwrap();
+
+    let dispatch: DispatchFilter = parse_log(dispatch_res.logs[0].clone())?;
+    let dispatch_id: DispatchIdFilter = parse_log(dispatch_res.logs[1].clone())?;
+
+    // generate ism metadata
+    let ism_metadata = to.get_validator_set(DOMAIN_EVM)?.make_metadata(
+        from.core.mailbox.address(),
+        from.core.mailbox.root().await?,
+        from.core.mailbox.count().await? - 1,
+        dispatch_id.message_id,
+        true,
+    )?;
+
+    // process
+    let process_res = Wasm::new(to.app).execute(
+        &to.core.mailbox,
+        &mailbox::ExecuteMsg::Process {
+            metadata: ism_metadata.into(),
+            message: dispatch.message.to_vec().into(),
+        },
+        &[],
+        &to.acc_owner,
+    )?;
+    let process_recv_evt = process_res
+        .events
+        .iter()
+        .find(|v| v.ty == "wasm-mailbox_msg_received")
+        .unwrap();
+
+    assert_eq!(
+        process_recv_evt.attributes,
+        sorted(vec![
+            Attribute {
+                key: "_contract_address".to_string(),
+                value: to.core.msg_receiver,
+            },
+            attr("sender", sender),
+            attr(
+                "origin",
+                from.core.mailbox.local_domain().await?.to_string()
+            ),
+            attr("body", std::str::from_utf8(msg_body)?),
+        ]),
+    );
+
+    Ok(process_res)
 }
 
 #[tokio::test]
@@ -96,7 +167,7 @@ async fn test_mailbox_cw_to_evm() -> eyre::Result<()> {
     // init Anvil env
     let anvil1 = eth::setup_env(DOMAIN_EVM).await?;
 
-    let _ = send_msg(&anvil1, &osmo).await?;
+    let _ = send_msg_cw_to_evm(&osmo, &anvil1).await?;
 
     Ok(())
 }
@@ -122,61 +193,7 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
     // init Anvil env
     let anvil1 = eth::setup_env(DOMAIN_EVM).await?;
 
-    // prepare message arguments
-    let sender = bech32_encode("osmo", anvil1.acc_owner.address().as_bytes())?;
-    let receiver = bech32_to_h256(&osmo.core.msg_receiver)?;
-    let msg_body = b"hello world";
-
-    // dispatch
-    let dispatch_tx_call = anvil1
-        .core
-        .mailbox
-        .dispatch(DOMAIN_OSMO, receiver, msg_body.into());
-    let dispatch_res = dispatch_tx_call.send().await?.await?.unwrap();
-
-    let dispatch: DispatchFilter = parse_log(dispatch_res.logs[0].clone())?;
-    let dispatch_id: DispatchIdFilter = parse_log(dispatch_res.logs[1].clone())?;
-
-    // generate ism metadata
-    let ism_metadata = osmo.get_validator_set(DOMAIN_EVM)?.make_metadata(
-        anvil1.core.mailbox.address(),
-        anvil1.core.mailbox.root().await?,
-        anvil1.core.mailbox.count().await? - 1,
-        dispatch_id.message_id,
-        true,
-    )?;
-
-    // process
-    let process_res = Wasm::new(osmo.app).execute(
-        &osmo.core.mailbox,
-        &mailbox::ExecuteMsg::Process {
-            metadata: ism_metadata.into(),
-            message: dispatch.message.to_vec().into(),
-        },
-        &[],
-        &osmo.acc_owner,
-    )?;
-    let process_recv_evt = process_res
-        .events
-        .iter()
-        .find(|v| v.ty == "wasm-mailbox_msg_received")
-        .unwrap();
-
-    assert_eq!(
-        process_recv_evt.attributes,
-        sorted(vec![
-            Attribute {
-                key: "_contract_address".to_string(),
-                value: osmo.core.msg_receiver,
-            },
-            attr("sender", sender),
-            attr(
-                "origin",
-                anvil1.core.mailbox.local_domain().await?.to_string()
-            ),
-            attr("body", std::str::from_utf8(msg_body)?),
-        ]),
-    );
+    let _ = send_msg_evm_to_cw(&anvil1, &osmo).await?;
 
     Ok(())
 }
