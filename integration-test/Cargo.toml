@@ -40,6 +40,7 @@ hex-literal.workspace = true
 ibcx-test-utils.workspace = true
 
 rstest.workspace = true
+cw20.workspace = true
 
 hpl-ownable.workspace = true
 hpl-ism-multisig.workspace = true
