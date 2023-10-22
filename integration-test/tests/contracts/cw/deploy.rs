@@ -5,7 +5,7 @@ use cosmwasm_std::HexBinary;
 use hpl_interface::{
     core::mailbox,
     router::{DomainRouteSet, RouterMsg},
-    warp::{self, cw20::Cw20ModeBridged},
+    warp::{self, cw20::Cw20ModeBridged, native::NativeModeBriged},
 };
 use test_tube::{Account, Runner, SigningAccount, Wasm};
 
@@ -126,29 +126,48 @@ pub fn deploy_warp_route_bridged<'a, R: Runner<'a>>(
     hrp: &str,
     codes: &Codes,
     denom: String,
+    token_type: warp::TokenType,
 ) -> eyre::Result<String> {
-    instantiate(
-        wasm,
-        codes.warp_cw20,
-        deployer,
-        "warp-cw20",
-        &warp::cw20::InstantiateMsg {
-            token: warp::TokenModeMsg::Bridged(Cw20ModeBridged {
-                code_id: codes.cw20_base,
-                init_msg: Box::new(warp::cw20::Cw20InitMsg {
-                    name: denom.clone(),
-                    symbol: denom,
-                    decimals: 6,
-                    initial_balances: vec![],
-                    mint: None,
-                    marketing: None,
+    match token_type {
+        warp::TokenType::Native(_) => instantiate(
+            wasm,
+            codes.warp_native,
+            deployer,
+            "warp-native",
+            &warp::native::InstantiateMsg {
+                token: warp::TokenModeMsg::Bridged(NativeModeBriged {
+                    denom,
+                    metadata: None,
                 }),
-            }),
-            hrp: hrp.to_string(),
-            owner: owner.address(),
-            mailbox: mailbox.to_string(),
-        },
-    )
+                hrp: hrp.to_string(),
+                owner: owner.address(),
+                mailbox: mailbox.to_string(),
+            },
+        ),
+        warp::TokenType::CW20 { .. } => instantiate(
+            wasm,
+            codes.warp_cw20,
+            deployer,
+            "warp-cw20",
+            &warp::cw20::InstantiateMsg {
+                token: warp::TokenModeMsg::Bridged(Cw20ModeBridged {
+                    code_id: codes.cw20_base,
+                    init_msg: Box::new(warp::cw20::Cw20InitMsg {
+                        name: denom.clone(),
+                        symbol: denom,
+                        decimals: 6,
+                        initial_balances: vec![],
+                        mint: None,
+                        marketing: None,
+                    }),
+                }),
+                hrp: hrp.to_string(),
+                owner: owner.address(),
+                mailbox: mailbox.to_string(),
+            },
+        ),
+        warp::TokenType::CW721 { .. } => todo!(),
+    }
 }
 
 #[allow(dead_code)]

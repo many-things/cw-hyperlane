@@ -7,8 +7,11 @@ use test_tube::{Account, Module, Runner, SigningAccount, Wasm};
 use crate::validator::TestValidators;
 
 use super::{
-    deploy_core, igp::Igp, prepare_routing_hook, prepare_routing_ism, store_code,
-    types::CoreDeployments, Hook,
+    deploy_core,
+    igp::Igp,
+    prepare_routing_hook, prepare_routing_ism, store_code,
+    types::{Codes, CoreDeployments},
+    Hook,
 };
 
 const DEFAULT_GAS: u128 = 300_000;
@@ -18,6 +21,7 @@ pub struct Env<'a, R: Runner<'a>> {
 
     pub app: &'a R,
     pub core: CoreDeployments,
+    pub codes: Codes,
     pub domain: u32,
 
     acc_gen: Box<dyn Fn(&'a R, &'a [Coin]) -> SigningAccount>,
@@ -86,6 +90,7 @@ pub fn setup_env<'a, R: Runner<'a>>(
 
         app,
         core,
+        codes,
         domain,
 
         acc_gen: Box::new(acc_gen),
