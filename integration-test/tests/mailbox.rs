@@ -141,7 +141,7 @@ async fn test_mailbox_evm_to_cw() -> eyre::Result<()> {
     let ism_metadata = osmo.get_validator_set(DOMAIN_EVM)?.make_metadata(
         anvil1.core.mailbox.address(),
         anvil1.core.mailbox.root().await?,
-        anvil1.core.mailbox.count().await?,
+        anvil1.core.mailbox.count().await? - 1,
         dispatch_id.message_id,
         true,
     )?;

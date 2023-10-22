@@ -38,6 +38,8 @@ pub fn verify_message(
     let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
     let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
+    let merkle_index = metadata.merkle_index();
+
     let verifiable_cases = product(
         validators.0.into_iter().map(|v| v.signer_pubkey).collect(),
         metadata.signatures,
@@ -46,7 +48,7 @@ pub fn verify_message(
     let multisig_hash = multisig_hash(
         domain_hash(message.origin_domain, metadata.origin_merkle_tree)?.to_vec(),
         metadata.merkle_root.to_vec(),
-        0,
+        merkle_index,
         message.id().to_vec(),
     )?;
 

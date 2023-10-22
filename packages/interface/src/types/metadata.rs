@@ -115,6 +115,12 @@ impl From<HexBinary> for MessageIdMultisigIsmMetadata {
     }
 }
 
+impl MessageIdMultisigIsmMetadata {
+    pub fn merkle_index(&self) -> u32 {
+        u32::from_be_bytes(self.merkle_index.to_vec().try_into().unwrap())
+    }
+}
+
 #[cw_serde]
 pub struct AggregateIsmMetadata(pub BTreeMap<Addr, HexBinary>);
 
