@@ -145,7 +145,7 @@ impl TestValidators {
         let multisig_hash = hpl_ism_multisig::multisig_hash(
             hpl_ism_multisig::domain_hash(self.domain, addr.to_vec().into())?.to_vec(),
             merkle_root.to_vec(),
-            merkle_index.to_be_bytes().to_vec(),
+            merkle_index,
             message_id.to_vec(),
         )?;
 
