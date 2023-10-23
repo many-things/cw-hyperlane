@@ -4,34 +4,28 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { TokenModeMsgForNativeModeBrigedAndNativeModeCollateral, InstantiateMsg, NativeModeBriged, Metadata, DenomUnit, NativeModeCollateral, ExecuteMsg, OwnableMsg, RouterMsgForHexBinary, HexBinary, DomainRouteSetForHexBinary, HandleMsg, QueryMsg, OwnableQueryMsg, RouterQueryForHexBinary, Order, TokenWarpDefaultQueryMsg, DomainsResponse, Addr, OwnerResponse, PendingOwnerResponse, RouteResponseForHexBinary, RoutesResponseForHexBinary, Empty, TokenMode, TokenModeResponse, TokenType, TokenTypeNative, TokenTypeResponse } from "./WarpNative.types";
-export interface WarpNativeMsg {
+import { InstantiateMsg, ExecuteMsg, OwnableMsg, HexBinary, PostDispatchMsg, QueryMsg, OwnableQueryMsg, HookQueryMsg, AggregateHookQueryMsg, QuoteDispatchMsg, Addr, OwnerResponse, PendingOwnerResponse, HooksResponse, MailboxResponse, Uint128, QuoteDispatchResponse, Coin } from "./HookAggregate.types";
+export interface HookAggregateMsg {
   contractAddress: string;
   sender: string;
   ownable: (ownableMsg: OwnableMsg, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  router: (routerMsgForHexBinary: RouterMsgForHexBinary, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  handle: ({
-    body,
-    origin,
-    sender
+  postDispatch: ({
+    message,
+    metadata
   }: {
-    body: HexBinary;
-    origin: number;
-    sender: HexBinary;
+    message: HexBinary;
+    metadata: HexBinary;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  transferRemote: ({
-    destDomain,
-    recipient
+  setHooks: ({
+    hooks
   }: {
-    destDomain: number;
-    recipient: HexBinary;
+    hooks: string[];
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
-export class WarpNativeMsgComposer implements WarpNativeMsg {
+export class HookAggregateMsgComposer implements HookAggregateMsg {
   sender: string;
   contractAddress: string;
 
@@ -39,9 +33,8 @@ export class WarpNativeMsgComposer implements WarpNativeMsg {
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.ownable = this.ownable.bind(this);
-    this.router = this.router.bind(this);
-    this.handle = this.handle.bind(this);
-    this.transferRemote = this.transferRemote.bind(this);
+    this.postDispatch = this.postDispatch.bind(this);
+    this.setHooks = this.setHooks.bind(this);
   }
 
   ownable = (ownableMsg: OwnableMsg, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
@@ -57,27 +50,12 @@ export class WarpNativeMsgComposer implements WarpNativeMsg {
       })
     };
   };
-  router = (routerMsgForHexBinary: RouterMsgForHexBinary, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          router: routerMsgForHexBinary
-        })),
-        funds: _funds
-      })
-    };
-  };
-  handle = ({
-    body,
-    origin,
-    sender
+  postDispatch = ({
+    message,
+    metadata
   }: {
-    body: HexBinary;
-    origin: number;
-    sender: HexBinary;
+    message: HexBinary;
+    metadata: HexBinary;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -85,22 +63,19 @@ export class WarpNativeMsgComposer implements WarpNativeMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          handle: {
-            body,
-            origin,
-            sender
+          post_dispatch: {
+            message,
+            metadata
           }
         })),
         funds: _funds
       })
     };
   };
-  transferRemote = ({
-    destDomain,
-    recipient
+  setHooks = ({
+    hooks
   }: {
-    destDomain: number;
-    recipient: HexBinary;
+    hooks: string[];
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -108,9 +83,8 @@ export class WarpNativeMsgComposer implements WarpNativeMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          transfer_remote: {
-            dest_domain: destDomain,
-            recipient
+          set_hooks: {
+            hooks
           }
         })),
         funds: _funds

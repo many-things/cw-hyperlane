@@ -5,17 +5,15 @@
 */
 
 export interface InstantiateMsg {
+  isms: string[];
   owner: string;
+  threshold: number;
 }
 export type ExecuteMsg = {
-  ownership: OwnableMsg;
+  ownable: OwnableMsg;
 } | {
-  set_remote_gas_data_configs: {
-    configs: RemoteGasDataConfig[];
-  };
-} | {
-  set_remote_gas_data: {
-    config: RemoteGasDataConfig;
+  set_isms: {
+    isms: string[];
   };
 };
 export type OwnableMsg = {
@@ -27,35 +25,44 @@ export type OwnableMsg = {
 } | {
   claim_ownership: {};
 };
-export type Uint128 = string;
-export interface RemoteGasDataConfig {
-  gas_price: Uint128;
-  remote_domain: number;
-  token_exchange_rate: Uint128;
-}
 export type QueryMsg = {
   ownable: OwnableQueryMsg;
 } | {
-  oracle: IgpGasOracleQueryMsg;
+  ism: IsmQueryMsg;
 };
 export type OwnableQueryMsg = {
   get_owner: {};
 } | {
   get_pending_owner: {};
 };
-export type IgpGasOracleQueryMsg = {
-  get_exchange_rate_and_gas_price: {
-    dest_domain: number;
+export type IsmQueryMsg = {
+  module_type: {};
+} | {
+  verify: {
+    message: HexBinary;
+    metadata: HexBinary;
+  };
+} | {
+  verify_info: {
+    message: HexBinary;
   };
 };
-export interface GetExchangeRateAndGasPriceResponse {
-  exchange_rate: Uint128;
-  gas_price: Uint128;
-}
+export type HexBinary = string;
 export type Addr = string;
 export interface OwnerResponse {
   owner: Addr;
 }
 export interface PendingOwnerResponse {
   pending_owner?: Addr | null;
+}
+export type IsmType = "unused" | "routing" | "aggregation" | "legacy_multisig" | "merkle_root_multisig" | "message_id_multisig" | "null" | "ccip_read";
+export interface ModuleTypeResponse {
+  type: IsmType;
+}
+export interface VerifyResponse {
+  verified: boolean;
+}
+export interface VerifyInfoResponse {
+  threshold: number;
+  validators: string[];
 }

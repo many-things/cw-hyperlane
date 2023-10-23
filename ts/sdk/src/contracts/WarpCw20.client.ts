@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { TokenModeMsgForCw20ModeBridgedAndCw20ModeCollateral, Uint128, Logo, EmbeddedLogo, Binary, InstantiateMsg, Cw20ModeBridged, InstantiateMsg1, Cw20Coin, InstantiateMarketingInfo, MinterResponse, Cw20ModeCollateral, ExecuteMsg, RouterMsgForHexBinary, HexBinary, DomainRouteSetForHexBinary, HandleMsg, Cw20ReceiveMsg, QueryMsg, OwnableQueryMsg, RouterQueryForHexBinary, Order, TokenWarpDefaultQueryMsg, DomainsResponse, Addr, OwnerResponse, PendingOwnerResponse, RouteResponseForHexBinary, RoutesResponseForHexBinary, Empty, TokenMode, TokenModeResponse, TokenType, TokenTypeNative, TokenTypeResponse } from "./WarpCw20.types";
+import { TokenModeMsgForCw20ModeBridgedAndCw20ModeCollateral, Uint128, Logo, EmbeddedLogo, Binary, InstantiateMsg, Cw20ModeBridged, InstantiateMsg1, Cw20Coin, InstantiateMarketingInfo, MinterResponse, Cw20ModeCollateral, ExecuteMsg, OwnableMsg, RouterMsgForHexBinary, HexBinary, DomainRouteSetForHexBinary, HandleMsg, Cw20ReceiveMsg, QueryMsg, OwnableQueryMsg, RouterQueryForHexBinary, Order, TokenWarpDefaultQueryMsg, DomainsResponse, Addr, OwnerResponse, PendingOwnerResponse, RouteResponseForHexBinary, RoutesResponseForHexBinary, Empty, TokenMode, TokenModeResponse, TokenType, TokenTypeNative, TokenTypeResponse } from "./WarpCw20.types";
 export interface WarpCw20ReadOnlyInterface {
   contractAddress: string;
   ownable: (ownableQueryMsg: OwnableQueryMsg) => Promise<OwnableResponse>;
@@ -44,6 +44,7 @@ export class WarpCw20QueryClient implements WarpCw20ReadOnlyInterface {
 export interface WarpCw20Interface extends WarpCw20ReadOnlyInterface {
   contractAddress: string;
   sender: string;
+  ownable: (ownableMsg: OwnableMsg, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   router: (routerMsgForHexBinary: RouterMsgForHexBinary, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   handle: ({
     body,
@@ -74,11 +75,17 @@ export class WarpCw20Client extends WarpCw20QueryClient implements WarpCw20Inter
     this.client = client;
     this.sender = sender;
     this.contractAddress = contractAddress;
+    this.ownable = this.ownable.bind(this);
     this.router = this.router.bind(this);
     this.handle = this.handle.bind(this);
     this.receive = this.receive.bind(this);
   }
 
+  ownable = async (ownableMsg: OwnableMsg, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      ownable: ownableMsg
+    }, fee, memo, _funds);
+  };
   router = async (routerMsgForHexBinary: RouterMsgForHexBinary, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       router: routerMsgForHexBinary

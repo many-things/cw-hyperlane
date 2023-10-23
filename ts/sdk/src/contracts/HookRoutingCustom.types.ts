@@ -5,7 +5,6 @@
 */
 
 export interface InstantiateMsg {
-  mailbox: string;
   owner: string;
 }
 export type ExecuteMsg = {

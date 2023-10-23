@@ -5,6 +5,7 @@
 */
 
 export interface InstantiateMsg {
+  hooks: string[];
   owner: string;
 }
 export type ExecuteMsg = {
@@ -12,7 +13,9 @@ export type ExecuteMsg = {
 } | {
   post_dispatch: PostDispatchMsg;
 } | {
-  router: RouterMsgForAddr;
+  set_hooks: {
+    hooks: string[];
+  };
 };
 export type OwnableMsg = {
   init_ownership_transfer: {
@@ -24,79 +27,46 @@ export type OwnableMsg = {
   claim_ownership: {};
 };
 export type HexBinary = string;
-export type RouterMsgForAddr = {
-  set_route: {
-    set: DomainRouteSetForAddr;
-  };
-} | {
-  set_routes: {
-    set: DomainRouteSetForAddr[];
-  };
-};
-export type Addr = string;
 export interface PostDispatchMsg {
   message: HexBinary;
   metadata: HexBinary;
 }
-export interface DomainRouteSetForAddr {
-  domain: number;
-  route?: Addr | null;
-}
 export type QueryMsg = {
   ownable: OwnableQueryMsg;
 } | {
-  router: RouterQueryForAddr;
-} | {
   hook: HookQueryMsg;
+} | {
+  aggregate_hook: AggregateHookQueryMsg;
 };
 export type OwnableQueryMsg = {
   get_owner: {};
 } | {
   get_pending_owner: {};
 };
-export type RouterQueryForAddr = {
-  domains: {};
-} | {
-  get_route: {
-    domain: number;
-  };
-} | {
-  list_routes: {
-    limit?: number | null;
-    offset?: number | null;
-    order?: Order | null;
-  };
-};
-export type Order = "asc" | "desc";
 export type HookQueryMsg = {
   quote_dispatch: QuoteDispatchMsg;
 } | {
   mailbox: {};
 };
+export type AggregateHookQueryMsg = {
+  hooks: {};
+};
 export interface QuoteDispatchMsg {
   message: HexBinary;
   metadata: HexBinary;
 }
-export interface DomainsResponse {
-  domains: number[];
-}
+export type Addr = string;
 export interface OwnerResponse {
   owner: Addr;
 }
 export interface PendingOwnerResponse {
   pending_owner?: Addr | null;
 }
-export interface RouteResponseForAddr {
-  route: DomainRouteSetForAddr;
-}
-export interface RoutesResponseForAddr {
-  routes: DomainRouteSetForAddr[];
+export interface HooksResponse {
+  hooks: string[];
 }
 export interface MailboxResponse {
   mailbox: string;
-}
-export interface Empty {
-  [k: string]: unknown;
 }
 export type Uint128 = string;
 export interface QuoteDispatchResponse {

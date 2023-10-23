@@ -36,6 +36,8 @@ export interface NativeModeCollateral {
   denom: string;
 }
 export type ExecuteMsg = {
+  ownable: OwnableMsg;
+} | {
   router: RouterMsgForHexBinary;
 } | {
   handle: HandleMsg;
@@ -44,6 +46,15 @@ export type ExecuteMsg = {
     dest_domain: number;
     recipient: HexBinary;
   };
+};
+export type OwnableMsg = {
+  init_ownership_transfer: {
+    next_owner: string;
+  };
+} | {
+  revoke_ownership_transfer: {};
+} | {
+  claim_ownership: {};
 };
 export type RouterMsgForHexBinary = {
   set_route: {

@@ -8,7 +8,6 @@ export interface InstantiateMsg {
   beneficiary: string;
   gas_token: string;
   hrp: string;
-  mailbox: string;
   owner: string;
 }
 export type ExecuteMsg = {

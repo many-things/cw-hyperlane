@@ -4,96 +4,110 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-import * as _0 from "./HookMerkle.types";
-import * as _1 from "./HookMerkle.client";
-import * as _2 from "./HookMerkle.message-composer";
-import * as _3 from "./HookPausable.types";
-import * as _4 from "./HookPausable.client";
-import * as _5 from "./HookPausable.message-composer";
-import * as _6 from "./HookRouting.types";
-import * as _7 from "./HookRouting.client";
-import * as _8 from "./HookRouting.message-composer";
-import * as _9 from "./HookRoutingCustom.types";
-import * as _10 from "./HookRoutingCustom.client";
-import * as _11 from "./HookRoutingCustom.message-composer";
-import * as _12 from "./HookRoutingFallback.types";
-import * as _13 from "./HookRoutingFallback.client";
-import * as _14 from "./HookRoutingFallback.message-composer";
-import * as _15 from "./Igp.types";
-import * as _16 from "./Igp.client";
-import * as _17 from "./Igp.message-composer";
-import * as _18 from "./IgpOracle.types";
-import * as _19 from "./IgpOracle.client";
-import * as _20 from "./IgpOracle.message-composer";
-import * as _21 from "./IsmMultisig.types";
-import * as _22 from "./IsmMultisig.client";
-import * as _23 from "./IsmMultisig.message-composer";
-import * as _24 from "./IsmRouting.types";
-import * as _25 from "./IsmRouting.client";
-import * as _26 from "./IsmRouting.message-composer";
-import * as _27 from "./Mailbox.types";
-import * as _28 from "./Mailbox.client";
-import * as _29 from "./Mailbox.message-composer";
-import * as _30 from "./ValidatorAnnounce.types";
-import * as _31 from "./ValidatorAnnounce.client";
-import * as _32 from "./ValidatorAnnounce.message-composer";
-import * as _33 from "./WarpCw20.types";
-import * as _34 from "./WarpCw20.client";
-import * as _35 from "./WarpCw20.message-composer";
-import * as _36 from "./WarpNative.types";
-import * as _37 from "./WarpNative.client";
-import * as _38 from "./WarpNative.message-composer";
+import * as _0 from "./HookAggregate.types";
+import * as _1 from "./HookAggregate.client";
+import * as _2 from "./HookAggregate.message-composer";
+import * as _3 from "./HookMerkle.types";
+import * as _4 from "./HookMerkle.client";
+import * as _5 from "./HookMerkle.message-composer";
+import * as _6 from "./HookPausable.types";
+import * as _7 from "./HookPausable.client";
+import * as _8 from "./HookPausable.message-composer";
+import * as _9 from "./HookRouting.types";
+import * as _10 from "./HookRouting.client";
+import * as _11 from "./HookRouting.message-composer";
+import * as _12 from "./HookRoutingCustom.types";
+import * as _13 from "./HookRoutingCustom.client";
+import * as _14 from "./HookRoutingCustom.message-composer";
+import * as _15 from "./HookRoutingFallback.types";
+import * as _16 from "./HookRoutingFallback.client";
+import * as _17 from "./HookRoutingFallback.message-composer";
+import * as _18 from "./Igp.types";
+import * as _19 from "./Igp.client";
+import * as _20 from "./Igp.message-composer";
+import * as _21 from "./IgpOracle.types";
+import * as _22 from "./IgpOracle.client";
+import * as _23 from "./IgpOracle.message-composer";
+import * as _24 from "./IsmAggregate.types";
+import * as _25 from "./IsmAggregate.client";
+import * as _26 from "./IsmAggregate.message-composer";
+import * as _27 from "./IsmMultisig.types";
+import * as _28 from "./IsmMultisig.client";
+import * as _29 from "./IsmMultisig.message-composer";
+import * as _30 from "./IsmRouting.types";
+import * as _31 from "./IsmRouting.client";
+import * as _32 from "./IsmRouting.message-composer";
+import * as _33 from "./Mailbox.types";
+import * as _34 from "./Mailbox.client";
+import * as _35 from "./Mailbox.message-composer";
+import * as _36 from "./ValidatorAnnounce.types";
+import * as _37 from "./ValidatorAnnounce.client";
+import * as _38 from "./ValidatorAnnounce.message-composer";
+import * as _39 from "./WarpCw20.types";
+import * as _40 from "./WarpCw20.client";
+import * as _41 from "./WarpCw20.message-composer";
+import * as _42 from "./WarpNative.types";
+import * as _43 from "./WarpNative.client";
+import * as _44 from "./WarpNative.message-composer";
 export namespace contracts {
-  export const HookMerkle = { ..._0,
+  export const HookAggregate = { ..._0,
     ..._1,
     ..._2
   };
-  export const HookPausable = { ..._3,
+  export const HookMerkle = { ..._3,
     ..._4,
     ..._5
   };
-  export const HookRouting = { ..._6,
+  export const HookPausable = { ..._6,
     ..._7,
     ..._8
   };
-  export const HookRoutingCustom = { ..._9,
+  export const HookRouting = { ..._9,
     ..._10,
     ..._11
   };
-  export const HookRoutingFallback = { ..._12,
+  export const HookRoutingCustom = { ..._12,
     ..._13,
     ..._14
   };
-  export const Igp = { ..._15,
+  export const HookRoutingFallback = { ..._15,
     ..._16,
     ..._17
   };
-  export const IgpOracle = { ..._18,
+  export const Igp = { ..._18,
     ..._19,
     ..._20
   };
-  export const IsmMultisig = { ..._21,
+  export const IgpOracle = { ..._21,
     ..._22,
     ..._23
   };
-  export const IsmRouting = { ..._24,
+  export const IsmAggregate = { ..._24,
     ..._25,
     ..._26
   };
-  export const Mailbox = { ..._27,
+  export const IsmMultisig = { ..._27,
     ..._28,
     ..._29
   };
-  export const ValidatorAnnounce = { ..._30,
+  export const IsmRouting = { ..._30,
     ..._31,
     ..._32
   };
-  export const WarpCw20 = { ..._33,
+  export const Mailbox = { ..._33,
     ..._34,
     ..._35
   };
-  export const WarpNative = { ..._36,
+  export const ValidatorAnnounce = { ..._36,
     ..._37,
     ..._38
+  };
+  export const WarpCw20 = { ..._39,
+    ..._40,
+    ..._41
+  };
+  export const WarpNative = { ..._42,
+    ..._43,
+    ..._44
   };
 }

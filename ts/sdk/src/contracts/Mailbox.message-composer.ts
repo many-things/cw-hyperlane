@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { InstantiateMsg, ExecuteMsg, OwnableMsg, HexBinary, DispatchMsg, QueryMsg, OwnableQueryMsg, MailboxHookQueryMsg, MailboxQueryMsg, DefaultHookResponse, DefaultIsmResponse, Addr, OwnerResponse, PendingOwnerResponse, HrpResponse, LocalDomainResponse, MessageDeliveredResponse, NonceResponse, Uint128, QuoteDispatchResponse, Coin, RecipientIsmResponse, RequiredHookResponse } from "./Mailbox.types";
+import { InstantiateMsg, ExecuteMsg, OwnableMsg, HexBinary, DispatchMsg, QueryMsg, OwnableQueryMsg, MailboxHookQueryMsg, MailboxQueryMsg, DefaultHookResponse, DefaultIsmResponse, Addr, OwnerResponse, PendingOwnerResponse, HrpResponse, LatestDispatchedIdResponse, LocalDomainResponse, MessageDeliveredResponse, NonceResponse, Uint128, QuoteDispatchResponse, Coin, RecipientIsmResponse, RequiredHookResponse } from "./Mailbox.types";
 export interface MailboxMsg {
   contractAddress: string;
   sender: string;

@@ -5,7 +5,6 @@
 */
 
 export interface InstantiateMsg {
-  mailbox: string;
   owner: string;
   paused: boolean;
 }

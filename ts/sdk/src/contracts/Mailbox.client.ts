@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { InstantiateMsg, ExecuteMsg, OwnableMsg, HexBinary, DispatchMsg, QueryMsg, OwnableQueryMsg, MailboxHookQueryMsg, MailboxQueryMsg, DefaultHookResponse, DefaultIsmResponse, Addr, OwnerResponse, PendingOwnerResponse, HrpResponse, LocalDomainResponse, MessageDeliveredResponse, NonceResponse, Uint128, QuoteDispatchResponse, Coin, RecipientIsmResponse, RequiredHookResponse } from "./Mailbox.types";
+import { InstantiateMsg, ExecuteMsg, OwnableMsg, HexBinary, DispatchMsg, QueryMsg, OwnableQueryMsg, MailboxHookQueryMsg, MailboxQueryMsg, DefaultHookResponse, DefaultIsmResponse, Addr, OwnerResponse, PendingOwnerResponse, HrpResponse, LatestDispatchedIdResponse, LocalDomainResponse, MessageDeliveredResponse, NonceResponse, Uint128, QuoteDispatchResponse, Coin, RecipientIsmResponse, RequiredHookResponse } from "./Mailbox.types";
 export interface MailboxReadOnlyInterface {
   contractAddress: string;
   ownable: (ownableQueryMsg: OwnableQueryMsg) => Promise<OwnableResponse>;

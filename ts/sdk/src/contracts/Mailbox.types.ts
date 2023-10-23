@@ -83,6 +83,8 @@ export type MailboxQueryMsg = {
   recipient_ism: {
     recipient_addr: string;
   };
+} | {
+  latest_dispatch_id: {};
 };
 export interface DefaultHookResponse {
   default_hook: string;
@@ -99,6 +101,9 @@ export interface PendingOwnerResponse {
 }
 export interface HrpResponse {
   hrp: string;
+}
+export interface LatestDispatchedIdResponse {
+  message_id: HexBinary;
 }
 export interface LocalDomainResponse {
   local_domain: number;

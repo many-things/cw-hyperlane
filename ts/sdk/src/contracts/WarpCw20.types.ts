@@ -57,11 +57,22 @@ export interface Cw20ModeCollateral {
   address: string;
 }
 export type ExecuteMsg = {
+  ownable: OwnableMsg;
+} | {
   router: RouterMsgForHexBinary;
 } | {
   handle: HandleMsg;
 } | {
   receive: Cw20ReceiveMsg;
+};
+export type OwnableMsg = {
+  init_ownership_transfer: {
+    next_owner: string;
+  };
+} | {
+  revoke_ownership_transfer: {};
+} | {
+  claim_ownership: {};
 };
 export type RouterMsgForHexBinary = {
   set_route: {

@@ -8,10 +8,11 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { TokenModeMsgForCw20ModeBridgedAndCw20ModeCollateral, Uint128, Logo, EmbeddedLogo, Binary, InstantiateMsg, Cw20ModeBridged, InstantiateMsg1, Cw20Coin, InstantiateMarketingInfo, MinterResponse, Cw20ModeCollateral, ExecuteMsg, RouterMsgForHexBinary, HexBinary, DomainRouteSetForHexBinary, HandleMsg, Cw20ReceiveMsg, QueryMsg, OwnableQueryMsg, RouterQueryForHexBinary, Order, TokenWarpDefaultQueryMsg, DomainsResponse, Addr, OwnerResponse, PendingOwnerResponse, RouteResponseForHexBinary, RoutesResponseForHexBinary, Empty, TokenMode, TokenModeResponse, TokenType, TokenTypeNative, TokenTypeResponse } from "./WarpCw20.types";
+import { TokenModeMsgForCw20ModeBridgedAndCw20ModeCollateral, Uint128, Logo, EmbeddedLogo, Binary, InstantiateMsg, Cw20ModeBridged, InstantiateMsg1, Cw20Coin, InstantiateMarketingInfo, MinterResponse, Cw20ModeCollateral, ExecuteMsg, OwnableMsg, RouterMsgForHexBinary, HexBinary, DomainRouteSetForHexBinary, HandleMsg, Cw20ReceiveMsg, QueryMsg, OwnableQueryMsg, RouterQueryForHexBinary, Order, TokenWarpDefaultQueryMsg, DomainsResponse, Addr, OwnerResponse, PendingOwnerResponse, RouteResponseForHexBinary, RoutesResponseForHexBinary, Empty, TokenMode, TokenModeResponse, TokenType, TokenTypeNative, TokenTypeResponse } from "./WarpCw20.types";
 export interface WarpCw20Msg {
   contractAddress: string;
   sender: string;
+  ownable: (ownableMsg: OwnableMsg, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   router: (routerMsgForHexBinary: RouterMsgForHexBinary, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   handle: ({
     body,
@@ -39,11 +40,25 @@ export class WarpCw20MsgComposer implements WarpCw20Msg {
   constructor(sender: string, contractAddress: string) {
     this.sender = sender;
     this.contractAddress = contractAddress;
+    this.ownable = this.ownable.bind(this);
     this.router = this.router.bind(this);
     this.handle = this.handle.bind(this);
     this.receive = this.receive.bind(this);
   }
 
+  ownable = (ownableMsg: OwnableMsg, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          ownable: ownableMsg
+        })),
+        funds: _funds
+      })
+    };
+  };
   router = (routerMsgForHexBinary: RouterMsgForHexBinary, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
