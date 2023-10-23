@@ -42,9 +42,7 @@ pub fn instantiate(
 
     hpl_ownable::initialize(deps.storage, &owner)?;
 
-    let mut denom = "".into();
-
-    let msgs = match msg.token {
+    let (msgs, denom) = match msg.token {
         // create native denom if token is bridged
         TokenModeMsg::Bridged(token) => {
             let mut msgs = vec![];
@@ -64,13 +62,12 @@ pub fn instantiate(
                 )));
             }
 
-            msgs
+            (msgs, token.denom)
         }
         // use denom directly if token is native
         TokenModeMsg::Collateral(token) => {
             TOKEN.save(deps.storage, &token.denom)?;
-            denom = token.denom;
-            vec![]
+            (vec![], token.denom)
         }
     };
 
@@ -90,10 +87,13 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    use ExecuteMsg::*;
+
     match msg {
-        ExecuteMsg::Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
-        ExecuteMsg::Handle(msg) => mailbox_handle(deps, env, info, msg),
-        ExecuteMsg::TransferRemote {
+        Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
+        Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
+        Handle(msg) => mailbox_handle(deps, env, info, msg),
+        TransferRemote {
             dest_domain,
             recipient,
         } => transfer_remote(deps, env, info, dest_domain, recipient),
@@ -110,9 +110,8 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
             TOKEN.save(deps.storage, &reply.new_token_denom)?;
 
-            let resp = Response::new().add_event(
-                new_event("reply-instantiate").add_attribute("denom", reply.new_token_denom),
-            );
+            let resp = Response::new()
+                .add_event(new_event("reply-init").add_attribute("denom", reply.new_token_denom));
 
             Ok(resp)
         }
@@ -246,4 +245,296 @@ fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
     let mode = MODE.load(deps.storage)?;
 
     Ok(TokenModeResponse { mode })
+}
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::{
+        coin,
+        testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
+        Coin, OwnedDeps,
+    };
+    use hpl_interface::{
+        build_test_executor, build_test_querier,
+        core::HandleMsg,
+        router::DomainRouteSet,
+        warp::native::{Metadata, NativeModeBriged, NativeModeCollateral},
+    };
+    use hpl_router::set_route;
+    use ibcx_test_utils::{addr, gen_bz};
+    use rstest::{fixture, rstest};
+
+    use super::*;
+
+    build_test_executor!(super::execute);
+    build_test_querier!(super::query);
+
+    type NativeTokenMode = TokenModeMsg<NativeModeBriged, NativeModeCollateral>;
+    type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
+
+    const DEPLOYER: &str = "deployer";
+    const OWNER: &str = "owner";
+    const MAILBOX: &str = "mailbox";
+    const DENOM: &str = "utest";
+
+    #[fixture]
+    fn metadata(#[default(true)] empty: bool) -> Option<Metadata> {
+        if empty {
+            None
+        } else {
+            Some(Metadata {
+                description: "testtesttest".into(),
+                denom_units: vec![],
+                base: "basebasebase".into(),
+                display: "displaydisplaydisplay".into(),
+                name: DENOM.into(),
+                symbol: DENOM.into(),
+            })
+        }
+    }
+
+    #[fixture]
+    fn token_mode_bridged(metadata: Option<Metadata>) -> NativeTokenMode {
+        TokenModeMsg::Bridged(NativeModeBriged {
+            denom: DENOM.into(),
+            metadata,
+        })
+    }
+
+    #[fixture]
+    fn token_mode_collateral() -> NativeTokenMode {
+        TokenModeMsg::Collateral(NativeModeCollateral {
+            denom: DENOM.into(),
+        })
+    }
+
+    #[fixture]
+    fn deps(
+        #[default(token_mode_collateral())] token_mode: NativeTokenMode,
+        #[default("osmo")] hrp: &str,
+    ) -> TestDeps {
+        let mut deps = mock_dependencies();
+
+        super::instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(DEPLOYER, &[]),
+            super::InstantiateMsg {
+                token: token_mode,
+                hrp: hrp.into(),
+                owner: OWNER.into(),
+                mailbox: MAILBOX.into(),
+            },
+        )
+        .unwrap();
+
+        deps
+    }
+
+    #[rstest]
+    #[case(token_mode_bridged(metadata(true)))]
+    #[case(token_mode_bridged(metadata(false)))]
+    #[case(token_mode_collateral())]
+    fn test_queries(#[values("osmo", "neutron")] hrp: &str, #[case] token_mode: NativeTokenMode) {
+        let mut deps = deps(token_mode.clone(), hrp);
+
+        if TokenMode::from(token_mode.clone()) == TokenMode::Bridged {
+            super::TOKEN
+                .save(deps.as_mut().storage, &DENOM.into())
+                .unwrap();
+        }
+
+        let res: warp::TokenTypeResponse = test_query(
+            deps.as_ref(),
+            QueryMsg::TokenDefault(warp::TokenWarpDefaultQueryMsg::TokenType {}),
+        );
+        assert_eq!(
+            res.typ,
+            warp::TokenType::Native(warp::TokenTypeNative::Fungible {
+                denom: DENOM.into()
+            })
+        );
+
+        let res: warp::TokenModeResponse = test_query(
+            deps.as_ref(),
+            QueryMsg::TokenDefault(warp::TokenWarpDefaultQueryMsg::TokenMode {}),
+        );
+        assert_eq!(res.mode, token_mode.into());
+    }
+
+    #[rstest]
+    #[case(token_mode_bridged(metadata(true)))]
+    #[case(token_mode_bridged(metadata(false)))]
+    #[case(token_mode_collateral())]
+    fn test_init(#[values("osmo", "neutron")] hrp: &str, #[case] token_mode: NativeTokenMode) {
+        let mut deps = mock_dependencies();
+
+        let res = super::instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(DEPLOYER, &[]),
+            super::InstantiateMsg {
+                token: token_mode.clone(),
+                hrp: hrp.into(),
+                owner: OWNER.into(),
+                mailbox: MAILBOX.into(),
+            },
+        )
+        .unwrap();
+
+        let storage = deps.as_ref().storage;
+        assert_eq!(super::HRP.load(storage).unwrap(), hrp);
+        assert_eq!(
+            super::MODE.load(storage).unwrap(),
+            token_mode.clone().into()
+        );
+        assert_eq!(super::MAILBOX.load(storage).unwrap(), MAILBOX);
+
+        match token_mode {
+            TokenModeMsg::Bridged(v) => {
+                if v.metadata.is_some() {
+                    assert_eq!(res.messages.len(), 2);
+                } else {
+                    assert_eq!(res.messages.len(), 1);
+                }
+            }
+            TokenModeMsg::Collateral(_) => {
+                assert_eq!(res.messages.len(), 0);
+                assert_eq!(super::TOKEN.load(storage).unwrap(), DENOM);
+            }
+        }
+    }
+
+    #[rstest]
+    #[case(MAILBOX, 1, gen_bz(32))]
+    #[should_panic(expected = "unauthorized")]
+    #[case(OWNER, 1, gen_bz(32))]
+    #[should_panic(expected = "route not found")]
+    #[case(MAILBOX, 2, gen_bz(32))]
+    fn test_mailbox_handle(
+        mut deps: TestDeps,
+        #[case] sender: &str,
+        #[case] origin_domain: u32,
+        #[case] origin_sender: HexBinary,
+    ) {
+        let recipient = gen_bz(32);
+
+        let handle_msg = HandleMsg {
+            origin: origin_domain,
+            sender: origin_sender.clone(),
+            body: warp::Message {
+                recipient: recipient.clone(),
+                amount: Uint256::from_u128(100),
+                metadata: HexBinary::default(),
+            }
+            .into(),
+        };
+
+        set_route(
+            deps.as_mut().storage,
+            &addr(OWNER),
+            DomainRouteSet {
+                domain: 1,
+                route: Some(origin_sender),
+            },
+        )
+        .unwrap();
+
+        let res = test_execute(
+            deps.as_mut(),
+            &addr(sender),
+            ExecuteMsg::Handle(handle_msg),
+            vec![],
+        );
+        let mut msgs: Vec<_> = res.messages.into_iter().map(|v| v.msg).collect();
+
+        let mode = MODE.load(deps.as_ref().storage).unwrap();
+
+        assert_eq!(
+            msgs.pop().unwrap(),
+            conv::to_send_msg(
+                &bech32_encode("osmo", recipient.as_slice()).unwrap(),
+                vec![coin(100, DENOM)]
+            )
+            .into()
+        );
+
+        if mode == TokenMode::Bridged {
+            assert_eq!(
+                msgs.pop().unwrap(),
+                conv::to_mint_msg(&mock_env().contract.address, DENOM, "100").into()
+            );
+        } else {
+            assert!(msgs.is_empty());
+        }
+    }
+
+    #[rstest]
+    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM)])]
+    #[should_panic(expected = "route not found")]
+    #[case(2, gen_bz(32), gen_bz(32), vec![coin(100, DENOM)])]
+    #[should_panic(expected = "No funds sent")]
+    #[case(1, gen_bz(32), gen_bz(32), vec![])]
+    #[should_panic(expected = "Must send reserve token 'utest'")]
+    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, "uatom")])]
+    #[should_panic(expected = "Sent more than one denomination")]
+    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM), coin(100, "uatom")])]
+    fn test_transfer_remote(
+        mut deps: TestDeps,
+        #[case] dest_domain: u32,
+        #[case] dest_router: HexBinary,
+        #[case] dest_recipient: HexBinary,
+        #[case] funds: Vec<Coin>,
+    ) {
+        set_route(
+            deps.as_mut().storage,
+            &addr(OWNER),
+            DomainRouteSet {
+                domain: 1,
+                route: Some(dest_router.clone()),
+            },
+        )
+        .unwrap();
+
+        let res = test_execute(
+            deps.as_mut(),
+            &addr("sender"),
+            ExecuteMsg::TransferRemote {
+                dest_domain,
+                recipient: dest_recipient.clone(),
+            },
+            funds,
+        );
+        let mut msgs: Vec<_> = res.messages.into_iter().map(|v| v.msg).collect();
+
+        let mode = MODE.load(deps.as_ref().storage).unwrap();
+
+        assert_eq!(
+            msgs.last().unwrap(),
+            &mailbox::dispatch(
+                MAILBOX,
+                dest_domain,
+                dest_router,
+                warp::Message {
+                    recipient: dest_recipient,
+                    amount: Uint256::from_u128(100),
+                    metadata: HexBinary::default(),
+                }
+                .into(),
+                None,
+                None
+            )
+            .unwrap()
+        );
+        msgs.remove(msgs.len() - 1); // remove last (dispatch) msg
+
+        if mode == TokenMode::Bridged {
+            assert_eq!(
+                msgs.pop().unwrap(),
+                conv::to_burn_msg(&mock_env().contract.address, DENOM, "100").into()
+            );
+        } else {
+            assert!(msgs.is_empty());
+        }
+    }
 }

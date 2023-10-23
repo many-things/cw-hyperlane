@@ -1,6 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{wasm_execute, Addr, Api, CosmosMsg, HexBinary, StdResult};
 
+#[allow(unused_imports)]
 use crate::{
     hook::QuoteDispatchResponse,
     ownable::{OwnableMsg, OwnableQueryMsg},

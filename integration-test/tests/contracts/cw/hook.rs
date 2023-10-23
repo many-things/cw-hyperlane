@@ -10,7 +10,7 @@ use ibcx_test_utils::addr;
 use osmosis_test_tube::Wasm;
 use test_tube::{Account, Runner, SigningAccount};
 
-use super::{igp::Igp, types::Codes};
+use super::{igp::Igp, instantiate, types::Codes};
 
 #[allow(dead_code)]
 pub enum Hook {
@@ -43,8 +43,8 @@ pub enum Hook {
     },
 }
 
+#[allow(dead_code)]
 impl Hook {
-    #[allow(dead_code)]
     pub fn mock(gas: Uint256) -> Self {
         Self::Mock { gas }
     }
@@ -183,6 +183,36 @@ impl Hook {
         Ok(hook)
     }
 
+    fn deploy_aggregate<'a, R: Runner<'a>>(
+        wasm: &Wasm<'a, R>,
+        code: u64,
+        codes: &Codes,
+        mailbox: String,
+        hooks: Vec<Self>,
+        owner: &SigningAccount,
+        deployer: &SigningAccount,
+    ) -> eyre::Result<String> {
+        use hpl_interface::hook::aggregate::*;
+
+        let hook_addrs = hooks
+            .into_iter()
+            .map(|hook| hook.deploy(wasm, codes, mailbox.clone(), owner, deployer))
+            .collect::<eyre::Result<Vec<_>>>()?;
+
+        let hook = instantiate(
+            wasm,
+            code,
+            deployer,
+            "cw-hpl-hook-aggregate",
+            &InstantiateMsg {
+                owner: owner.address(),
+                hooks: hook_addrs,
+            },
+        );
+
+        Ok(hook.data.address)
+    }
+
     pub fn deploy<'a, R: Runner<'a>>(
         self,
         wasm: &Wasm<'a, R>,
@@ -193,7 +223,7 @@ impl Hook {
     ) -> eyre::Result<String> {
         match self {
             Hook::Mock { gas } => Self::deploy_mock(wasm, codes, gas, deployer),
-            Hook::Igp(igp) => Ok(igp.deploy(wasm, codes, mailbox, owner, deployer)?.core),
+            Hook::Igp(igp) => Ok(igp.deploy(wasm, codes, owner, deployer)?.core),
             Hook::Merkle {} => Self::deploy_merkle(wasm, codes, mailbox, owner, deployer),
             Hook::Pausable {} => Self::deploy_pausable(wasm, codes, owner, deployer),
             Hook::Routing { routes } => Self::deploy_routing(
@@ -266,16 +296,15 @@ impl Hook {
 
                 Ok(hook_addr)
             }
-            Hook::Aggregate { .. } => todo!(),
+            Hook::Aggregate { hooks } => Self::deploy_aggregate(
+                wasm,
+                codes.hook_aggregate,
+                codes,
+                mailbox,
+                hooks,
+                owner,
+                deployer,
+            ),
         }
     }
-}
-
-pub fn prepare_routing_hook(routes: Vec<(u32, u128)>) -> Hook {
-    let routes = routes
-        .into_iter()
-        .map(|(domain, _)| (domain, Hook::Merkle {}))
-        .collect();
-
-    Hook::routing(routes)
 }

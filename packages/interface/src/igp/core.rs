@@ -13,7 +13,6 @@ use super::oracle::IgpGasOracleQueryMsg;
 pub struct InstantiateMsg {
     pub hrp: String,
     pub owner: String,
-    pub mailbox: String,
     pub gas_token: String,
     pub beneficiary: String,
 }

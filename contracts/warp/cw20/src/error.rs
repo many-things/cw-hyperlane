@@ -9,21 +9,21 @@ pub enum ContractError {
     #[error("{0}")]
     ParseReplyError(#[from] cw_utils::ParseReplyError),
 
-    #[error("Unauthorized")]
+    #[error("unauthorized")]
     Unauthorized,
 
-    #[error("WrongLength")]
+    #[error("wrong length")]
     WrongLength {},
 
-    #[error("InvalidTokenOption")]
+    #[error("invalid token option")]
     InvalidTokenOption,
 
-    #[error("InvalidReplyId")]
+    #[error("invalid reply id")]
     InvalidReplyId,
 
-    #[error("InvalidReceiveMsg")]
+    #[error("invalid receive msg")]
     InvalidReceiveMsg,
 
-    #[error("NoRouter domain:{domain:?}")]
+    #[error("no router for domain {domain:?}")]
     NoRouter { domain: u32 },
 }

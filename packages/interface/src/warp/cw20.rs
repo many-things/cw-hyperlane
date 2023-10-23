@@ -3,7 +3,7 @@ use cosmwasm_std::HexBinary;
 
 use crate::{
     core,
-    ownable::OwnableQueryMsg,
+    ownable::{OwnableMsg, OwnableQueryMsg},
     router::{self, RouterQuery},
 };
 
@@ -53,6 +53,7 @@ pub enum ReceiveMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    Ownable(OwnableMsg),
     Router(router::RouterMsg<HexBinary>),
 
     /// handle transfer remote

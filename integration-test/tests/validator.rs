@@ -145,7 +145,7 @@ impl TestValidators {
         let multisig_hash = hpl_ism_multisig::multisig_hash(
             hpl_ism_multisig::domain_hash(self.domain, addr.to_vec().into())?.to_vec(),
             merkle_root.to_vec(),
-            merkle_index.to_be_bytes().to_vec(),
+            merkle_index,
             message_id.to_vec(),
         )?;
 
@@ -206,7 +206,7 @@ fn test_validator() {
         .make_metadata(
             H160::from_slice(gen_bz(20).as_slice()),
             gen_bz(32).as_slice().try_into().unwrap(),
-            1,
+            0,
             message_id.as_slice().try_into().unwrap(),
             true,
         )

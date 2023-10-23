@@ -13,7 +13,7 @@ use hpl_router::get_routes;
 use ibcx_test_utils::{addr, gen_bz};
 use rstest::{fixture, rstest};
 
-use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP, MAILBOX};
+use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP};
 
 use super::IGP;
 
@@ -62,22 +62,14 @@ macro_rules! arg_fixture {
 arg_fixture!(deployer, Addr, addr("deployer"));
 arg_fixture!(hrp, &'static str, "test");
 arg_fixture!(owner, Addr, addr("owner"));
-arg_fixture!(mailbox, Addr, addr("mailbox"));
 arg_fixture!(gas_token, &'static str, "utest");
 arg_fixture!(beneficiary, Addr, addr("beneficiary"));
 
 #[fixture]
-fn igp(
-    deployer: Addr,
-    hrp: &str,
-    owner: Addr,
-    mailbox: Addr,
-    gas_token: &str,
-    beneficiary: Addr,
-) -> IGP {
+fn igp(deployer: Addr, hrp: &str, owner: Addr, gas_token: &str, beneficiary: Addr) -> IGP {
     let mut igp = IGP::new(mock_dependencies(), mock_env());
 
-    igp.init(&deployer, hrp, &owner, &mailbox, gas_token, &beneficiary)
+    igp.init(&deployer, hrp, &owner, gas_token, &beneficiary)
         .unwrap();
 
     igp
@@ -101,7 +93,6 @@ fn test_init(igp: IGP) {
     assert_eq!(get_owner(storage).unwrap(), "owner");
     assert_eq!(BENEFICIARY.load(storage).unwrap(), "beneficiary");
     assert_eq!(GAS_TOKEN.load(storage).unwrap(), "utest");
-    assert_eq!(MAILBOX.load(storage).unwrap(), "mailbox");
     assert_eq!(HRP.load(storage).unwrap(), "test");
 }
 
@@ -249,8 +240,6 @@ fn test_pay_for_gas(
 #[case(addr("mailbox"), true, Some(300_000))]
 #[case(addr("mailbox"), true, None)]
 #[case(addr("mailbox"), false, None)]
-#[should_panic(expected = "unauthorized")]
-#[case(addr("owner"), true, Some(300_000))]
 fn test_post_dispatch(
     #[values("osmo", "neutron")] hrp: &str,
     #[with(vec![(1, "oracle/2/150".into())])] igp_routes: (IGP, Vec<(u32, String)>),
