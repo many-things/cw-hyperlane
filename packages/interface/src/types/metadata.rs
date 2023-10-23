@@ -121,23 +121,55 @@ impl MessageIdMultisigIsmMetadata {
     }
 }
 
+use std::convert::AsMut;
+
+fn clone_into_array<A, T>(slice: &[T]) -> A
+where
+    A: Sized + Default + AsMut<[T]>,
+    T: Clone,
+{
+    let mut a = Default::default();
+    <A as AsMut<[T]>>::as_mut(&mut a).clone_from_slice(slice);
+    a
+}
+
 #[cw_serde]
-pub struct AggregateIsmMetadata(pub BTreeMap<Addr, HexBinary>);
+pub struct AggregateMetadata(BTreeMap<Addr, HexBinary>);
 
-impl AggregateIsmMetadata {
-    const RANGE_SIZE: usize = 4;
+impl AggregateMetadata {
+    pub const RANGE_SIZE: usize = 2;
 
-    pub fn from_hex(v: HexBinary, isms: Vec<Addr>) -> Self {
+    pub fn new(set: Vec<(Addr, HexBinary)>) -> Self {
+        Self(set.into_iter().collect())
+    }
+}
+
+impl Iterator for AggregateMetadata {
+    type Item = (Addr, HexBinary);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop_first()
+    }
+}
+
+impl AggregateMetadata {
+    pub fn from_hex(v: HexBinary, addrs: Vec<Addr>) -> Self {
         Self(
-            isms.into_iter()
+            addrs
+                .into_iter()
                 .enumerate()
                 .map(|(i, ism)| {
                     let start = i * Self::RANGE_SIZE * 2;
                     let mid = start + Self::RANGE_SIZE;
                     let end = mid + Self::RANGE_SIZE;
 
-                    let meta_start = usize::from_be_bytes(v[start..mid].try_into().unwrap());
-                    let meta_end = usize::from_be_bytes(v[mid..end].try_into().unwrap());
+                    let mut meta_start = [0u8; 8];
+                    meta_start[8 - (mid - start)..].copy_from_slice(&v[start..mid]);
+                    let mut meta_end = [0u8; 8];
+                    meta_end[8 - (end - mid)..].copy_from_slice(&v[mid..end]);
+
+                    let meta_start = usize::from_be_bytes(meta_start);
+                    let meta_end = usize::from_be_bytes(meta_end);
 
                     (ism, v[meta_start..meta_end].to_vec().into())
                 })
@@ -146,13 +178,40 @@ impl AggregateIsmMetadata {
     }
 }
 
-// impl From<AggregateIsmMetadata> for HexBinary {
-//     fn from(v: AggregateIsmMetadata) -> Self {
-//         v.0.into_iter().fold(vec![], |acc, (ism, metaedata)| {
+impl From<AggregateMetadata> for HexBinary {
+    fn from(v: AggregateMetadata) -> Self {
+        let pos_start = v.0.len() * AggregateMetadata::RANGE_SIZE * 2;
 
-//         })
-//     }
-// }
+        let ls: Vec<([u8; 2], [u8; 2], HexBinary)> =
+            v.0.values()
+                .fold(vec![] as Vec<(usize, usize, HexBinary)>, |mut acc, m| {
+                    let l = acc.last().map(|v| v.1).unwrap_or(pos_start);
+
+                    acc.push((l, l + m.len(), m.clone()));
+                    acc
+                })
+                .into_iter()
+                .map(|(start, end, metadata)| {
+                    (
+                        clone_into_array(&start.to_be_bytes()[6..8]),
+                        clone_into_array(&end.to_be_bytes()[6..8]),
+                        metadata,
+                    )
+                })
+                .collect();
+
+        let mut pos = vec![];
+        let mut metadata = vec![];
+
+        for (start, end, meta) in ls {
+            pos.extend_from_slice(&start);
+            pos.extend_from_slice(&end);
+            metadata.extend_from_slice(meta.as_slice());
+        }
+
+        [pos, metadata].concat().into()
+    }
+}
 
 #[cw_serde]
 pub struct IGPMetadata {
@@ -204,9 +263,26 @@ impl IGPMetadata {
 
 #[cfg(test)]
 mod test {
-    use ibcx_test_utils::hex;
+    use ibcx_test_utils::{addr, gen_bz, hex};
 
     use super::*;
+
+    #[test]
+    fn test_aggregate() {
+        let set = vec![
+            (addr("test1"), gen_bz(12)),
+            (addr("test2"), gen_bz(12)),
+            (addr("test3"), gen_bz(12)),
+        ];
+
+        let metadata = AggregateMetadata::new(set);
+        let isms = metadata.0.clone().into_keys().collect();
+
+        let metadata_bz: HexBinary = metadata.clone().into();
+
+        let new_metadata = AggregateMetadata::from_hex(metadata_bz, isms);
+        assert_eq!(metadata, new_metadata);
+    }
 
     #[test]
     fn test_message_id_multisig_metadata() {

@@ -9,7 +9,6 @@ pub const TREE_DEPTH: usize = 32;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub mailbox: String,
     pub hooks: Vec<String>,
 }
 
@@ -17,6 +16,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
     PostDispatch(PostDispatchMsg),
+    SetHooks { hooks: Vec<String> },
 }
 
 #[cw_serde]

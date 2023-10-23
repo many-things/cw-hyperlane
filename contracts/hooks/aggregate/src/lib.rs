@@ -1,40 +1,26 @@
+mod error;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdError,
+    ensure_eq, Addr, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
     StdResult,
 };
 use cw_storage_plus::Item;
+use error::ContractError;
 use hpl_interface::{
     hook::{
         aggregate::{AggregateHookQueryMsg, ExecuteMsg, HooksResponse, InstantiateMsg, QueryMsg},
-        HookQueryMsg, MailboxResponse, PostDispatchMsg, QuoteDispatchResponse,
+        post_dispatch, HookQueryMsg, MailboxResponse, PostDispatchMsg, QuoteDispatchResponse,
     },
     to_binary,
-    types::Message,
+    types::{AggregateMetadata, Message},
 };
-
-#[derive(thiserror::Error, Debug, PartialEq)]
-pub enum ContractError {
-    #[error("{0}")]
-    Std(#[from] StdError),
-
-    #[error("{0}")]
-    PaymentError(#[from] cw_utils::PaymentError),
-
-    #[error("unauthorized")]
-    Unauthorized {},
-
-    #[error("hook paused")]
-    Paused {},
-}
+use hpl_ownable::get_owner;
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-pub const MAILBOX_KEY: &str = "mailbox";
-pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
 
 pub const HOOKS_KEY: &str = "hooks";
 pub const HOOKS: Item<Vec<Addr>> = Item::new(HOOKS_KEY);
@@ -53,23 +39,21 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
-    let mailbox = deps.api.addr_validate(&msg.mailbox)?;
     let hooks = msg
         .hooks
-        .into_iter()
-        .map(|v| deps.api.addr_validate(&v))
+        .iter()
+        .map(|v| deps.api.addr_validate(v))
         .collect::<StdResult<_>>()?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
 
-    MAILBOX.save(deps.storage, &mailbox)?;
     HOOKS.save(deps.storage, &hooks)?;
 
     Ok(Response::new().add_event(
         new_event("initialize")
             .add_attribute("sender", info.sender)
             .add_attribute("owner", owner)
-            .add_attribute("mailbox", mailbox),
+            .add_attribute("hooks", msg.hooks.join(",")),
     ))
 }
 
@@ -82,20 +66,41 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
-        ExecuteMsg::PostDispatch(PostDispatchMsg { message, .. }) => {
+        ExecuteMsg::PostDispatch(PostDispatchMsg { message, metadata }) => {
+            // aggregate it
+            let hooks = HOOKS.load(deps.storage)?;
+
+            let msgs = AggregateMetadata::from_hex(metadata, hooks)
+                .map(|(hook, metadata)| {
+                    post_dispatch(hook, metadata, message.clone(), None).map(|x| x.into())
+                })
+                .collect::<StdResult<Vec<CosmosMsg>>>()?;
+
+            let decoded_msg: Message = message.into();
+
+            // do nothing
+            Ok(Response::new().add_messages(msgs).add_event(
+                new_event("post_dispatch").add_attribute("message_id", decoded_msg.id().to_hex()),
+            ))
+        }
+        ExecuteMsg::SetHooks { hooks } => {
             ensure_eq!(
-                MAILBOX.load(deps.storage)?,
+                get_owner(deps.storage)?,
                 info.sender,
                 ContractError::Unauthorized {}
             );
 
-            let decoded_msg: Message = message.into();
+            let parsed_hooks = hooks
+                .iter()
+                .map(|v| deps.api.addr_validate(v))
+                .collect::<StdResult<_>>()?;
 
-            // aggregate it
+            HOOKS.save(deps.storage, &parsed_hooks)?;
 
-            // do nothing
             Ok(Response::new().add_event(
-                new_event("post_dispatch").add_attribute("message_id", decoded_msg.id().to_hex()),
+                new_event("set_hooks")
+                    .add_attribute("sender", info.sender)
+                    .add_attribute("hooks", hooks.join(",")),
             ))
         }
     }
@@ -115,9 +120,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
     }
 }
 
-fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     Ok(MailboxResponse {
-        mailbox: MAILBOX.load(deps.storage)?.into(),
+        mailbox: "unrestricted".to_string(),
     })
 }
 
