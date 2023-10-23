@@ -70,9 +70,10 @@ pub fn execute(
             // aggregate it
             let hooks = HOOKS.load(deps.storage)?;
 
-            let msgs = AggregateMetadata::from_hex(metadata, hooks)
-                .map(|(hook, metadata)| {
-                    post_dispatch(hook, metadata, message.clone(), None).map(|x| x.into())
+            let msgs = hooks
+                .into_iter()
+                .map(|v| {
+                    post_dispatch(v, metadata.clone(), message.clone(), None).map(|x| x.into())
                 })
                 .collect::<StdResult<Vec<CosmosMsg>>>()?;
 
