@@ -25,6 +25,7 @@ pub fn main() {
         fetch_api!(hpl_core::mailbox, "mailbox"),
         fetch_api!(hpl_core::va, "validator_announce"),
         // hooks
+        fetch_api!(hpl_hook::aggregate, "hook_aggregate"),
         fetch_api!(hpl_hook::merkle, "hook_merkle"),
         fetch_api!(hpl_hook::pausable, "hook_pausable"),
         fetch_api!(hpl_hook::routing, "hook_routing"),
@@ -34,6 +35,7 @@ pub fn main() {
         fetch_api!(hpl_igp::core, "igp"),
         fetch_api!(hpl_igp::oracle, "igp_oracle"),
         // isms
+        fetch_api!(hpl_ism::aggregate, "ism_aggregate"),
         fetch_api!(hpl_ism::multisig, "ism_multisig"),
         fetch_api!(hpl_ism::routing, "ism_routing"),
         // warps
