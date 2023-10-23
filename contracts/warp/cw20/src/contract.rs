@@ -555,12 +555,7 @@ mod test {
             ExecuteMsg::Receive(receive_msg),
             vec![],
         );
-        let msgs = res
-            .messages
-            .clone()
-            .into_iter()
-            .map(|v| v.msg)
-            .collect::<Vec<_>>();
+        let msgs = res.messages.into_iter().map(|v| v.msg).collect::<Vec<_>>();
 
         let warp_msg = warp::Message {
             recipient,

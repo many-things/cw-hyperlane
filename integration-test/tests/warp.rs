@@ -205,7 +205,7 @@ async fn test_native_collateral(#[case] denom: &str) -> eyre::Result<()> {
     let events = wasm_events(warp_resp.events);
     assert_eq!(
         events["wasm-hpl_warp_native::instantiate"]["denom"],
-        mock_token.clone()
+        mock_token
     );
 
     let resp = tf.query_denom_authority_metadata(
@@ -221,7 +221,7 @@ async fn test_native_collateral(#[case] denom: &str) -> eyre::Result<()> {
     tf.change_admin(
         MsgChangeAdmin {
             sender: osmo.acc_deployer.address(),
-            denom: mock_token.clone(),
+            denom: mock_token,
             new_admin: warp_resp.data.address,
         },
         &osmo.acc_deployer,
