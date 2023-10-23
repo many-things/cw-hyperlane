@@ -385,7 +385,12 @@ mod test {
         assert_eq!(super::MAILBOX.load(storage).unwrap(), MAILBOX);
 
         match token_mode {
-            TokenModeMsg::Bridged(v) => {
+            TokenModeMsg::Bridged(mut v) => {
+                v.init_msg.mint = Some(cw20::MinterResponse {
+                    minter: mock_env().contract.address.into(),
+                    cap: None,
+                });
+
                 assert!(!super::TOKEN.exists(storage));
 
                 let reply = res.messages.get(0).unwrap();

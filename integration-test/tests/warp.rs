@@ -2,7 +2,6 @@
 mod constants;
 mod contracts;
 mod event;
-mod modules;
 mod validator;
 
 use std::collections::BTreeMap;
@@ -19,11 +18,7 @@ use osmosis_test_tube::{
 use rstest::rstest;
 use test_tube::{Account, Module, Wasm};
 
-use crate::{
-    constants::*,
-    contracts::{cw, eth},
-    validator::TestValidators,
-};
+use crate::{constants::*, contracts::cw, validator::TestValidators};
 
 fn wasm_events(events: Vec<Event>) -> BTreeMap<String, BTreeMap<String, String>> {
     events
