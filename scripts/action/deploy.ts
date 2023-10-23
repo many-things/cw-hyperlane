@@ -1,10 +1,5 @@
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
-import { GasPrice } from "@cosmjs/stargate";
-
 import { loadContext } from "../src/load_context";
 import HplMailbox from "../src/contracts/hpl_mailbox";
-import { Context } from "../src/types";
 import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
 import HplTestMockHook from "../src/contracts/hpl_test_mock_hook";
 import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
@@ -13,65 +8,15 @@ import HplIsmMultisig from "../src/contracts/hpl_ism_multisig";
 import { writeFileSync } from "fs";
 import HplValidatorAnnounce from "../src/contracts/hpl_validator_announce";
 import HplTestMockMsgReceiver from "../src/contracts/hpl_test_mock_msg_receiver";
-
-const NETWORK_ID = process.env.NETWORK_ID || "osmo-test-5";
-const NETWORK_HRP = process.env.NETWORK_HRP || "osmo";
-const NETWORK_URL =
-  process.env.NETWORK_URL || "https://rpc.osmotest5.osmosis.zone";
-const NETWORK_GAS = process.env.NETWORK_GAS || "0.025uosmo";
-
-async function getSigningClient(): Promise<{
-  client: SigningCosmWasmClient;
-  address: string;
-}> {
-  const mnemonic = process.env["SIGNING_MNEMONIC"] as string;
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
-    prefix: NETWORK_HRP,
-  });
-  const [{ address }] = await wallet.getAccounts();
-
-  const client = await SigningCosmWasmClient.connectWithSigner(
-    NETWORK_URL,
-    wallet,
-    {
-      gasPrice: GasPrice.fromString(NETWORK_GAS),
-    }
-  );
-  return { client, address };
-}
-
-type Const<T> = new (
-  address: string | undefined,
-  codeId: number | undefined,
-  digest: string,
-  signer: string,
-  client: SigningCosmWasmClient
-) => T;
-
-class ContractFetcher {
-  constructor(
-    private ctx: Context,
-    private owner: string,
-    private client: SigningCosmWasmClient
-  ) {}
-
-  public get<T>(f: Const<T>, name: string): T {
-    return new f(
-      this.ctx.contracts[name].address,
-      this.ctx.contracts[name].codeId,
-      this.ctx.contracts[name].digest,
-      this.owner,
-      this.client
-    );
-  }
-}
+import { config, getSigningClient } from "../src/config";
+import { ContractFetcher } from "./fetch";
 
 async function main() {
-  const { client, address: owner } = await getSigningClient();
+  const client = await getSigningClient(config);
 
-  const ctx = loadContext(NETWORK_ID);
+  const ctx = loadContext(config.network.id);
 
-  const fetcher = new ContractFetcher(ctx, owner, client);
+  const fetcher = new ContractFetcher(ctx, client);
 
   const mailbox = fetcher.get(HplMailbox, "hpl_mailbox");
   const va = fetcher.get(HplValidatorAnnounce, "hpl_validator_announce");
@@ -90,7 +35,7 @@ async function main() {
   // init mailbox
   ctx.contracts[mailbox.contractName] = await mailbox.instantiate({
     hrp: "dual",
-    owner,
+    owner: client.signer,
     domain: 33333,
   });
 
@@ -136,8 +81,8 @@ async function main() {
     await test_mock_receiver.instantiate({ hrp: "dual" });
 
   // pre-setup
-  await client.executeMultiple(
-    owner,
+  await client.wasm.executeMultiple(
+    client.signer,
     [
       {
         contractAddress: ctx.contracts[mailbox.contractName].address!,
