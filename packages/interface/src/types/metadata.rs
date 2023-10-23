@@ -137,7 +137,7 @@ where
 pub struct AggregateMetadata(BTreeMap<Addr, HexBinary>);
 
 impl AggregateMetadata {
-    pub const RANGE_SIZE: usize = 2;
+    pub const RANGE_SIZE: usize = 4;
 
     pub fn new(set: Vec<(Addr, HexBinary)>) -> Self {
         Self(set.into_iter().collect())
@@ -182,7 +182,11 @@ impl From<AggregateMetadata> for HexBinary {
     fn from(v: AggregateMetadata) -> Self {
         let pos_start = v.0.len() * AggregateMetadata::RANGE_SIZE * 2;
 
-        let ls: Vec<([u8; 2], [u8; 2], HexBinary)> =
+        let ls: Vec<(
+            [u8; AggregateMetadata::RANGE_SIZE],
+            [u8; AggregateMetadata::RANGE_SIZE],
+            HexBinary,
+        )> =
             v.0.values()
                 .fold(vec![] as Vec<(usize, usize, HexBinary)>, |mut acc, m| {
                     let l = acc.last().map(|v| v.1).unwrap_or(pos_start);
@@ -193,8 +197,8 @@ impl From<AggregateMetadata> for HexBinary {
                 .into_iter()
                 .map(|(start, end, metadata)| {
                     (
-                        clone_into_array(&start.to_be_bytes()[6..8]),
-                        clone_into_array(&end.to_be_bytes()[6..8]),
+                        clone_into_array(&start.to_be_bytes()[AggregateMetadata::RANGE_SIZE..]),
+                        clone_into_array(&end.to_be_bytes()[AggregateMetadata::RANGE_SIZE..]),
                         metadata,
                     )
                 })
