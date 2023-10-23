@@ -71,16 +71,6 @@ pub fn execute(
             // aggregate it
             let hooks = HOOKS.load(deps.storage)?;
 
-            deps.api.debug("aggregate hook");
-            deps.api.debug(&format!(
-                "=> {}",
-                hooks
-                    .iter()
-                    .map(|v| v.to_string())
-                    .collect::<Vec<_>>()
-                    .join(",")
-            ));
-
             let msgs: Vec<CosmosMsg> = hooks
                 .into_iter()
                 .map(|v| {
