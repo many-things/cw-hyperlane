@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, MAILBOX, TOKEN_EXCHANGE_RATE_SCALE};
+use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, TOKEN_EXCHANGE_RATE_SCALE};
 
 use cosmwasm_std::{coin, Addr, Deps, QuerierWrapper, Storage, Uint256};
 use hpl_interface::hook::{MailboxResponse, QuoteDispatchMsg, QuoteDispatchResponse};
@@ -7,11 +7,9 @@ use hpl_interface::igp::core::{BeneficiaryResponse, QuoteGasPaymentResponse};
 use hpl_interface::igp::oracle::{self, GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
 use hpl_interface::types::{IGPMetadata, Message};
 
-pub fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
-    let mailbox = MAILBOX.load(deps.storage)?;
-
+pub fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     Ok(MailboxResponse {
-        mailbox: mailbox.into(),
+        mailbox: "unrestricted".to_string(),
     })
 }
 

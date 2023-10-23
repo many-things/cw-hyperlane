@@ -1,6 +1,6 @@
 use crate::event::{emit_claim, emit_pay_for_gas, emit_post_dispatch, emit_set_beneficiary};
 use crate::query::quote_gas_price;
-use crate::{ContractError, BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP, MAILBOX};
+use crate::{ContractError, BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP};
 
 use cosmwasm_std::{
     coins, ensure, ensure_eq, BankMsg, DepsMut, Env, HexBinary, MessageInfo, Response, Uint128,
@@ -55,12 +55,6 @@ pub fn post_dispatch(
     info: MessageInfo,
     req: PostDispatchMsg,
 ) -> Result<Response, ContractError> {
-    ensure_eq!(
-        info.sender,
-        MAILBOX.load(deps.storage)?,
-        ContractError::Unauthorized {}
-    );
-
     let message: Message = req.message.clone().into();
     let hrp = HRP.load(deps.storage)?;
 

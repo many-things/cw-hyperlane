@@ -3,18 +3,19 @@ mod error;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
-    StdResult,
+    ensure_eq, Addr, Coin, CosmosMsg, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
+    QueryResponse, Response, StdResult,
 };
 use cw_storage_plus::Item;
 use error::ContractError;
 use hpl_interface::{
     hook::{
         aggregate::{AggregateHookQueryMsg, ExecuteMsg, HooksResponse, InstantiateMsg, QueryMsg},
-        post_dispatch, HookQueryMsg, MailboxResponse, PostDispatchMsg, QuoteDispatchResponse,
+        post_dispatch, HookQueryMsg, MailboxResponse, PostDispatchMsg, QuoteDispatchMsg,
+        QuoteDispatchResponse,
     },
     to_binary,
-    types::{AggregateMetadata, Message},
+    types::Message,
 };
 use hpl_ownable::get_owner;
 
@@ -70,12 +71,36 @@ pub fn execute(
             // aggregate it
             let hooks = HOOKS.load(deps.storage)?;
 
-            let msgs = hooks
+            deps.api.debug("aggregate hook");
+            deps.api.debug(&format!(
+                "=> {}",
+                hooks
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ));
+
+            let msgs: Vec<CosmosMsg> = hooks
                 .into_iter()
                 .map(|v| {
-                    post_dispatch(v, metadata.clone(), message.clone(), None).map(|x| x.into())
+                    let quote = hpl_interface::hook::quote_dispatch(
+                        &deps.querier,
+                        &v,
+                        metadata.clone(),
+                        message.clone(),
+                    )?;
+                    let msg = post_dispatch(
+                        v,
+                        metadata.clone(),
+                        message.clone(),
+                        quote.gas_amount.map(|v| vec![v]),
+                    )?
+                    .into();
+
+                    Ok(msg)
                 })
-                .collect::<StdResult<Vec<CosmosMsg>>>()?;
+                .collect::<StdResult<_>>()?;
 
             let decoded_msg: Message = message.into();
 
@@ -113,7 +138,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
-            HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch()),
+            HookQueryMsg::QuoteDispatch(QuoteDispatchMsg { metadata, message }) => {
+                to_binary(quote_dispatch(deps, metadata, message))
+            }
         },
         QueryMsg::AggregateHook(msg) => match msg {
             AggregateHookQueryMsg::Hooks {} => to_binary(get_hooks(deps)),
@@ -127,8 +154,35 @@ fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     })
 }
 
-fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
-    Ok(QuoteDispatchResponse { gas_amount: None })
+fn quote_dispatch(
+    deps: Deps,
+    metadata: HexBinary,
+    message: HexBinary,
+) -> Result<QuoteDispatchResponse, ContractError> {
+    let hooks = HOOKS.load(deps.storage)?;
+
+    let mut total: Option<Coin> = None;
+
+    for hook in hooks {
+        let res = hpl_interface::hook::quote_dispatch(
+            &deps.querier,
+            hook,
+            metadata.clone(),
+            message.clone(),
+        )?;
+
+        if let Some(gas_amount) = res.gas_amount {
+            total = match total {
+                Some(mut v) => {
+                    v.amount += gas_amount.amount;
+                    Some(v)
+                }
+                None => Some(gas_amount),
+            };
+        }
+    }
+
+    Ok(QuoteDispatchResponse { gas_amount: total })
 }
 
 fn get_hooks(deps: Deps) -> Result<HooksResponse, ContractError> {

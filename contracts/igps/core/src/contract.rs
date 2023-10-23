@@ -7,7 +7,7 @@ use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg
 use hpl_interface::igp::oracle::IgpGasOracleQueryMsg;
 use hpl_interface::to_binary;
 
-use crate::{ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, GAS_TOKEN, HRP, MAILBOX};
+use crate::{ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, GAS_TOKEN, HRP};
 
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_igp_core::{}", name))
@@ -23,13 +23,11 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
-    let mailbox = deps.api.addr_validate(&msg.mailbox)?;
     let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
 
     BENEFICIARY.save(deps.storage, &beneficiary)?;
-    MAILBOX.save(deps.storage, &mailbox)?;
 
     GAS_TOKEN.save(deps.storage, &msg.gas_token)?;
     HRP.save(deps.storage, &msg.hrp)?;

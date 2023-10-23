@@ -22,9 +22,6 @@ pub const DEFAULT_GAS_USAGE: u128 = 25_000;
 pub const HRP_KEY: &str = "hrp";
 pub const HRP: Item<String> = Item::new(HRP_KEY);
 
-pub const MAILBOX_KEY: &str = "mailbox";
-pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
-
 pub const GAS_TOKEN_KEY: &str = "gas_token";
 pub const GAS_TOKEN: Item<String> = Item::new(GAS_TOKEN_KEY);
 

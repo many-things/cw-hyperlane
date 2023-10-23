@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
-use cosmwasm_std::{coin, Coin};
+use cosmwasm_std::{coin, Coin, Uint256};
 use hpl_interface::igp::oracle::RemoteGasDataConfig;
 use test_tube::{Account, Module, Runner, SigningAccount, Wasm};
 
@@ -9,7 +9,7 @@ use crate::validator::TestValidators;
 use super::{
     deploy_core,
     igp::Igp,
-    prepare_routing_hook, prepare_routing_ism, store_code,
+    prepare_routing_ism, store_code,
     types::{Codes, CoreDeployments},
     Hook,
 };
@@ -62,14 +62,20 @@ pub fn setup_env<'a, R: Runner<'a>>(
             .map(|v| (v.domain, hrp, v.clone()))
             .collect(),
     );
-    let default_hook =
-        prepare_routing_hook(validators.iter().map(|v| (v.domain, DEFAULT_GAS)).collect());
-    let required_hook = Hook::Igp(Igp {
-        hrp: hrp.to_string(),
-        gas_token: "uosmo".to_string(),
-        beneficiary: deployer.address(),
-        oracle_configs: oracle_config.to_vec(),
-    });
+
+    let default_hook = Hook::mock(Uint256::from_u128(DEFAULT_GAS));
+
+    let required_hook = Hook::Aggregate {
+        hooks: vec![
+            Hook::Merkle {},
+            Hook::Igp(Igp {
+                hrp: hrp.to_string(),
+                gas_token: "uosmo".to_string(),
+                beneficiary: deployer.address(),
+                oracle_configs: oracle_config.to_vec(),
+            }),
+        ],
+    };
 
     let wasm = Wasm::new(app);
     let codes = store_code(&wasm, &deployer, artifacts)?;

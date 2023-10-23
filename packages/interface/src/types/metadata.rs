@@ -163,13 +163,13 @@ impl AggregateMetadata {
                     let mid = start + Self::RANGE_SIZE;
                     let end = mid + Self::RANGE_SIZE;
 
-                    let mut meta_start = [0u8; 8];
-                    meta_start[8 - (mid - start)..].copy_from_slice(&v[start..mid]);
-                    let mut meta_end = [0u8; 8];
-                    meta_end[8 - (end - mid)..].copy_from_slice(&v[mid..end]);
+                    let mut meta_start = [0u8; 4];
+                    meta_start.copy_from_slice(&v[start..mid]);
+                    let mut meta_end = [0u8; 4];
+                    meta_end.copy_from_slice(&v[mid..end]);
 
-                    let meta_start = usize::from_be_bytes(meta_start);
-                    let meta_end = usize::from_be_bytes(meta_end);
+                    let meta_start = u32::from_be_bytes(meta_start) as usize;
+                    let meta_end = u32::from_be_bytes(meta_end) as usize;
 
                     (ism, v[meta_start..meta_end].to_vec().into())
                 })

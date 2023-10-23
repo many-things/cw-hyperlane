@@ -25,7 +25,6 @@ impl Igp {
         self,
         wasm: &Wasm<'a, R>,
         codes: &Codes,
-        mailbox: String,
         owner: &SigningAccount,
         deployer: &SigningAccount,
     ) -> eyre::Result<IgpDeployment> {
@@ -35,7 +34,6 @@ impl Igp {
                 &igp::core::InstantiateMsg {
                     hrp: self.hrp,
                     owner: owner.address(),
-                    mailbox,
                     gas_token: self.gas_token,
                     beneficiary: self.beneficiary,
                 },

@@ -206,7 +206,7 @@ fn test_validator() {
         .make_metadata(
             H160::from_slice(gen_bz(20).as_slice()),
             gen_bz(32).as_slice().try_into().unwrap(),
-            1,
+            0,
             message_id.as_slice().try_into().unwrap(),
             true,
         )
