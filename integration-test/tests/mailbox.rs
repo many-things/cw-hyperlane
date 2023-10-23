@@ -8,6 +8,7 @@ use cosmwasm_std::{attr, coin, Attribute, Binary, Uint128};
 use ethers::{
     prelude::parse_log, providers::Middleware, signers::Signer, types::TransactionReceipt,
 };
+use ibcx_test_utils::addr;
 use osmosis_test_tube::{
     osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse, Account, Module,
     OsmosisTestApp, Wasm,
@@ -16,7 +17,7 @@ use osmosis_test_tube::{
 use hpl_interface::{
     core::mailbox::{self, DispatchMsg},
     igp::oracle::RemoteGasDataConfig,
-    types::{bech32_decode, bech32_encode, bech32_to_h256},
+    types::{bech32_decode, bech32_encode, bech32_to_h256, AggregateMetadata},
 };
 use test_tube::{ExecuteResponse, Runner};
 
@@ -103,7 +104,7 @@ where
     let dispatch_id: DispatchIdFilter = parse_log(dispatch_res.logs[1].clone())?;
 
     // generate ism metadata
-    let ism_metadata = to.get_validator_set(DOMAIN_EVM)?.make_metadata(
+    let multisig_ism_metadata = to.get_validator_set(DOMAIN_EVM)?.make_metadata(
         from.core.mailbox.address(),
         from.core.mailbox.root().await?,
         from.core.mailbox.count().await? - 1,
@@ -111,11 +112,16 @@ where
         true,
     )?;
 
+    let aggregate_ism_metadata = AggregateMetadata::new(vec![(
+        addr(&to.core.default_ism),
+        multisig_ism_metadata.into(),
+    )]);
+
     // process
     let process_res = Wasm::new(to.app).execute(
         &to.core.mailbox,
         &mailbox::ExecuteMsg::Process {
-            metadata: ism_metadata.into(),
+            metadata: aggregate_ism_metadata.into(),
             message: dispatch.message.to_vec().into(),
         },
         &[],

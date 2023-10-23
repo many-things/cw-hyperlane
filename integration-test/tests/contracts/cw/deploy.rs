@@ -62,7 +62,7 @@ pub fn deploy_core<'a, R: Runner<'a>>(
 
     // set default ism, hook, igp
 
-    let default_ism = default_ism.deploy(wasm, codes, deployer)?;
+    let default_ism = default_ism.deploy(wasm, codes, owner, deployer)?;
     let default_hook = default_hook.deploy(wasm, codes, mailbox.clone(), owner, deployer)?;
     let required_hook = required_hook.deploy(wasm, codes, mailbox.clone(), owner, deployer)?;
 
