@@ -34,6 +34,7 @@ pub struct Codes {
     pub test_mock_hook: u64,
     pub test_mock_ism: u64,
     pub test_mock_msg_receiver: u64,
+    pub test_mock_multicall: u64,
 
     pub warp_cw20: u64,
     pub warp_native: u64,

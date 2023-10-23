@@ -7,7 +7,7 @@ use super::types::{Codes, CodesMap};
 
 const DEFAULT_ARTIFACTS_PATH: &str = "../target/wasm32-unknown-unknown/release/";
 
-const CONTRACTS: [&str; 18] = [
+const CONTRACTS: [&str; 19] = [
     "mailbox",
     "validator_announce",
     "hook_aggregate",
@@ -24,6 +24,7 @@ const CONTRACTS: [&str; 18] = [
     "test_mock_hook",
     "test_mock_ism",
     "test_mock_msg_receiver",
+    "test_mock_multicall",
     "warp_cw20",
     "warp_native",
 ];
