@@ -4,18 +4,20 @@ pub use crate::error::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    Addr, Deps, DepsMut, Env, Event, HexBinary, MessageInfo, QueryResponse, Response, StdResult,
+    ensure_eq, Addr, Deps, DepsMut, Env, Event, HexBinary, MessageInfo, QueryResponse, Response,
+    StdResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
 use hpl_interface::{
     ism::{
-        aggregate::InstantiateMsg, ExpectedIsmQueryMsg, IsmQueryMsg, IsmType, ModuleTypeResponse,
-        VerifyInfoResponse, VerifyResponse,
+        aggregate::{ExecuteMsg, InstantiateMsg, QueryMsg},
+        IsmQueryMsg, IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse,
     },
     to_binary,
     types::AggregateMetadata,
 };
+use hpl_ownable::get_owner;
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -62,15 +64,42 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(
-    deps: Deps,
-    _env: Env,
-    msg: ExpectedIsmQueryMsg,
-) -> Result<QueryResponse, ContractError> {
+pub fn execute(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
+) -> Result<Response, ContractError> {
+    match msg {
+        ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
+        ExecuteMsg::SetIsms { isms } => {
+            ensure_eq!(
+                get_owner(deps.storage)?,
+                info.sender,
+                ContractError::Unauthorized
+            );
+
+            let parsed_isms = isms
+                .iter()
+                .map(|v| deps.api.addr_validate(v))
+                .collect::<StdResult<_>>()?;
+
+            ISMS.save(deps.storage, &parsed_isms)?;
+
+            Ok(Response::new()
+                .add_event(new_event("set_isms").add_attribute("isms", isms.join(","))))
+        }
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     use IsmQueryMsg::*;
 
     match msg {
-        ExpectedIsmQueryMsg::Ism(msg) => match msg {
+        QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
+
+        QueryMsg::Ism(msg) => match msg {
             ModuleType {} => to_binary({
                 Ok::<_, ContractError>(ModuleTypeResponse {
                     typ: IsmType::Aggregation,
