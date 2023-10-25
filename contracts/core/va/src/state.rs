@@ -2,7 +2,7 @@ use cosmwasm_std::{Addr, Empty};
 use cw_storage_plus::{Item, Map};
 
 pub const MAILBOX_KEY: &str = "mailbox";
-pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
+pub const MAILBOX: Item<Vec<u8>> = Item::new(MAILBOX_KEY);
 
 pub const LOCAL_DOMAIN_KEY: &str = "local_domain";
 pub const LOCAL_DOMAIN: Item<u32> = Item::new(LOCAL_DOMAIN_KEY);

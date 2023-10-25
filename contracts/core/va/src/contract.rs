@@ -33,6 +33,7 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let mailbox = deps.api.addr_validate(&msg.mailbox)?;
+    let mailbox_addr = bech32_decode(mailbox.as_str())?;
 
     let local_domain = deps
         .querier
@@ -42,7 +43,7 @@ pub fn instantiate(
         )?
         .local_domain;
 
-    MAILBOX.save(deps.storage, &mailbox)?;
+    MAILBOX.save(deps.storage, &mailbox_addr)?;
     LOCAL_DOMAIN.save(deps.storage, &local_domain)?;
 
     Ok(Response::new().add_event(
@@ -149,11 +150,11 @@ fn announce(
 
     // make announcement digest
     let local_domain = LOCAL_DOMAIN.load(deps.storage)?;
-    let mailbox = MAILBOX.load(deps.storage)?;
+    let mailbox_addr = MAILBOX.load(deps.storage)?;
 
     // make digest
     let message_hash = eth_hash(announcement_hash(
-        domain_hash(local_domain, bech32_decode(mailbox.as_str())?.into())?.to_vec(),
+        domain_hash(local_domain, mailbox_addr.into())?.to_vec(),
         &storage_location,
     ))?;
 
@@ -385,16 +386,16 @@ mod test {
         #[case] enable_duplication: bool,
     ) {
         let validator = announcement.validator;
-
         let mailbox = HexBinary::from_hex(&announcement.mailbox).unwrap();
-        let mailbox_addr = bech32_encode(hrp, mailbox.as_slice()).unwrap();
 
         let mut deps = mock_dependencies();
 
         LOCAL_DOMAIN
             .save(deps.as_mut().storage, &announcement.domain)
             .unwrap();
-        MAILBOX.save(deps.as_mut().storage, &mailbox_addr).unwrap();
+        MAILBOX
+            .save(deps.as_mut().storage, &mailbox.to_vec())
+            .unwrap();
 
         let replay_id = replay_hash(&validator, &announcement.location).unwrap();
         if enable_duplication {
