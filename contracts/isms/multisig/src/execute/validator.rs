@@ -102,288 +102,80 @@ pub fn unenroll_validator(
     Ok(Response::new().add_event(emit_unenroll_validator(domain, validator.to_hex())))
 }
 
-// #[cfg(test)]
-// mod test {
-//     use cosmwasm_std::{
-//         testing::{mock_dependencies, mock_info},
-//         Addr, Storage,
-//     };
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::{testing::mock_dependencies, HexBinary};
+    use hpl_interface::{
+        build_test_executor, build_test_querier,
+        ism::multisig::{ExecuteMsg, ValidatorSet},
+    };
+    use ibcx_test_utils::{addr, hex};
+    use rstest::rstest;
 
-//     use super::*;
-//     const ADDR1_VAULE: &str = "addr1";
-//     const ADDR2_VAULE: &str = "addr2";
+    use crate::state::VALIDATORS;
 
-//     const VALIDATOR: &str = "E000fA4E466831dB288290Dd97e66560fb3d7d28";
+    build_test_executor!(crate::contract::execute);
+    build_test_querier!(crate::contract::query);
 
-//     fn mock_owner(storage: &mut dyn Storage, owner: Addr) {
-//         hpl_ownable::initialize(storage, &owner).unwrap();
-//     }
+    #[rstest]
+    #[case("owner", vec![hex("deadbeef")])]
+    #[should_panic(expected = "unauthorized")]
+    #[case("someone", vec![hex("deadbeef")])]
+    #[should_panic(expected = "duplicate validator")]
+    #[case("owner", vec![hex("deadbeef"),hex("deadbeef")])]
+    fn test_enroll(#[case] sender: &str, #[case] validators: Vec<HexBinary>) {
+        let mut deps = mock_dependencies();
 
-//     #[test]
-//     fn test_enroll_validator_failure() {
-//         let mut deps = mock_dependencies();
-//         let owner = Addr::unchecked(ADDR1_VAULE);
+        hpl_ownable::initialize(deps.as_mut().storage, &addr("owner")).unwrap();
 
-//         mock_owner(deps.as_mut().storage, owner.clone());
+        for validator in validators.clone() {
+            test_execute(
+                deps.as_mut(),
+                &addr(sender),
+                ExecuteMsg::EnrollValidator {
+                    set: ValidatorSet {
+                        domain: 1,
+                        validator,
+                    },
+                },
+                vec![],
+            );
+        }
 
-//         HRP.save(deps.as_mut().storage, &VAL_HRP.into()).unwrap();
+        assert_eq!(
+            VALIDATORS.load(deps.as_ref().storage, 1).unwrap(),
+            validators
+        );
+    }
 
-//         let msg = MsgValidatorSet {
-//             domain: 1u32,
-//             validator: "test".to_string(),
-//             validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
-//         };
+    #[rstest]
+    #[case("owner", hex("deadbeef"))]
+    #[should_panic(expected = "unauthorized")]
+    #[case("someone", hex("deadbeef"))]
+    #[should_panic(expected = "validator not exist")]
+    #[case("owner", hex("debeefed"))]
+    fn test_unenroll(#[case] sender: &str, #[case] target: HexBinary) {
+        let mut deps = mock_dependencies();
 
-//         // unauthorized
-//         let info = mock_info(ADDR2_VAULE, &[]);
-//         let unauthorize_resp = enroll_validator(deps.as_mut(), info, msg).unwrap_err();
-//         assert!(matches!(unauthorize_resp, ContractError::Unauthorized {}));
+        hpl_ownable::initialize(deps.as_mut().storage, &addr("owner")).unwrap();
 
-//         // already exist pubkey
-//         let valid_message = MsgValidatorSet {
-//             domain: 1u32,
-//             validator: VALIDATOR_ADDR.to_string(),
-//             validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
-//         };
-//         VALIDATORS
-//             .save(
-//                 deps.as_mut().storage,
-//                 1u32,
-//                 &Validators(vec![ValidatorSet {
-//                     signer: Addr::unchecked(valid_message.validator.clone()),
-//                     signer_pubkey: valid_message.validator_pubkey.clone(),
-//                 }]),
-//             )
-//             .unwrap();
+        VALIDATORS
+            .save(deps.as_mut().storage, 1, &vec![hex("deadbeef")])
+            .unwrap();
 
-//         let info = mock_info(owner.as_str(), &[]);
-//         let duplicate_pubkey = enroll_validator(deps.as_mut(), info, valid_message).unwrap_err();
-//         assert!(matches!(
-//             duplicate_pubkey,
-//             ContractError::ValidatorDuplicate {}
-//         ))
-//     }
+        test_execute(
+            deps.as_mut(),
+            &addr(sender),
+            ExecuteMsg::UnenrollValidator {
+                domain: 1,
+                validator: target,
+            },
+            vec![],
+        );
 
-//     #[test]
-//     fn test_enroll_validator_success() {
-//         let mut deps = mock_dependencies();
-//         let owner = Addr::unchecked(ADDR1_VAULE);
-//         let validator: String = VALIDATOR_ADDR.to_string();
-//         let domain: u32 = 1;
-
-//         HRP.save(deps.as_mut().storage, &VAL_HRP.into()).unwrap();
-
-//         mock_owner(deps.as_mut().storage, owner.clone());
-//         let msg = MsgValidatorSet {
-//             domain,
-//             validator: validator.clone(),
-//             validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
-//         };
-
-//         // validators not exist
-//         let info = mock_info(ADDR1_VAULE, &[]);
-//         let result = enroll_validator(deps.as_mut(), info, msg.clone()).unwrap();
-
-//         assert_eq!(
-//             result.events,
-//             vec![emit_enroll_validator(1u32, validator.clone())]
-//         );
-
-//         // check it actually save
-//         let saved_validators = VALIDATORS.load(&deps.storage, domain).unwrap();
-//         assert_eq!(validator, saved_validators.0[0].signer);
-
-//         // validator is exist already
-//         VALIDATORS
-//             .save(
-//                 deps.as_mut().storage,
-//                 1u32,
-//                 &Validators(vec![ValidatorSet {
-//                     signer: Addr::unchecked(ADDR2_VAULE),
-//                     signer_pubkey: msg.validator_pubkey.clone(),
-//                 }]),
-//             )
-//             .unwrap();
-
-//         let info = mock_info(owner.as_str(), &[]);
-//         let result = enroll_validator(deps.as_mut(), info, msg).unwrap();
-
-//         assert_eq!(
-//             result.events,
-//             vec![emit_enroll_validator(1u32, validator.clone())]
-//         );
-//         let saved_validators = VALIDATORS.load(&deps.storage, domain).unwrap();
-//         assert_eq!(validator, saved_validators.0.last().unwrap().signer);
-//     }
-
-//     #[test]
-//     fn test_enroll_validators_failure() {
-//         let mut deps = mock_dependencies();
-//         let owner = Addr::unchecked(ADDR1_VAULE);
-
-//         mock_owner(deps.as_mut().storage, owner);
-
-//         HRP.save(deps.as_mut().storage, &VAL_HRP.into()).unwrap();
-
-//         let msg = vec![
-//             MsgValidatorSet {
-//                 domain: 1u32,
-//                 validator: String::from(VALIDATOR_ADDR),
-//                 validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
-//             },
-//             MsgValidatorSet {
-//                 domain: 1u32,
-//                 validator: String::from(VALIDATOR_ADDR),
-//                 validator_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
-//             },
-//         ];
-
-//         let info = mock_info(ADDR2_VAULE, &[]);
-//         let unauthorized = enroll_validators(deps.as_mut(), info, msg.clone()).unwrap_err();
-//         assert!(matches!(unauthorized, ContractError::Unauthorized {}));
-
-//         let info = mock_info(ADDR1_VAULE, &[]);
-//         let duplicated = enroll_validators(deps.as_mut(), info, msg).unwrap_err();
-//         assert!(matches!(duplicated, ContractError::ValidatorDuplicate {}));
-//     }
-
-//     #[test]
-//     fn test_enroll_validators_success() {
-//         let mut deps = mock_dependencies();
-//         let owner = Addr::unchecked(ADDR1_VAULE);
-//         let validator = String::from(VALIDATOR_ADDR);
-//         let validator_pubkey = HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap();
-//         mock_owner(deps.as_mut().storage, owner.clone());
-
-//         HRP.save(deps.as_mut().storage, &VAL_HRP.into()).unwrap();
-
-//         let msg = vec![
-//             MsgValidatorSet {
-//                 domain: 1u32,
-//                 validator: validator.clone(),
-//                 validator_pubkey: validator_pubkey.clone(),
-//             },
-//             MsgValidatorSet {
-//                 domain: 2u32,
-//                 validator: validator.clone(),
-//                 validator_pubkey: validator_pubkey.clone(),
-//             },
-//         ];
-
-//         VALIDATORS
-//             .save(
-//                 deps.as_mut().storage,
-//                 2u32,
-//                 &Validators(vec![ValidatorSet {
-//                     signer: Addr::unchecked(ADDR2_VAULE),
-//                     signer_pubkey: validator_pubkey,
-//                 }]),
-//             )
-//             .unwrap();
-
-//         let info = mock_info(owner.as_str(), &[]);
-//         let result = enroll_validators(deps.as_mut(), info, msg).unwrap();
-
-//         assert_eq!(
-//             result.events,
-//             vec![
-//                 emit_enroll_validator(1u32, validator.clone()),
-//                 emit_enroll_validator(2u32, validator.clone())
-//             ]
-//         );
-
-//         // check it actually saved
-//         assert_eq!(
-//             validator,
-//             VALIDATORS
-//                 .load(&deps.storage, 1u32)
-//                 .unwrap()
-//                 .0
-//                 .last()
-//                 .unwrap()
-//                 .signer
-//         );
-//         assert_eq!(
-//             validator,
-//             VALIDATORS
-//                 .load(&deps.storage, 2u32)
-//                 .unwrap()
-//                 .0
-//                 .last()
-//                 .unwrap()
-//                 .signer
-//         );
-//     }
-
-//     #[test]
-//     fn test_unenroll_validator_failure() {
-//         let mut deps = mock_dependencies();
-//         let owner = Addr::unchecked(ADDR1_VAULE);
-//         let validator = String::from(VALIDATOR_ADDR);
-//         let domain: u32 = 1;
-
-//         mock_owner(deps.as_mut().storage, owner.clone());
-
-//         // unauthorization
-//         let info = mock_info(ADDR2_VAULE, &[]);
-//         let unauthorized =
-//             unenroll_validator(deps.as_mut(), info, domain, validator.clone()).unwrap_err();
-//         assert!(matches!(unauthorized, ContractError::Unauthorized {}));
-
-//         // not exists
-//         let info = mock_info(owner.as_str(), &[]);
-//         let not_exist_state =
-//             unenroll_validator(deps.as_mut(), info.clone(), domain, validator.clone()).unwrap_err();
-//         assert!(matches!(
-//             not_exist_state,
-//             ContractError::ValidatorNotExist {}
-//         ));
-
-//         // not exists in exist state
-//         VALIDATORS
-//             .save(
-//                 deps.as_mut().storage,
-//                 1u32,
-//                 &Validators(vec![ValidatorSet {
-//                     signer: Addr::unchecked(ADDR2_VAULE),
-//                     signer_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
-//                 }]),
-//             )
-//             .unwrap();
-//         let not_exist_state =
-//             unenroll_validator(deps.as_mut(), info, domain, validator).unwrap_err();
-//         assert!(matches!(
-//             not_exist_state,
-//             ContractError::ValidatorNotExist {}
-//         ));
-//     }
-
-//     #[test]
-//     fn test_unenroll_validator_success() {
-//         let mut deps = mock_dependencies();
-//         let owner = Addr::unchecked(ADDR1_VAULE);
-//         let validator = String::from(VALIDATOR_ADDR);
-//         let domain: u32 = 1;
-
-//         mock_owner(deps.as_mut().storage, owner.clone());
-
-//         let info = mock_info(owner.as_str(), &[]);
-//         VALIDATORS
-//             .save(
-//                 deps.as_mut().storage,
-//                 domain,
-//                 &Validators(vec![ValidatorSet {
-//                     signer: Addr::unchecked(validator.clone()),
-//                     signer_pubkey: HexBinary::from_hex(VALIDATOR_PUBKEY).unwrap(),
-//                 }]),
-//             )
-//             .unwrap();
-//         let result = unenroll_validator(deps.as_mut(), info, domain, validator.clone()).unwrap();
-
-//         assert_eq!(
-//             result.events,
-//             vec![emit_unenroll_validator(domain, validator)]
-//         );
-//         assert_eq!(VALIDATORS.load(&deps.storage, domain).unwrap().0.len(), 0)
-//     }
-// }
+        assert!(VALIDATORS
+            .load(deps.as_ref().storage, 1)
+            .unwrap()
+            .is_empty());
+    }
+}
