@@ -4,44 +4,42 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { InstantiateMsg, ExecuteMsg, OwnableMsg, HexBinary, ValidatorSet, ThresholdSet, QueryMsg, OwnableQueryMsg, IsmQueryMsg, MultisigIsmQueryMsg, EnrolledValidatorsResponse, Addr, OwnerResponse, PendingOwnerResponse, IsmType, ModuleTypeResponse, VerifyResponse, VerifyInfoResponse } from "./IsmMultisig.types";
-export interface IsmMultisigMsg {
+import { InstantiateMsg, ExecuteMsg, OwnableMsg, HexBinary, RouterMsgForAddr, Addr, PostDispatchMsg, DomainRouteSetForAddr, RegisterCustomHookMsg, ClearCustomHookMsg, QueryMsg, OwnableQueryMsg, RouterQueryForAddr, Order, HookQueryMsg, CustomRoutingHookQueryMsg, QuoteDispatchMsg, CustomHookResponse, CustomHooksResponse, DomainsResponse, OwnerResponse, PendingOwnerResponse, RouteResponseForAddr, RoutesResponseForAddr, MailboxResponse, Empty, Uint128, QuoteDispatchResponse, Coin } from "./HookRoutingCustom.types";
+export interface HookRoutingCustomMsg {
   contractAddress: string;
   sender: string;
   ownable: (ownableMsg: OwnableMsg, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  enrollValidator: ({
-    set
+  postDispatch: ({
+    message,
+    metadata
   }: {
-    set: ValidatorSet;
+    message: HexBinary;
+    metadata: HexBinary;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  enrollValidators: ({
-    set
+  router: (routerMsgForAddr: RouterMsgForAddr, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  registerCustomHook: ({
+    destDomain,
+    hook,
+    recipient
   }: {
-    set: ValidatorSet[];
+    destDomain: number;
+    hook: string;
+    recipient: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  unenrollValidator: ({
-    domain,
-    validator
+  registerCustomHooks: (_funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  clearCustomHook: ({
+    destDomain,
+    recipient
   }: {
-    domain: number;
-    validator: string;
+    destDomain: number;
+    recipient: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  setThreshold: ({
-    set
-  }: {
-    set: ThresholdSet;
-  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  setThresholds: ({
-    set
-  }: {
-    set: ThresholdSet[];
-  }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  clearCustomHooks: (_funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
-export class IsmMultisigMsgComposer implements IsmMultisigMsg {
+export class HookRoutingCustomMsgComposer implements HookRoutingCustomMsg {
   sender: string;
   contractAddress: string;
 
@@ -49,11 +47,12 @@ export class IsmMultisigMsgComposer implements IsmMultisigMsg {
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.ownable = this.ownable.bind(this);
-    this.enrollValidator = this.enrollValidator.bind(this);
-    this.enrollValidators = this.enrollValidators.bind(this);
-    this.unenrollValidator = this.unenrollValidator.bind(this);
-    this.setThreshold = this.setThreshold.bind(this);
-    this.setThresholds = this.setThresholds.bind(this);
+    this.postDispatch = this.postDispatch.bind(this);
+    this.router = this.router.bind(this);
+    this.registerCustomHook = this.registerCustomHook.bind(this);
+    this.registerCustomHooks = this.registerCustomHooks.bind(this);
+    this.clearCustomHook = this.clearCustomHook.bind(this);
+    this.clearCustomHooks = this.clearCustomHooks.bind(this);
   }
 
   ownable = (ownableMsg: OwnableMsg, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
@@ -69,10 +68,12 @@ export class IsmMultisigMsgComposer implements IsmMultisigMsg {
       })
     };
   };
-  enrollValidator = ({
-    set
+  postDispatch = ({
+    message,
+    metadata
   }: {
-    set: ValidatorSet;
+    message: HexBinary;
+    metadata: HexBinary;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -80,18 +81,36 @@ export class IsmMultisigMsgComposer implements IsmMultisigMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          enroll_validator: {
-            set
+          post_dispatch: {
+            message,
+            metadata
           }
         })),
         funds: _funds
       })
     };
   };
-  enrollValidators = ({
-    set
+  router = (routerMsgForAddr: RouterMsgForAddr, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          router: routerMsgForAddr
+        })),
+        funds: _funds
+      })
+    };
+  };
+  registerCustomHook = ({
+    destDomain,
+    hook,
+    recipient
   }: {
-    set: ValidatorSet[];
+    destDomain: number;
+    hook: string;
+    recipient: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -99,20 +118,35 @@ export class IsmMultisigMsgComposer implements IsmMultisigMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          enroll_validators: {
-            set
+          register_custom_hook: {
+            dest_domain: destDomain,
+            hook,
+            recipient
           }
         })),
         funds: _funds
       })
     };
   };
-  unenrollValidator = ({
-    domain,
-    validator
+  registerCustomHooks = (_funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          register_custom_hooks: {}
+        })),
+        funds: _funds
+      })
+    };
+  };
+  clearCustomHook = ({
+    destDomain,
+    recipient
   }: {
-    domain: number;
-    validator: string;
+    destDomain: number;
+    recipient: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -120,48 +154,23 @@ export class IsmMultisigMsgComposer implements IsmMultisigMsg {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          unenroll_validator: {
-            domain,
-            validator
+          clear_custom_hook: {
+            dest_domain: destDomain,
+            recipient
           }
         })),
         funds: _funds
       })
     };
   };
-  setThreshold = ({
-    set
-  }: {
-    set: ThresholdSet;
-  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
+  clearCustomHooks = (_funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
       value: MsgExecuteContract.fromPartial({
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          set_threshold: {
-            set
-          }
-        })),
-        funds: _funds
-      })
-    };
-  };
-  setThresholds = ({
-    set
-  }: {
-    set: ThresholdSet[];
-  }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          set_thresholds: {
-            set
-          }
+          clear_custom_hooks: {}
         })),
         funds: _funds
       })

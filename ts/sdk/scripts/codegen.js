@@ -3,17 +3,19 @@ const path = require("path");
 const fs = require("fs");
 
 const pkgRoot = path.join(__dirname, "..");
-const contractsDir = path.join(pkgRoot, "..", "..", "contracts");
+
+const schemaDir = path.join(pkgRoot, "..", "..", "schema");
 
 const contracts = fs
-  .readdirSync(contractsDir, { withFileTypes: true })
+  .readdirSync(schemaDir, { withFileTypes: true })
   .filter((c) => c.isDirectory())
   .map((c) => ({
     name: c.name,
-    dir: path.join(contractsDir, c.name),
+    dir: path.join(schemaDir, c.name),
   }));
 
 const outPath = path.join(pkgRoot, "src", "contracts");
+
 fs.rmSync(outPath, { recursive: true, force: true });
 
 codegen({

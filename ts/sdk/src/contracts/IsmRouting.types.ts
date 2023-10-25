@@ -5,31 +5,18 @@
 */
 
 export interface InstantiateMsg {
-  hrp: string;
+  isms: IsmSet[];
   owner: string;
+}
+export interface IsmSet {
+  address: string;
+  domain: number;
 }
 export type ExecuteMsg = {
   ownable: OwnableMsg;
 } | {
-  enroll_validator: {
-    set: ValidatorSet;
-  };
-} | {
-  enroll_validators: {
-    set: ValidatorSet[];
-  };
-} | {
-  unenroll_validator: {
-    domain: number;
-    validator: string;
-  };
-} | {
-  set_threshold: {
-    set: ThresholdSet;
-  };
-} | {
-  set_thresholds: {
-    set: ThresholdSet[];
+  set: {
+    ism: IsmSet;
   };
 };
 export type OwnableMsg = {
@@ -41,22 +28,12 @@ export type OwnableMsg = {
 } | {
   claim_ownership: {};
 };
-export type HexBinary = string;
-export interface ValidatorSet {
-  domain: number;
-  validator: string;
-  validator_pubkey: HexBinary;
-}
-export interface ThresholdSet {
-  domain: number;
-  threshold: number;
-}
 export type QueryMsg = {
   ownable: OwnableQueryMsg;
 } | {
   ism: IsmQueryMsg;
 } | {
-  multisig_ism: MultisigIsmQueryMsg;
+  routing_ism: RoutingIsmQueryMsg;
 };
 export type OwnableQueryMsg = {
   get_owner: {};
@@ -75,15 +52,12 @@ export type IsmQueryMsg = {
     message: HexBinary;
   };
 };
-export type MultisigIsmQueryMsg = {
-  enrolled_validators: {
-    domain: number;
+export type HexBinary = string;
+export type RoutingIsmQueryMsg = {
+  route: {
+    message: HexBinary;
   };
 };
-export interface EnrolledValidatorsResponse {
-  threshold: number;
-  validators: string[];
-}
 export type Addr = string;
 export interface OwnerResponse {
   owner: Addr;
@@ -94,6 +68,9 @@ export interface PendingOwnerResponse {
 export type IsmType = "unused" | "routing" | "aggregation" | "legacy_multisig" | "merkle_root_multisig" | "message_id_multisig" | "null" | "ccip_read";
 export interface ModuleTypeResponse {
   type: IsmType;
+}
+export interface RouteResponse {
+  ism: string;
 }
 export interface VerifyResponse {
   verified: boolean;

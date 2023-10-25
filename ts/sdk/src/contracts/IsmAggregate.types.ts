@@ -5,31 +5,15 @@
 */
 
 export interface InstantiateMsg {
-  hrp: string;
+  isms: string[];
   owner: string;
+  threshold: number;
 }
 export type ExecuteMsg = {
   ownable: OwnableMsg;
 } | {
-  enroll_validator: {
-    set: ValidatorSet;
-  };
-} | {
-  enroll_validators: {
-    set: ValidatorSet[];
-  };
-} | {
-  unenroll_validator: {
-    domain: number;
-    validator: string;
-  };
-} | {
-  set_threshold: {
-    set: ThresholdSet;
-  };
-} | {
-  set_thresholds: {
-    set: ThresholdSet[];
+  set_isms: {
+    isms: string[];
   };
 };
 export type OwnableMsg = {
@@ -41,22 +25,10 @@ export type OwnableMsg = {
 } | {
   claim_ownership: {};
 };
-export type HexBinary = string;
-export interface ValidatorSet {
-  domain: number;
-  validator: string;
-  validator_pubkey: HexBinary;
-}
-export interface ThresholdSet {
-  domain: number;
-  threshold: number;
-}
 export type QueryMsg = {
   ownable: OwnableQueryMsg;
 } | {
   ism: IsmQueryMsg;
-} | {
-  multisig_ism: MultisigIsmQueryMsg;
 };
 export type OwnableQueryMsg = {
   get_owner: {};
@@ -75,15 +47,7 @@ export type IsmQueryMsg = {
     message: HexBinary;
   };
 };
-export type MultisigIsmQueryMsg = {
-  enrolled_validators: {
-    domain: number;
-  };
-};
-export interface EnrolledValidatorsResponse {
-  threshold: number;
-  validators: string[];
-}
+export type HexBinary = string;
 export type Addr = string;
 export interface OwnerResponse {
   owner: Addr;
