@@ -12,7 +12,6 @@ pub enum Ism {
     Routing(Vec<(u32, Self)>),
 
     Multisig {
-        hrp: String,
         validators: validator::TestValidators,
     },
 
@@ -30,11 +29,8 @@ impl Ism {
         Self::Routing(isms)
     }
 
-    pub fn multisig(hrp: &str, validators: validator::TestValidators) -> Self {
-        Self::Multisig {
-            hrp: hrp.to_string(),
-            validators,
-        }
+    pub fn multisig(validators: validator::TestValidators) -> Self {
+        Self::Multisig { validators }
     }
 }
 
@@ -53,7 +49,6 @@ impl Ism {
     fn deploy_multisig<'a, R: Runner<'a>>(
         wasm: &Wasm<'a, R>,
         codes: &Codes,
-        hrp: String,
         set: validator::TestValidators,
         owner: &SigningAccount,
         deployer: &SigningAccount,
@@ -62,7 +57,6 @@ impl Ism {
             .instantiate(
                 codes.ism_multisig,
                 &hpl_interface::ism::multisig::InstantiateMsg {
-                    hrp: hrp.to_string(),
                     owner: owner.address(),
                 },
                 None,
@@ -75,9 +69,7 @@ impl Ism {
 
         wasm.execute(
             &multisig_ism,
-            &hpl_interface::ism::multisig::ExecuteMsg::EnrollValidators {
-                set: set.to_set(&hrp),
-            },
+            &hpl_interface::ism::multisig::ExecuteMsg::EnrollValidators { set: set.to_set() },
             &[],
             owner,
         )?;
@@ -173,10 +165,9 @@ impl Ism {
     ) -> eyre::Result<String> {
         match self {
             Self::Mock => Self::deploy_mock(wasm, codes, deployer),
-            Self::Multisig {
-                hrp,
-                validators: set,
-            } => Self::deploy_multisig(wasm, codes, hrp, set, owner, deployer),
+            Self::Multisig { validators: set } => {
+                Self::deploy_multisig(wasm, codes, set, owner, deployer)
+            }
             Self::Aggregate { isms, threshold } => {
                 Self::deploy_aggregate(wasm, codes, isms, threshold, owner, deployer)
             }
@@ -185,14 +176,14 @@ impl Ism {
     }
 }
 
-pub fn prepare_routing_ism(info: Vec<(u32, &str, TestValidators)>) -> Ism {
+pub fn prepare_routing_ism(info: Vec<(u32, TestValidators)>) -> Ism {
     let mut isms = vec![];
 
-    for (domain, hrp, set) in info {
+    for (domain, set) in info {
         isms.push((
             domain,
             Ism::Aggregate {
-                isms: vec![Ism::multisig(hrp, set)],
+                isms: vec![Ism::multisig(set)],
                 threshold: 1,
             },
         ));
