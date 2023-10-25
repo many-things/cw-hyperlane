@@ -56,12 +56,8 @@ pub fn setup_env<'a, R: Runner<'a>>(
     let deployer = acc_gen(app, &[coin(1_000_000u128.pow(3), "uosmo")]);
     let tester = acc_gen(app, &[coin(1_000_000u128.pow(3), "uosmo")]);
 
-    let default_ism = prepare_routing_ism(
-        validators
-            .iter()
-            .map(|v| (v.domain, hrp, v.clone()))
-            .collect(),
-    );
+    let default_ism =
+        prepare_routing_ism(validators.iter().map(|v| (v.domain, v.clone())).collect());
 
     let default_hook = Hook::mock(Uint256::from_u128(DEFAULT_GAS));
 

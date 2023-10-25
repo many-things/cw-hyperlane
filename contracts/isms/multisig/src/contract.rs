@@ -15,7 +15,7 @@ use hpl_interface::{
 use crate::{
     error::ContractError,
     execute,
-    state::{HRP, THRESHOLD, VALIDATORS},
+    state::{THRESHOLD, VALIDATORS},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -31,8 +31,6 @@ pub fn instantiate(
     let owner = deps.api.addr_validate(&msg.owner)?;
 
     hpl_ownable::initialize(deps.storage, &owner)?;
-
-    HRP.save(deps.storage, &msg.hrp)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -84,11 +82,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 let threshold = THRESHOLD.load(deps.storage, domain)?;
 
                 Ok::<_, ContractError>(EnrolledValidatorsResponse {
-                    validators: validators
-                        .0
-                        .into_iter()
-                        .map(|v| v.signer.to_string())
-                        .collect::<Vec<_>>(),
+                    validators,
                     threshold,
                 })
             }),

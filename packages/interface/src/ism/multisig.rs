@@ -10,14 +10,12 @@ use super::{ModuleTypeResponse, VerifyInfoResponse, VerifyResponse};
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub hrp: String,
 }
 
 #[cw_serde]
 pub struct ValidatorSet {
     pub domain: u32,
-    pub validator: String,
-    pub validator_pubkey: HexBinary,
+    pub validator: HexBinary,
 }
 
 #[cw_serde]
@@ -32,7 +30,7 @@ pub enum ExecuteMsg {
 
     EnrollValidator { set: ValidatorSet },
     EnrollValidators { set: Vec<ValidatorSet> },
-    UnenrollValidator { domain: u32, validator: String },
+    UnenrollValidator { domain: u32, validator: HexBinary },
 
     SetThreshold { set: ThresholdSet },
     SetThresholds { set: Vec<ThresholdSet> },
@@ -56,7 +54,7 @@ pub enum MultisigIsmQueryMsg {
 
 #[cw_serde]
 pub struct EnrolledValidatorsResponse {
-    pub validators: Vec<String>,
+    pub validators: Vec<HexBinary>,
     pub threshold: u8,
 }
 
