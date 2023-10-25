@@ -9,17 +9,83 @@ import {
 import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing";
 import { GasPrice, SigningStargateClient } from "@cosmjs/stargate";
 
+export type IsmType =
+  | {
+      type: "multisig";
+      owner: string;
+      validators: {
+        [domain: number]: { addr: string; pubkey: string };
+      };
+      threshold: number;
+    }
+  | {
+      type: "aggregate";
+      owner: string;
+      isms: IsmType[];
+    }
+  | {
+      type: "routing";
+      owner: string;
+      isms: { [domain: number]: IsmType };
+    };
+
+export type HookType =
+  | {
+      type: "merkle";
+      owner: string;
+    }
+  | {
+      type: "mock";
+    }
+  | {
+      type: "pausable";
+      owner: string;
+    }
+  | {
+      type: "igp";
+    }
+  | { type: "aggregate"; owner: string; hooks: HookType[] }
+  | {
+      type: "routing";
+      owner: string;
+      hooks: { [domain: number]: HookType };
+      custom_hooks?: {
+        [domain: number]: { recipient: string; hook: string };
+      };
+      fallback_hook?: string;
+    };
+
 export type Config = {
   network: {
     id: string;
     hrp: string;
     url: string;
-    gas: string;
+    gas: {
+      price: string;
+      denom: string;
+    };
     domain: number;
     tm_version?: "34" | "37";
   };
 
   signer: string;
+
+  deploy: {
+    igp: {
+      token?: string;
+      configs: {
+        [domain: number]: {
+          exchange_rate: number;
+          gas_price: number;
+        };
+      };
+    };
+    ism?: IsmType;
+    hooks?: {
+      default?: HookType;
+      required?: HookType;
+    };
+  };
 };
 
 export type Client = {
@@ -59,14 +125,14 @@ export async function getSigningClient({
     clientBase,
     wallet,
     {
-      gasPrice: GasPrice.fromString(network.gas),
+      gasPrice: GasPrice.fromString(`${network.gas.price}${network.gas.denom}`),
     }
   );
   const stargate = await SigningStargateClient.createWithSigner(
     clientBase,
     wallet,
     {
-      gasPrice: GasPrice.fromString(network.gas),
+      gasPrice: GasPrice.fromString(`${network.gas.price}${network.gas.denom}`),
     }
   );
 

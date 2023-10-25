@@ -1,110 +1,65 @@
-import { loadContext } from "../src/load_context";
-import HplMailbox from "../src/contracts/hpl_mailbox";
-import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
-import HplTestMockHook from "../src/contracts/hpl_test_mock_hook";
-import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
-import HplIgp from "../src/contracts/hpl_igp";
-import HplIsmMultisig from "../src/contracts/hpl_ism_multisig";
 import { writeFileSync } from "fs";
-import HplValidatorAnnounce from "../src/contracts/hpl_validator_announce";
-import HplTestMockMsgReceiver from "../src/contracts/hpl_test_mock_msg_receiver";
-import { config, getSigningClient } from "../src/config";
-import { ContractFetcher } from "./fetch";
+
+import { loadContext } from "../src/load_context";
+import {
+  Client,
+  HookType,
+  IsmType,
+  config,
+  getSigningClient,
+} from "../src/config";
+
+import { ContractFetcher, Contracts } from "./fetch";
+import { Context } from "../src/types";
+
+const name = (c: any) => c.contractName;
+const addr = (ctx: Context, c: any) => ctx.contracts[name(c)].address!;
 
 async function main() {
   const client = await getSigningClient(config);
 
-  const ctx = loadContext(config.network.id);
+  let ctx = loadContext(config.network.id);
 
-  const fetcher = new ContractFetcher(ctx, client);
+  const contracts = new ContractFetcher(ctx, client).getContracts();
+  const {
+    core: { mailbox },
+    mocks,
+  } = contracts;
 
-  const mailbox = fetcher.get(HplMailbox, "hpl_mailbox");
-  const va = fetcher.get(HplValidatorAnnounce, "hpl_validator_announce");
-
-  const hook_merkle = fetcher.get(HplHookMerkle, "hpl_hook_merkle");
-  const igp_oracle = fetcher.get(HplIgpGasOracle, "hpl_igp_oracle");
-  const igp = fetcher.get(HplIgp, "hpl_igp");
-  const ism_multisig = fetcher.get(HplIsmMultisig, "hpl_ism_multisig");
-
-  const test_mock_hook = fetcher.get(HplTestMockHook, "hpl_test_mock_hook");
-  const test_mock_receiver = fetcher.get(
-    HplTestMockMsgReceiver,
-    "hpl_test_mock_msg_receiver"
-  );
-
-  // init mailbox
-  ctx.contracts[mailbox.contractName] = await mailbox.instantiate({
-    hrp: "dual",
-    owner: client.signer,
-    domain: 33333,
-  });
-
-  // init validator announce
-  ctx.contracts[va.contractName] = await va.instantiate({
-    hrp: "dual",
-    mailbox: ctx.contracts[mailbox.contractName].address,
-  });
-
-  // init merkle hook - (required hook)
-  ctx.contracts[hook_merkle.contractName] = await hook_merkle.instantiate({
-    owner: ctx.address!,
-    mailbox: ctx.contracts[mailbox.contractName].address,
-  });
-
-  // init mock hook - (default hook)
-  ctx.contracts[test_mock_hook.contractName] = await test_mock_hook.instantiate(
-    {}
-  );
-
-  // init igp oracle
-  ctx.contracts[igp_oracle.contractName] = await igp_oracle.instantiate({
-    owner: ctx.address!,
-  });
-
-  // init igp
-  ctx.contracts[igp.contractName] = await igp.instantiate({
-    hrp: "dual",
-    owner: ctx.address!,
-    mailbox: ctx.contracts[mailbox.contractName].address,
-    gas_token: "token",
-    beneficiary: ctx.address!,
-  });
-
-  // init ism multisig
-  ctx.contracts[ism_multisig.contractName] = await ism_multisig.instantiate({
-    hrp: "dual",
-    owner: ctx.address!,
-  });
+  ctx = await deploy_core(ctx, client, contracts);
+  ctx = await deploy_igp(ctx, client, contracts);
+  ctx = await deploy_ism_hook(ctx, client, contracts);
 
   // init test mock msg receiver
-  ctx.contracts[test_mock_receiver.contractName] =
-    await test_mock_receiver.instantiate({ hrp: "dual" });
+  ctx.contracts[name(mocks.receiver)] = await mocks.receiver.instantiate({
+    hrp: config.network.hrp,
+  });
 
   // pre-setup
   await client.wasm.executeMultiple(
     client.signer,
     [
       {
-        contractAddress: ctx.contracts[mailbox.contractName].address!,
+        contractAddress: addr(ctx, mailbox),
         msg: {
           set_default_ism: {
-            ism: ctx.contracts[ism_multisig.contractName].address!,
+            ism: ctx.contracts["hpl_default_ism"].address!,
           },
         },
       },
       {
-        contractAddress: ctx.contracts[mailbox.contractName].address!,
+        contractAddress: addr(ctx, mailbox),
         msg: {
           set_default_hook: {
-            hook: ctx.contracts[test_mock_hook.contractName].address!,
+            hook: ctx.contracts["hpl_default_hook"].address!,
           },
         },
       },
       {
-        contractAddress: ctx.contracts[mailbox.contractName].address!,
+        contractAddress: addr(ctx, mailbox),
         msg: {
           set_required_hook: {
-            hook: ctx.contracts[hook_merkle.contractName].address!,
+            hook: ctx.contracts["hpl_required_hook"].address!,
           },
         },
       },
@@ -114,5 +69,298 @@ async function main() {
 
   writeFileSync("./save.json", JSON.stringify(ctx, null, 2));
 }
+
+const deploy_core = async (
+  ctx: Context,
+  client: Client,
+  { core: { mailbox, va } }: Contracts
+): Promise<Context> => {
+  // init mailbox
+  ctx.contracts[name(mailbox)] = await mailbox.instantiate({
+    hrp: config.network.hrp,
+    owner: client.signer,
+    domain: config.network.domain,
+  });
+
+  // init validator announce
+  ctx.contracts[name(va)] = await va.instantiate({
+    hrp: config.network.hrp,
+    mailbox: addr(ctx, mailbox),
+  });
+
+  return ctx;
+};
+
+const deploy_igp = async (
+  ctx: Context,
+  client: Client,
+  { igp }: Contracts
+): Promise<Context> => {
+  // init igp
+  ctx.contracts[name(igp.core)] = await igp.core.instantiate({
+    hrp: config.network.hrp,
+    owner: ctx.address!,
+    gas_token: config.deploy.igp.token || config.network.gas.denom,
+    beneficiary: ctx.address!,
+  });
+
+  // init igp oracle
+  ctx.contracts[name(igp.oracle)] = await igp.oracle.instantiate({
+    owner: ctx.address!,
+  });
+
+  await client.wasm.execute(
+    client.signer,
+    addr(ctx, igp.oracle),
+    {
+      set_remote_gas_data_configs: {
+        configs: Object.entries(config.deploy.igp.configs).map(
+          ([domain, v]) => ({
+            remote_domain: Number(domain),
+            token_exchange_rate: v.exchange_rate.toString(),
+            gas_price: v.gas_price.toString(),
+          })
+        ),
+      },
+    },
+    "auto"
+  );
+
+  await client.wasm.execute(
+    client.signer,
+    addr(ctx, igp.core),
+    {
+      router: {
+        set_routes: {
+          set: Object.keys(config.deploy.igp.configs).map((domain) => ({
+            domain: Number(domain),
+            route: addr(ctx, igp.oracle),
+          })),
+        },
+      },
+    },
+    "auto"
+  );
+
+  return ctx;
+};
+
+const deploy_ism_hook = async (
+  ctx: Context,
+  client: Client,
+  contracts: Contracts
+) => {
+  ctx.contracts["hpl_default_ism"] = {
+    ...ctx.contracts[`hpl_ism_${config.deploy.ism?.type || "multisig"}`],
+
+    address: await deploy_ism(
+      client,
+      config.deploy.ism || {
+        type: "multisig",
+        owner: "<signer>",
+        validators: [
+          {
+            addr: client.signer,
+            pubkey: client.signer_pubkey,
+          },
+        ],
+        threshold: 1,
+      },
+      contracts
+    ),
+  };
+
+  ctx.contracts["hpl_default_hook"] = {
+    ...ctx.contracts[
+      config.deploy.hooks?.default?.type &&
+      config.deploy.hooks?.default?.type !== "mock"
+        ? `hpl_hook_${config.deploy.hooks.default.type}`
+        : "hpl_test_mock_hook"
+    ],
+
+    address: await deploy_hook(
+      ctx,
+      client,
+      config.deploy.hooks?.default || { type: "mock" },
+      contracts
+    ),
+  };
+
+  ctx.contracts["hpl_required_hook"] = {
+    ...ctx.contracts[
+      config.deploy.hooks?.required?.type &&
+      config.deploy.hooks?.required?.type !== "mock"
+        ? `hpl_hook_${config.deploy.hooks.required.type}`
+        : "hpl_test_mock_hook"
+    ],
+
+    address: await deploy_hook(
+      ctx,
+      client,
+      config.deploy.hooks?.required || { type: "mock" },
+      contracts
+    ),
+  };
+
+  return ctx;
+};
+
+const deploy_ism = async (
+  client: Client,
+  ism: IsmType,
+  contracts: Contracts
+): Promise<string> => {
+  const { isms } = contracts;
+
+  switch (ism.type) {
+    case "multisig":
+      const multisig_ism_res = await isms.multisig.instantiate({
+        hrp: config.network.hrp,
+        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
+      });
+
+      await client.wasm.execute(
+        client.signer,
+        multisig_ism_res.address!,
+        {
+          enroll_validators: {
+            set: Object.entries(ism.validators).map(([domain, v]) => ({
+              domain: Number(domain),
+              validator: v.addr,
+              validator_pubkey: v.pubkey,
+            })),
+          },
+        },
+        "auto"
+      );
+
+      await client.wasm.execute(
+        client.signer,
+        multisig_ism_res.address!,
+        {
+          set_thresholds: {
+            set: Object.keys(ism.validators).map((domain) => ({
+              domain: Number(domain),
+              threshold: ism.threshold,
+            })),
+          },
+        },
+        "auto"
+      );
+
+      return multisig_ism_res.address!;
+
+    case "aggregate":
+      const aggregate_ism_res = await isms.aggregate.instantiate({
+        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
+        isms: await Promise.all(
+          ism.isms.map((v) => deploy_ism(client, v, contracts))
+        ),
+      });
+
+      return aggregate_ism_res.address!;
+    case "routing":
+      const routing_ism_res = await isms.routing.instantiate({
+        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
+      });
+
+      await client.wasm.execute(
+        client.signer,
+        routing_ism_res.address!,
+        {
+          router: {
+            set_routes: {
+              set: await Promise.all(
+                Object.entries(ism.isms).map(async ([domain, v]) => {
+                  const route = await deploy_ism(client, v, contracts);
+                  return { domain, route };
+                })
+              ),
+            },
+          },
+        },
+        "auto"
+      );
+
+      return routing_ism_res.address!;
+
+    default:
+      throw new Error("invalid ism type");
+  }
+};
+
+const deploy_hook = async (
+  ctx: Context,
+  client: Client,
+  hook: HookType,
+  contracts: Contracts
+): Promise<string> => {
+  const {
+    core: { mailbox },
+    hooks,
+    igp,
+    mocks,
+  } = contracts;
+
+  switch (hook.type) {
+    case "aggregate":
+      const aggregate_hook_res = await hooks.aggregate.instantiate({
+        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+        hooks: await Promise.all(
+          hook.hooks.map((v) => deploy_hook(ctx, client, v, contracts))
+        ),
+      });
+
+      return aggregate_hook_res.address!;
+
+    case "merkle":
+      const merkle_hook_res = await hooks.merkle.instantiate({
+        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+        mailbox: addr(ctx, mailbox),
+      });
+
+      return merkle_hook_res.address!;
+
+    case "mock":
+      const mock_hook_res = await mocks.hook.instantiate({});
+
+      return mock_hook_res.address!;
+
+    case "pausable":
+      const pausable_hook_res = await hooks.pausable.instantiate({
+        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+      });
+
+      return pausable_hook_res.address!;
+
+    case "igp":
+      return ctx.contracts[name(igp.core)].address!;
+
+    case "routing":
+      const routing_hook_res = await hooks.routing.instantiate({
+        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+      });
+
+      await client.wasm.execute(
+        client.signer,
+        routing_hook_res.address!,
+        {
+          router: {
+            set_routes: {
+              set: await Promise.all(
+                Object.entries(hook.hooks).map(async ([domain, v]) => {
+                  const route = await deploy_hook(ctx, client, v, contracts);
+                  return { domain, route };
+                })
+              ),
+            },
+          },
+        },
+        "auto"
+      );
+    default:
+      throw new Error("invalid hook type");
+  }
+};
 
 main().catch(console.error);

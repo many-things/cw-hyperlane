@@ -7,6 +7,10 @@ import { addPad } from "../src/conv";
 import { loadContext } from "../src/load_context";
 import { ContractFetcher } from "./fetch";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
+import HplIsmAggregate from "../src/contracts/hpl_ism_aggregate";
+import HplIgp from "../src/contracts/hpl_igp";
+import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
+import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
 
 const program = new Command();
 
@@ -28,12 +32,14 @@ program
 program.parseAsync(process.argv).catch(console.error);
 
 const parseWasmEventLog = (res: ExecuteResult) => {
-  return res.events
-    .filter((v) => v.type.startsWith("wasm"))
-    .map((v) => ({
-      "@type": v.type.slice(5),
-      ...Object.fromEntries(v.attributes.map((x) => [x.key, x.value])),
-    }));
+  return (
+    res.events
+      // .filter((v) => v.type.startsWith("wasm"))
+      .map((v) => ({
+        "@type": v.type.slice(5),
+        ...Object.fromEntries(v.attributes.map((x) => [x.key, x.value])),
+      }))
+  );
 };
 
 function makeHandler(
@@ -45,7 +51,17 @@ function makeHandler(
     const client = await getSigningClient(config);
     const fetcher = new ContractFetcher(ctx, client);
     const mailbox = fetcher.get(HplMailbox, "hpl_mailbox");
-    return { mailbox };
+    const igp = fetcher.get(HplIgp, "hpl_igp");
+    const igp_oracle = fetcher.get(HplIgpGasOracle, "hpl_igp_oracle");
+    const hook_merkle = fetcher.get(HplHookMerkle, "hpl_hook_merkle");
+    const hook_aggregate = fetcher.get(HplIsmAggregate, "hpl_hook_aggregate");
+
+    return {
+      client,
+      mailbox,
+      igp: { core: igp, oracle: igp_oracle },
+      hook: { merkle: hook_merkle, aggregate: hook_aggregate },
+    };
   };
 
   switch (action) {
@@ -57,13 +73,16 @@ function makeHandler(
       ) => {
         const { mailbox } = await loadDeps();
 
-        const res = await mailbox.execute({
-          dispatch: {
-            dest_domain: Number(dest_domain),
-            recipient_addr: addPad(recipient_addr),
-            msg_body: Buffer.from(msg_body, "utf-8").toString("hex"),
+        const res = await mailbox.execute(
+          {
+            dispatch: {
+              dest_domain: Number(dest_domain),
+              recipient_addr: addPad(recipient_addr),
+              msg_body: Buffer.from(msg_body, "utf-8").toString("hex"),
+            },
           },
-        });
+          [{ denom: "token", amount: "26000000" }]
+        );
         console.log(parseWasmEventLog(res));
       };
     case "process":

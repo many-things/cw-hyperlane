@@ -94,6 +94,13 @@ export abstract class BaseContract implements Contract {
       "auto",
       { admin: this.signer }
     );
+    console.log(
+      [
+        this.contractName.padEnd(30),
+        contract.contractAddress.padEnd(65),
+        contract.transactionHash.padEnd(65),
+      ].join("| ")
+    );
 
     this.address = contract.contractAddress;
     return this.getContractContext();
@@ -118,6 +125,12 @@ export abstract class BaseContract implements Contract {
       "auto",
       undefined,
       funds
+    );
+    console.log(
+      [
+        `${this.contractName}:${Object.keys(msg)[0]}`.padEnd(30),
+        res.transactionHash.padEnd(65),
+      ].join("| ")
     );
 
     return res;
