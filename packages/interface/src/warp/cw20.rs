@@ -3,6 +3,7 @@ use cosmwasm_std::{HexBinary, Uint128};
 
 use crate::{
     core,
+    ism::IsmSpecifierQueryMsg,
     ownable::{OwnableMsg, OwnableQueryMsg},
     router::{self, RouterQuery},
 };
@@ -58,10 +59,9 @@ pub enum ExecuteMsg {
     },
 }
 
-// FIXME: make ism query msg nested
 #[cw_serde]
-// #[derive(QueryResponses)]
-// #[query_responses(nested)]
+#[derive(QueryResponses)]
+#[query_responses(nested)]
 pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
 
@@ -69,5 +69,5 @@ pub enum QueryMsg {
 
     TokenDefault(TokenWarpDefaultQueryMsg),
 
-    InterchainSecurityModule(),
+    IsmSpecifier(IsmSpecifierQueryMsg),
 }

@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 use hpl_interface::{
     core::mailbox,
-    ism::InterchainSecurityModuleResponse,
+    ism::{InterchainSecurityModuleResponse, IsmSpecifierQueryMsg},
     to_binary,
     types::bech32_encode,
     warp::{
@@ -247,9 +247,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             TokenType {} => to_binary(get_token_type(deps)),
             TokenMode {} => to_binary(get_token_mode(deps)),
         },
-        QueryMsg::InterchainSecurityModule() => Ok(cosmwasm_std::to_binary(
-            &InterchainSecurityModuleResponse { ism: None },
-        )?),
+        QueryMsg::IsmSpecifier(IsmSpecifierQueryMsg::InterchainSecurityModule()) => Ok(
+            cosmwasm_std::to_binary(&InterchainSecurityModuleResponse { ism: None })?,
+        ),
     }
 }
 

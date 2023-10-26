@@ -144,29 +144,29 @@ pub fn main() {
         });
     }
 
-    // {
-    //     use hpl_warp::cw20::*;
+    {
+        use hpl_warp::cw20::*;
 
-    //     apis.push(generate_api! {
-    //         name: "hpl_warp_cw20",
-    //         instantiate: InstantiateMsg,
-    //         migrate: Empty,
-    //         execute: ExecuteMsg,
-    //         query: QueryMsg,
-    //     });
-    // }
+        apis.push(generate_api! {
+            name: "hpl_warp_cw20",
+            instantiate: InstantiateMsg,
+            migrate: Empty,
+            execute: ExecuteMsg,
+            query: QueryMsg,
+        });
+    }
 
-    // {
-    //     use hpl_warp::native::*;
+    {
+        use hpl_warp::native::*;
 
-    //     apis.push(generate_api! {
-    //         name: "hpl_warp_native",
-    //         instantiate: InstantiateMsg,
-    //         migrate: Empty,
-    //         execute: ExecuteMsg,
-    //         query: QueryMsg,
-    //     });
-    // }
+        apis.push(generate_api! {
+            name: "hpl_warp_native",
+            instantiate: InstantiateMsg,
+            migrate: Empty,
+            execute: ExecuteMsg,
+            query: QueryMsg,
+        });
+    }
 
     let mut base = current_dir().unwrap();
     base.push("schema");
