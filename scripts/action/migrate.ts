@@ -19,8 +19,8 @@ async function main() {
 
   const migrate_resp = await client.wasm.migrate(
     client.signer,
-    "dual1nzkcccxw00u9egqfuuq2ue23hjj6kxmfvmc5y0r7wchk5e6nypns6768kk",
-    contracts.warp.native.codeId!,
+    "dual1rvtgvc38sfd9zehtgsp3eh8k269naq949u5qdcqm3x35mjg2uctqfdn3yq",
+    contracts.mocks.receiver.codeId!,
     {},
     "auto"
   );
