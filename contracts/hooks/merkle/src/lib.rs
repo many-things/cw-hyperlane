@@ -181,7 +181,11 @@ fn get_tree_checkpoint(deps: Deps) -> Result<merkle::CheckPointResponse, Contrac
 
     Ok(merkle::CheckPointResponse {
         root: tree.root()?,
-        count: tree.count as u32,
+        count: if tree.count == 0 {
+            0
+        } else {
+            tree.count as u32 - 1
+        },
     })
 }
 
