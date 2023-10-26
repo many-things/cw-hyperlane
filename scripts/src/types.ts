@@ -4,6 +4,7 @@ import {
 } from "@cosmjs/cosmwasm-stargate";
 import { getWasmPath } from "./load_wasm";
 import fs from "fs";
+import { fromBech32 } from "@cosmjs/encoding";
 
 export interface ContractContext {
   codeId: number | undefined;
@@ -94,10 +95,14 @@ export abstract class BaseContract implements Contract {
       "auto",
       { admin: this.signer }
     );
+
     console.log(
       [
         this.contractName.padEnd(30),
         contract.contractAddress.padEnd(65),
+        Buffer.from(fromBech32(contract.contractAddress).data)
+          .toString("hex")
+          .padEnd(65),
         contract.transactionHash.padEnd(65),
       ].join("| ")
     );

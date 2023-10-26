@@ -99,14 +99,14 @@ const deploy_igp = async (
   // init igp
   ctx.contracts[name(igp.core)] = await igp.core.instantiate({
     hrp: config.network.hrp,
-    owner: ctx.address!,
+    owner: client.signer,
     gas_token: config.deploy.igp.token || config.network.gas.denom,
-    beneficiary: ctx.address!,
+    beneficiary: client.signer,
   });
 
   // init igp oracle
   ctx.contracts[name(igp.oracle)] = await igp.oracle.instantiate({
-    owner: ctx.address!,
+    owner: client.signer,
   });
 
   await client.wasm.execute(
@@ -158,13 +158,12 @@ const deploy_ism_hook = async (
       config.deploy.ism || {
         type: "multisig",
         owner: "<signer>",
-        validators: [
-          {
-            addr: client.signer,
-            pubkey: client.signer_pubkey,
+        validators: {
+          5: {
+            addrs: [client.signer_addr],
+            threshold: 1,
           },
-        ],
-        threshold: 1,
+        },
       },
       contracts
     ),
@@ -215,7 +214,6 @@ const deploy_ism = async (
   switch (ism.type) {
     case "multisig":
       const multisig_ism_res = await isms.multisig.instantiate({
-        hrp: config.network.hrp,
         owner: ism.owner === "<signer>" ? client.signer : ism.owner,
       });
 
@@ -224,11 +222,12 @@ const deploy_ism = async (
         multisig_ism_res.address!,
         {
           enroll_validators: {
-            set: Object.entries(ism.validators).map(([domain, v]) => ({
-              domain: Number(domain),
-              validator: v.addr,
-              validator_pubkey: v.pubkey,
-            })),
+            set: Object.entries(ism.validators).flatMap(([domain, validator]) =>
+              validator.addrs.map((v) => ({
+                domain: Number(domain),
+                validator: v,
+              }))
+            ),
           },
         },
         "auto"
@@ -239,10 +238,12 @@ const deploy_ism = async (
         multisig_ism_res.address!,
         {
           set_thresholds: {
-            set: Object.keys(ism.validators).map((domain) => ({
-              domain: Number(domain),
-              threshold: ism.threshold,
-            })),
+            set: Object.entries(ism.validators).map(
+              ([domain, { threshold }]) => ({
+                domain: Number(domain),
+                threshold,
+              })
+            ),
           },
         },
         "auto"

@@ -8,15 +8,15 @@ import {
 } from "@cosmjs/tendermint-rpc";
 import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing";
 import { GasPrice, SigningStargateClient } from "@cosmjs/stargate";
+import { Secp256k1, keccak256 } from "@cosmjs/crypto";
 
 export type IsmType =
   | {
       type: "multisig";
       owner: string;
       validators: {
-        [domain: number]: { addr: string; pubkey: string };
+        [domain: number]: { addrs: string[]; threshold: number };
       };
-      threshold: number;
     }
   | {
       type: "aggregate";
@@ -92,6 +92,7 @@ export type Client = {
   wasm: SigningCosmWasmClient;
   stargate: SigningStargateClient;
   signer: string;
+  signer_addr: string;
   signer_pubkey: string;
 };
 
@@ -136,10 +137,14 @@ export async function getSigningClient({
     }
   );
 
+  const pubkey = Secp256k1.uncompressPubkey(account.pubkey);
+  const ethaddr = keccak256(pubkey.slice(1)).slice(-20);
+
   return {
     wasm,
     stargate,
     signer: account.address,
+    signer_addr: Buffer.from(ethaddr).toString("hex"),
     signer_pubkey: Buffer.from(account.pubkey).toString("hex"),
   };
 }
