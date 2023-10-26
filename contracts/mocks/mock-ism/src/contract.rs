@@ -59,7 +59,7 @@ pub fn query(_deps: Deps, _env: Env, msg: ExpectedIsmQueryMsg) -> StdResult<Quer
             Verify { .. } => Ok(to_binary(&VerifyResponse { verified: true })?),
             VerifyInfo { .. } => Ok(to_binary(&VerifyInfoResponse {
                 threshold: 1u8,
-                validators: vec!["".to_string()],
+                validators: vec![],
             })?),
         },
     }

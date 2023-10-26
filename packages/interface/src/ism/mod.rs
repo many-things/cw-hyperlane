@@ -68,7 +68,7 @@ pub struct VerifyResponse {
 #[cw_serde]
 pub struct VerifyInfoResponse {
     pub threshold: u8,
-    pub validators: Vec<String>,
+    pub validators: Vec<HexBinary>,
 }
 
 #[cw_serde]

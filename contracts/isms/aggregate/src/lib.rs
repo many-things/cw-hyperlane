@@ -15,7 +15,7 @@ use hpl_interface::{
         IsmQueryMsg, IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse,
     },
     to_binary,
-    types::AggregateMetadata,
+    types::{bech32_decode, AggregateMetadata},
 };
 use hpl_ownable::get_owner;
 
@@ -143,7 +143,7 @@ fn verify_info(deps: Deps, _message: HexBinary) -> Result<VerifyInfoResponse, Co
         validators: ISMS
             .load(deps.storage)?
             .into_iter()
-            .map(|v| v.to_string())
-            .collect(),
+            .map(|v| Ok(bech32_decode(v.as_str())?.into()))
+            .collect::<StdResult<_>>()?,
     })
 }
