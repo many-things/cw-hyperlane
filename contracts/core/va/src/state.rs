@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Empty};
+use cosmwasm_std::Empty;
 use cw_storage_plus::{Item, Map};
 
 pub const MAILBOX_KEY: &str = "mailbox";

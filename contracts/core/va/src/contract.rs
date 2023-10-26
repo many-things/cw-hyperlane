@@ -199,7 +199,7 @@ mod test {
         ContractResult, QuerierResult, SystemResult, WasmQuery,
     };
 
-    use hpl_interface::types::bech32_encode;
+    use hpl_interface::build_test_querier;
     use ibcx_test_utils::{gen_addr, gen_bz, hex};
     use k256::{
         ecdsa::{RecoveryId, Signature, SigningKey},
@@ -207,9 +207,10 @@ mod test {
         SecretKey,
     };
     use rstest::rstest;
-    use serde::de::DeserializeOwned;
 
     use super::*;
+
+    build_test_querier!(crate::contract::query);
 
     struct Announcement {
         validator: HexBinary,
@@ -296,11 +297,6 @@ mod test {
         bz.into()
     }
 
-    fn query<T: DeserializeOwned>(deps: Deps, msg: QueryMsg) -> T {
-        let res = super::query(deps, mock_env(), msg).unwrap();
-        cosmwasm_std::from_binary(&res).unwrap()
-    }
-
     #[rstest]
     fn test_init(#[values("osmo", "neutron")] hrp: &str) {
         let sender = gen_addr(hrp);
@@ -329,49 +325,40 @@ mod test {
         .unwrap();
     }
 
-    // #[rstest]
-    // fn test_query(
-    //     #[values("osmo", "neutron")] hrp: &str,
-    //     #[values(0, 4)] validators_len: usize,
-    //     #[values(0, 4)] locations_len: usize,
-    // ) {
-    //     let mut deps = mock_dependencies();
+    #[rstest]
+    fn test_queries(#[values(0, 4)] validators_len: usize, #[values(0, 4)] locations_len: usize) {
+        let mut deps = mock_dependencies();
 
-    //     let validators = (0..validators_len)
-    //         .map(|_| gen_addr(hrp))
-    //         .collect::<Vec<_>>();
-    //     for validator in validators {
-    //         VALIDATORS
-    //             .save(deps.as_mut().storage, validator, &Empty {})
-    //             .unwrap();
+        let validators = (0..validators_len).map(|_| gen_bz(20)).collect::<Vec<_>>();
+        for validator in validators {
+            VALIDATORS
+                .save(deps.as_mut().storage, validator.to_vec(), &Empty {})
+                .unwrap();
 
-    //         let locations = (0..locations_len)
-    //             .map(|v| format!("file://foo/bar/{v}"))
-    //             .collect::<Vec<_>>();
+            let locations = (0..locations_len)
+                .map(|v| format!("file://foo/bar/{v}"))
+                .collect::<Vec<_>>();
 
-    //         STORAGE_LOCATIONS
-    //             .save(deps.as_mut().storage, validator, &locations)
-    //             .unwrap();
-    //     }
+            STORAGE_LOCATIONS
+                .save(deps.as_mut().storage, validator.to_vec(), &locations)
+                .unwrap();
+        }
 
-    //     let GetAnnouncedValidatorsResponse { validators } =
-    //         query(deps.as_ref(), QueryMsg::GetAnnouncedValidators {});
-    //     assert_eq!(validators.len(), validators_len);
+        let GetAnnouncedValidatorsResponse { validators } =
+            test_query(deps.as_ref(), QueryMsg::GetAnnouncedValidators {});
+        assert_eq!(validators.len(), validators_len);
 
-    //     let GetAnnounceStorageLocationsResponse { storage_locations } = query(
-    //         deps.as_ref(),
-    //         QueryMsg::GetAnnounceStorageLocations {
-    //             validators: validators
-    //                 .iter()
-    //                 .map(|v| HexBinary::from(bech32_decode(v).unwrap()))
-    //                 .collect::<Vec<_>>(),
-    //         },
-    //     );
-    //     for (validator, locations) in storage_locations {
-    //         assert!(validators.contains(&validator));
-    //         assert_eq!(locations.len(), locations_len);
-    //     }
-    // }
+        let GetAnnounceStorageLocationsResponse { storage_locations } = test_query(
+            deps.as_ref(),
+            QueryMsg::GetAnnounceStorageLocations {
+                validators: validators.iter().map(|v| hex(v)).collect(),
+            },
+        );
+        for (validator, locations) in storage_locations {
+            assert!(validators.contains(&validator));
+            assert_eq!(locations.len(), locations_len);
+        }
+    }
 
     #[rstest]
     #[case::rand(Announcement::rand(), false)]
@@ -380,11 +367,7 @@ mod test {
     #[case::replay(Announcement::rand(), true)]
     #[should_panic(expected = "verify failed")]
     #[case::verify(Announcement::fail(), false)]
-    fn test_announce(
-        #[values("osmo")] hrp: &str,
-        #[case] announcement: Announcement,
-        #[case] enable_duplication: bool,
-    ) {
+    fn test_announce(#[case] announcement: Announcement, #[case] enable_duplication: bool) {
         let validator = announcement.validator;
         let mailbox = HexBinary::from_hex(&announcement.mailbox).unwrap();
 
