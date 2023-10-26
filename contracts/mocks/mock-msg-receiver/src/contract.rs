@@ -2,7 +2,8 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
+    attr, to_binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
+    StdResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
@@ -14,9 +15,6 @@ use crate::{CONTRACT_NAME, CONTRACT_VERSION};
 pub struct InstantiateMsg {
     pub hrp: String,
 }
-
-#[cw_serde]
-pub struct MigrateMsg {}
 
 #[cw_serde]
 pub struct ExecuteMsg {}
@@ -36,11 +34,6 @@ pub fn instantiate(
     HRP.save(deps.storage, &msg.hrp)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
-    Ok(Response::default())
 }
 
 /// Handling contract execution
@@ -79,4 +72,9 @@ pub fn query(
             ism: None,
         })?),
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> StdResult<Response> {
+    Ok(Response::default())
 }
