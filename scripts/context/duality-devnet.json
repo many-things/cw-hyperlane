@@ -1,8 +1,8 @@
 {
   "contracts": {
     "hpl_hook_merkle": {
-      "codeId": 85,
-      "digest": "4fba80a54607e418a28d188bb86865f0c412f34fb3cf2345a10a55bbf954f528"
+      "codeId": 90,
+      "digest": "5a3f445e0b216cdd8a0d80ce74b88c0b1fb63f04a977ccab7a6209fa865a034c"
     },
     "hpl_igp": {
       "address": "dual14cu2z6xw62cumt7hmfw7977jyaymr26jazxdpvfp7ag2dss29q2q700yum",
