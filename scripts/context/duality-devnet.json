@@ -1,8 +1,8 @@
 {
   "contracts": {
     "hpl_hook_merkle": {
-      "codeId": 69,
-      "digest": "986cfcb90f4491d5ca87c57cdb1623f46daac16a8c2dfc5b0afa22f7f5876fab"
+      "codeId": 85,
+      "digest": "4fba80a54607e418a28d188bb86865f0c412f34fb3cf2345a10a55bbf954f528"
     },
     "hpl_igp": {
       "address": "dual14cu2z6xw62cumt7hmfw7977jyaymr26jazxdpvfp7ag2dss29q2q700yum",
@@ -38,12 +38,12 @@
       "digest": "3e3172f31c46d51b4e25d151eeee286919af129eb66714d88610838b2c1405ca"
     },
     "hpl_warp_cw20": {
-      "codeId": 83,
-      "digest": "6a3a1a6a3a85109842ced3c50c8a30c2bd50e7f3648271f634190e58aa62ff19"
+      "codeId": 86,
+      "digest": "e3511aca519720054551d936c37d8a990ee940f6d7f8962617b97c641f8547b1"
     },
     "hpl_warp_native": {
-      "codeId": 84,
-      "digest": "5d3fa9232d3873cef2918677203d785286add4f48d95353a70be646c27d30198"
+      "codeId": 88,
+      "digest": "4299e3fa9cd809e9e4de4b826f748558915bf94a7cb9e1b41382a1340423237d"
     },
     "hpl_warp_native_ibc": {
       "codeId": 32,
@@ -92,5 +92,6 @@
       "digest": "1d0d021c3200bdae970d4a17b28aa3d35136953e3a931c77acb422c466d3a2c1",
       "address": "dual1nz2n6vfk5fjlex2qquupyaqhaucr4xn30lm0teqwh0r0zv0v9xhsky7h3a"
     }
-  }
+  },
+  "address": "dual1dwnrgwsf5c9vqjxsax04pdm0mx007yrraj2dgn"
 }
