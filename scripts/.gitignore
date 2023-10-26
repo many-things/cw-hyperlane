@@ -1,5 +1,4 @@
 /dist
-/context
 .env
 config.yaml
 /node_modules
