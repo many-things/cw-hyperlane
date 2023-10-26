@@ -1,7 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdError,
+    ensure_eq, Addr, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
+    StdError,
 };
 use cw_storage_plus::Item;
 use hpl_interface::{
@@ -187,6 +188,11 @@ fn get_tree_checkpoint(deps: Deps) -> Result<merkle::CheckPointResponse, Contrac
             tree.count as u32 - 1
         },
     })
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }
 
 #[cfg(test)]
