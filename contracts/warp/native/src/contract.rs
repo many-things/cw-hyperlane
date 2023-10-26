@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo, QueryResponse, Reply,
-    Response, SubMsg, Uint128, Uint256,
+    ensure, ensure_eq, CosmosMsg, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, QueryResponse,
+    Reply, Response, SubMsg, Uint128, Uint256,
 };
 use hpl_interface::{
     core::mailbox,
@@ -261,6 +261,11 @@ fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
     let mode = MODE.load(deps.storage)?;
 
     Ok(TokenModeResponse { mode })
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, env: Env, msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }
 
 #[cfg(test)]
