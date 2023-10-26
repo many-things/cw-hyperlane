@@ -38,12 +38,12 @@
       "digest": "3e3172f31c46d51b4e25d151eeee286919af129eb66714d88610838b2c1405ca"
     },
     "hpl_warp_cw20": {
-      "codeId": 86,
-      "digest": "e3511aca519720054551d936c37d8a990ee940f6d7f8962617b97c641f8547b1"
+      "codeId": 91,
+      "digest": "9b3b3f9ea7add7b41b9579a4e426979c729894b51b4c9b29cf6306e405f2adf5"
     },
     "hpl_warp_native": {
-      "codeId": 88,
-      "digest": "4299e3fa9cd809e9e4de4b826f748558915bf94a7cb9e1b41382a1340423237d"
+      "codeId": 92,
+      "digest": "560a2c74114e35d6f5109fec50cbc315c1d25381e196ac3e5ac159d1f84619d2"
     },
     "hpl_warp_native_ibc": {
       "codeId": 32,
