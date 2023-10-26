@@ -264,7 +264,7 @@ fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, env: Env, msg: Empty) -> Result<Response, ContractError> {
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
 
