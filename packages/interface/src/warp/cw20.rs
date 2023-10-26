@@ -58,11 +58,16 @@ pub enum ExecuteMsg {
     },
 }
 
+// FIXME: make ism query msg nested
 #[cw_serde]
-#[derive(QueryResponses)]
-#[query_responses(nested)]
+// #[derive(QueryResponses)]
+// #[query_responses(nested)]
 pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
+
     Router(RouterQuery<HexBinary>),
+
     TokenDefault(TokenWarpDefaultQueryMsg),
+
+    InterchainSecurityModule(),
 }
