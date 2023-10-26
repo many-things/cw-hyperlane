@@ -10,12 +10,6 @@ use crate::{
     ContractError,
 };
 
-fn product<T: Clone, U: Clone>(x: Vec<T>, y: Vec<U>) -> Vec<(T, U)> {
-    x.iter()
-        .flat_map(|item_x| y.iter().map(move |item_y| (item_x.clone(), item_y.clone())))
-        .collect()
-}
-
 pub fn get_module_type() -> Result<ModuleTypeResponse, ContractError> {
     Ok(ModuleTypeResponse {
         typ: IsmType::MessageIdMultisig,
@@ -47,16 +41,16 @@ pub fn verify_message(
     let hashed_message = eth_hash(multisig_hash)?;
 
     // pizza :)
-    let comb = product(metadata.signatures, vec![0u8, 1u8]);
-
     let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
     let mut threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
 
-    for (signature, recovery_param) in comb {
+    for signature in metadata.signatures {
         let signature = signature.as_slice();
-        let pubkey =
-            deps.api
-                .secp256k1_recover_pubkey(&hashed_message, &signature[..64], recovery_param)?;
+        let pubkey = deps.api.secp256k1_recover_pubkey(
+            &hashed_message,
+            &signature[..64],
+            signature[64] - 27,
+        )?;
 
         if validators.contains(&eth_addr(pubkey.into())?) {
             threshold -= 1;
