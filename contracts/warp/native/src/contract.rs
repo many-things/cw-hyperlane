@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo, QueryResponse, Reply,
-    Response, SubMsg, Uint256,
+    ensure, ensure_eq, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo, QueryResponse, Reply,
+    Response, SubMsg, Uint128, Uint256,
 };
 use hpl_interface::{
     core::mailbox,
@@ -96,7 +96,8 @@ pub fn execute(
         TransferRemote {
             dest_domain,
             recipient,
-        } => transfer_remote(deps, env, info, dest_domain, recipient),
+            amount,
+        } => transfer_remote(deps, env, info, dest_domain, recipient, amount),
     }
 }
 
@@ -177,11 +178,25 @@ fn transfer_remote(
     info: MessageInfo,
     dest_domain: u32,
     recipient: HexBinary,
+    transfer_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let token = TOKEN.load(deps.storage)?;
     let mode = MODE.load(deps.storage)?;
     let mailbox = MAILBOX.load(deps.storage)?;
-    let transfer_amount = cw_utils::must_pay(&info, &token)?;
+
+    let mut funds = info.funds.clone();
+
+    let (token_index, token_received) = funds
+        .iter()
+        .enumerate()
+        .find(|(_, v)| v.denom == token)
+        .expect("no funds sent");
+    ensure!(
+        token_received.amount >= transfer_amount,
+        ContractError::InsufficientFunds
+    );
+
+    funds[token_index].amount -= transfer_amount;
 
     let dest_router = get_route::<HexBinary>(deps.storage, dest_domain)?
         .route
@@ -208,6 +223,7 @@ fn transfer_remote(
         dispatch_payload.into(),
         None,
         None,
+        funds,
     )?);
 
     Ok(Response::new().add_messages(msgs).add_event(
@@ -252,7 +268,7 @@ mod test {
     use cosmwasm_std::{
         coin,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Coin, OwnedDeps,
+        Coin, OwnedDeps, Uint128,
     };
     use hpl_interface::{
         build_test_executor, build_test_querier,
@@ -471,14 +487,13 @@ mod test {
 
     #[rstest]
     #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM)])]
+    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM), coin(100, "uatom")])]
     #[should_panic(expected = "route not found")]
     #[case(2, gen_bz(32), gen_bz(32), vec![coin(100, DENOM)])]
-    #[should_panic(expected = "No funds sent")]
+    #[should_panic(expected = "no funds sent")]
     #[case(1, gen_bz(32), gen_bz(32), vec![])]
-    #[should_panic(expected = "Must send reserve token 'utest'")]
+    #[should_panic(expected = "no funds sent")]
     #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, "uatom")])]
-    #[should_panic(expected = "Sent more than one denomination")]
-    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM), coin(100, "uatom")])]
     fn test_transfer_remote(
         mut deps: TestDeps,
         #[case] dest_domain: u32,
@@ -502,8 +517,9 @@ mod test {
             ExecuteMsg::TransferRemote {
                 dest_domain,
                 recipient: dest_recipient.clone(),
+                amount: Uint128::new(50),
             },
-            funds,
+            funds.clone(),
         );
         let mut msgs: Vec<_> = res.messages.into_iter().map(|v| v.msg).collect();
 
@@ -517,12 +533,17 @@ mod test {
                 dest_router,
                 warp::Message {
                     recipient: dest_recipient,
-                    amount: Uint256::from_u128(100),
+                    amount: Uint256::from_u128(50),
                     metadata: HexBinary::default(),
                 }
                 .into(),
                 None,
-                None
+                None,
+                vec![
+                    vec![coin(50, DENOM)],
+                    funds.into_iter().filter(|v| v.denom != DENOM).collect()
+                ]
+                .concat()
             )
             .unwrap()
         );

@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{HexBinary, Uint128};
 
 use crate::{
     core,
@@ -62,6 +62,7 @@ pub enum ExecuteMsg {
     TransferRemote {
         dest_domain: u32,
         recipient: HexBinary,
+        amount: Uint128,
     },
 }
 
