@@ -46,6 +46,7 @@ pub fn bech32_encode(hrp: &str, raw_addr: &[u8]) -> StdResult<Addr> {
 
 #[cfg(test)]
 mod tests {
+    use cosmwasm_std::HexBinary;
     use rstest::rstest;
 
     use crate::types::bech32_to_h256;
@@ -62,6 +63,15 @@ mod tests {
             )
             .unwrap()
         );
+    }
+
+    #[test]
+    fn conv() {
+        let addr = "dual1dwnrgwsf5c9vqjxsax04pdm0mx007yrraj2dgn";
+        let addr_bin = bech32_decode(addr).unwrap();
+        let addr_hex = HexBinary::from(addr_bin).to_hex();
+
+        println!("{}", addr_hex);
     }
 
     #[rstest]

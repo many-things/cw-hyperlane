@@ -124,7 +124,7 @@ impl TestValidators {
             .iter()
             .map(|v| {
                 let (mut signature, recov_id) = v.sign(digest);
-                signature.0.extend(vec![recov_id.to_byte()]);
+                signature.0.extend(vec![recov_id.to_byte() + 27]);
                 signature.into()
             })
             .collect::<Vec<_>>();

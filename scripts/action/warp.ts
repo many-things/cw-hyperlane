@@ -1,35 +1,153 @@
+import { version } from "../package.json";
 import { loadContext } from "../src/load_context";
-import HplMailbox from "../src/contracts/hpl_mailbox";
-import HplWarpNative from "../src/contracts/hpl_warp_native";
 import { config, getSigningClient } from "../src/config";
 import { ContractFetcher } from "./fetch";
+import { addPad } from "../src/conv";
+import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
+import { Command } from "commander";
 
-async function main() {
+const program = new Command();
+
+program.name("Warp CLI").version(version);
+
+program
+  .command("new")
+  .argument("<denom>", 'token denom, e.g. "untrn"')
+  .option(
+    "--token-mode <token_mode>",
+    'token mode, e.g. "collateral" or "bridged"',
+    "collateral"
+  )
+  .action(create);
+
+program
+  .command("link")
+  .argument("<address>", "address of internal warp route")
+  .argument("<domain>", "domain of external chain, e.g. 5 (goerli)")
+  .argument("<external_route>", "address of external route")
+  .action(link);
+
+program
+  .command("transfer")
+  .argument("<address>", "address of internal warp route")
+  .argument("<domain>", "domain of external chain, e.g. 5 (goerli)")
+  .argument("<recipient>", "recipient address")
+  .argument("<amount>")
+  .action(transfer);
+
+program.parseAsync(process.argv).catch(console.error);
+
+const parseWasmEventLog = (res: ExecuteResult) => {
+  return (
+    res.events
+      // .filter((v) => v.type.startsWith("wasm"))
+      .map((v) => ({
+        "@type": v.type.slice(5),
+        ...Object.fromEntries(v.attributes.map((x) => [x.key, x.value])),
+      }))
+  );
+};
+
+async function create(
+  denom: string,
+  { tokenMode }: { tokenMode: "collateral" | "bridged" }
+) {
   const client = await getSigningClient(config);
-
   const ctx = loadContext(config.network.id);
 
   const fetcher = new ContractFetcher(ctx, client);
+  const {
+    core: { mailbox },
+    warp,
+  } = fetcher.getContracts();
 
-  const mailbox = fetcher.get(HplMailbox, "hpl_mailbox");
+  switch (tokenMode) {
+    case "collateral":
+      const ibc_route = await warp.native.instantiate({
+        token: {
+          collateral: {
+            denom,
+          },
+        },
+        hrp: config.network.hrp,
+        owner: client.signer,
+        mailbox: mailbox.address!,
+      });
 
-  const warp_native = fetcher.get(HplWarpNative, "hpl_warp_native");
-
-  const target_denom =
-    "ibc/B5CB286F69D48B2C4F6F8D8CF59011C40590DCF8A91617A5FBA9FF0A7B21307F";
-
-  const ibc_route = await warp_native.instantiate({
-    token: {
-      collateral: {
-        denom: target_denom,
-      },
-    },
-    hrp: "dual",
-    owner: client.signer,
-    mailbox: mailbox.address!,
-  });
-
-  console.log("ibc_route", ibc_route);
+      console.log("ibc_route", ibc_route);
+      return;
+    case "bridged":
+      throw Error("not implemented");
+  }
 }
 
-main().catch(console.error);
+async function link(address: string, domain: string, external_route: string) {
+  const client = await getSigningClient(config);
+
+  const resp = await client.wasm.execute(
+    client.signer,
+    address,
+    {
+      router: {
+        set_route: {
+          set: {
+            domain: Number(domain),
+            route: addPad(external_route),
+          },
+        },
+      },
+    },
+    "auto"
+  );
+  console.log(parseWasmEventLog(resp));
+  console.log(resp.transactionHash);
+}
+
+async function transfer(
+  address: string,
+  domain: string,
+  recipient: string,
+  amount: string
+) {
+  const client = await getSigningClient(config);
+
+  const {
+    type: {
+      native: {
+        fungible: { denom },
+      },
+    },
+  }: {
+    type: {
+      native: {
+        fungible: {
+          denom: string;
+        };
+      };
+    };
+  } = await client.wasm.queryContractSmart(address, {
+    token_default: {
+      token_type: {},
+    },
+  });
+
+  const resp = await client.wasm.execute(
+    client.signer,
+    address,
+    {
+      transfer_remote: {
+        dest_domain: Number(domain),
+        recipient: addPad(recipient),
+        amount,
+      },
+    },
+    "auto",
+    undefined,
+    [
+      { amount, denom },
+      { amount: "2500000", denom: "token" },
+    ]
+  );
+  console.log(parseWasmEventLog(resp));
+  console.log(resp.transactionHash);
+}

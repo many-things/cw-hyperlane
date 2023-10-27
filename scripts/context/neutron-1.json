@@ -1,0 +1,73 @@
+{
+  "contracts": {
+    "hpl_hook_aggregate": {
+      "codeId": 384,
+      "digest": "03fedc6af9ad56aa247993d451cbf0669ce91035e87cd43cbeecb14114ce4ff5"
+    },
+    "hpl_hook_merkle": {
+      "codeId": 385,
+      "digest": "b68a6715634a0a567f699c98539e87ac779649e850102bab98610116e2e10259"
+    },
+    "hpl_hook_pausable": {
+      "codeId": 386,
+      "digest": "aeeb15ed555fbcedd8f1535498888b45ecf21a521871c4f683c1503c6cbb39e9"
+    },
+    "hpl_hook_routing": {
+      "codeId": 387,
+      "digest": "601f0a02aa236376c50fa4f4f23cd90f3ce4535cb2fe2e8756afcd31ecefc859"
+    },
+    "hpl_hook_routing_custom": {
+      "codeId": 388,
+      "digest": "24bcc5053094cd9280f1cc3d1bd9b76312bffa8d0b8bdf8743d4d1aa27f3efae"
+    },
+    "hpl_hook_routing_fallback": {
+      "codeId": 389,
+      "digest": "27d6754aeaa78242e99445938ab73e6b2837d5ada8eb7c708ea7f3bf7b3861ba"
+    },
+    "hpl_igp": {
+      "codeId": 390,
+      "digest": "377fd5ddc2f9866c69aa6858f8a75683c5d3ee461fdb33658237f0e5951b4e7d"
+    },
+    "hpl_igp_oracle": {
+      "codeId": 391,
+      "digest": "0d0ffc64d0ec318d99f11a68f69b6fa0d4004b7fd387a677c621d4efdb8ea7d1"
+    },
+    "hpl_ism_aggregate": {
+      "codeId": 392,
+      "digest": "a1ed31b7b55bbee4b293ac78da9cc54ad1464e058122b5feda6cfba3e82ae3a8"
+    },
+    "hpl_ism_multisig": {
+      "codeId": 393,
+      "digest": "d38bb495b36d4ae7a8055e12ea9e6e295ca26009094028c401d89688c4612d9e"
+    },
+    "hpl_ism_routing": {
+      "codeId": 394,
+      "digest": "aa851324bb1d402ba1445223c7b7fa50641b7fb8372030983daca9082166fa95"
+    },
+    "hpl_mailbox": {
+      "codeId": 395,
+      "digest": "c28afc65e96bf730f7654e15cbcb962d603065581664907655fcaabf8745fb2a"
+    },
+    "hpl_test_mock_hook": {
+      "codeId": 396,
+      "digest": "bbbdd167b7acebed3283a7482cb032666ee13201442bafd9814067765303e797"
+    },
+    "hpl_test_mock_msg_receiver": {
+      "codeId": 397,
+      "digest": "54068ecbb73db316e756c6d1343896e3920175985430d24c477f6abe0db77757"
+    },
+    "hpl_validator_announce": {
+      "codeId": 398,
+      "digest": "70042fe83ab067f7f1a4420dded5a78ce1b9e7832f4e9639c641f8268aed5b75"
+    },
+    "hpl_warp_cw20": {
+      "codeId": 399,
+      "digest": "533b8f38e853a832b4c69f65e8c87cb75604e5e03b3c353c210f4828140f8881"
+    },
+    "hpl_warp_native": {
+      "codeId": 400,
+      "digest": "b245ed32563f6bb4a9f9046d28b36e757ea0ee168f8a3998b0b9ac1dcfc4f0f8"
+    }
+  },
+  "address": "neutron1ugu6ktzqwrmr0pgw603kakuhvj46a7mmrl6pw3"
+}

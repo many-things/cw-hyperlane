@@ -21,6 +21,9 @@ pub enum ContractError {
     #[error("invalid reply id")]
     InvalidReplyId,
 
+    #[error("insufficient funds")]
+    InsufficientFunds,
+
     #[error("no route for domain {domain:?}")]
     NoRouter { domain: u32 },
 }

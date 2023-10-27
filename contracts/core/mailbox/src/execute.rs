@@ -495,9 +495,12 @@ mod tests {
     fn test_process_query_handler(query: &WasmQuery) -> QuerierResult {
         match query {
             WasmQuery::Smart { contract_addr, msg } => {
-                if let Ok(req) = cosmwasm_std::from_binary::<ism::IsmSpecifierQueryMsg>(msg) {
+                if let Ok(req) = cosmwasm_std::from_binary::<ism::ExpectedIsmSpecifierQueryMsg>(msg)
+                {
                     match req {
-                        ism::IsmSpecifierQueryMsg::InterchainSecurityModule() => {
+                        hpl_interface::ism::ExpectedIsmSpecifierQueryMsg::IsmSpecifier(
+                            ism::IsmSpecifierQueryMsg::InterchainSecurityModule(),
+                        ) => {
                             return SystemResult::Ok(
                                 cosmwasm_std::to_binary(&ism::InterchainSecurityModuleResponse {
                                     ism: Some(addr("default_ism")),

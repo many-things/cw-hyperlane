@@ -1,81 +1,81 @@
 {
   "contracts": {
     "hpl_hook_merkle": {
-      "codeId": 69,
-      "digest": "986cfcb90f4491d5ca87c57cdb1623f46daac16a8c2dfc5b0afa22f7f5876fab"
+      "codeId": 94,
+      "digest": "1a13b59eac4f6262bff526ce16e8d1c82639d30cde6d599183410a8ce7a5abb4"
     },
     "hpl_igp": {
       "address": "dual14cu2z6xw62cumt7hmfw7977jyaymr26jazxdpvfp7ag2dss29q2q700yum",
-      "codeId": 74,
-      "digest": "8bec7d6dd094fcb1ff4d89ec3631b08242215d003e8cb1e46454ef5713c399e8"
+      "codeId": 99,
+      "digest": "8a68a04c72717598b57dba73a16aa3ccad25498ecc1735d8f49b8e650028709a"
     },
     "hpl_igp_oracle": {
       "address": "dual1alp24grk7e5f3msv0apk68hehspglpr7y7upfrvkpdfu7c84sqtq8ze5p2",
-      "codeId": 75,
-      "digest": "e076ecc28e12972d66b9a7a87aa1ed210752f64ed682e14d45e12236a41f364c"
+      "codeId": 100,
+      "digest": "8533c3893d4aa47c845cfa4dcb119f2958c35438538ebba413c2677d47c1306b"
     },
     "hpl_ism_multisig": {
-      "codeId": 77,
-      "digest": "435f13deae9c7b7cb0d244bdbe9ae095c27c69bf81f4b9857be68e8b9174f4de"
+      "codeId": 102,
+      "digest": "98dc12a30bc151941a89ecc81656470a8bdba299f2c56f26a1a04a7567222714"
     },
     "hpl_mailbox": {
       "address": "dual1mveu0r9rj4qa6aqxt8almpha6cqluu397y8jd6r4jhzm3hmtmndq8lvk47",
-      "codeId": 79,
-      "digest": "2ba401ab148c755c935b7f5aaed0da373aef165fa712390161d1b9e9e3b2a3d0"
+      "codeId": 104,
+      "digest": "355c5c5ef5168a099d03d6cd89529211dec206b6ed14ca778a98620ef280f652"
     },
     "hpl_test_mock_hook": {
-      "codeId": 80,
-      "digest": "7a4413b88f334a0ac0009a68887cee1cd160fbb83e3b8dd87bd4489b44d28bdb"
+      "codeId": 105,
+      "digest": "d17655f65e364f259c4f48c2b67288d852f4e5ed38fbaef5aa4946f3b641b138"
     },
     "hpl_test_mock_msg_receiver": {
       "address": "dual1rvtgvc38sfd9zehtgsp3eh8k269naq949u5qdcqm3x35mjg2uctqfdn3yq",
-      "codeId": 81,
-      "digest": "3718a207a02ba1d9ee4c57ee33a2ae73962b5eb27e542836c069840914e2be89"
+      "codeId": 106,
+      "digest": "41a067c8d55912c6fefe559e508ae0bbab81ed0caae4db8c8d2f2f732f4f6f18"
     },
     "hpl_validator_announce": {
       "address": "dual1982lwq4rt4qntkv2hafvvtwupn7hgqqkv0kpf55yahlh6pqeldvqd24lld",
-      "codeId": 82,
-      "digest": "3e3172f31c46d51b4e25d151eeee286919af129eb66714d88610838b2c1405ca"
+      "codeId": 107,
+      "digest": "78ac1d373a9f21b7bd4698d74f762882672db2af56fffe8501ece9b2cfadb964"
     },
     "hpl_warp_cw20": {
-      "codeId": 83,
-      "digest": "6a3a1a6a3a85109842ced3c50c8a30c2bd50e7f3648271f634190e58aa62ff19"
+      "codeId": 108,
+      "digest": "bf517d714856673acf628602284eca5f1a3cb27e4277b64c70b502cf603312c6"
     },
     "hpl_warp_native": {
-      "codeId": 84,
-      "digest": "5d3fa9232d3873cef2918677203d785286add4f48d95353a70be646c27d30198"
+      "codeId": 109,
+      "digest": "858366c03a932325bd34b080474e8ed1f2e313161cb41c3e68402c837c2b2b88"
     },
     "hpl_warp_native_ibc": {
       "codeId": 32,
       "digest": "eed9d7dfa18163de64893cfe88e038cfc82e487561c94b142978efdacc1f9dff"
     },
     "hpl_hook_aggregate": {
-      "codeId": 68,
-      "digest": "1d0d021c3200bdae970d4a17b28aa3d35136953e3a931c77acb422c466d3a2c1"
+      "codeId": 93,
+      "digest": "fb05c417ced388eabb743fefaa3f89dd2ae8e720c63947143e4027d1a34101a9"
     },
     "hpl_hook_pausable": {
-      "codeId": 70,
-      "digest": "9df275eabf0d4683314935b6cb8dbcd4f68f08bc308d2d979afccbbe34ea3f18"
+      "codeId": 95,
+      "digest": "c81b4829045035372f1cdd190d6f99be912165f0624d763f9eae4fdaf49db1d9"
     },
     "hpl_hook_routing": {
-      "codeId": 71,
-      "digest": "4f96a3a784102a172955b0b1f33bab1cf50380f13fe2aefa00880368c401bfba"
+      "codeId": 96,
+      "digest": "eeb2548015d1cd0d887e1b0387303d840a7cf744bc5834d6af369785bef23aa9"
     },
     "hpl_hook_routing_custom": {
-      "codeId": 72,
-      "digest": "3bd3d02c02feb98f7e1e2009571b43ef36c0f4ec702e0669cec6ecddf3e3c3dd"
+      "codeId": 97,
+      "digest": "f5fa5986cc177096d56ec40e14c71d4c4830b59feafe585d249469420bdb5cc7"
     },
     "hpl_hook_routing_fallback": {
-      "codeId": 73,
-      "digest": "49f5ce6e6b175b2c15046d2f0e628b6d4dea4ba7f97decfce2de48b4a24c444b"
+      "codeId": 98,
+      "digest": "7363e92061dfdea646729f3cfbc1e4bd718a276b1e130600b11f3fd1541575cb"
     },
     "hpl_ism_aggregate": {
-      "codeId": 76,
-      "digest": "4d5d558efc0ea10d2e139b2aae9c356f5c5007f15cb8ab4ed77c202213268f0b"
+      "codeId": 101,
+      "digest": "16c799ac7e57a8cb51eaf702b14948950dc72ab7e266f1615cbb727547b171c7"
     },
     "hpl_ism_routing": {
-      "codeId": 78,
-      "digest": "f8ec1fd4f6638c4d8d82606406d4fd4f6e938ef711c7f1c529fd010953ce55d3"
+      "codeId": 103,
+      "digest": "228a9c770b32701980f05a928c617c4c1811939454a1f5230550600635e98aaa"
     },
     "hpl_default_ism": {
       "codeId": 77,
@@ -92,5 +92,6 @@
       "digest": "1d0d021c3200bdae970d4a17b28aa3d35136953e3a931c77acb422c466d3a2c1",
       "address": "dual1nz2n6vfk5fjlex2qquupyaqhaucr4xn30lm0teqwh0r0zv0v9xhsky7h3a"
     }
-  }
+  },
+  "address": "dual1dwnrgwsf5c9vqjxsax04pdm0mx007yrraj2dgn"
 }

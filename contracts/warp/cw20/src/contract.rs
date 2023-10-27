@@ -1,18 +1,19 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, from_binary, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo, QueryResponse,
-    Reply, Response, SubMsg, Uint256, WasmMsg,
+    ensure_eq, wasm_execute, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo, QueryResponse,
+    Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
 };
 
-use cw20::Cw20ReceiveMsg;
+use cw20::Cw20ExecuteMsg;
 use hpl_interface::{
     core::mailbox,
+    ism::{InterchainSecurityModuleResponse, IsmSpecifierQueryMsg},
     to_binary,
     types::bech32_encode,
     warp::{
         self,
-        cw20::{ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg},
+        cw20::{ExecuteMsg, InstantiateMsg, QueryMsg},
         TokenMode, TokenModeMsg, TokenModeResponse, TokenTypeResponse,
     },
 };
@@ -92,20 +93,11 @@ pub fn execute(
         Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
         Handle(msg) => mailbox_handle(deps, info, msg),
-        Receive(msg) => {
-            ensure_eq!(
-                info.sender,
-                TOKEN.load(deps.storage)?,
-                ContractError::Unauthorized
-            );
-
-            match from_binary::<ReceiveMsg>(&msg.msg)? {
-                ReceiveMsg::TransferRemote {
-                    dest_domain,
-                    recipient,
-                } => transfer_remote(deps, msg, dest_domain, recipient),
-            }
-        }
+        TransferRemote {
+            dest_domain,
+            recipient,
+            amount,
+        } => transfer_remote(deps, env, info, dest_domain, recipient, amount),
     }
 }
 
@@ -173,9 +165,11 @@ fn mailbox_handle(
 
 fn transfer_remote(
     deps: DepsMut,
-    receive_msg: Cw20ReceiveMsg,
+    env: Env,
+    info: MessageInfo,
     dest_domain: u32,
     recipient: HexBinary,
+    transfer_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let token = TOKEN.load(deps.storage)?;
     let mode = MODE.load(deps.storage)?;
@@ -187,9 +181,23 @@ fn transfer_remote(
 
     let mut msgs: Vec<CosmosMsg> = vec![];
 
+    // push token transfer msg
+    msgs.push(
+        wasm_execute(
+            &token,
+            &Cw20ExecuteMsg::TransferFrom {
+                owner: info.sender.to_string(),
+                recipient: env.contract.address.to_string(),
+                amount: transfer_amount,
+            },
+            vec![],
+        )?
+        .into(),
+    );
+
     if mode == TokenMode::Bridged {
         // push token burn msg if token is bridged
-        msgs.push(conv::to_burn_msg(&token, receive_msg.amount)?.into());
+        msgs.push(conv::to_burn_msg(&token, transfer_amount)?.into());
     }
 
     // push mailbox dispatch msg
@@ -199,21 +207,22 @@ fn transfer_remote(
         dest_router,
         warp::Message {
             recipient: recipient.clone(),
-            amount: Uint256::from_uint128(receive_msg.amount),
+            amount: Uint256::from_uint128(transfer_amount),
             metadata: HexBinary::default(),
         }
         .into(),
         None,
         None,
+        info.funds,
     )?);
 
     Ok(Response::new().add_messages(msgs).add_event(
         new_event("transfer-remote")
-            .add_attribute("sender", receive_msg.sender)
+            .add_attribute("sender", info.sender)
             .add_attribute("dest_domain", dest_domain.to_string())
             .add_attribute("recipient", recipient.to_hex())
             .add_attribute("token", token)
-            .add_attribute("amount", receive_msg.amount),
+            .add_attribute("amount", transfer_amount),
     ))
 }
 
@@ -228,6 +237,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             TokenType {} => to_binary(get_token_type(deps)),
             TokenMode {} => to_binary(get_token_mode(deps)),
         },
+        QueryMsg::IsmSpecifier(IsmSpecifierQueryMsg::InterchainSecurityModule()) => Ok(
+            cosmwasm_std::to_binary(&InterchainSecurityModuleResponse { ism: None })?,
+        ),
     }
 }
 
@@ -413,46 +425,16 @@ mod test {
         }
     }
 
-    enum Method {
-        Handle,
-        Receive,
-    }
-
-    fn default_cw20_receive_msg() -> Cw20ReceiveMsg {
-        Cw20ReceiveMsg {
-            sender: Default::default(),
-            amount: Default::default(),
-            msg: Default::default(),
-        }
-    }
-
     #[rstest]
+    #[case(MAILBOX, 1, gen_bz(32), token_mode_bridged())]
+    #[case(MAILBOX, 1, gen_bz(32), token_mode_collateral())]
     #[should_panic(expected = "unauthorized")]
-    #[case(MAILBOX, Method::Receive)]
-    #[should_panic(expected = "unauthorized")]
-    #[case(TOKEN, Method::Handle)]
-    fn test_execute_authority(
-        deps: (TestDeps, Response),
-        #[case] sender: &str,
-        #[case] method: Method,
-    ) {
-        let (mut deps, _) = deps;
-
-        let msg = match method {
-            Method::Handle => ExecuteMsg::Handle(HandleMsg::default()),
-            Method::Receive => ExecuteMsg::Receive(default_cw20_receive_msg()),
-        };
-
-        test_execute(deps.as_mut(), &addr(sender), msg, vec![]);
-    }
-
-    #[rstest]
-    #[case(1, gen_bz(32), token_mode_bridged())]
-    #[case(1, gen_bz(32), token_mode_collateral())]
+    #[case(TOKEN, 1, gen_bz(32), token_mode_collateral())]
     #[should_panic(expected = "route not found")]
-    #[case(2, gen_bz(32), token_mode_collateral())]
+    #[case(MAILBOX, 2, gen_bz(32), token_mode_collateral())]
     fn test_mailbox_handle(
         #[values("osmo", "neutron")] hrp: &str,
+        #[case] sender: &str,
         #[case] domain: u32,
         #[case] route: HexBinary,
         #[case] token_mode: Cw20TokenMode,
@@ -463,8 +445,6 @@ mod test {
             Some(TOKEN),
             token_mode.clone(),
         );
-
-        let sender = MAILBOX;
 
         let warp_msg = warp::Message {
             recipient: gen_bz(32),
@@ -539,20 +519,14 @@ mod test {
         let sender = addr("sender");
         let recipient = gen_bz(32);
 
-        let receive_msg = Cw20ReceiveMsg {
-            sender: sender.to_string(),
-            amount: Uint128::new(100),
-            msg: cosmwasm_std::to_binary(&ReceiveMsg::TransferRemote {
-                dest_domain: domain,
-                recipient: recipient.clone(),
-            })
-            .unwrap(),
-        };
-
         let res = test_execute(
             deps.as_mut(),
-            &addr(TOKEN),
-            ExecuteMsg::Receive(receive_msg),
+            &sender,
+            ExecuteMsg::TransferRemote {
+                dest_domain: domain,
+                recipient: route.clone(),
+                amount: Uint128::new(100),
+            },
             vec![],
         );
         let msgs = res.messages.into_iter().map(|v| v.msg).collect::<Vec<_>>();
@@ -564,7 +538,7 @@ mod test {
         };
 
         let dispatch_msg =
-            mailbox::dispatch(MAILBOX, domain, route, warp_msg.into(), None, None).unwrap();
+            mailbox::dispatch(MAILBOX, domain, route, warp_msg.into(), None, None, vec![]).unwrap();
 
         match token_mode {
             TokenModeMsg::Bridged(_) => {

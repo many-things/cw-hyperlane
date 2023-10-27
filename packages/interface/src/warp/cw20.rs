@@ -1,8 +1,9 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{HexBinary, Uint128};
 
 use crate::{
     core,
+    ism::IsmSpecifierQueryMsg,
     ownable::{OwnableMsg, OwnableQueryMsg},
     router::{self, RouterQuery},
 };
@@ -43,24 +44,19 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
-pub enum ReceiveMsg {
-    // transfer to remote
-    TransferRemote {
-        dest_domain: u32,
-        recipient: HexBinary,
-    },
-}
-
-#[cw_serde]
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
     Router(router::RouterMsg<HexBinary>),
 
-    /// handle transfer remote
+    // handle transfer remote
     Handle(core::HandleMsg),
 
-    // cw20 receiver
-    Receive(cw20::Cw20ReceiveMsg),
+    // transfer to remote
+    TransferRemote {
+        dest_domain: u32,
+        recipient: HexBinary,
+        amount: Uint128,
+    },
 }
 
 #[cw_serde]
@@ -68,6 +64,10 @@ pub enum ExecuteMsg {
 #[query_responses(nested)]
 pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
+
     Router(RouterQuery<HexBinary>),
+
     TokenDefault(TokenWarpDefaultQueryMsg),
+
+    IsmSpecifier(IsmSpecifierQueryMsg),
 }
