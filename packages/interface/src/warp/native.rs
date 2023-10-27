@@ -2,6 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{HexBinary, Uint128};
 
 use crate::{
+    connection::{ConnectionMsg, ConnectionQueryMsg},
     core,
     ism::IsmSpecifierQueryMsg,
     ownable::{OwnableMsg, OwnableQueryMsg},
@@ -55,6 +56,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
     Router(RouterMsg<HexBinary>),
+    Connection(ConnectionMsg),
 
     // handle transfer remote
     Handle(core::HandleMsg),
@@ -74,6 +76,8 @@ pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
 
     Router(RouterQuery<HexBinary>),
+
+    Connection(ConnectionQueryMsg),
 
     TokenDefault(TokenWarpDefaultQueryMsg),
 

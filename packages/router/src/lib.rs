@@ -5,24 +5,17 @@ use cosmwasm_std::{
     ensure_eq, to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse,
     Response, StdError, StdResult, Storage,
 };
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::Map;
 use hpl_interface::{
     range_option,
     router::{
-        DomainRouteSet, DomainsResponse, GetHookResponse, GetIsmResponse, RouteResponse, RouterMsg,
-        RouterQuery, RoutesResponse,
+        DomainRouteSet, DomainsResponse, RouteResponse, RouterMsg, RouterQuery, RoutesResponse,
     },
     Order,
 };
 use serde::{de::DeserializeOwned, Serialize};
 
 const ROUTES_PREFIX: &str = "routes";
-
-const ISM_KEY: &str = "router::ism";
-const ISM: Item<Addr> = Item::new(ISM_KEY);
-
-const HOOK_KEY: &str = "router::hook";
-const HOOK: Item<Addr> = Item::new(HOOK_KEY);
 
 fn event_to_resp(event: Event) -> Response {
     Response::new().add_event(event)
@@ -66,24 +59,6 @@ where
             let event = set_routes(deps.storage, &info.sender, set)?;
 
             Ok(event_to_resp(event))
-        }
-        SetIsm { ism } => {
-            let ism_addr = deps.api.addr_validate(&ism)?;
-
-            ISM.save(deps.storage, &ism_addr)?;
-
-            Ok(event_to_resp(
-                new_event("set_ism").add_attribute("ism", ism),
-            ))
-        }
-        SetHook { hook } => {
-            let hook_addr = deps.api.addr_validate(&hook)?;
-
-            HOOK.save(deps.storage, &hook_addr)?;
-
-            Ok(event_to_resp(
-                new_event("set_hook").add_attribute("hook", hook),
-            ))
         }
     }
 }
@@ -154,12 +129,6 @@ where
         } => to_binary(&RoutesResponse::<T> {
             routes: get_routes(deps.storage, offset, limit, order)?,
         }),
-        RouterQuery::GetIsm {} => to_binary(&GetIsmResponse {
-            ism: get_ism(deps.storage)?.map(|v| v.into()),
-        }),
-        RouterQuery::GetHook {} => to_binary(&GetHookResponse {
-            hook: get_hook(deps.storage)?.map(|v| v.into()),
-        }),
         RouterQuery::Placeholder(_) => unreachable!(),
     }
 }
@@ -212,12 +181,4 @@ where
             })
         })
         .collect()
-}
-
-pub fn get_ism(storage: &dyn Storage) -> StdResult<Option<Addr>> {
-    ISM.may_load(storage)
-}
-
-pub fn get_hook(storage: &dyn Storage) -> StdResult<Option<Addr>> {
-    HOOK.may_load(storage)
 }

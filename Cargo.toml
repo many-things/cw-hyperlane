@@ -109,6 +109,7 @@ hpl-warp-cw20 = { path = "./contracts/warp/cw20" }
 hpl-warp-native = { path = "./contracts/warp/native" }
 
 # workspace aliases (./packages)
+hpl-connection = { path = "./packages/connection" }
 hpl-ownable = { path = "./packages/ownable" }
 hpl-pausable = { path = "./packages/pausable" }
 hpl-router = { path = "./packages/router" }

@@ -12,9 +12,6 @@ pub struct DomainRouteSet<T> {
 
 #[cw_serde]
 pub enum RouterMsg<T> {
-    SetIsm { ism: String },
-    SetHook { hook: String },
-
     SetRoute { set: DomainRouteSet<T> },
     SetRoutes { set: Vec<DomainRouteSet<T>> },
 }
@@ -35,12 +32,6 @@ pub enum RouterQuery<T> {
         order: Option<Order>,
     },
 
-    #[returns(GetIsmResponse)]
-    GetIsm {},
-
-    #[returns(GetHookResponse)]
-    GetHook {},
-
     #[serde(skip)]
     #[returns(cosmwasm_std::Empty)]
     Placeholder(PhantomData<T>),
@@ -59,14 +50,4 @@ pub struct RouteResponse<T> {
 #[cw_serde]
 pub struct RoutesResponse<T> {
     pub routes: Vec<DomainRouteSet<T>>,
-}
-
-#[cw_serde]
-pub struct GetIsmResponse {
-    pub ism: Option<String>,
-}
-
-#[cw_serde]
-pub struct GetHookResponse {
-    pub hook: Option<String>,
 }

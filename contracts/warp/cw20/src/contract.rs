@@ -6,6 +6,7 @@ use cosmwasm_std::{
 };
 
 use cw20::Cw20ExecuteMsg;
+use hpl_connection::{get_hook, get_ism};
 use hpl_interface::{
     core::mailbox,
     ism::{InterchainSecurityModuleResponse, IsmSpecifierQueryMsg},
@@ -17,7 +18,7 @@ use hpl_interface::{
         TokenMode, TokenModeMsg, TokenModeResponse, TokenTypeResponse,
     },
 };
-use hpl_router::{get_hook, get_ism, get_route};
+use hpl_router::get_route;
 
 use crate::{
     conv, error::ContractError, new_event, CONTRACT_NAME, CONTRACT_VERSION, HRP, MAILBOX, MODE,
@@ -92,6 +93,7 @@ pub fn execute(
     match msg {
         Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
+        Connection(msg) => Ok(hpl_connection::handle(deps, env, info, msg)?),
         Handle(msg) => mailbox_handle(deps, info, msg),
         TransferRemote {
             dest_domain,
@@ -233,6 +235,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Router(msg) => Ok(hpl_router::handle_query(deps, env, msg)?),
+        QueryMsg::Connection(msg) => Ok(hpl_connection::handle_query(deps, env, msg)?),
         QueryMsg::TokenDefault(msg) => match msg {
             TokenType {} => to_binary(get_token_type(deps)),
             TokenMode {} => to_binary(get_token_mode(deps)),
