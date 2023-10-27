@@ -238,7 +238,7 @@ fn transfer_remote(
             metadata: HexBinary::default(),
         }
         .into(),
-        None,
+        HOOK.may_load(deps.storage)?.map(|v| v.into()),
         None,
         info.funds,
     )?);

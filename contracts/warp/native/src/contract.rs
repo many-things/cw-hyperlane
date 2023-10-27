@@ -248,7 +248,7 @@ fn transfer_remote(
         dest_domain,
         dest_router,
         dispatch_payload.into(),
-        None,
+        HOOK.may_load(deps.storage)?.map(|v| v.into()),
         None,
         funds,
     )?);
