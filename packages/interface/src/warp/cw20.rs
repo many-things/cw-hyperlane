@@ -57,13 +57,6 @@ pub enum ExecuteMsg {
         recipient: HexBinary,
         amount: Uint128,
     },
-
-    SetIsm {
-        ism: String,
-    },
-    SetHook {
-        hook: String,
-    },
 }
 
 #[cw_serde]

@@ -17,7 +17,6 @@ use hpl_interface::{
         TokenMode, TokenModeMsg, TokenModeResponse, TokenTypeResponse,
     },
 };
-use hpl_ownable::get_owner;
 use hpl_router::get_route;
 
 use crate::{
@@ -99,32 +98,6 @@ pub fn execute(
             recipient,
             amount,
         } => transfer_remote(deps, env, info, dest_domain, recipient, amount),
-        SetIsm { ism } => {
-            ensure_eq!(
-                get_owner(deps.storage)?,
-                info.sender,
-                ContractError::Unauthorized
-            );
-
-            let ism_addr = deps.api.addr_validate(&ism)?;
-
-            ISM.save(deps.storage, &ism_addr)?;
-
-            Ok(Response::new().add_event(new_event("set-ism").add_attribute("ism", ism_addr)))
-        }
-        SetHook { hook } => {
-            ensure_eq!(
-                get_owner(deps.storage)?,
-                info.sender,
-                ContractError::Unauthorized
-            );
-
-            let hook_addr = deps.api.addr_validate(&hook)?;
-
-            HOOK.save(deps.storage, &hook_addr)?;
-
-            Ok(Response::new().add_event(new_event("set-hook").add_attribute("hook", hook_addr)))
-        }
     }
 }
 
