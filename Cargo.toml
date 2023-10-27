@@ -42,7 +42,7 @@ keywords = ["hyperlane", "cosmos", "cosmwasm"]
 
 [workspace.dependencies]
 # cosmwasm
-cosmwasm-std = { version = "1.2.7", features = ["stargate", "cosmwasm_1_2"] }
+cosmwasm-std = { version = "1.2.7", features = ["stargate"] }
 cosmwasm-storage = "1.2.7"
 cosmwasm-schema = "1.2.7"
 cosmwasm-crypto = "1.2.7"
