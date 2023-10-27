@@ -17,11 +17,12 @@ use hpl_interface::{
         TokenMode, TokenModeMsg, TokenModeResponse, TokenTypeResponse,
     },
 };
+use hpl_ownable::get_owner;
 use hpl_router::get_route;
 
 use crate::{
-    conv, error::ContractError, new_event, CONTRACT_NAME, CONTRACT_VERSION, HRP, MAILBOX, MODE,
-    REPLY_ID_CREATE_DENOM, TOKEN,
+    conv, error::ContractError, new_event, CONTRACT_NAME, CONTRACT_VERSION, HRP, ISM, MAILBOX,
+    MODE, REPLY_ID_CREATE_DENOM, TOKEN,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -98,6 +99,19 @@ pub fn execute(
             recipient,
             amount,
         } => transfer_remote(deps, env, info, dest_domain, recipient, amount),
+        SetIsm { ism } => {
+            ensure_eq!(
+                get_owner(deps.storage)?,
+                info.sender,
+                ContractError::Unauthorized
+            );
+
+            let ism_addr = deps.api.addr_validate(&ism)?;
+
+            ISM.save(deps.storage, &ism_addr)?;
+
+            Ok(Response::new().add_event(new_event("set-ism").add_attribute("ism", ism_addr)))
+        }
     }
 }
 
@@ -238,7 +252,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             TokenMode {} => to_binary(get_token_mode(deps)),
         },
         QueryMsg::IsmSpecifier(IsmSpecifierQueryMsg::InterchainSecurityModule()) => Ok(
-            cosmwasm_std::to_binary(&InterchainSecurityModuleResponse { ism: None })?,
+            cosmwasm_std::to_binary(&InterchainSecurityModuleResponse {
+                ism: ISM.may_load(deps.storage)?,
+            })?,
         ),
     }
 }
