@@ -9,8 +9,8 @@ use cw_storage_plus::{Item, Map};
 use hpl_interface::{
     range_option,
     router::{
-        DomainRouteSet, DomainsResponse, GetIsmResponse, RouteResponse, RouterMsg, RouterQuery,
-        RoutesResponse,
+        DomainRouteSet, DomainsResponse, GetHookResponse, GetIsmResponse, RouteResponse, RouterMsg,
+        RouterQuery, RoutesResponse,
     },
     Order,
 };
@@ -154,13 +154,13 @@ where
         } => to_binary(&RoutesResponse::<T> {
             routes: get_routes(deps.storage, offset, limit, order)?,
         }),
-        RouterQuery::Placeholder(_) => unreachable!(),
         RouterQuery::GetIsm {} => to_binary(&GetIsmResponse {
-            ism: ISM.may_load(deps.storage)?.map(|v| v.into()),
+            ism: get_ism(deps.storage)?.map(|v| v.into()),
         }),
-        RouterQuery::GetHook {} => to_binary(&GetIsmResponse {
-            ism: HOOK.may_load(deps.storage)?.map(|v| v.into()),
+        RouterQuery::GetHook {} => to_binary(&GetHookResponse {
+            hook: get_hook(deps.storage)?.map(|v| v.into()),
         }),
+        RouterQuery::Placeholder(_) => unreachable!(),
     }
 }
 
@@ -212,4 +212,12 @@ where
             })
         })
         .collect()
+}
+
+pub fn get_ism(storage: &dyn Storage) -> StdResult<Option<Addr>> {
+    ISM.may_load(storage)
+}
+
+pub fn get_hook(storage: &dyn Storage) -> StdResult<Option<Addr>> {
+    HOOK.may_load(storage)
 }

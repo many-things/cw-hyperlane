@@ -15,14 +15,14 @@ use hpl_interface::{
     },
     warp::{TokenMode, TokenModeMsg, TokenModeResponse, TokenTypeResponse},
 };
-use hpl_router::get_route;
+use hpl_router::{get_hook, get_ism, get_route};
 
 use crate::{
     conv,
     error::ContractError,
     new_event,
     proto::{MsgCreateDenom, MsgCreateDenomResponse},
-    CONTRACT_NAME, CONTRACT_VERSION, HOOK, HRP, ISM, MAILBOX, MODE, REPLY_ID_CREATE_DENOM, TOKEN,
+    CONTRACT_NAME, CONTRACT_VERSION, HRP, MAILBOX, MODE, REPLY_ID_CREATE_DENOM, TOKEN,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -222,7 +222,7 @@ fn transfer_remote(
         dest_domain,
         dest_router,
         dispatch_payload.into(),
-        HOOK.may_load(deps.storage)?.map(|v| v.into()),
+        get_hook(deps.storage)?.map(|v| v.into()),
         None,
         funds,
     )?);
@@ -249,7 +249,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         },
         QueryMsg::IsmSpecifier(IsmSpecifierQueryMsg::InterchainSecurityModule()) => Ok(
             cosmwasm_std::to_binary(&InterchainSecurityModuleResponse {
-                ism: ISM.may_load(deps.storage)?,
+                ism: get_ism(deps.storage)?,
             })?,
         ),
     }
