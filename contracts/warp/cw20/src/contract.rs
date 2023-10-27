@@ -21,8 +21,8 @@ use hpl_ownable::get_owner;
 use hpl_router::get_route;
 
 use crate::{
-    conv, error::ContractError, new_event, CONTRACT_NAME, CONTRACT_VERSION, HRP, ISM, MAILBOX,
-    MODE, REPLY_ID_CREATE_DENOM, TOKEN,
+    conv, error::ContractError, new_event, CONTRACT_NAME, CONTRACT_VERSION, HOOK, HRP, ISM,
+    MAILBOX, MODE, REPLY_ID_CREATE_DENOM, TOKEN,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -111,6 +111,19 @@ pub fn execute(
             ISM.save(deps.storage, &ism_addr)?;
 
             Ok(Response::new().add_event(new_event("set-ism").add_attribute("ism", ism_addr)))
+        }
+        SetHook { hook } => {
+            ensure_eq!(
+                get_owner(deps.storage)?,
+                info.sender,
+                ContractError::Unauthorized
+            );
+
+            let hook_addr = deps.api.addr_validate(&hook)?;
+
+            HOOK.save(deps.storage, &hook_addr)?;
+
+            Ok(Response::new().add_event(new_event("set-hook").add_attribute("hook", hook_addr)))
         }
     }
 }

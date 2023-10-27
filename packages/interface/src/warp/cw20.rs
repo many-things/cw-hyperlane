@@ -61,6 +61,9 @@ pub enum ExecuteMsg {
     SetIsm {
         ism: String,
     },
+    SetHook {
+        hook: String,
+    },
 }
 
 #[cw_serde]
