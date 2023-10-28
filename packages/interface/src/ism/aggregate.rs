@@ -25,6 +25,20 @@ pub enum QueryMsg {
     Ownable(OwnableQueryMsg),
 
     Ism(IsmQueryMsg),
+
+    AggregateIsm(AggregateIsmQueryMsg),
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum AggregateIsmQueryMsg {
+    #[returns(IsmsResponse)]
+    Isms {},
+}
+
+#[cw_serde]
+pub struct IsmsResponse {
+    pub isms: Vec<String>,
 }
 
 #[cfg(test)]

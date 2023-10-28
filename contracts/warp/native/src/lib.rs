@@ -30,12 +30,6 @@ const HRP: Item<String> = Item::new(HRP_KEY);
 const MAILBOX_KEY: &str = "mailbox";
 const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
 
-const ISM_KEY: &str = "ism";
-const ISM: Item<Addr> = Item::new(ISM_KEY);
-
-const HOOK_KEY: &str = "hook";
-const HOOK: Item<Addr> = Item::new(HOOK_KEY);
-
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_warp_native::{name}"))
 }

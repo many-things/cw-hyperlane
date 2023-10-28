@@ -4,14 +4,14 @@ pub use crate::error::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Deps, DepsMut, Env, Event, HexBinary, MessageInfo, QueryResponse, Response,
-    StdResult,
+    ensure_eq, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, QueryResponse,
+    Response, StdResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
 use hpl_interface::{
     ism::{
-        aggregate::{ExecuteMsg, InstantiateMsg, QueryMsg},
+        aggregate::{AggregateIsmQueryMsg, ExecuteMsg, InstantiateMsg, IsmsResponse, QueryMsg},
         IsmQueryMsg, IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse,
     },
     to_binary,
@@ -108,6 +108,16 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             Verify { metadata, message } => to_binary(verify(deps, metadata, message)),
             VerifyInfo { message } => to_binary(verify_info(deps, message)),
         },
+
+        QueryMsg::AggregateIsm(msg) => match msg {
+            AggregateIsmQueryMsg::Isms {} => Ok(cosmwasm_std::to_binary(&IsmsResponse {
+                isms: ISMS
+                    .load(deps.storage)?
+                    .into_iter()
+                    .map(|v| v.into())
+                    .collect(),
+            })?),
+        },
     }
 }
 
@@ -146,4 +156,9 @@ fn verify_info(deps: Deps, _message: HexBinary) -> Result<VerifyInfoResponse, Co
             .map(|v| Ok(bech32_decode(v.as_str())?.into()))
             .collect::<StdResult<_>>()?,
     })
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::default())
 }
