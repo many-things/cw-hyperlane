@@ -25,10 +25,12 @@
       "digest": "27d6754aeaa78242e99445938ab73e6b2837d5ada8eb7c708ea7f3bf7b3861ba"
     },
     "hpl_igp": {
+      "address": "neutron1szwgk88w9muxa9qk9fp9f6wglmggdrlvestnax3fdnyy6rc6dd0sj748d9",
       "codeId": 390,
       "digest": "377fd5ddc2f9866c69aa6858f8a75683c5d3ee461fdb33658237f0e5951b4e7d"
     },
     "hpl_igp_oracle": {
+      "address": "neutron1td95ahlnlx29tldhuztsdd9v6n6gnpx5xk6ylgldcgv39q42qpcqrzgw2u",
       "codeId": 391,
       "digest": "0d0ffc64d0ec318d99f11a68f69b6fa0d4004b7fd387a677c621d4efdb8ea7d1"
     },
@@ -45,6 +47,7 @@
       "digest": "aa851324bb1d402ba1445223c7b7fa50641b7fb8372030983daca9082166fa95"
     },
     "hpl_mailbox": {
+      "address": "neutron1uu6art27uvpst3mp535exunj99v0pe6lj5s08a9gf4h4eryhny9sdxd2hf",
       "codeId": 395,
       "digest": "c28afc65e96bf730f7654e15cbcb962d603065581664907655fcaabf8745fb2a"
     },
