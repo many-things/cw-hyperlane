@@ -68,17 +68,13 @@ pub fn quote_dispatch(
 
     let igp_message: Message = req.message.into();
 
-    let gas_needed = quote_gas_payment(deps, igp_message.dest_domain, gas_limit)?.gas_needed;
+    let quote_res = quote_gas_payment(deps, igp_message.dest_domain, gas_limit);
 
     Ok(QuoteDispatchResponse {
-        gas_amount: if gas_needed.is_zero() {
-            None
-        } else {
-            Some(coin(
-                gas_needed.to_string().parse::<u128>()?,
-                GAS_TOKEN.load(deps.storage)?,
-            ))
-        },
+        gas_amount: Some(coin(
+            quote_res?.gas_needed.to_string().parse::<u128>()?,
+            GAS_TOKEN.load(deps.storage)?,
+        )),
     })
 }
 
