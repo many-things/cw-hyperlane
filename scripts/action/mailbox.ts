@@ -80,17 +80,17 @@ function makeHandler(
         const { mailbox, client } = await loadDeps();
         recipient = toBech32('dual', Buffer.from(recipient, 'hex'))
         console.log(recipient)
-        console.log(await client.wasm.queryContractSmart(recipient, {
-          ism_specifier: {
-            interchain_security_module: {}
-          }
-        }))
-        const res = await mailbox.query({ mailbox: {
-          recipient_ism: {
-            recipient_addr: toBech32('dual', Buffer.from(recipient, 'hex'))
-          }}
-        })
-        console.log(res)
+        console.log('mailbox default ism', await client.wasm.queryContractSmart("dual1mveu0r9rj4qa6aqxt8almpha6cqluu397y8jd6r4jhzm3hmtmndq8lvk47", { mailbox: { default_ism: {} }}))
+
+        console.log('recipient ism', await client.wasm.queryContractSmart("dual1mveu0r9rj4qa6aqxt8almpha6cqluu397y8jd6r4jhzm3hmtmndq8lvk47", { mailbox: { recipient_ism: { recipient_addr: "dual1nzkcccxw00u9egqfuuq2ue23hjj6kxmfvmc5y0r7wchk5e6nypns6768kk" }}}))
+
+        console.log('ism type', await client.wasm.queryContractSmart("dual13gtrk7ewpgt5h68595u67dwljvsg86rjvet26t0j5h4qxeah9s2q5664ak", {
+          ism: { module_type: {} }
+         }))
+
+         console.log('enrolled validators', await client.wasm.queryContractSmart("dual13gtrk7ewpgt5h68595u67dwljvsg86rjvet26t0j5h4qxeah9s2q5664ak", {
+          multisig_ism: { enrolled_validators: { domain: 5 }}
+         }))
 
         console.log('defaut ism')
         console.log(await mailbox.query({ mailbox: { default_ism: {}} }))
