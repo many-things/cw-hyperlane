@@ -11,6 +11,7 @@ import HplIsmAggregate from "../src/contracts/hpl_ism_aggregate";
 import HplIgp from "../src/contracts/hpl_igp";
 import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
 import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
+import { toBech32 } from "@cosmjs/encoding";
 
 const program = new Command();
 
@@ -29,6 +30,15 @@ program
   .argument("<msg_body>", "message body in hex")
   .action(makeHandler("process"));
 
+program.command("quoteGasPayment")
+  .argument("<dest_domain>", 'destination domain, e.g. "5"')  
+  .argument("<gas_amount>", 'gas amount')
+  .action(makeHandler("quoteGasPayment"))
+
+program.command("recipientIsm")
+  .argument("<recipient>")
+  .action(makeHandler("recipientIsm"))
+
 program.parseAsync(process.argv).catch(console.error);
 
 const parseWasmEventLog = (res: ExecuteResult) => {
@@ -43,7 +53,7 @@ const parseWasmEventLog = (res: ExecuteResult) => {
 };
 
 function makeHandler(
-  action: "dispatch" | "process"
+  action: "dispatch" | "process" | "quoteGasPayment" | "recipientIsm"
 ): (...args: any[]) => void | Promise<void> {
   const ctx = loadContext(config.network.id);
 
@@ -65,6 +75,71 @@ function makeHandler(
   };
 
   switch (action) {
+    case "recipientIsm":
+      return async (recipient: string) => {
+        const { mailbox, client } = await loadDeps();
+        recipient = toBech32('dual', Buffer.from(recipient, 'hex'))
+        console.log(recipient)
+        console.log(await client.wasm.queryContractSmart(recipient, {
+          ism_specifier: {
+            interchain_security_module: {}
+          }
+        }))
+        const res = await mailbox.query({ mailbox: {
+          recipient_ism: {
+            recipient_addr: toBech32('dual', Buffer.from(recipient, 'hex'))
+          }}
+        })
+        console.log(res)
+
+        console.log('defaut ism')
+        console.log(await mailbox.query({ mailbox: { default_ism: {}} }))
+      }
+    case "quoteGasPayment":
+      return async (
+        dest_domain: string,
+        gas_amount: number
+      ) => {
+        const { igp } = await loadDeps();
+        // let res = await igp.core.query({ 
+        //   igp: {
+        //     quote_gas_payment: {
+        //       dest_domain: Number(dest_domain),
+        //       gas_amount: gas_amount.toString()
+        //     }
+        //   }
+        // })
+        let res
+        console.log(res)
+        await igp.core.execute({
+          router: {
+            set_route: {
+              set: {
+                domain: Number(dest_domain),
+                route: igp.oracle.address!
+              }
+            }
+          }
+        })
+        // await igp.oracle.execute({
+        //   set_remote_gas_data: {
+        //     config: {
+        //       remote_domain: Number(dest_domain),
+        //       token_exchange_rate: "1000000",
+        //       gas_price: "1"
+        //     }
+        //   }
+        // })
+        res = await igp.core.query({ 
+          igp: {
+            quote_gas_payment: {
+              dest_domain: Number(dest_domain),
+              gas_amount: gas_amount.toString()
+            }
+          }
+        })
+        console.log(res)
+      }
     case "dispatch":
       return async (
         dest_domain: string,
@@ -81,7 +156,7 @@ function makeHandler(
               msg_body: Buffer.from(msg_body, "utf-8").toString("hex"),
             },
           },
-          [{ denom: "token", amount: "26000000" }]
+          [{ denom: "untrn", amount: "2" }]
         );
         console.log(parseWasmEventLog(res));
       };
