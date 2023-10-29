@@ -25,16 +25,16 @@
       "digest": "27d6754aeaa78242e99445938ab73e6b2837d5ada8eb7c708ea7f3bf7b3861ba"
     },
     "hpl_igp": {
-      "codeId": 390,
-      "digest": "377fd5ddc2f9866c69aa6858f8a75683c5d3ee461fdb33658237f0e5951b4e7d"
+      "codeId": 401,
+      "digest": "a51833e9c5bca244af2e4fb871968f49759fcabe5b783472d9e78e5704e1eda2"
     },
     "hpl_igp_oracle": {
       "codeId": 391,
       "digest": "0d0ffc64d0ec318d99f11a68f69b6fa0d4004b7fd387a677c621d4efdb8ea7d1"
     },
     "hpl_ism_aggregate": {
-      "codeId": 392,
-      "digest": "a1ed31b7b55bbee4b293ac78da9cc54ad1464e058122b5feda6cfba3e82ae3a8"
+      "codeId": 402,
+      "digest": "bf4b0fc80c4c9f0842f59bbbde2eefe83f3b282675fd4afc5bb4f067099c7c46"
     },
     "hpl_ism_multisig": {
       "codeId": 393,
@@ -61,12 +61,12 @@
       "digest": "70042fe83ab067f7f1a4420dded5a78ce1b9e7832f4e9639c641f8268aed5b75"
     },
     "hpl_warp_cw20": {
-      "codeId": 399,
-      "digest": "533b8f38e853a832b4c69f65e8c87cb75604e5e03b3c353c210f4828140f8881"
+      "codeId": 403,
+      "digest": "b59f9557bca4a4dbc92e8067d945c210eb27defb0dee88949febbd1467855fe4"
     },
     "hpl_warp_native": {
-      "codeId": 400,
-      "digest": "b245ed32563f6bb4a9f9046d28b36e757ea0ee168f8a3998b0b9ac1dcfc4f0f8"
+      "codeId": 404,
+      "digest": "ab71ca5deb4ab69bed05913457956ead84f7195e7e9532a674d85e071b70ef90"
     }
   },
   "address": "neutron1ugu6ktzqwrmr0pgw603kakuhvj46a7mmrl6pw3"
