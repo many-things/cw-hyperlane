@@ -140,6 +140,12 @@ fn announce(
     storage_location: String,
     signature: HexBinary,
 ) -> Result<Response, ContractError> {
+    ensure_eq!(
+        validator.len(),
+        20,
+        ContractError::invalid_addr("length should be 20")
+    );
+
     // check replay protection
     let replay_id = replay_hash(&validator, &storage_location)?;
     ensure!(

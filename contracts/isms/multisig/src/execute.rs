@@ -56,6 +56,12 @@ pub fn enroll_validator(
         ContractError::Unauthorized {}
     );
 
+    ensure_eq!(
+        msg.validator.len(),
+        20,
+        ContractError::invalid_addr("length should be 20")
+    );
+
     let validator_state = VALIDATORS.may_load(deps.storage, msg.domain)?;
 
     if let Some(mut validators) = validator_state {
@@ -88,6 +94,12 @@ pub fn enroll_validators(
     let mut events: Vec<Event> = Vec::new();
 
     for msg in validators.into_iter() {
+        ensure_eq!(
+            msg.validator.len(),
+            20,
+            ContractError::invalid_addr("length should be 20")
+        );
+
         let validators_state = VALIDATORS.may_load(deps.storage, msg.domain)?;
 
         if let Some(mut validators) = validators_state {

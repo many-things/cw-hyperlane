@@ -21,9 +21,18 @@ pub enum ContractError {
     #[error("invalid pubkey")]
     InvalidPubKey,
 
+    #[error("invalid address. reason: {0}")]
+    InvalidAddress(String),
+
     #[error("duplicate validator")]
     ValidatorDuplicate,
 
     #[error("validator not exists")]
     ValidatorNotExist,
+}
+
+impl ContractError {
+    pub fn invalid_addr(reason: &str) -> Self {
+        ContractError::InvalidAddress(reason.into())
+    }
 }
