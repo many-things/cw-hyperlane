@@ -68,14 +68,17 @@ pub fn quote_dispatch(
 
     let igp_message: Message = req.message.into();
 
-    let quote_res = quote_gas_payment(deps, igp_message.dest_domain, gas_limit);
-
-    Ok(QuoteDispatchResponse {
-        gas_amount: Some(coin(
-            quote_res?.gas_needed.to_string().parse::<u128>()?,
+    let gas_amount = quote_gas_payment(deps, igp_message.dest_domain, gas_limit)?.gas_needed;
+    let gas_amount = if !gas_amount.is_zero() {
+        Some(coin(
+            gas_amount.to_string().parse::<u128>()?,
             GAS_TOKEN.load(deps.storage)?,
-        )),
-    })
+        ))
+    } else {
+        None
+    };
+
+    Ok(QuoteDispatchResponse { gas_amount })
 }
 
 pub fn get_exchange_rate_and_gas_price(
