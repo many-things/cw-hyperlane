@@ -256,11 +256,11 @@ mod test {
     }
 
     #[rstest]
-    #[case("owner", vec![hex("deadbeef")])]
+    #[case("owner", vec![hex(&"deadbeef".repeat(5))])]
     #[should_panic(expected = "unauthorized")]
-    #[case("someone", vec![hex("deadbeef")])]
+    #[case("someone", vec![hex(&"deadbeef".repeat(5))])]
     #[should_panic(expected = "duplicate validator")]
-    #[case("owner", vec![hex("deadbeef"),hex("deadbeef")])]
+    #[case("owner", vec![hex(&"deadbeef".repeat(5)),hex(&"deadbeef".repeat(5))])]
     fn test_enroll(#[case] sender: &str, #[case] validators: Vec<HexBinary>) {
         let mut deps = mock_dependencies();
 
