@@ -17,6 +17,7 @@ import HplTestMockHook from "../src/contracts/hpl_test_mock_hook";
 import HplTestMockMsgReceiver from "../src/contracts/hpl_test_mock_msg_receiver";
 import HplWarpCw20 from "../src/contracts/hpl_warp_cw20";
 import HplWarpNative from "../src/contracts/hpl_warp_native";
+import { Contracts } from "../src/deploy";
 
 type Const<T> = new (
   address: string | undefined,
@@ -25,38 +26,6 @@ type Const<T> = new (
   signer: string,
   client: SigningCosmWasmClient
 ) => T;
-
-export type Contracts = {
-  core: {
-    mailbox: HplMailbox;
-    va: HplValidatorAnnounce;
-  };
-  hooks: {
-    aggregate: HplHookAggregate;
-    merkle: HplHookMerkle;
-    pausable: HplHookPausable;
-    routing: HplHookRouting;
-    routing_custom: HplHookRoutingCustom;
-    routing_fallback: HplHookRoutingCustom;
-  };
-  igp: {
-    core: HplIgp;
-    oracle: HplIgpGasOracle;
-  };
-  isms: {
-    aggregate: HplIsmAggregate;
-    multisig: HplIsmMultisig;
-    routing: HplIsmRouting;
-  };
-  mocks: {
-    hook: HplTestMockHook;
-    receiver: HplTestMockMsgReceiver;
-  };
-  warp: {
-    cw20: HplWarpCw20;
-    native: HplWarpNative;
-  };
-};
 
 export class ContractFetcher {
   constructor(private ctx: Context, private client: Client) {}

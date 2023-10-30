@@ -11,6 +11,7 @@ import {
 
 import { ContractFetcher, Contracts } from "./fetch";
 import { Context } from "../src/types";
+import { deploy_ism } from "../src/deploy";
 
 const name = (c: any) => c.contractName;
 const addr = (ctx: Context, c: any) => ctx.contracts[name(c)].address!;
@@ -204,91 +205,6 @@ const deploy_ism_hook = async (
   return ctx;
 };
 
-const deploy_ism = async (
-  client: Client,
-  ism: IsmType,
-  contracts: Contracts
-): Promise<string> => {
-  const { isms } = contracts;
-
-  switch (ism.type) {
-    case "multisig":
-      const multisig_ism_res = await isms.multisig.instantiate({
-        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
-      });
-
-      await client.wasm.execute(
-        client.signer,
-        multisig_ism_res.address!,
-        {
-          enroll_validators: {
-            set: Object.entries(ism.validators).flatMap(([domain, validator]) =>
-              validator.addrs.map((v) => ({
-                domain: Number(domain),
-                validator: v,
-              }))
-            ),
-          },
-        },
-        "auto"
-      );
-
-      await client.wasm.execute(
-        client.signer,
-        multisig_ism_res.address!,
-        {
-          set_thresholds: {
-            set: Object.entries(ism.validators).map(
-              ([domain, { threshold }]) => ({
-                domain: Number(domain),
-                threshold,
-              })
-            ),
-          },
-        },
-        "auto"
-      );
-
-      return multisig_ism_res.address!;
-
-    case "aggregate":
-      const aggregate_ism_res = await isms.aggregate.instantiate({
-        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
-        isms: await Promise.all(
-          ism.isms.map((v) => deploy_ism(client, v, contracts))
-        ),
-      });
-
-      return aggregate_ism_res.address!;
-    case "routing":
-      const routing_ism_res = await isms.routing.instantiate({
-        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
-      });
-
-      await client.wasm.execute(
-        client.signer,
-        routing_ism_res.address!,
-        {
-          router: {
-            set_routes: {
-              set: await Promise.all(
-                Object.entries(ism.isms).map(async ([domain, v]) => {
-                  const route = await deploy_ism(client, v, contracts);
-                  return { domain, route };
-                })
-              ),
-            },
-          },
-        },
-        "auto"
-      );
-
-      return routing_ism_res.address!;
-
-    default:
-      throw new Error("invalid ism type");
-  }
-};
 
 const deploy_hook = async (
   ctx: Context,
