@@ -1,16 +1,18 @@
 import { Command } from "commander";
+import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 
 import { version } from "../package.json";
 import { config, getSigningClient } from "../src/config";
-import HplMailbox from "../src/contracts/hpl_mailbox";
 import { addPad } from "../src/conv";
 import { loadContext } from "../src/load_context";
 import { ContractFetcher } from "./fetch";
-import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
-import HplIsmAggregate from "../src/contracts/hpl_ism_aggregate";
-import HplIgp from "../src/contracts/hpl_igp";
-import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
-import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
+import {
+  HplMailbox,
+  HplIgp,
+  HplIgpGasOracle,
+  HplHookMerkle,
+  HplIsmAggregate,
+} from "../src/contracts";
 
 const program = new Command();
 

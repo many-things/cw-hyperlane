@@ -53,5 +53,5 @@ export async function loadWasmFileDigest() {
 }
 
 export function getWasmPath(contractName: string): string {
-  return path.join(directoryPath, `${contractName}-aarch64.wasm`);
+  return path.join(directoryPath, `${contractName}.wasm`);
 }
