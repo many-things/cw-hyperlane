@@ -21,7 +21,7 @@ program
   .action(create);
 
 program
-  .command("setIsm")
+  .command("set-ism")
   .argument("<address>", "address of internal warp route")
   .argument("<ismAddress>", "address of ISM")
   .action(setIsm);
@@ -86,16 +86,17 @@ async function create(
       throw Error("not implemented");
   }
 }
-async function setIsm(address: string,  ism: string) {
+
+async function setIsm(address: string, ism: string) {
   const client = await getSigningClient(config);
   const resp = await client.wasm.execute(
     client.signer,
     address,
     {
       connection: {
-          set_ism: {
-            ism,
-          },
+        set_ism: {
+          ism,
+        },
       },
     },
     "auto"
