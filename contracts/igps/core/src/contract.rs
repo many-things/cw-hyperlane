@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response};
 
 use hpl_interface::hook::HookQueryMsg;
 use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg};
@@ -110,4 +110,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             } => to_binary(quote_gas_payment(deps, dest_domain, gas_amount)),
         },
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }

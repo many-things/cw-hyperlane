@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
 use cw2::set_contract_version;
 use hpl_interface::{
     ism::{
@@ -88,4 +88,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             }),
         },
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }

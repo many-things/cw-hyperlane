@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    ensure_eq, to_binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
 };
 
 use hpl_interface::igp::oracle::{
@@ -91,4 +91,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             }
         },
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }
