@@ -21,6 +21,12 @@ program
   .action(create);
 
 program
+  .command("set-ism")
+  .argument("<address>", "address of internal warp route")
+  .argument("<ismAddress>", "address of ISM")
+  .action(setIsm);
+
+program
   .command("link")
   .argument("<address>", "address of internal warp route")
   .argument("<domain>", "domain of external chain, e.g. 5 (goerli)")
@@ -81,9 +87,25 @@ async function create(
   }
 }
 
+async function setIsm(address: string, ism: string) {
+  const client = await getSigningClient(config);
+  const resp = await client.wasm.execute(
+    client.signer,
+    address,
+    {
+      connection: {
+        set_ism: {
+          ism,
+        },
+      },
+    },
+    "auto"
+  );
+  console.log(parseWasmEventLog(resp));
+  console.log(resp.transactionHash);
+}
 async function link(address: string, domain: string, external_route: string) {
   const client = await getSigningClient(config);
-
   const resp = await client.wasm.execute(
     client.signer,
     address,
@@ -145,7 +167,7 @@ async function transfer(
     undefined,
     [
       { amount, denom },
-      { amount: "2500000", denom: "token" },
+      { amount: "100", denom: "untrn" },
     ]
   );
   console.log(parseWasmEventLog(resp));

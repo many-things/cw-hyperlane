@@ -1,5 +1,7 @@
+import { injectable } from "inversify";
 import { BaseContract } from "../types";
 
-export default class HplHookRoutingCustom extends BaseContract {
+@injectable()
+export class HplHookRoutingCustom extends BaseContract {
   contractName: string = "hpl_hook_routing_custom";
 }
