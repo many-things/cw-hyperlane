@@ -25,8 +25,8 @@
       "digest": "6fcf09c7d50fd5bfddbdeb0020625bdab2094237dca4f29e93ae12371a550f6f"
     },
     "hpl_igp": {
-      "codeId": 411,
-      "digest": "92e97402efe3aedcc84ef33608d5199f7a6506a61d13afc472e4b1f6740393cd"
+      "codeId": 426,
+      "digest": "ed02f45ba7566523428c483a99840ec803b4a8c4a61504c85c70713adfe4d912"
     },
     "hpl_igp_oracle": {
       "codeId": 412,
@@ -37,8 +37,8 @@
       "digest": "3a4adfaed525c40845768e05da436f1ea39f6c9d7e9d47ec2de8457034a229c1"
     },
     "hpl_ism_multisig": {
-      "codeId": 414,
-      "digest": "168a875843bd6b13420e289e6a089e1c566d62f95e9b9fb4bcec0c61966940f4"
+      "codeId": 427,
+      "digest": "8c6c86d831a12614192e5d11603e8df01688d6d99da7b78ab4a6b2ecc3e6a289"
     },
     "hpl_ism_routing": {
       "codeId": 415,
@@ -57,8 +57,8 @@
       "digest": "d0f8bc913e07df303911222970e09dd3abeef97399cb1c554d76cf98caa7f37a"
     },
     "hpl_validator_announce": {
-      "codeId": 419,
-      "digest": "db7afc67aa15c4f287af98c7836b3acf2016b96c6aa1eee01458bc11e6732178"
+      "codeId": 428,
+      "digest": "9b9991cabca8fb484cd4edf5f420769f3be88bea184a34b63648c8f6d38eac7b"
     },
     "hpl_warp_cw20": {
       "codeId": 420,
