@@ -198,6 +198,11 @@ fn announce(
     ))
 }
 
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
+}
+
 #[cfg(test)]
 mod test {
     use cosmwasm_std::{
