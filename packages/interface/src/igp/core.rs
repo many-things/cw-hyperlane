@@ -5,6 +5,7 @@ use crate::{
     hook::{HookQueryMsg, PostDispatchMsg},
     ownable::{OwnableMsg, OwnableQueryMsg},
     router::{RouterMsg, RouterQuery},
+    Order,
 };
 
 use super::oracle::IgpGasOracleQueryMsg;
@@ -89,6 +90,19 @@ pub enum QueryMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum IgpQueryMsg {
+    #[returns(DefaultGasResponse)]
+    DefaultGas {},
+
+    #[returns(GasForDomainResponse)]
+    GasForDomain { domains: Vec<u32> },
+
+    #[returns(GasForDomainResponse)]
+    ListGasForDomains {
+        offset: Option<u32>,
+        limit: Option<u32>,
+        order: Option<Order>,
+    },
+
     #[returns(BeneficiaryResponse)]
     Beneficiary {},
 
@@ -103,6 +117,16 @@ impl IgpQueryMsg {
     pub fn wrap(self) -> QueryMsg {
         QueryMsg::Igp(self)
     }
+}
+
+#[cw_serde]
+pub struct DefaultGasResponse {
+    pub gas: u128,
+}
+
+#[cw_serde]
+pub struct GasForDomainResponse {
+    pub gas: Vec<(u32, u128)>,
 }
 
 #[cw_serde]

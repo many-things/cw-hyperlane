@@ -1,16 +1,53 @@
 use crate::error::ContractError;
-use crate::{get_default_gas, BENEFICIARY, GAS_TOKEN, TOKEN_EXCHANGE_RATE_SCALE};
+use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_FOR_DOMAIN, GAS_TOKEN, TOKEN_EXCHANGE_RATE_SCALE};
 
-use cosmwasm_std::{coin, Addr, Deps, QuerierWrapper, Storage, Uint256};
+use cosmwasm_std::{coin, Addr, Deps, QuerierWrapper, StdResult, Storage, Uint256};
 use hpl_interface::hook::{MailboxResponse, QuoteDispatchMsg, QuoteDispatchResponse};
-use hpl_interface::igp::core::{BeneficiaryResponse, QuoteGasPaymentResponse};
+use hpl_interface::igp::core::{
+    BeneficiaryResponse, DefaultGasResponse, GasForDomainResponse, QuoteGasPaymentResponse,
+};
 use hpl_interface::igp::oracle::{self, GetExchangeRateAndGasPriceResponse, IgpGasOracleQueryMsg};
 use hpl_interface::types::{IGPMetadata, Message};
+use hpl_interface::Order;
 
 pub fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     Ok(MailboxResponse {
         mailbox: "unrestricted".to_string(),
     })
+}
+
+pub fn get_default_gas(deps: Deps) -> Result<DefaultGasResponse, ContractError> {
+    let default_gas = DEFAULT_GAS_USAGE.load(deps.storage)?;
+
+    Ok(DefaultGasResponse { gas: default_gas })
+}
+
+pub fn get_gas_for_domain(
+    deps: Deps,
+    domains: Vec<u32>,
+) -> Result<GasForDomainResponse, ContractError> {
+    Ok(GasForDomainResponse {
+        gas: domains
+            .into_iter()
+            .map(|v| Ok((v, GAS_FOR_DOMAIN.load(deps.storage, v)?)))
+            .collect::<StdResult<_>>()?,
+    })
+}
+
+pub fn list_gas_for_domains(
+    deps: Deps,
+    offset: Option<u32>,
+    limit: Option<u32>,
+    order: Option<Order>,
+) -> Result<GasForDomainResponse, ContractError> {
+    let ((min, max), limit, order) = hpl_interface::range_option(offset, limit, order)?;
+
+    let gas = GAS_FOR_DOMAIN
+        .range(deps.storage, min, max, order.into())
+        .take(limit)
+        .collect::<StdResult<Vec<_>>>()?;
+
+    Ok(GasForDomainResponse { gas })
 }
 
 pub fn get_beneficiary(deps: Deps) -> Result<BeneficiaryResponse, ContractError> {
@@ -61,7 +98,10 @@ pub fn quote_dispatch(
     let igp_message: Message = req.message.into();
 
     let gas_limit = match req.metadata.len() < 32 {
-        true => Uint256::from(get_default_gas(deps.storage, igp_message.dest_domain)?),
+        true => Uint256::from(crate::get_default_gas(
+            deps.storage,
+            igp_message.dest_domain,
+        )?),
         false => {
             let igp_metadata: IGPMetadata = req.metadata.clone().into();
             igp_metadata.gas_limit

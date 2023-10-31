@@ -103,7 +103,16 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             }
         },
         QueryMsg::Igp(msg) => match msg {
+            IgpQueryMsg::DefaultGas {} => to_binary(get_default_gas(deps)),
+            IgpQueryMsg::GasForDomain { domains } => to_binary(get_gas_for_domain(deps, domains)),
+            IgpQueryMsg::ListGasForDomains {
+                offset,
+                limit,
+                order,
+            } => to_binary(list_gas_for_domains(deps, offset, limit, order)),
+
             IgpQueryMsg::Beneficiary {} => to_binary(get_beneficiary(deps)),
+
             IgpQueryMsg::QuoteGasPayment {
                 dest_domain,
                 gas_amount,

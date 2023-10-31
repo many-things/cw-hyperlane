@@ -6,7 +6,10 @@ use cosmwasm_std::{
 };
 use hpl_interface::{
     igp::{
-        core::{ExecuteMsg, GasOracleConfig},
+        core::{
+            DefaultGasResponse, ExecuteMsg, GasForDomainResponse, GasOracleConfig, IgpQueryMsg,
+            QueryMsg,
+        },
         oracle,
     },
     types::{IGPMetadata, Message},
@@ -426,4 +429,73 @@ fn test_get_default_gas(mut igp: IGP) {
 
     assert_eq!(get_default_gas(storage, 1).unwrap(), 123_456);
     assert_eq!(get_default_gas(storage, 2).unwrap(), 250_000);
+}
+
+#[rstest]
+fn test_gas_query(mut igp: IGP) {
+    let config = (1u32..100u32)
+        .map(|i| (i, (i * 100_000) as u128))
+        .collect::<Vec<_>>();
+
+    let _resp = igp
+        .execute(
+            mock_info("owner", &[]),
+            ExecuteMsg::SetGasForDomain { config },
+        )
+        .map_err(|v| v.to_string())
+        .unwrap();
+
+    let DefaultGasResponse { gas: default_gas } = igp
+        .query(QueryMsg::Igp(IgpQueryMsg::DefaultGas {}))
+        .unwrap();
+    assert_eq!(default_gas, 250_000);
+
+    let domain_range = 1u32..4u32;
+    let GasForDomainResponse {
+        gas: gas_for_domain,
+    } = igp
+        .query(QueryMsg::Igp(IgpQueryMsg::GasForDomain {
+            domains: domain_range.clone().collect(),
+        }))
+        .unwrap();
+    assert_eq!(
+        domain_range
+            .map(|i| (i, (i * 100_000) as u128))
+            .collect::<Vec<_>>(),
+        gas_for_domain
+    );
+
+    let domain_range = 1u32..11u32;
+    let GasForDomainResponse {
+        gas: gas_for_domain,
+    } = igp
+        .query(QueryMsg::Igp(IgpQueryMsg::ListGasForDomains {
+            offset: None,
+            limit: None,
+            order: None,
+        }))
+        .unwrap();
+    assert_eq!(
+        domain_range
+            .map(|i| (i, (i * 100_000) as u128))
+            .collect::<Vec<_>>(),
+        gas_for_domain
+    );
+
+    let domain_range = (90u32..100u32).rev();
+    let GasForDomainResponse {
+        gas: gas_for_domain,
+    } = igp
+        .query(QueryMsg::Igp(IgpQueryMsg::ListGasForDomains {
+            offset: None,
+            limit: None,
+            order: Some(hpl_interface::Order::Desc),
+        }))
+        .unwrap();
+    assert_eq!(
+        domain_range
+            .map(|i| (i, (i * 100_000) as u128))
+            .collect::<Vec<_>>(),
+        gas_for_domain
+    );
 }
