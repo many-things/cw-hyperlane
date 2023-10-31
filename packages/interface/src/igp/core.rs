@@ -15,6 +15,7 @@ pub struct InstantiateMsg {
     pub owner: String,
     pub gas_token: String,
     pub beneficiary: String,
+    pub default_gas_usage: u128,
 }
 
 #[cw_serde]
@@ -49,6 +50,16 @@ pub enum ExecuteMsg {
     PostDispatch(PostDispatchMsg),
 
     // base
+    SetDefaultGas {
+        gas: u128,
+    },
+    SetGasForDomain {
+        config: Vec<(u32, u128)>,
+    },
+    UnsetGasForDomain {
+        domains: Vec<u32>,
+    },
+
     SetBeneficiary {
         beneficiary: String,
     },

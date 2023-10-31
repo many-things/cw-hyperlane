@@ -299,7 +299,10 @@ fn test_post_dispatch(
         .parse::<u128>()
         .unwrap();
 
-    assert_eq!(gas_limit.unwrap_or(DEFAULT_GAS_USAGE), gas_amount_log);
+    assert_eq!(
+        gas_limit.unwrap_or(DEFAULT_GAS_USAGE.load(igp.deps.as_mut().storage).unwrap()),
+        gas_amount_log
+    );
 }
 
 #[rstest]

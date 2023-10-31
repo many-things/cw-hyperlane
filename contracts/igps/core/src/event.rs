@@ -1,5 +1,37 @@
 use cosmwasm_std::{Addr, Coin, Event, HexBinary, Uint128, Uint256};
 
+pub fn emit_set_default_gas(owner: Addr, default_gas: u128) -> Event {
+    Event::new("igp-core-set-default-gas")
+        .add_attribute("owner", owner)
+        .add_attribute("default-gas", default_gas.to_string())
+}
+
+pub fn emit_set_gas_for_domain(owner: Addr, gas_for_domain: Vec<(u32, u128)>) -> Event {
+    Event::new("igp-core-set-gas-for-domain")
+        .add_attribute("owner", owner)
+        .add_attribute(
+            "domains",
+            gas_for_domain
+                .into_iter()
+                .map(|v| v.0.to_string())
+                .collect::<Vec<_>>()
+                .join(","),
+        )
+}
+
+pub fn emit_unset_gas_for_domain(owner: Addr, domains: Vec<u32>) -> Event {
+    Event::new("igp-core-unset-gas-for-domain")
+        .add_attribute("owner", owner)
+        .add_attribute(
+            "domains",
+            domains
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(","),
+        )
+}
+
 pub fn emit_set_beneficiary(owner: Addr, beneficiary: String) -> Event {
     Event::new("igp-core-set-beneficiary")
         .add_attribute("owner", owner)
