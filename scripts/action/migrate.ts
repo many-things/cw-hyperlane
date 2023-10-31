@@ -58,6 +58,18 @@ async function main() {
     );
     console.log(parseEventLog(migrate_resp.events));
   }
+
+  const set_gas_resp = await client.wasm.execute(
+    client.signer,
+    "neutron12p8wntzra3vpfcqv05scdx5sa3ftaj6gjcmtm7ynkl0e6crtt4ns8cnrmx",
+    {
+      set_default_gas: {
+        gas: "200000",
+      },
+    },
+    "auto"
+  );
+  console.log(parseEventLog(set_gas_resp.events));
 }
 
 main().catch(console.error);
