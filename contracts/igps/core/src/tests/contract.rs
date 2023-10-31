@@ -1,11 +1,14 @@
 use cosmwasm_std::{
     coin, from_binary,
-    testing::{mock_dependencies, mock_env},
-    to_binary, Addr, BankMsg, Coin, ContractResult, HexBinary, QuerierResult, SubMsg, SystemResult,
-    Uint128, Uint256, WasmQuery,
+    testing::{mock_dependencies, mock_env, mock_info},
+    to_binary, Addr, BankMsg, Coin, ContractResult, HexBinary, Order, QuerierResult, StdResult,
+    SubMsg, SystemResult, Uint128, Uint256, WasmQuery,
 };
 use hpl_interface::{
-    igp::{core::GasOracleConfig, oracle},
+    igp::{
+        core::{ExecuteMsg, GasOracleConfig},
+        oracle,
+    },
     types::{IGPMetadata, Message},
 };
 use hpl_ownable::get_owner;
@@ -13,7 +16,7 @@ use hpl_router::get_routes;
 use ibcx_test_utils::{addr, gen_bz};
 use rstest::{fixture, rstest};
 
-use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP};
+use crate::{get_default_gas, BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP};
 
 use super::IGP;
 
@@ -323,4 +326,104 @@ fn test_claim(mut igp: IGP, #[case] sender: Addr, #[case] funds: Vec<Coin>) {
             amount: funds
         })
     )
+}
+
+#[rstest]
+#[case(addr("owner"))]
+#[should_panic(expected = "unauthorized")]
+#[case(addr("someone"))]
+fn test_set_default_gas(mut igp: IGP, #[case] sender: Addr) {
+    let _resp = igp
+        .execute(
+            mock_info(sender.as_str(), &[]),
+            ExecuteMsg::SetDefaultGas { gas: 99_999 },
+        )
+        .map_err(|v| v.to_string())
+        .unwrap();
+
+    let storage = igp.deps.as_ref().storage;
+
+    assert_eq!(crate::DEFAULT_GAS_USAGE.load(storage).unwrap(), 99_999);
+}
+
+#[rstest]
+#[case(addr("owner"))]
+#[should_panic(expected = "unauthorized")]
+#[case(addr("someone"))]
+fn test_set_gas_for_domain(mut igp: IGP, #[case] sender: Addr) {
+    let config = (1u32..5u32)
+        .map(|i| (i, (i * 100_000) as u128))
+        .collect::<Vec<_>>();
+
+    let _resp = igp
+        .execute(
+            mock_info(sender.as_str(), &[]),
+            ExecuteMsg::SetGasForDomain {
+                config: config.clone(),
+            },
+        )
+        .map_err(|v| v.to_string())
+        .unwrap();
+
+    let storage = igp.deps.as_ref().storage;
+
+    assert_eq!(
+        crate::GAS_FOR_DOMAIN
+            .range(storage, None, None, Order::Ascending)
+            .collect::<StdResult<Vec<(u32, u128)>>>()
+            .unwrap(),
+        config
+    );
+}
+
+#[rstest]
+#[case(addr("owner"))]
+#[should_panic(expected = "unauthorized")]
+#[case(addr("someone"))]
+fn test_unset_gas_for_domain(mut igp: IGP, #[case] sender: Addr) {
+    let config = (1u32..5u32)
+        .map(|i| (i, (i * 100_000) as u128))
+        .collect::<Vec<_>>();
+
+    let _resp = igp
+        .execute(
+            mock_info("owner", &[]),
+            ExecuteMsg::SetGasForDomain {
+                config: config.clone(),
+            },
+        )
+        .map_err(|v| v.to_string())
+        .unwrap();
+
+    let _resp = igp
+        .execute(
+            mock_info(sender.as_str(), &[]),
+            ExecuteMsg::UnsetGasForDomain {
+                domains: config.iter().map(|v| v.0).collect(),
+            },
+        )
+        .map_err(|v| v.to_string())
+        .unwrap();
+
+    let storage = igp.deps.as_ref().storage;
+
+    assert!(crate::GAS_FOR_DOMAIN.is_empty(storage));
+}
+
+#[rstest]
+fn test_get_default_gas(mut igp: IGP) {
+    let _resp = igp
+        .execute(
+            mock_info("owner", &[]),
+            ExecuteMsg::SetGasForDomain {
+                config: vec![(1, 123_456)],
+            },
+        )
+        .map_err(|v| v.to_string())
+        .unwrap();
+
+    let storage = igp.deps.as_ref().storage;
+
+    assert_eq!(get_default_gas(storage, 1).unwrap(), 123_456);
+    assert_eq!(get_default_gas(storage, 2).unwrap(), 250_000);
 }
