@@ -1,57 +1,54 @@
-import HplMailbox from "./contracts/hpl_mailbox";
-import HplValidatorAnnounce from "./contracts/hpl_validator_announce";
-import HplHookAggregate from "./contracts/hpl_hook_aggregate";
-import HplHookMerkle from "./contracts/hpl_hook_merkle";
-import HplHookPausable from "./contracts/hpl_hook_pausable";
-import HplHookRouting from "./contracts/hpl_hook_routing";
-import HplHookRoutingCustom from "./contracts/hpl_hook_routing_custom";
-import HplIgp from "./contracts/hpl_igp";
-import HplIgpGasOracle from "./contracts/hpl_igp_oracle";
-import HplIsmAggregate from "./contracts/hpl_ism_aggregate";
-import HplIsmMultisig from "./contracts/hpl_ism_multisig";
-import HplIsmRouting from "./contracts/hpl_ism_routing";
-import HplTestMockHook from "./contracts/hpl_test_mock_hook";
-import HplTestMockMsgReceiver from "./contracts/hpl_test_mock_msg_receiver";
-import HplWarpCw20 from "./contracts/hpl_warp_cw20";
-import HplWarpNative from "./contracts/hpl_warp_native";
-
+import { Client, IsmType } from "../src/config";
 import {
-  Client,
-  IsmType,
-} from "../src/config";
-import { addPad } from "./conv";
+  HplMailbox,
+  HplValidatorAnnounce,
+  HplHookAggregate,
+  HplHookMerkle,
+  HplHookPausable,
+  HplHookRouting,
+  HplHookRoutingCustom,
+  HplIgp,
+  HplIsmAggregate,
+  HplIsmMultisig,
+  HplIsmRouting,
+  HplTestMockHook,
+  HplTestMockMsgReceiver,
+  HplWarpCw20,
+  HplWarpNative,
+  HplIgpOracle,
+} from "./contracts";
 
 export type Contracts = {
-    core: {
-      mailbox: HplMailbox;
-      va: HplValidatorAnnounce;
-    };
-    hooks: {
-      aggregate: HplHookAggregate;
-      merkle: HplHookMerkle;
-      pausable: HplHookPausable;
-      routing: HplHookRouting;
-      routing_custom: HplHookRoutingCustom;
-      routing_fallback: HplHookRoutingCustom;
-    };
-    igp: {
-      core: HplIgp;
-      oracle: HplIgpGasOracle;
-    };
-    isms: {
-      aggregate: HplIsmAggregate;
-      multisig: HplIsmMultisig;
-      routing: HplIsmRouting;
-    };
-    mocks: {
-      hook: HplTestMockHook;
-      receiver: HplTestMockMsgReceiver;
-    };
-    warp: {
-      cw20: HplWarpCw20;
-      native: HplWarpNative;
-    };
+  core: {
+    mailbox: HplMailbox;
+    va: HplValidatorAnnounce;
   };
+  hooks: {
+    aggregate: HplHookAggregate;
+    merkle: HplHookMerkle;
+    pausable: HplHookPausable;
+    routing: HplHookRouting;
+    routing_custom: HplHookRoutingCustom;
+    routing_fallback: HplHookRoutingCustom;
+  };
+  igp: {
+    core: HplIgp;
+    oracle: HplIgpOracle;
+  };
+  isms: {
+    aggregate: HplIsmAggregate;
+    multisig: HplIsmMultisig;
+    routing: HplIsmRouting;
+  };
+  mocks: {
+    hook: HplTestMockHook;
+    receiver: HplTestMockMsgReceiver;
+  };
+  warp: {
+    cw20: HplWarpCw20;
+    native: HplWarpNative;
+  };
+};
 
 const name = (c: any) => c.contractName;
 
@@ -64,19 +61,21 @@ export const deploy_ism = async (
 
   switch (ism.type) {
     case "multisig":
-      console.log('Instantiate Multisig ISM contract')
+      console.log("Instantiate Multisig ISM contract");
       const multisig_ism_res = await isms.multisig.instantiate({
         owner: ism.owner === "<signer>" ? client.signer : ism.owner,
       });
 
-      console.log('Enroll validators')
-      console.log(ism)
-      console.log(Object.entries(ism.validators).flatMap(([domain, validator]) =>
-      validator.addrs.map((v) => ({
-        domain: Number(domain),
-        validator: v,
-      }))
-    ))
+      console.log("Enroll validators");
+      console.log(ism);
+      console.log(
+        Object.entries(ism.validators).flatMap(([domain, validator]) =>
+          validator.addrs.map((v) => ({
+            domain: Number(domain),
+            validator: v,
+          }))
+        )
+      );
       await client.wasm.execute(
         client.signer,
         multisig_ism_res.address!,
@@ -93,7 +92,7 @@ export const deploy_ism = async (
         "auto"
       );
 
-      console.log('Set thresholds')
+      console.log("Set thresholds");
       await client.wasm.execute(
         client.signer,
         multisig_ism_res.address!,
@@ -150,4 +149,3 @@ export const deploy_ism = async (
       throw new Error("invalid ism type");
   }
 };
-
