@@ -44,6 +44,8 @@ hpl-router.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]
+serde-json-wasm.workspace = true
+
 osmosis-test-tube.workspace = true
 ibcx-test-utils.workspace = true
 rstest.workspace = true

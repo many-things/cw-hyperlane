@@ -529,15 +529,26 @@ mod test {
             &sender,
             ExecuteMsg::TransferRemote {
                 dest_domain: domain,
-                recipient: route.clone(),
+                recipient: recipient.clone(),
                 amount: Uint128::new(100),
             },
             vec![],
         );
         let msgs = res.messages.into_iter().map(|v| v.msg).collect::<Vec<_>>();
 
+        let transfer_from_msg = wasm_execute(
+            TOKEN,
+            &Cw20ExecuteMsg::TransferFrom {
+                owner: sender.to_string(),
+                recipient: mock_env().contract.address.to_string(),
+                amount: Uint128::new(100),
+            },
+            vec![],
+        )
+        .unwrap();
+
         let warp_msg = warp::Message {
-            recipient,
+            recipient: recipient,
             amount: Uint256::from_u128(100),
             metadata: HexBinary::default(),
         };
@@ -550,6 +561,7 @@ mod test {
                 assert_eq!(
                     cosmwasm_std::to_binary(&msgs).unwrap(),
                     cosmwasm_std::to_binary(&vec![
+                        transfer_from_msg.into(),
                         CosmosMsg::from(conv::to_burn_msg(TOKEN, Uint128::new(100)).unwrap()),
                         dispatch_msg,
                     ])
@@ -559,7 +571,7 @@ mod test {
             TokenModeMsg::Collateral(_) => {
                 assert_eq!(
                     cosmwasm_std::to_binary(&msgs).unwrap(),
-                    cosmwasm_std::to_binary(&vec![dispatch_msg]).unwrap(),
+                    cosmwasm_std::to_binary(&vec![transfer_from_msg.into(), dispatch_msg]).unwrap(),
                 );
             }
         }
