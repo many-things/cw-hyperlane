@@ -1,8 +1,6 @@
 import { injectable } from "inversify";
 import { Context, HplMailboxInstantiateMsg, Migration } from "../types";
-import HplMailbox from "../contracts/hpl_mailbox";
-import HplIsmMultisig from "../contracts/hpl_ism_multisig";
-
+import { HplIsmMultisig, HplMailbox } from "../contracts";
 
 @injectable()
 export default class MailboxMigration implements Migration {
@@ -12,7 +10,7 @@ export default class MailboxMigration implements Migration {
   constructor(
     private ctx: Context,
     private mailbox: HplMailbox,
-    private ism_multisig: HplIsmMultisig,
+    private ism_multisig: HplIsmMultisig
   ) {}
 
   run = async (): Promise<Context> => {
@@ -20,10 +18,13 @@ export default class MailboxMigration implements Migration {
       owner: this.ctx.address!,
       hrp: "dual",
       domain: 33333,
-    }
-    this.ctx.contracts[this.mailbox.contractName] = await this.mailbox.instantiate(mailboxInit);
+    };
+    this.ctx.contracts[this.mailbox.contractName] =
+      await this.mailbox.instantiate(mailboxInit);
     return this.ctx;
-  }
+  };
 
-  setContext = (ctx: Context) => { this.ctx = ctx }
+  setContext = (ctx: Context) => {
+    this.ctx = ctx;
+  };
 }

@@ -1,5 +1,7 @@
+import { injectable } from "inversify";
 import { BaseContract } from "../types";
 
-export default class HplWarpNative extends BaseContract {
+@injectable()
+export class HplWarpNative extends BaseContract {
   contractName: string = "hpl_warp_native";
 }

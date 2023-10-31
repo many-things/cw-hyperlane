@@ -1,32 +1,32 @@
 import { Command } from "commander";
+import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 
 import { version } from "../package.json";
 import { config, getSigningClient } from "../src/config";
-import HplMailbox from "../src/contracts/hpl_mailbox";
-import { addPad } from "../src/conv";
 import { loadContext } from "../src/load_context";
 import { ContractFetcher } from "./fetch";
-import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
-import HplIsmAggregate from "../src/contracts/hpl_ism_aggregate";
-import HplIgp from "../src/contracts/hpl_igp";
-import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
-import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
-import { toBech32 } from "@cosmjs/encoding";
+import {
+  HplMailbox,
+  HplIgp,
+  HplIgpGasOracle,
+  HplHookMerkle,
+  HplIsmAggregate,
+} from "../src/contracts";
 
 const program = new Command();
 
 program.name("Mailbox CLI").version(version);
 
 program
-  .command("getIsm")
+  .command("get-ism")
   .argument("<recipient_addr>", "recipient address in bech32")
-  .action(makeHandler("getIsm"));
+  .action(makeHandler("get-ism"));
 
 program
   .command("show")
   .argument("<ism_addr>", "ism address in bech32")
   .argument("<originDomain>", "origin domain to be used when multisig")
-  .action(makeHandler("showIsm"));
+  .action(makeHandler("show-ism"));
 
 program.parseAsync(process.argv).catch(console.error);
 
@@ -42,7 +42,7 @@ const parseWasmEventLog = (res: ExecuteResult) => {
 };
 
 function makeHandler(
-  action: "getIsm" | "showIsm"
+  action: "get-ism" | "show-ism"
 ): (...args: any[]) => void | Promise<void> {
   const ctx = loadContext(config.network.id);
 
@@ -64,46 +64,46 @@ function makeHandler(
   };
 
   switch (action) {
-    case "getIsm":
-      return async (
-        recipient_addr: string,
-      ) => {
+    case "get-ism":
+      return async (recipient_addr: string) => {
         const { mailbox } = await loadDeps();
 
-        const ism = await mailbox.query({ mailbox: { default_ism: {} }})
-        console.log('Default ISM on mailbox is', ism)
+        const ism = await mailbox.query({ mailbox: { default_ism: {} } });
+        console.log("Default ISM on mailbox is", ism);
 
-        const recipientIsm = await mailbox.query({ mailbox: { recipient_ism: { recipient_addr }}})
-        
-        console.log('Recipient ISM is ', recipientIsm)
+        const recipientIsm = await mailbox.query({
+          mailbox: { recipient_ism: { recipient_addr } },
+        });
+
+        console.log("Recipient ISM is ", recipientIsm);
       };
-    case "showIsm":
+    case "show-ism":
       return async (ism_addr: string, originDomain?: string) => {
         // Generic info
         const { client } = await loadDeps();
         const ism = await client.wasm.queryContractSmart(ism_addr, {
           ism: {
-            module_type: {}
-          }
-        })
+            module_type: {},
+          },
+        });
         switch (ism.type) {
-          case 'message_id_multisig':
+          case "message_id_multisig":
             const msig = await client.wasm.queryContractSmart(ism_addr, {
               multisig_ism: {
                 enrolled_validators: {
-                  domain: Number(originDomain)
-                }
+                  domain: Number(originDomain),
+                },
               },
-            })
+            });
             const owner = await client.wasm.queryContractSmart(ism_addr, {
-              ownable: { get_owner: {} }
-            })
-            console.log(msig, owner)
+              ownable: { get_owner: {} },
+            });
+            console.log(msig, owner);
             break;
-        
+
           default:
             break;
         }
-      }
+      };
   }
 }

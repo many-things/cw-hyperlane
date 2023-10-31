@@ -1,17 +1,11 @@
 import { writeFileSync } from "fs";
 
 import { loadContext } from "../src/load_context";
-import {
-  Client,
-  HookType,
-  IsmType,
-  config,
-  getSigningClient,
-} from "../src/config";
+import { Client, HookType, config, getSigningClient } from "../src/config";
 
-import { ContractFetcher, Contracts } from "./fetch";
+import { ContractFetcher } from "./fetch";
 import { Context } from "../src/types";
-import { deploy_ism } from "../src/deploy";
+import { Contracts, deploy_ism } from "../src/deploy";
 
 const name = (c: any) => c.contractName;
 const addr = (ctx: Context, c: any) => ctx.contracts[name(c)].address!;
@@ -204,7 +198,6 @@ const deploy_ism_hook = async (
 
   return ctx;
 };
-
 
 const deploy_hook = async (
   ctx: Context,

@@ -1,5 +1,7 @@
+import { injectable } from "inversify";
 import { BaseContract } from "../types";
 
-export default class HplIsmMultisig extends BaseContract {
+@injectable()
+export class HplIsmMultisig extends BaseContract {
   contractName: string = "hpl_ism_multisig";
 }
