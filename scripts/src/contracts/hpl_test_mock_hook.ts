@@ -1,5 +1,7 @@
+import { injectable } from "inversify";
 import { BaseContract } from "../types";
 
-export default class HplTestMockHook extends BaseContract {
+@injectable()
+export class HplTestMockHook extends BaseContract {
   contractName: string = "hpl_test_mock_hook";
 }

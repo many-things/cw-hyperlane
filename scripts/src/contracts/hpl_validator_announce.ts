@@ -1,5 +1,7 @@
+import { injectable } from "inversify";
 import { BaseContract } from "../types";
 
-export default class HplValidatorAnnounce extends BaseContract {
+@injectable()
+export class HplValidatorAnnounce extends BaseContract {
   contractName: string = "hpl_validator_announce";
 }

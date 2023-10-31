@@ -1,5 +1,7 @@
+import { injectable } from "inversify";
 import { BaseContract } from "../types";
 
-export default class HplTestMockMsgReceiver extends BaseContract {
+@injectable()
+export class HplTestMockMsgReceiver extends BaseContract {
   contractName: string = "hpl_test_mock_msg_receiver";
 }

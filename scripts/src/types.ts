@@ -50,25 +50,13 @@ export interface Contract {
 export abstract class BaseContract implements Contract {
   contractName: string;
 
-  address: string | undefined;
-  codeId: number | undefined;
-  digest: string;
-  client: SigningCosmWasmClient;
-  signer: string;
-
   constructor(
-    address: string | undefined,
-    codeId: number | undefined,
-    digest: string,
-    signer: string,
-    client: SigningCosmWasmClient
-  ) {
-    this.address = address;
-    this.client = client;
-    this.digest = digest;
-    this.codeId = codeId;
-    this.signer = signer;
-  }
+    public address: string | undefined,
+    public codeId: number | undefined,
+    public digest: string,
+    public signer: string,
+    public client: SigningCosmWasmClient
+  ) {}
 
   public getContractContext(): ContractContext {
     return {

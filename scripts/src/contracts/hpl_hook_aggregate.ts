@@ -1,5 +1,7 @@
+import { injectable } from "inversify";
 import { BaseContract } from "../types";
 
-export default class HplHookAggregate extends BaseContract {
+@injectable()
+export class HplHookAggregate extends BaseContract {
   contractName: string = "hpl_hook_aggregate";
 }
