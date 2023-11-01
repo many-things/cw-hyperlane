@@ -1,11 +1,11 @@
 pub mod contract;
 mod error;
-pub mod event;
-pub mod execute;
+mod migration;
 pub mod query;
-pub mod state;
 
-use cosmwasm_std::{HexBinary, StdResult};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{Event, HexBinary, StdResult};
+use cw_storage_plus::Map;
 use hpl_interface::types::keccak256_hash;
 
 pub use crate::error::ContractError;
@@ -13,6 +13,19 @@ pub use crate::error::ContractError;
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[cw_serde]
+pub struct ValidatorSet {
+    pub validators: Vec<HexBinary>,
+    pub threshold: u8,
+}
+
+pub const VALIDATORS_PREFIX: &str = "validators";
+pub const VALIDATORS: Map<u32, ValidatorSet> = Map::new(VALIDATORS_PREFIX);
+
+fn new_event(name: &str) -> Event {
+    Event::new(format!("hpl_ism_multisig::{name}"))
+}
 
 pub fn domain_hash(local_domain: u32, address: HexBinary) -> StdResult<HexBinary> {
     let mut bz = vec![];

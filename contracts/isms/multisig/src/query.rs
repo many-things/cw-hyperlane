@@ -4,11 +4,7 @@ use hpl_interface::{
     types::{eth_addr, eth_hash, Message, MessageIdMultisigIsmMetadata},
 };
 
-use crate::{
-    domain_hash, multisig_hash,
-    state::{THRESHOLD, VALIDATORS},
-    ContractError,
-};
+use crate::{domain_hash, multisig_hash, ContractError, VALIDATORS};
 
 pub fn get_module_type() -> Result<ModuleTypeResponse, ContractError> {
     Ok(ModuleTypeResponse {
@@ -41,8 +37,10 @@ pub fn verify_message(
     let hashed_message = eth_hash(multisig_hash)?;
 
     // pizza :)
-    let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
-    let mut threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
+    let crate::ValidatorSet {
+        validators,
+        mut threshold,
+    } = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
     for signature in metadata.signatures {
         let signature = signature.as_slice();
@@ -71,8 +69,10 @@ pub fn get_verify_info(
 ) -> Result<VerifyInfoResponse, ContractError> {
     let message: Message = raw_message.into();
 
-    let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
-    let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
+    let crate::ValidatorSet {
+        validators,
+        threshold,
+    } = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
     Ok(VerifyInfoResponse {
         threshold,
@@ -82,7 +82,6 @@ pub fn get_verify_info(
 
 #[cfg(test)]
 mod test {
-    use crate::state::{THRESHOLD, VALIDATORS};
     use cosmwasm_std::{testing::mock_dependencies, HexBinary};
     use hpl_interface::{
         ism::{IsmType, ModuleTypeResponse, VerifyResponse},
@@ -91,6 +90,8 @@ mod test {
     use ibcx_test_utils::hex;
     use k256::{ecdsa::SigningKey, elliptic_curve::rand_core::OsRng};
     use rstest::rstest;
+
+    use crate::{ValidatorSet, VALIDATORS};
 
     use super::{get_module_type, get_verify_info, verify_message};
 
@@ -133,11 +134,15 @@ mod test {
 
         let message: Message = raw_message.clone().into();
 
-        VALIDATORS
-            .save(deps.as_mut().storage, message.origin_domain, &validators)
-            .unwrap();
-        THRESHOLD
-            .save(deps.as_mut().storage, message.origin_domain, &1u8)
+        crate::VALIDATORS
+            .save(
+                deps.as_mut().storage,
+                message.origin_domain,
+                &ValidatorSet {
+                    validators,
+                    threshold: 1,
+                },
+            )
             .unwrap();
 
         let res = verify_message(deps.as_ref(), raw_metadata, raw_message).unwrap();
@@ -156,9 +161,15 @@ mod test {
         let addr = eth_addr(verifying_key.to_encoded_point(false).as_bytes().into()).unwrap();
 
         VALIDATORS
-            .save(deps.as_mut().storage, 26658, &vec![addr.clone()])
+            .save(
+                deps.as_mut().storage,
+                26658,
+                &ValidatorSet {
+                    validators: vec![addr.clone()],
+                    threshold: 1,
+                },
+            )
             .unwrap();
-        THRESHOLD.save(deps.as_mut().storage, 26658, &1u8).unwrap();
 
         let info = get_verify_info(deps.as_ref(), raw_message).unwrap();
 
