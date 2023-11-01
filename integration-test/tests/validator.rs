@@ -6,7 +6,9 @@ use ethers::types::{Address, H160};
 use ethers::utils::hex::FromHex;
 use hpl_interface::{
     ism::multisig::{ThresholdSet, ValidatorSet},
-    types::{bech32_encode, pub_to_addr, Message, MessageIdMultisigIsmMetadata},
+    types::{
+        bech32_encode, eth_addr, eth_hash, pub_to_addr, Message, MessageIdMultisigIsmMetadata,
+    },
 };
 use ibcx_test_utils::{addr, gen_bz};
 use k256::{
@@ -54,11 +56,10 @@ impl TestValidator {
         .into()
     }
 
-    pub fn to_val(&self, domain: u32, hrp: &str) -> ValidatorSet {
+    pub fn to_val(&self, domain: u32) -> ValidatorSet {
         ValidatorSet {
             domain,
-            validator: self.addr(hrp),
-            validator_pubkey: self.pub_key_to_binary(),
+            validator: eth_addr(self.pub_key.to_encoded_point(false).as_bytes().into()).unwrap(),
         }
     }
 
@@ -108,10 +109,10 @@ impl TestValidators {
         }
     }
 
-    pub fn to_set(&self, hrp: &str) -> Vec<ValidatorSet> {
+    pub fn to_set(&self) -> Vec<ValidatorSet> {
         self.validators
             .iter()
-            .map(|v| v.to_val(self.domain, hrp))
+            .map(|v| v.to_val(self.domain))
             .collect::<Vec<_>>()
     }
 
@@ -123,7 +124,7 @@ impl TestValidators {
             .iter()
             .map(|v| {
                 let (mut signature, recov_id) = v.sign(digest);
-                signature.0.extend(vec![recov_id.to_byte()]);
+                signature.0.extend(vec![recov_id.to_byte() + 27]);
                 signature.into()
             })
             .collect::<Vec<_>>();
@@ -145,11 +146,11 @@ impl TestValidators {
         let multisig_hash = hpl_ism_multisig::multisig_hash(
             hpl_ism_multisig::domain_hash(self.domain, addr.to_vec().into())?.to_vec(),
             merkle_root.to_vec(),
-            merkle_index.to_be_bytes().to_vec(),
+            merkle_index,
             message_id.to_vec(),
         )?;
 
-        let hashed_message = hpl_ism_multisig::eth_hash(multisig_hash)?;
+        let hashed_message = eth_hash(multisig_hash)?;
 
         let signatures = if is_passed {
             self.sign(self.threshold, hashed_message.as_slice().try_into()?)
@@ -168,7 +169,6 @@ impl TestValidators {
 
 #[test]
 fn test_validator() {
-    let hrp = "osmo";
     let owner = addr("owner");
     let validators = TestValidators::new(2, 5, 3);
 
@@ -176,14 +176,10 @@ fn test_validator() {
 
     hpl_ownable::initialize(deps.as_mut().storage, &owner).unwrap();
 
-    hpl_ism_multisig::state::HRP
-        .save(deps.as_mut().storage, &hrp.to_string())
-        .unwrap();
-
     hpl_ism_multisig::execute::enroll_validators(
         deps.as_mut(),
         mock_info(owner.as_str(), &[]),
-        validators.to_set(hrp),
+        validators.to_set(),
     )
     .unwrap();
 
@@ -206,7 +202,7 @@ fn test_validator() {
         .make_metadata(
             H160::from_slice(gen_bz(20).as_slice()),
             gen_bz(32).as_slice().try_into().unwrap(),
-            1,
+            0,
             message_id.as_slice().try_into().unwrap(),
             true,
         )

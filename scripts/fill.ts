@@ -10,6 +10,7 @@ import { ARTIFACTS } from "./artifacts";
 async function getSigningClient(): Promise<{
   client: SigningCosmWasmClient;
   address: string;
+  pubkey: string;
 }> {
   const mnemonic = process.env["SIGNING_MNEMONIC"] as string;
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
@@ -24,11 +25,14 @@ async function getSigningClient(): Promise<{
       gasPrice: GasPrice.fromString("0.025uosmo"),
     }
   );
-  return { client, address };
+
+  const pubkey = process.env["SIGNING_PUBKEY"] as string;
+
+  return { client, address, pubkey };
 }
 
 async function main() {
-  const { client, address: owner } = await getSigningClient();
+  const { client, address: owner, pubkey } = await getSigningClient();
 
   const {
     hpl_hub: { address: hpl_hub },
@@ -42,6 +46,8 @@ async function main() {
   } = ARTIFACTS.contracts;
 
   let execRes: ExecuteResult;
+
+  // =========================== hpl_routing
 
   // =========================== hpl_hub
   {

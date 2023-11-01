@@ -12,6 +12,15 @@ pub enum ContractError {
     #[error("unauthorized")]
     Unauthorized {},
 
+    #[error("invalid address. reason: {0}")]
+    InvalidAddress(String),
+
     #[error("verify failed")]
     VerifyFailed {},
+}
+
+impl ContractError {
+    pub fn invalid_addr(reason: &str) -> Self {
+        ContractError::InvalidAddress(reason.into())
+    }
 }

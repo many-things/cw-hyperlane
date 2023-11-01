@@ -11,8 +11,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Announce {
         validator: HexBinary,
-        storage_location: String,
         signature: HexBinary,
+        storage_location: String,
     },
 }
 

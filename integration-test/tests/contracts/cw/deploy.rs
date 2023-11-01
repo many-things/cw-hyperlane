@@ -5,33 +5,32 @@ use cosmwasm_std::HexBinary;
 use hpl_interface::{
     core::mailbox,
     router::{DomainRouteSet, RouterMsg},
-    warp::{self, cw20::Cw20ModeBridged},
+    warp::{self, cw20::Cw20ModeBridged, native::NativeModeBriged},
 };
-use test_tube::{Account, Runner, SigningAccount, Wasm};
+use osmosis_test_tube::osmosis_std::types::cosmwasm::wasm::v1::MsgInstantiateContractResponse;
+use test_tube::{Account, ExecuteResponse, Runner, SigningAccount, Wasm};
 
 use super::{
     types::{Codes, CoreDeployments},
     Hook, Ism,
 };
 
-fn instantiate<'a, M: Serialize, R: Runner<'a>>(
+pub fn instantiate<'a, M: Serialize, R: Runner<'a>>(
     wasm: &Wasm<'a, R>,
     code: u64,
     deployer: &SigningAccount,
     name: &str,
     msg: &M,
-) -> eyre::Result<String> {
-    Ok(wasm
-        .instantiate(
-            code,
-            msg,
-            Some(&deployer.address()),
-            Some(name),
-            &[],
-            deployer,
-        )?
-        .data
-        .address)
+) -> ExecuteResponse<MsgInstantiateContractResponse> {
+    wasm.instantiate(
+        code,
+        msg,
+        Some(&deployer.address()),
+        Some(name),
+        &[],
+        deployer,
+    )
+    .unwrap()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -57,11 +56,13 @@ pub fn deploy_core<'a, R: Runner<'a>>(
             owner: deployer.address(),
             domain: origin_domain,
         },
-    )?;
+    )
+    .data
+    .address;
 
     // set default ism, hook, igp
 
-    let default_ism = default_ism.deploy(wasm, codes, deployer)?;
+    let default_ism = default_ism.deploy(wasm, codes, owner, deployer)?;
     let default_hook = default_hook.deploy(wasm, codes, mailbox.clone(), owner, deployer)?;
     let required_hook = required_hook.deploy(wasm, codes, mailbox.clone(), owner, deployer)?;
 
@@ -106,7 +107,9 @@ pub fn deploy_core<'a, R: Runner<'a>>(
         &ReceiverInitMsg {
             hrp: hrp.to_string(),
         },
-    )?;
+    )
+    .data
+    .address;
 
     Ok(CoreDeployments {
         mailbox,
@@ -126,29 +129,48 @@ pub fn deploy_warp_route_bridged<'a, R: Runner<'a>>(
     hrp: &str,
     codes: &Codes,
     denom: String,
-) -> eyre::Result<String> {
-    instantiate(
-        wasm,
-        codes.warp_cw20,
-        deployer,
-        "warp-cw20",
-        &warp::cw20::InstantiateMsg {
-            token: warp::TokenModeMsg::Bridged(Cw20ModeBridged {
-                code_id: codes.cw20_base,
-                init_msg: Box::new(warp::cw20::Cw20InitMsg {
-                    name: denom.clone(),
-                    symbol: denom,
-                    decimals: 6,
-                    initial_balances: vec![],
-                    mint: None,
-                    marketing: None,
+    token_type: warp::TokenType,
+) -> ExecuteResponse<MsgInstantiateContractResponse> {
+    match token_type {
+        warp::TokenType::Native(_) => instantiate(
+            wasm,
+            codes.warp_native,
+            deployer,
+            "warp-native",
+            &warp::native::InstantiateMsg {
+                token: warp::TokenModeMsg::Bridged(NativeModeBriged {
+                    denom,
+                    metadata: None,
                 }),
-            }),
-            hrp: hrp.to_string(),
-            owner: owner.address(),
-            mailbox: mailbox.to_string(),
-        },
-    )
+                hrp: hrp.to_string(),
+                owner: owner.address(),
+                mailbox: mailbox.to_string(),
+            },
+        ),
+        warp::TokenType::CW20 { .. } => instantiate(
+            wasm,
+            codes.warp_cw20,
+            deployer,
+            "warp-cw20",
+            &warp::cw20::InstantiateMsg {
+                token: warp::TokenModeMsg::Bridged(Cw20ModeBridged {
+                    code_id: codes.cw20_base,
+                    init_msg: Box::new(warp::cw20::Cw20InitMsg {
+                        name: denom.clone(),
+                        symbol: denom,
+                        decimals: 6,
+                        initial_balances: vec![],
+                        mint: None,
+                        marketing: None,
+                    }),
+                }),
+                hrp: hrp.to_string(),
+                owner: owner.address(),
+                mailbox: mailbox.to_string(),
+            },
+        ),
+        warp::TokenType::CW721 { .. } => todo!(),
+    }
 }
 
 #[allow(dead_code)]
@@ -160,10 +182,10 @@ pub fn deploy_warp_route_collateral<'a, R: Runner<'a>>(
     hrp: &str,
     codes: &Codes,
     denom: String,
-) -> eyre::Result<String> {
+) -> ExecuteResponse<MsgInstantiateContractResponse> {
     if denom.starts_with(format!("{hrp}1").as_str()) {
         // cw20
-        let route = instantiate(
+        instantiate(
             wasm,
             codes.warp_cw20,
             deployer,
@@ -176,12 +198,10 @@ pub fn deploy_warp_route_collateral<'a, R: Runner<'a>>(
                 owner: owner.address(),
                 mailbox: mailbox.to_string(),
             },
-        )?;
-
-        Ok(route)
+        )
     } else {
         // native
-        let route = instantiate(
+        instantiate(
             wasm,
             codes.warp_native,
             deployer,
@@ -192,9 +212,7 @@ pub fn deploy_warp_route_collateral<'a, R: Runner<'a>>(
                 owner: owner.address(),
                 mailbox: mailbox.to_string(),
             },
-        )?;
-
-        Ok(route)
+        )
     }
 }
 

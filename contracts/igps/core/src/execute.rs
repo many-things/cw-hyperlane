@@ -1,6 +1,11 @@
-use crate::event::{emit_claim, emit_pay_for_gas, emit_post_dispatch, emit_set_beneficiary};
+use crate::event::{
+    emit_claim, emit_pay_for_gas, emit_post_dispatch, emit_set_beneficiary, emit_set_default_gas,
+    emit_set_gas_for_domain, emit_unset_gas_for_domain,
+};
 use crate::query::quote_gas_price;
-use crate::{ContractError, BENEFICIARY, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP, MAILBOX};
+use crate::{
+    get_default_gas, ContractError, BENEFICIARY, DEFAULT_GAS_USAGE, GAS_FOR_DOMAIN, GAS_TOKEN, HRP,
+};
 
 use cosmwasm_std::{
     coins, ensure, ensure_eq, BankMsg, DepsMut, Env, HexBinary, MessageInfo, Response, Uint128,
@@ -13,6 +18,58 @@ use hpl_interface::{
 use hpl_ownable::get_owner;
 
 use std::str::FromStr;
+
+pub fn set_default_gas(
+    deps: DepsMut,
+    info: MessageInfo,
+    default_gas: u128,
+) -> Result<Response, ContractError> {
+    ensure_eq!(
+        info.sender,
+        get_owner(deps.storage)?,
+        ContractError::Unauthorized {}
+    );
+
+    DEFAULT_GAS_USAGE.save(deps.storage, &default_gas)?;
+
+    Ok(Response::new().add_event(emit_set_default_gas(info.sender, default_gas)))
+}
+
+pub fn set_gas_for_domain(
+    deps: DepsMut,
+    info: MessageInfo,
+    config: Vec<(u32, u128)>,
+) -> Result<Response, ContractError> {
+    ensure_eq!(
+        info.sender,
+        get_owner(deps.storage)?,
+        ContractError::Unauthorized {}
+    );
+
+    for (domain, custom_gas) in config.clone() {
+        GAS_FOR_DOMAIN.save(deps.storage, domain, &custom_gas)?;
+    }
+
+    Ok(Response::new().add_event(emit_set_gas_for_domain(info.sender, config)))
+}
+
+pub fn unset_gas_for_domain(
+    deps: DepsMut,
+    info: MessageInfo,
+    domains: Vec<u32>,
+) -> Result<Response, ContractError> {
+    ensure_eq!(
+        info.sender,
+        get_owner(deps.storage)?,
+        ContractError::Unauthorized {}
+    );
+
+    for domain in domains.clone() {
+        GAS_FOR_DOMAIN.remove(deps.storage, domain);
+    }
+
+    Ok(Response::new().add_event(emit_unset_gas_for_domain(info.sender, domains)))
+}
 
 pub fn set_beneficiary(
     deps: DepsMut,
@@ -55,17 +112,14 @@ pub fn post_dispatch(
     info: MessageInfo,
     req: PostDispatchMsg,
 ) -> Result<Response, ContractError> {
-    ensure_eq!(
-        info.sender,
-        MAILBOX.load(deps.storage)?,
-        ContractError::Unauthorized {}
-    );
-
     let message: Message = req.message.clone().into();
     let hrp = HRP.load(deps.storage)?;
 
     let (gas_limit, refund_address) = match req.metadata.to_vec().len() < 32 {
-        true => (Uint256::from(DEFAULT_GAS_USAGE), message.sender_addr(&hrp)?),
+        true => (
+            Uint256::from(get_default_gas(deps.storage, message.dest_domain)?),
+            message.sender_addr(&hrp)?,
+        ),
         false => {
             let igp_metadata: IGPMetadata = req.metadata.clone().into();
             (

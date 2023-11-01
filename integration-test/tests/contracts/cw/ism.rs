@@ -12,8 +12,12 @@ pub enum Ism {
     Routing(Vec<(u32, Self)>),
 
     Multisig {
-        hrp: String,
         validators: validator::TestValidators,
+    },
+
+    Aggregate {
+        isms: Vec<Self>,
+        threshold: u8,
     },
 
     #[allow(dead_code)]
@@ -25,11 +29,8 @@ impl Ism {
         Self::Routing(isms)
     }
 
-    pub fn multisig(hrp: &str, validators: validator::TestValidators) -> Self {
-        Self::Multisig {
-            hrp: hrp.to_string(),
-            validators,
-        }
+    pub fn multisig(validators: validator::TestValidators) -> Self {
+        Self::Multisig { validators }
     }
 }
 
@@ -48,16 +49,15 @@ impl Ism {
     fn deploy_multisig<'a, R: Runner<'a>>(
         wasm: &Wasm<'a, R>,
         codes: &Codes,
-        hrp: String,
         set: validator::TestValidators,
+        owner: &SigningAccount,
         deployer: &SigningAccount,
     ) -> eyre::Result<String> {
         let multisig_ism = wasm
             .instantiate(
                 codes.ism_multisig,
                 &hpl_interface::ism::multisig::InstantiateMsg {
-                    hrp: hrp.to_string(),
-                    owner: deployer.address(),
+                    owner: owner.address(),
                 },
                 None,
                 None,
@@ -69,11 +69,9 @@ impl Ism {
 
         wasm.execute(
             &multisig_ism,
-            &hpl_interface::ism::multisig::ExecuteMsg::EnrollValidators {
-                set: set.to_set(&hrp),
-            },
+            &hpl_interface::ism::multisig::ExecuteMsg::EnrollValidators { set: set.to_set() },
             &[],
-            deployer,
+            owner,
         )?;
 
         wasm.execute(
@@ -85,7 +83,7 @@ impl Ism {
                 },
             },
             &[],
-            deployer,
+            owner,
         )?;
 
         Ok(multisig_ism)
@@ -95,19 +93,20 @@ impl Ism {
         wasm: &Wasm<'a, R>,
         codes: &Codes,
         isms: Vec<(u32, Self)>,
+        owner: &SigningAccount,
         deployer: &SigningAccount,
     ) -> eyre::Result<String> {
         let routing_ism = wasm
             .instantiate(
                 codes.ism_routing,
                 &hpl_interface::ism::routing::InstantiateMsg {
-                    owner: deployer.address(),
+                    owner: owner.address(),
                     isms: isms
                         .into_iter()
                         .map(|(domain, ism)| {
                             Ok(hpl_interface::ism::routing::IsmSet {
                                 domain,
-                                address: ism.deploy(wasm, codes, deployer)?,
+                                address: ism.deploy(wasm, codes, owner, deployer)?,
                             })
                         })
                         .collect::<eyre::Result<Vec<_>>>()?,
@@ -123,28 +122,71 @@ impl Ism {
         Ok(routing_ism)
     }
 
+    fn deploy_aggregate<'a, R: Runner<'a>>(
+        wasm: &Wasm<'a, R>,
+        codes: &Codes,
+        isms: Vec<Self>,
+        threshold: u8,
+        owner: &SigningAccount,
+        deployer: &SigningAccount,
+    ) -> eyre::Result<String> {
+        use hpl_interface::ism::aggregate::*;
+
+        let ism_addrs = isms
+            .into_iter()
+            .map(|v| v.deploy(wasm, codes, owner, deployer))
+            .collect::<eyre::Result<Vec<_>>>()?;
+
+        let aggregate_ism = wasm
+            .instantiate(
+                codes.ism_aggregate,
+                &InstantiateMsg {
+                    owner: owner.address(),
+                    isms: ism_addrs,
+                    threshold,
+                },
+                None,
+                None,
+                &[],
+                deployer,
+            )?
+            .data
+            .address;
+
+        Ok(aggregate_ism)
+    }
+
     pub fn deploy<'a, R: Runner<'a>>(
         self,
         wasm: &Wasm<'a, R>,
         codes: &Codes,
+        owner: &SigningAccount,
         deployer: &SigningAccount,
     ) -> eyre::Result<String> {
         match self {
             Self::Mock => Self::deploy_mock(wasm, codes, deployer),
-            Self::Multisig {
-                hrp,
-                validators: set,
-            } => Self::deploy_multisig(wasm, codes, hrp, set, deployer),
-            Self::Routing(isms) => Self::deploy_routing(wasm, codes, isms, deployer),
+            Self::Multisig { validators: set } => {
+                Self::deploy_multisig(wasm, codes, set, owner, deployer)
+            }
+            Self::Aggregate { isms, threshold } => {
+                Self::deploy_aggregate(wasm, codes, isms, threshold, owner, deployer)
+            }
+            Self::Routing(isms) => Self::deploy_routing(wasm, codes, isms, owner, deployer),
         }
     }
 }
 
-pub fn prepare_routing_ism(info: Vec<(u32, &str, TestValidators)>) -> Ism {
+pub fn prepare_routing_ism(info: Vec<(u32, TestValidators)>) -> Ism {
     let mut isms = vec![];
 
-    for (domain, hrp, set) in info {
-        isms.push((domain, Ism::multisig(hrp, set)));
+    for (domain, set) in info {
+        isms.push((
+            domain,
+            Ism::Aggregate {
+                isms: vec![Ism::multisig(set)],
+                threshold: 1,
+            },
+        ));
     }
 
     Ism::routing(isms)

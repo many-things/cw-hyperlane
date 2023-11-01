@@ -1,11 +1,13 @@
 import { injectable } from "inversify";
 import { Context, Migration } from "../types";
-import HplMailbox from "../contracts/hpl_mailbox";
-import HplIgpGasOracle from "../contracts/hpl_igp_oracle";
-import HplIgpCore from "../contracts/hpl_igp";
-import HplIsmMultisig from "../contracts/hpl_ism_multisig";
-import HplHookMerkle from "../contracts/hpl_hook_merkle";
-import HplTestMockHook from "../contracts/hpl_test_mock_hook";
+import {
+  HplMailbox,
+  HplHookMerkle,
+  HplIgpOracle,
+  HplIsmMultisig,
+  HplTestMockHook,
+  HplIgp,
+} from "../contracts";
 
 @injectable()
 export default class InitializeStandalone implements Migration {
@@ -16,8 +18,8 @@ export default class InitializeStandalone implements Migration {
     private ctx: Context,
     private mailbox: HplMailbox,
     private hook_merkle: HplHookMerkle,
-    private igp: HplIgpCore,
-    private igp_oracle: HplIgpGasOracle,
+    private igp: HplIgp,
+    private igp_oracle: HplIgpOracle,
     private ism_multisig: HplIsmMultisig,
     private test_mock_hook: HplTestMockHook
   ) {}
@@ -44,7 +46,9 @@ export default class InitializeStandalone implements Migration {
 
     // init igp oracle
     this.ctx.contracts[this.igp_oracle.contractName] =
-      await this.igp_oracle.instantiate({});
+      await this.igp_oracle.instantiate({
+        owner: this.ctx.address!,
+      });
 
     // init igp
     this.ctx.contracts[this.igp.contractName] = await this.igp.instantiate({
@@ -52,7 +56,7 @@ export default class InitializeStandalone implements Migration {
       owner: this.ctx.address!,
       mailbox: this.ctx.contracts[this.mailbox.contractName].address,
       gas_token: "token",
-      beneficairy: this.ctx.address!,
+      beneficiary: this.ctx.address!,
     });
 
     // init ism multisig

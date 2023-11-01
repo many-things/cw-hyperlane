@@ -17,6 +17,7 @@ pub struct Codes {
     #[serde(rename = "validator_announce")]
     pub va: u64,
 
+    pub hook_aggregate: u64,
     pub hook_merkle: u64,
     pub hook_pausable: u64,
     pub hook_routing: u64,
@@ -26,6 +27,7 @@ pub struct Codes {
     pub igp: u64,
     pub igp_oracle: u64,
 
+    pub ism_aggregate: u64,
     pub ism_multisig: u64,
     pub ism_routing: u64,
 

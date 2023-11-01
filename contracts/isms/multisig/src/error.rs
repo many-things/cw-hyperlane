@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, VerificationError};
+use cosmwasm_std::{RecoverPubkeyError, StdError, VerificationError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -9,27 +9,30 @@ pub enum ContractError {
     #[error("{0}")]
     VerificationError(#[from] VerificationError),
 
-    #[error("Unauthorized")]
+    #[error("{0}")]
+    RecoverPubkeyError(#[from] RecoverPubkeyError),
+
+    #[error("unauthorized")]
     Unauthorized,
 
-    #[error("Wrong length")]
+    #[error("wrong length")]
     WrongLength,
 
-    #[error("Invalid pubkey")]
+    #[error("invalid pubkey")]
     InvalidPubKey,
 
-    #[error("Ownership transfer not started")]
-    OwnershipTransferNotStarted,
+    #[error("invalid address. reason: {0}")]
+    InvalidAddress(String),
 
-    #[error("Ownership transfer already started")]
-    OwnershipTransferAlreadyStarted,
-
-    #[error("Validator pubkey mismatched")]
-    ValidatorPubKeyMismatched,
-
-    #[error("Duplicate Validator")]
+    #[error("duplicate validator")]
     ValidatorDuplicate,
 
-    #[error("Validator not exists")]
+    #[error("validator not exists")]
     ValidatorNotExist,
+}
+
+impl ContractError {
+    pub fn invalid_addr(reason: &str) -> Self {
+        ContractError::InvalidAddress(reason.into())
+    }
 }

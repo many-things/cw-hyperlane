@@ -20,6 +20,16 @@ pub fn eth_hash(message: HexBinary) -> StdResult<HexBinary> {
     Ok(message_hash)
 }
 
+pub fn eth_addr(pubkey: HexBinary) -> StdResult<HexBinary> {
+    let hash = keccak256_hash(&pubkey.as_slice()[1..]);
+
+    let mut bytes = [0u8; 20];
+    bytes.copy_from_slice(&hash.as_slice()[12..]);
+    let addr = HexBinary::from(bytes.to_vec());
+
+    Ok(addr.to_vec().into())
+}
+
 pub fn sha256_digest(bz: impl AsRef<[u8]>) -> StdResult<[u8; 32]> {
     use sha2::{Digest, Sha256};
 

@@ -42,7 +42,6 @@ impl IGP {
         sender: &Addr,
         hrp: &str,
         owner: &Addr,
-        mailbox: &Addr,
         gas_token: &str,
         beneficiary: &Addr,
     ) -> Result<Response, ContractError> {
@@ -53,9 +52,9 @@ impl IGP {
             InstantiateMsg {
                 hrp: hrp.to_string(),
                 owner: owner.to_string(),
-                mailbox: mailbox.to_string(),
                 gas_token: gas_token.to_string(),
                 beneficiary: beneficiary.to_string(),
+                default_gas_usage: 250_000,
             },
         )
     }

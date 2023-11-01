@@ -1,6 +1,10 @@
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import {
+  ExecuteResult,
+  SigningCosmWasmClient,
+} from "@cosmjs/cosmwasm-stargate";
 import { getWasmPath } from "./load_wasm";
 import fs from "fs";
+import { fromBech32 } from "@cosmjs/encoding";
 
 export interface ContractContext {
   codeId: number | undefined;
@@ -46,25 +50,13 @@ export interface Contract {
 export abstract class BaseContract implements Contract {
   contractName: string;
 
-  address: string | undefined;
-  codeId: number | undefined;
-  digest: string;
-  client: SigningCosmWasmClient;
-  signer: string;
-
   constructor(
-    address: string | undefined,
-    codeId: number | undefined,
-    digest: string,
-    signer: string,
-    client: SigningCosmWasmClient
-  ) {
-    this.address = address;
-    this.client = client;
-    this.digest = digest;
-    this.codeId = codeId;
-    this.signer = signer;
-  }
+    public address: string | undefined,
+    public codeId: number | undefined,
+    public digest: string,
+    public signer: string,
+    public client: SigningCosmWasmClient
+  ) {}
 
   public getContractContext(): ContractContext {
     return {
@@ -83,18 +75,64 @@ export abstract class BaseContract implements Contract {
   }
 
   public async instantiate(msg: any): Promise<ContractContext> {
-    const instantiateMsg = msg as HplMailboxInstantiateMsg;
     const contract = await this.client.instantiate(
       this.signer,
       this.codeId!,
-      instantiateMsg,
+      msg,
       this.contractName,
       "auto",
       { admin: this.signer }
     );
 
+    console.log(
+      [
+        this.contractName.padEnd(30),
+        contract.contractAddress.padEnd(65),
+        Buffer.from(fromBech32(contract.contractAddress).data)
+          .toString("hex")
+          .padEnd(65),
+        contract.transactionHash.padEnd(65),
+      ].join("| ")
+    );
+
     this.address = contract.contractAddress;
     return this.getContractContext();
+  }
+
+  // overloads
+  public async execute(msg: any): Promise<ExecuteResult>;
+  public async execute(
+    msg: any,
+    funds: { denom: string; amount: string }[]
+  ): Promise<ExecuteResult>;
+
+  // implementation
+  public async execute(
+    msg: any,
+    funds?: { denom: string; amount: string }[]
+  ): Promise<ExecuteResult> {
+    const res = await this.client.execute(
+      this.signer,
+      this.address!,
+      msg,
+      "auto",
+      undefined,
+      funds
+    );
+    console.log(
+      [
+        `${this.contractName}:${Object.keys(msg)[0]}`.padEnd(30),
+        res.transactionHash.padEnd(65),
+      ].join("| ")
+    );
+
+    return res;
+  }
+
+  public async query<T>(msg: any): Promise<T> {
+    const res = await this.client.queryContractSmart(this.address!, msg);
+
+    return res;
   }
 }
 
@@ -144,7 +182,8 @@ export interface HplIsmRoutingInstantiateMsg {
 
 export interface HplMailboxInstantiateMsg {
   owner: string;
-  default_ism: string;
+  hrp: string;
+  domain: number;
 }
 
 export interface HplMulticallInstantiateMsg {

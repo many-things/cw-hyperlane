@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, Order, QueryResponse,
-    Response, StdResult,
+    ensure, ensure_eq, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, Order,
+    QueryResponse, Response, StdResult,
 };
 
 use hpl_interface::{
@@ -14,13 +14,12 @@ use hpl_interface::{
         },
     },
     to_binary,
-    types::{bech32_decode, bech32_encode, eth_hash, keccak256_hash, pub_to_addr},
+    types::{bech32_decode, eth_addr, eth_hash, keccak256_hash},
 };
-use k256::{ecdsa::VerifyingKey, EncodedPoint};
 
 use crate::{
     error::ContractError,
-    state::{HRP, LOCAL_DOMAIN, MAILBOX, REPLAY_PROTECITONS, STORAGE_LOCATIONS, VALIDATORS},
+    state::{LOCAL_DOMAIN, MAILBOX, REPLAY_PROTECITONS, STORAGE_LOCATIONS, VALIDATORS},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
 
@@ -34,6 +33,7 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let mailbox = deps.api.addr_validate(&msg.mailbox)?;
+    let mailbox_addr = bech32_decode(mailbox.as_str())?;
 
     let local_domain = deps
         .querier
@@ -43,8 +43,7 @@ pub fn instantiate(
         )?
         .local_domain;
 
-    HRP.save(deps.storage, &msg.hrp)?;
-    MAILBOX.save(deps.storage, &mailbox)?;
+    MAILBOX.save(deps.storage, &mailbox_addr)?;
     LOCAL_DOMAIN.save(deps.storage, &local_domain)?;
 
     Ok(Response::new().add_event(
@@ -85,18 +84,13 @@ fn get_announce(
     deps: Deps,
     validators: Vec<HexBinary>,
 ) -> Result<GetAnnounceStorageLocationsResponse, ContractError> {
-    let hrp = HRP.load(deps.storage)?;
-
     let storage_locations = validators
         .into_iter()
         .map(|v| {
-            let raw_validator = bech32_encode(&hrp, &v)?;
-            let validator = deps.api.addr_validate(raw_validator.as_str())?;
-
             let storage_locations = STORAGE_LOCATIONS
-                .may_load(deps.storage, validator.clone())?
+                .may_load(deps.storage, v.to_vec())?
                 .unwrap_or_default();
-            Ok((validator.to_string(), storage_locations))
+            Ok((v.to_hex(), storage_locations))
         })
         .collect::<StdResult<Vec<_>>>()?;
 
@@ -106,27 +100,24 @@ fn get_announce(
 fn get_validators(deps: Deps) -> Result<GetAnnouncedValidatorsResponse, ContractError> {
     let validators = VALIDATORS
         .keys(deps.storage, None, None, Order::Ascending)
-        .map(|v| v.map(String::from))
+        .map(|v| v.map(HexBinary::from).map(|v| v.to_hex()))
         .collect::<StdResult<Vec<_>>>()?;
 
     Ok(GetAnnouncedValidatorsResponse { validators })
 }
 
-fn replay_hash(validator: &Addr, storage_location: &str) -> StdResult<HexBinary> {
+fn replay_hash(validator: &HexBinary, storage_location: &str) -> StdResult<HexBinary> {
     Ok(keccak256_hash(
-        [
-            bech32_decode(validator.as_str())?,
-            storage_location.as_bytes().to_vec(),
-        ]
-        .concat()
-        .as_slice(),
+        [validator.to_vec(), storage_location.as_bytes().to_vec()]
+            .concat()
+            .as_slice(),
     ))
 }
 
-fn domain_hash(local_domain: u32, mailbox: &str) -> StdResult<HexBinary> {
+fn domain_hash(local_domain: u32, mailbox: HexBinary) -> StdResult<HexBinary> {
     let mut bz = vec![];
     bz.append(&mut local_domain.to_be_bytes().to_vec());
-    bz.append(&mut bech32_decode(mailbox)?);
+    bz.append(&mut mailbox.to_vec());
     bz.append(&mut "HYPERLANE_ANNOUNCEMENT".as_bytes().to_vec());
 
     let hash = keccak256_hash(&bz);
@@ -149,9 +140,11 @@ fn announce(
     storage_location: String,
     signature: HexBinary,
 ) -> Result<Response, ContractError> {
-    let hrp = HRP.load(deps.storage)?;
-    let raw_validator = bech32_encode(hrp.as_str(), &validator)?;
-    let validator = deps.api.addr_validate(raw_validator.as_str())?;
+    ensure_eq!(
+        validator.len(),
+        20,
+        ContractError::invalid_addr("length should be 20")
+    );
 
     // check replay protection
     let replay_id = replay_hash(&validator, &storage_location)?;
@@ -163,47 +156,51 @@ fn announce(
 
     // make announcement digest
     let local_domain = LOCAL_DOMAIN.load(deps.storage)?;
-    let mailbox = MAILBOX.load(deps.storage)?;
+    let mailbox_addr = MAILBOX.load(deps.storage)?;
 
     // make digest
     let message_hash = eth_hash(announcement_hash(
-        domain_hash(local_domain, mailbox.as_str())?.to_vec(),
+        domain_hash(local_domain, mailbox_addr.into())?.to_vec(),
         &storage_location,
     ))?;
 
     // recover pubkey from signature & verify
-    let recovered = deps.api.secp256k1_recover_pubkey(
+    let pubkey = deps.api.secp256k1_recover_pubkey(
         &message_hash,
         &signature.as_slice()[..64],
         // We subs 27 according to this - https://eips.ethereum.org/EIPS/eip-155
         signature[64] - 27,
     )?;
 
-    let pubkey = EncodedPoint::from_bytes(recovered).expect("failed to parse recovered pubkey");
-    let pubkey = VerifyingKey::from_encoded_point(&pubkey).expect("invalid recovered public key");
-    let pubkey_bin = pubkey.to_encoded_point(true).as_bytes().to_vec();
-
-    let recovered_addr = bech32_encode(&hrp, &pub_to_addr(pubkey_bin.into())?)?;
-    ensure!(recovered_addr == validator, ContractError::VerifyFailed {});
+    ensure_eq!(
+        eth_addr(pubkey.into())?,
+        validator,
+        ContractError::VerifyFailed {}
+    );
 
     // save validator if not saved yet
-    if !VALIDATORS.has(deps.storage, validator.clone()) {
-        VALIDATORS.save(deps.storage, validator.clone(), &Empty {})?;
+    if !VALIDATORS.has(deps.storage, validator.to_vec()) {
+        VALIDATORS.save(deps.storage, validator.to_vec(), &Empty {})?;
     }
 
     // append storage_locations
     let mut storage_locations = STORAGE_LOCATIONS
-        .may_load(deps.storage, validator.clone())?
+        .may_load(deps.storage, validator.to_vec())?
         .unwrap_or_default();
     storage_locations.push(storage_location.clone());
-    STORAGE_LOCATIONS.save(deps.storage, validator.clone(), &storage_locations)?;
+    STORAGE_LOCATIONS.save(deps.storage, validator.to_vec(), &storage_locations)?;
 
     Ok(Response::new().add_event(
         Event::new("validator-announcement")
             .add_attribute("sender", info.sender)
-            .add_attribute("validator", validator)
+            .add_attribute("validator", validator.to_string())
             .add_attribute("storage-location", storage_location),
     ))
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }
 
 #[cfg(test)]
@@ -212,23 +209,26 @@ mod test {
         testing::{mock_dependencies, mock_env, mock_info},
         ContractResult, QuerierResult, SystemResult, WasmQuery,
     };
-    use ibcx_test_utils::{gen_addr, gen_bz};
+
+    use hpl_interface::build_test_querier;
+    use ibcx_test_utils::{gen_addr, gen_bz, hex};
     use k256::{
         ecdsa::{RecoveryId, Signature, SigningKey},
         elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
         SecretKey,
     };
     use rstest::rstest;
-    use serde::de::DeserializeOwned;
 
     use super::*;
 
+    build_test_querier!(crate::contract::query);
+
     struct Announcement {
-        validator: String,
+        validator: HexBinary,
         mailbox: String,
         domain: u32,
         location: String,
-        signature: String,
+        signature: HexBinary,
     }
 
     impl Announcement {
@@ -240,37 +240,27 @@ mod test {
             signature: &str,
         ) -> Self {
             Self {
-                validator: validator.into(),
+                validator: hex(validator),
                 mailbox: mailbox.into(),
                 domain,
                 location: location.into(),
-                signature: signature.into(),
+                signature: hex(signature),
             }
         }
 
-        fn preset1() -> Self {
+        fn preset() -> Self {
             Self::new(
-                "f9e25a6be80f6d48727e42381fc3c3b7834c0cb4",
-                "62634b0c56b57fef1c27f25039cfb872875a9eeeb42d80a034f8d6b55ed20d09",
-                26658,
-                "file:///var/folders/3v/g38z040x54x8l6b160vv66b40000gn/T/.tmp7XoxND/checkpoint",
-                "6c30e1072f0e23694d3a3a96dc41fc4d17636ce145e83adef3224a6f4732c2db715407b42478c581b6ac1b79e64807a7748935d398a33bf4b73d37924c293c941b",
-            )
-        }
-
-        fn preset2() -> Self {
-            Self::new(
-                "f9e25a6be80f6d48727e42381fc3c3b7834c0cb4",
-                "62634b0c56b57fef1c27f25039cfb872875a9eeeb42d80a034f8d6b55ed20d09",
-                26657,
-                "file:///var/folders/3v/g38z040x54x8l6b160vv66b40000gn/T/.tmpBJPK8C/checkpoint",
-                "76c637d605f683734c672c0437f14ae48520e85fb68b0c0b9c28069f183e3bfc46f0de0655f06937c74b5a0a15f5b8fe37f1d1ad4dd8b64dc55307a2103fedad1c",
+                "05a9b5efe9f61f9142453d8e9f61565f333c6768",
+                "00000000000000000000000049cfd6ef774acab14814d699e3f7ee36fdfba932",
+                5,
+                "s3://hyperlane-testnet4-goerli-validator-0/us-east-1",
+                "dc47d48744fdb42b983f0244ed397feac08ee556eb48416582b5b638ada7b5322c8822e56a9020de7fe663ad43070f04b341514faf430ebf880bb1932434027d1c",
             )
         }
 
         fn rand() -> Self {
             // prepare test data
-            let mailbox = gen_bz(20);
+            let mailbox = gen_bz(32);
             let local_domain = 26657;
             let storage_location = "file://foo/bar";
 
@@ -279,18 +269,12 @@ mod test {
             let pubkey = secret_key.public_key();
 
             let signing_key = SigningKey::from(secret_key);
-            let pubkey_bin = pubkey.to_encoded_point(true).as_bytes().to_vec();
-
-            let addr_bin = pub_to_addr(pubkey_bin.into()).unwrap();
+            let pubkey_bin = pubkey.to_encoded_point(false).as_bytes().to_vec();
+            let addr_bin = eth_addr(pubkey_bin.into()).unwrap();
 
             // make announcement data
             let verify_digest = eth_hash(announcement_hash(
-                domain_hash(
-                    local_domain,
-                    bech32_encode("asdf", mailbox.as_slice()).unwrap().as_str(),
-                )
-                .unwrap()
-                .to_vec(),
+                domain_hash(local_domain, mailbox.clone()).unwrap().to_vec(),
                 storage_location,
             ))
             .unwrap();
@@ -301,11 +285,11 @@ mod test {
             );
 
             Self {
-                validator: addr_bin.to_hex(),
+                validator: addr_bin,
                 mailbox: mailbox.to_hex(),
                 domain: local_domain,
                 location: storage_location.to_string(),
-                signature: signature.to_hex(),
+                signature,
             }
         }
 
@@ -322,11 +306,6 @@ mod test {
         let mut bz = rs.to_bytes().to_vec();
         bz.push(v.to_byte() + 27u8);
         bz.into()
-    }
-
-    fn query<T: DeserializeOwned>(deps: Deps, msg: QueryMsg) -> T {
-        let res = super::query(deps, mock_env(), msg).unwrap();
-        cosmwasm_std::from_binary(&res).unwrap()
     }
 
     #[rstest]
@@ -355,26 +334,16 @@ mod test {
             },
         )
         .unwrap();
-
-        assert_eq!(HRP.load(deps.as_ref().storage).unwrap(), hrp);
     }
 
     #[rstest]
-    fn test_query(
-        #[values("osmo", "neutron")] hrp: &str,
-        #[values(0, 4)] validators_len: usize,
-        #[values(0, 4)] locations_len: usize,
-    ) {
+    fn test_queries(#[values(0, 4)] validators_len: usize, #[values(0, 4)] locations_len: usize) {
         let mut deps = mock_dependencies();
 
-        HRP.save(deps.as_mut().storage, &hrp.to_string()).unwrap();
-
-        let validators = (0..validators_len)
-            .map(|_| gen_addr(hrp))
-            .collect::<Vec<_>>();
+        let validators = (0..validators_len).map(|_| gen_bz(20)).collect::<Vec<_>>();
         for validator in validators {
             VALIDATORS
-                .save(deps.as_mut().storage, validator.clone(), &Empty {})
+                .save(deps.as_mut().storage, validator.to_vec(), &Empty {})
                 .unwrap();
 
             let locations = (0..locations_len)
@@ -382,21 +351,18 @@ mod test {
                 .collect::<Vec<_>>();
 
             STORAGE_LOCATIONS
-                .save(deps.as_mut().storage, validator, &locations)
+                .save(deps.as_mut().storage, validator.to_vec(), &locations)
                 .unwrap();
         }
 
         let GetAnnouncedValidatorsResponse { validators } =
-            query(deps.as_ref(), QueryMsg::GetAnnouncedValidators {});
+            test_query(deps.as_ref(), QueryMsg::GetAnnouncedValidators {});
         assert_eq!(validators.len(), validators_len);
 
-        let GetAnnounceStorageLocationsResponse { storage_locations } = query(
+        let GetAnnounceStorageLocationsResponse { storage_locations } = test_query(
             deps.as_ref(),
             QueryMsg::GetAnnounceStorageLocations {
-                validators: validators
-                    .iter()
-                    .map(|v| HexBinary::from(bech32_decode(v).unwrap()))
-                    .collect::<Vec<_>>(),
+                validators: validators.iter().map(|v| hex(v)).collect(),
             },
         );
         for (validator, locations) in storage_locations {
@@ -407,32 +373,25 @@ mod test {
 
     #[rstest]
     #[case::rand(Announcement::rand(), false)]
-    #[case::actual_data_1(Announcement::preset1(), false)]
-    #[case::actual_data_2(Announcement::preset2(), false)]
+    #[case::actual_data_1(Announcement::preset(), false)]
     #[should_panic(expected = "unauthorized")]
     #[case::replay(Announcement::rand(), true)]
     #[should_panic(expected = "verify failed")]
     #[case::verify(Announcement::fail(), false)]
-    fn test_announce(
-        #[values("osmo", "neutron")] hrp: &str,
-        #[case] announcement: Announcement,
-        #[case] enable_duplication: bool,
-    ) {
-        let validator = HexBinary::from_hex(&announcement.validator).unwrap();
-        let validator_addr = bech32_encode(hrp, validator.as_slice()).unwrap();
-
+    fn test_announce(#[case] announcement: Announcement, #[case] enable_duplication: bool) {
+        let validator = announcement.validator;
         let mailbox = HexBinary::from_hex(&announcement.mailbox).unwrap();
-        let mailbox_addr = bech32_encode(hrp, mailbox.as_slice()).unwrap();
 
         let mut deps = mock_dependencies();
 
-        HRP.save(deps.as_mut().storage, &hrp.to_string()).unwrap();
         LOCAL_DOMAIN
             .save(deps.as_mut().storage, &announcement.domain)
             .unwrap();
-        MAILBOX.save(deps.as_mut().storage, &mailbox_addr).unwrap();
+        MAILBOX
+            .save(deps.as_mut().storage, &mailbox.to_vec())
+            .unwrap();
 
-        let replay_id = replay_hash(&validator_addr, &announcement.location).unwrap();
+        let replay_id = replay_hash(&validator, &announcement.location).unwrap();
         if enable_duplication {
             REPLAY_PROTECITONS
                 .save(deps.as_mut().storage, replay_id.to_vec(), &Empty {})
@@ -441,20 +400,20 @@ mod test {
 
         announce(
             deps.as_mut(),
-            mock_info(validator_addr.as_str(), &[]),
-            validator,
+            mock_info("someone", &[]),
+            validator.clone(),
             announcement.location.clone(),
-            HexBinary::from_hex(&announcement.signature).unwrap(),
+            announcement.signature,
         )
         .map_err(|e| e.to_string())
         .unwrap();
 
         // check state
         assert!(REPLAY_PROTECITONS.has(deps.as_ref().storage, replay_id.to_vec()));
-        assert!(VALIDATORS.has(deps.as_ref().storage, validator_addr.clone()));
+        assert!(VALIDATORS.has(deps.as_ref().storage, validator.to_vec()));
         assert_eq!(
             STORAGE_LOCATIONS
-                .load(deps.as_ref().storage, validator_addr)
+                .load(deps.as_ref().storage, validator.to_vec())
                 .unwrap(),
             vec![announcement.location]
         );

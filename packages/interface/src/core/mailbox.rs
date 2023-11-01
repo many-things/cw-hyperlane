@@ -1,6 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{wasm_execute, Addr, Api, CosmosMsg, HexBinary, StdResult};
+use cosmwasm_std::{wasm_execute, Addr, Api, Coin, CosmosMsg, HexBinary, StdResult};
 
+#[allow(unused_imports)]
 use crate::{
     hook::QuoteDispatchResponse,
     ownable::{OwnableMsg, OwnableQueryMsg},
@@ -109,6 +110,7 @@ pub fn dispatch(
     msg_body: HexBinary,
     hook: Option<String>,
     metadata: Option<HexBinary>,
+    funds: Vec<Coin>,
 ) -> StdResult<CosmosMsg> {
     Ok(wasm_execute(
         mailbox,
@@ -119,7 +121,7 @@ pub fn dispatch(
             hook,
             metadata,
         }),
-        vec![],
+        funds,
     )?
     .into())
 }

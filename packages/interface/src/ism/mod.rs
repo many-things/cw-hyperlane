@@ -1,3 +1,4 @@
+pub mod aggregate;
 pub mod multisig;
 pub mod routing;
 
@@ -48,9 +49,22 @@ pub enum ExpectedIsmQueryMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
+#[query_responses(nested)]
+pub enum ExpectedIsmSpecifierQueryMsg {
+    IsmSpecifier(IsmSpecifierQueryMsg),
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum IsmSpecifierQueryMsg {
     #[returns(InterchainSecurityModuleResponse)]
     InterchainSecurityModule(),
+}
+
+impl IsmSpecifierQueryMsg {
+    pub fn wrap(self) -> ExpectedIsmSpecifierQueryMsg {
+        ExpectedIsmSpecifierQueryMsg::IsmSpecifier(self)
+    }
 }
 
 #[cw_serde]
@@ -67,7 +81,7 @@ pub struct VerifyResponse {
 #[cw_serde]
 pub struct VerifyInfoResponse {
     pub threshold: u8,
-    pub validators: Vec<String>,
+    pub validators: Vec<HexBinary>,
 }
 
 #[cw_serde]
@@ -81,7 +95,7 @@ pub fn recipient<C: CustomQuery>(
 ) -> StdResult<Option<Addr>> {
     let res = querier.query_wasm_smart::<InterchainSecurityModuleResponse>(
         recipient,
-        &IsmSpecifierQueryMsg::InterchainSecurityModule(),
+        &IsmSpecifierQueryMsg::InterchainSecurityModule().wrap(),
     )?;
 
     Ok(res.ism)

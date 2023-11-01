@@ -1,4 +1,6 @@
 /dist
-/context
 .env
+config.yaml
+config.*.yaml
+!config.example.yaml
 /node_modules

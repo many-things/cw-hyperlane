@@ -4,7 +4,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 pub enum ConnectionMsg {
     SetMailbox { mailbox: String },
 
-    SetIgp { igp: String },
+    SetHook { hook: String },
 
     SetIsm { ism: String },
 }
@@ -15,8 +15,8 @@ pub enum ConnectionQueryMsg {
     #[returns(MailboxResponse)]
     GetMailbox {},
 
-    #[returns(IgpResponse)]
-    GetIgp {},
+    #[returns(HookResponse)]
+    GetHook {},
 
     #[returns(IsmResponse)]
     GetIsm {},
@@ -24,15 +24,15 @@ pub enum ConnectionQueryMsg {
 
 #[cw_serde]
 pub struct MailboxResponse {
-    pub mailbox: String,
+    pub mailbox: Option<String>,
 }
 
 #[cw_serde]
-pub struct IgpResponse {
-    pub igp: String,
+pub struct HookResponse {
+    pub hook: Option<String>,
 }
 
 #[cw_serde]
 pub struct IsmResponse {
-    pub ism: String,
+    pub ism: Option<String>,
 }
