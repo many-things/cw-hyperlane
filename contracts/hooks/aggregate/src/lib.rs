@@ -164,6 +164,17 @@ fn quote_dispatch(
         if let Some(gas_amount) = res.gas_amount {
             total = match total {
                 Some(mut v) => {
+                    // TODO: review this - should we allow different gas denom?
+                    // if we should allow it, we need to update the QuoteDispatchResponse & handler of it
+                    ensure_eq!(
+                        gas_amount.denom,
+                        v.denom,
+                        ContractError::InvalidGas {
+                            expected: v.denom,
+                            actual: gas_amount.denom
+                        }
+                    );
+
                     v.amount += gas_amount.amount;
                     Some(v)
                 }

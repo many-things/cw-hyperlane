@@ -13,4 +13,7 @@ pub enum ContractError {
 
     #[error("hook paused")]
     Paused {},
+
+    #[error("invalid hook gas denom. expected: {expected}, actual: {actual}")]
+    InvalidGas { expected: String, actual: String },
 }
