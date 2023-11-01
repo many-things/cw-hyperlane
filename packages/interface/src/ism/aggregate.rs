@@ -15,7 +15,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
 
-    SetIsms { isms: Vec<String> },
+    SetIsms { isms: Vec<String>, threshold: u8 },
 }
 
 #[cw_serde]
@@ -39,6 +39,7 @@ pub enum AggregateIsmQueryMsg {
 #[cw_serde]
 pub struct IsmsResponse {
     pub isms: Vec<String>,
+    pub threshold: u8,
 }
 
 #[cfg(test)]

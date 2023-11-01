@@ -4,8 +4,8 @@ pub use crate::error::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, QueryResponse,
-    Response, StdResult,
+    ensure, ensure_eq, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo,
+    QueryResponse, Response, StdResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
@@ -72,11 +72,17 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
-        ExecuteMsg::SetIsms { isms } => {
+        ExecuteMsg::SetIsms { isms, threshold } => {
             ensure_eq!(
                 get_owner(deps.storage)?,
                 info.sender,
                 ContractError::Unauthorized
+            );
+            ensure!(
+                isms.len() >= threshold as usize,
+                ContractError::InvalidThreshold(
+                    "threshold should be less than ism count".to_string()
+                )
             );
 
             let parsed_isms = isms
@@ -85,6 +91,7 @@ pub fn execute(
                 .collect::<StdResult<_>>()?;
 
             ISMS.save(deps.storage, &parsed_isms)?;
+            THRESHOLD.save(deps.storage, &threshold)?;
 
             Ok(Response::new()
                 .add_event(new_event("set_isms").add_attribute("isms", isms.join(","))))
@@ -116,6 +123,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                     .into_iter()
                     .map(|v| v.into())
                     .collect(),
+                threshold: THRESHOLD.load(deps.storage)?,
             })?),
         },
     }

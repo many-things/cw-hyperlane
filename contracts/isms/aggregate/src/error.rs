@@ -14,4 +14,7 @@ pub enum ContractError {
 
     #[error("route not found")]
     RouteNotFound {},
+
+    #[error("invalid threshold. reason: {0}")]
+    InvalidThreshold(String),
 }
