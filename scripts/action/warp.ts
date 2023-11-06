@@ -25,6 +25,11 @@ program
   .argument("<address>", "address of internal warp route")
   .argument("<ismAddress>", "address of ISM")
   .action(setIsm);
+program
+  .command("set-hook")
+  .argument("<address>", "address of internal warp route")
+  .argument("<hookAddress>", "address of Hook")
+  .action(setHook);
 
 program
   .command("link")
@@ -86,6 +91,24 @@ async function create(
       throw Error("not implemented");
   }
 }
+async function setHook(address: string,  hook: string) {
+  const client = await getSigningClient(config);
+  const resp = await client.wasm.execute(
+    client.signer,
+    address,
+    {
+      connection: {
+        set_hook: {
+          hook,
+        },
+      },
+    },
+    "auto"
+  );
+  console.log(parseWasmEventLog(resp));
+  console.log(resp.transactionHash);
+}
+
 async function setIsm(address: string,  ism: string) {
   const client = await getSigningClient(config);
   const resp = await client.wasm.execute(
@@ -165,8 +188,7 @@ async function transfer(
     "auto",
     undefined,
     [
-      { amount, denom },
-      { amount: "100", denom: "untrn" },
+      { amount: (Number(amount) + 22500).toString(), denom },
     ]
   );
   console.log(parseWasmEventLog(resp));
