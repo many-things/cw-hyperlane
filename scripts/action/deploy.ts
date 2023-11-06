@@ -1,17 +1,11 @@
 import { writeFileSync } from "fs";
 
 import { loadContext } from "../src/load_context";
-import {
-  Client,
-  HookType,
-  IsmType,
-  config,
-  getSigningClient,
-} from "../src/config";
+import { Client, HookType, config, getSigningClient } from "../src/config";
 
-import { ContractFetcher, Contracts } from "./fetch";
+import { ContractFetcher } from "./fetch";
 import { Context } from "../src/types";
-import { deploy_ism } from "../src/deploy";
+import { Contracts, deploy_ism } from "../src/deploy";
 
 const name = (c: any) => c.contractName;
 const addr = (ctx: Context, c: any) => ctx.contracts[name(c)].address!;
@@ -22,53 +16,64 @@ async function main() {
   let ctx = loadContext(config.network.id);
 
   const contracts = new ContractFetcher(ctx, client).getContracts();
-  const {
-    core: { mailbox },
-    mocks,
-  } = contracts;
 
-  ctx = await deploy_core(ctx, client, contracts);
-  ctx = await deploy_igp(ctx, client, contracts);
-  ctx = await deploy_ism_hook(ctx, client, contracts);
-
-  // init test mock msg receiver
-  ctx.contracts[name(mocks.receiver)] = await mocks.receiver.instantiate({
-    hrp: config.network.hrp,
-  });
-
-  // pre-setup
-  await client.wasm.executeMultiple(
-    client.signer,
-    [
-      {
-        contractAddress: addr(ctx, mailbox),
-        msg: {
-          set_default_ism: {
-            ism: ctx.contracts["hpl_default_ism"].address!,
-          },
-        },
-      },
-      {
-        contractAddress: addr(ctx, mailbox),
-        msg: {
-          set_default_hook: {
-            hook: ctx.contracts["hpl_default_hook"].address!,
-          },
-        },
-      },
-      {
-        contractAddress: addr(ctx, mailbox),
-        msg: {
-          set_required_hook: {
-            hook: ctx.contracts["hpl_required_hook"].address!,
-          },
-        },
-      },
-    ],
-    "auto"
+  await deploy_hook(
+    ctx,
+    client,
+    {
+      type: "pausable",
+      owner: "neutron1lz8u2va2ec7zsqd2h9dcutnwge42nqlm4700sk",
+    },
+    contracts
   );
 
-  writeFileSync("./save.json", JSON.stringify(ctx, null, 2));
+  // const {
+  //   core: { mailbox },
+  //   mocks,
+  // } = contracts;
+
+  // ctx = await deploy_core(ctx, client, contracts);
+  // ctx = await deploy_igp(ctx, client, contracts);
+  // ctx = await deploy_ism_hook(ctx, client, contracts);
+
+  // init test mock msg receiver
+  // ctx.contracts[name(mocks.receiver)] = await mocks.receiver.instantiate({
+  //   hrp: config.network.hrp,
+  // });
+
+  // pre-setup
+  // await client.wasm.executeMultiple(
+  //   client.signer,
+  //   [
+  //     {
+  //       contractAddress: addr(ctx, mailbox),
+  //       msg: {
+  //         set_default_ism: {
+  //           ism: ctx.contracts["hpl_default_ism"].address!,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       contractAddress: addr(ctx, mailbox),
+  //       msg: {
+  //         set_default_hook: {
+  //           hook: ctx.contracts["hpl_default_hook"].address!,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       contractAddress: addr(ctx, mailbox),
+  //       msg: {
+  //         set_required_hook: {
+  //           hook: ctx.contracts["hpl_required_hook"].address!,
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   "auto"
+  // );
+
+  // writeFileSync("./save.json", JSON.stringify(ctx, null, 2));
 }
 
 const deploy_core = async (
@@ -205,7 +210,6 @@ const deploy_ism_hook = async (
   return ctx;
 };
 
-
 const deploy_hook = async (
   ctx: Context,
   client: Client,
@@ -246,6 +250,7 @@ const deploy_hook = async (
     case "pausable":
       const pausable_hook_res = await hooks.pausable.instantiate({
         owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+        paused: false
       });
 
       return pausable_hook_res.address!;

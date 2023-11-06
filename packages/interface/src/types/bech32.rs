@@ -74,6 +74,15 @@ mod tests {
         println!("{}", addr_hex);
     }
 
+    #[test]
+    fn conv_rev() {
+        let addr_hex = "f3aa0d652226e21ae35cd9035c492ae41725edc9036edf0d6a48701b153b90a0";
+        let addr_bin = HexBinary::from_hex(addr_hex).unwrap();
+        let addr = bech32_encode("dual", &addr_bin).unwrap();
+
+        println!("{}", addr);
+    }
+
     #[rstest]
     #[case(
         "osmo",

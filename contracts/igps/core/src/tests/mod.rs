@@ -54,6 +54,7 @@ impl IGP {
                 owner: owner.to_string(),
                 gas_token: gas_token.to_string(),
                 beneficiary: beneficiary.to_string(),
+                default_gas_usage: 250_000,
             },
         )
     }

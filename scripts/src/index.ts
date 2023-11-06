@@ -1,3 +1,5 @@
+import "reflect-metadata";
+
 import colors from "colors";
 import { loadWasmFileDigest, getWasmPath } from "./load_wasm";
 import { loadContext, saveContext } from "./load_context";

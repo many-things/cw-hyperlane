@@ -32,6 +32,9 @@ ismCommand
 const mailboxCommand = program.command("mailbox");
 mailboxCommand.command("show").action(makeMailboxHandler("show"));
 
+const igpCommand = program.command("igp");
+igpCommand.command("deploy").action(makeIgpHandler("deploy"))
+
 program.parseAsync(process.argv).catch(console.error);
 
 const parseWasmEventLog = (res: ExecuteResult) => {
@@ -62,6 +65,99 @@ async function loadDeps(ctx: Context) {
   };
 };
 
+const name = (c: any) => c.contractName;
+const addr = (ctx: Context, c: any) => ctx.contracts[name(c)].address!;
+
+
+function makeIgpHandler(
+  action: "deploy"
+): (...args: any[]) => void | Promise<void> {
+  const ctx = loadContext(config.network.id);
+  
+  switch (action) {
+    case "deploy":
+      return async () => {
+        const client = await getSigningClient(config);
+        const fetcher = new ContractFetcher(ctx, client);
+        const {
+          core: { mailbox },
+          igp,
+          hooks,
+          warp,
+        } = fetcher.getContracts();
+
+        console.log('Deploy IGP Gore')
+        ctx.contracts[name(igp.core)] = await igp.core.instantiate({
+          hrp: config.network.hrp,
+          owner: client.signer,
+          gas_token: config.deploy.igp.token || config.network.gas.denom,
+          beneficiary: client.signer,
+        });
+        console.log(`Deploy IGP Oracle for core`)
+
+        ctx.contracts[name(igp.oracle)] = await igp.oracle.instantiate({
+          owner: client.signer,
+        });
+
+
+        console.log(`set oracle configs`, Object.entries(config.deploy.igp.configs).map(
+          ([domain, v]) => ({
+            remote_domain: Number(domain),
+            token_exchange_rate: v.exchange_rate.toString(),
+            gas_price: v.gas_price.toString(),
+          })
+        ))
+        await client.wasm.execute(
+          client.signer,
+          addr(ctx, igp.oracle),
+          {
+            set_remote_gas_data_configs: {
+              configs: Object.entries(config.deploy.igp.configs).map(
+                ([domain, v]) => ({
+                  remote_domain: Number(domain),
+                  token_exchange_rate: v.exchange_rate.toString(),
+                  gas_price: v.gas_price.toString(),
+                })
+              ),
+            },
+          },
+          "auto"
+        );
+
+        console.log(`set Oracle`, Object.keys(config.deploy.igp.configs).map((domain) => ({
+          domain: Number(domain),
+          route: addr(ctx, igp.oracle),
+        })))
+        await client.wasm.execute(
+          client.signer,
+          addr(ctx, igp.core),
+          {
+            router: {
+              set_routes: {
+                set: Object.keys(config.deploy.igp.configs).map((domain) => ({
+                  domain: Number(domain),
+                  route: addr(ctx, igp.oracle),
+                })),
+              },
+            },
+          },
+          "auto"
+        );
+
+        console.log('Deploy Aggregate hook of merkle and IGP', [hooks.merkle.address, igp.core.address])
+        const aggregate_hook_res = await hooks.aggregate.instantiate({
+          owner: client.signer,
+          hooks: [hooks.merkle.address, igp.core.address],
+        });
+        console.log(`Deployed Aggregate hook`, {
+          agg_hook: aggregate_hook_res.address,
+          igp_core: igp.core.address,
+          igp_oracle: igp.oracle
+        })
+      };
+  }
+}
+
 function makeMailboxHandler(
   action: "show"
 ): (...args: any[]) => void | Promise<void> {
@@ -72,10 +168,19 @@ function makeMailboxHandler(
         const { mailbox } = await loadDeps(ctx);
         console.log(`Mailbox address is ${mailbox.address}`)
 
-        const hookAddress = await mailbox.query({ mailbox: {
+        const defaultHook = await mailbox.query({ mailbox: {
           default_hook: {},
         } })
-        console.log(`Default hook`, hookAddress)
+        const requiredHook = await mailbox.query({ mailbox: {
+          default_hook: {},
+        } })
+        const ism = await mailbox.query({
+          mailbox: { default_ism: {}}
+        })
+        
+
+        console.log(`Default hook`, defaultHook)
+        console.log(`Required Hook`, requiredHook)
       };
   }
 }

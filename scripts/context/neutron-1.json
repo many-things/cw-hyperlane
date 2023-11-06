@@ -5,6 +5,7 @@
       "digest": "910a823bb524dbbaed9952f484cb242ea837e50b5f7c458c1bf52d16c7de21fb"
     },
     "hpl_hook_merkle": {
+      "address": "neutron1e5c2qqquc86rd3q77aj2wyht40z6z3q5pclaq040ue9f5f8yuf7qnpvkzk",
       "codeId": 406,
       "digest": "0fa54766b2e8cb3e87ef076fbe0d50e09a21c23b0ab5671b1d2c548571bd2728"
     },
@@ -26,8 +27,8 @@
     },
     "hpl_igp": {
       "address": "neutron12p8wntzra3vpfcqv05scdx5sa3ftaj6gjcmtm7ynkl0e6crtt4ns8cnrmx",
-      "codeId": 411,
-      "digest": "92e97402efe3aedcc84ef33608d5199f7a6506a61d13afc472e4b1f6740393cd"
+      "codeId": 433,
+      "digest": "016156ac0887daca0545eddd7d2adad91ee7049485abe567efbbf8476282a2ef"
     },
     "hpl_igp_oracle": {
       "address": "neutron19g37uutqtjkalwaqn3aucwajutyaqwexwcj6y6p27sutjalrg0uq68gu76",
@@ -40,8 +41,8 @@
     },
     "hpl_ism_multisig": {
       "address": "neutron1q75ky8reksqzh0lkhk9k3csvjwv74jjquahrj233xc7dvzz5fv4qtvw0qg",
-      "codeId": 414,
-      "digest": "168a875843bd6b13420e289e6a089e1c566d62f95e9b9fb4bcec0c61966940f4"
+      "codeId": 431,
+      "digest": "e233448e7b3fa54b528740ec882a93a59300fda7c828e829ad04c44f5344e259"
     },
     "hpl_ism_routing": {
       "codeId": 415,
@@ -61,8 +62,8 @@
       "digest": "d0f8bc913e07df303911222970e09dd3abeef97399cb1c554d76cf98caa7f37a"
     },
     "hpl_validator_announce": {
-      "codeId": 419,
-      "digest": "db7afc67aa15c4f287af98c7836b3acf2016b96c6aa1eee01458bc11e6732178"
+      "codeId": 432,
+      "digest": "5985741956f51e1353095939c413b5e03d03670f97482783cfd629a72c1b240d"
     },
     "hpl_warp_cw20": {
       "codeId": 420,
@@ -73,5 +74,5 @@
       "digest": "983943571c74276e36a36f62ef9c6c54dc6de2c57fb76af4a0de37a0b5fef3ec"
     }
   },
-  "address": "neutron1ugu6ktzqwrmr0pgw603kakuhvj46a7mmrl6pw3"
+  "address": "neutron1dwnrgwsf5c9vqjxsax04pdm0mx007yrre4yyvm"
 }

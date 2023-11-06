@@ -1,14 +1,6 @@
 import { injectable } from "inversify";
-import {
-  Context,
-  HplIsmRoutingInstantiateMsg,
-  HplMulticallInstantiateMsg,
-  HplValidatorAnnounceInstantiateMsg,
-  Migration,
-} from "../types";
-import HplMailbox from "../contracts/hpl_mailbox";
-import HplIsmRouting from "../contracts/hpl_ism_routing";
-import HplValidatorAnnounce from "../contracts/hpl_validator_announce";
+import { Context, Migration } from "../types";
+import { HplIsmRouting, HplMailbox, HplValidatorAnnounce } from "../contracts";
 
 @injectable()
 export default class MailboxMigration implements Migration {

@@ -36,6 +36,7 @@ impl Igp {
                     owner: owner.address(),
                     gas_token: self.gas_token,
                     beneficiary: self.beneficiary,
+                    default_gas_usage: 25_000,
                 },
                 Some(deployer.address().as_str()),
                 Some("cw-hpl-igp"),

@@ -140,6 +140,12 @@ fn announce(
     storage_location: String,
     signature: HexBinary,
 ) -> Result<Response, ContractError> {
+    ensure_eq!(
+        validator.len(),
+        20,
+        ContractError::invalid_addr("length should be 20")
+    );
+
     // check replay protection
     let replay_id = replay_hash(&validator, &storage_location)?;
     ensure!(
@@ -190,6 +196,11 @@ fn announce(
             .add_attribute("validator", validator.to_string())
             .add_attribute("storage-location", storage_location),
     ))
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }
 
 #[cfg(test)]

@@ -1,16 +1,18 @@
 import { Command } from "commander";
+import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 
 import { version } from "../package.json";
 import { config, getSigningClient } from "../src/config";
-import HplMailbox from "../src/contracts/hpl_mailbox";
 import { addPad } from "../src/conv";
 import { loadContext } from "../src/load_context";
 import { ContractFetcher } from "./fetch";
-import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
-import HplIsmAggregate from "../src/contracts/hpl_ism_aggregate";
-import HplIgp from "../src/contracts/hpl_igp";
-import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
-import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
+import {
+  HplMailbox,
+  HplIgp,
+  HplIgpGasOracle,
+  HplHookMerkle,
+  HplIsmAggregate,
+} from "../src/contracts";
 
 const program = new Command();
 
@@ -43,7 +45,7 @@ const parseWasmEventLog = (res: ExecuteResult) => {
 };
 
 function makeHandler(
-  action: "dispatch" | "process"
+  action: "dispatch" | "process" | "quoteGasPayment"
 ): (...args: any[]) => void | Promise<void> {
   const ctx = loadContext(config.network.id);
 
@@ -65,6 +67,51 @@ function makeHandler(
   };
 
   switch (action) {
+    case "quoteGasPayment":
+      return async (
+        dest_domain: string,
+        gas_amount: number
+      ) => {
+        const { igp } = await loadDeps();
+        // let res = await igp.core.query({ 
+        //   igp: {
+        //     quote_gas_payment: {
+        //       dest_domain: Number(dest_domain),
+        //       gas_amount: gas_amount.toString()
+        //     }
+        //   }
+        // })
+        let res
+        console.log(res)
+        await igp.core.execute({
+          router: {
+            set_route: {
+              set: {
+                domain: Number(dest_domain),
+                route: igp.oracle.address!
+              }
+            }
+          }
+        })
+        await igp.oracle.execute({
+          set_remote_gas_data: {
+            config: {
+              remote_domain: Number(dest_domain),
+              token_exchange_rate: "1000000",
+              gas_price: "1"
+            }
+          }
+        })
+        res = await igp.core.query({ 
+          igp: {
+            quote_gas_payment: {
+              dest_domain: Number(dest_domain),
+              gas_amount: gas_amount.toString()
+            }
+          }
+        })
+        console.log(res)
+      }
     case "dispatch":
       return async (
         dest_domain: string,

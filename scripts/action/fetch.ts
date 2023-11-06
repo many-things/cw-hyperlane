@@ -1,23 +1,25 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { Context } from "../src/types";
 import { Client } from "../src/config";
-import HplMailbox from "../src/contracts/hpl_mailbox";
-import HplValidatorAnnounce from "../src/contracts/hpl_validator_announce";
-import HplHookAggregate from "../src/contracts/hpl_hook_aggregate";
-import HplHookMerkle from "../src/contracts/hpl_hook_merkle";
-import HplHookPausable from "../src/contracts/hpl_hook_pausable";
-import HplHookRouting from "../src/contracts/hpl_hook_routing";
-import HplHookRoutingCustom from "../src/contracts/hpl_hook_routing_custom";
-import HplIgp from "../src/contracts/hpl_igp";
-import HplIgpGasOracle from "../src/contracts/hpl_igp_oracle";
-import HplIsmAggregate from "../src/contracts/hpl_ism_aggregate";
-import HplIsmMultisig from "../src/contracts/hpl_ism_multisig";
-import HplIsmRouting from "../src/contracts/hpl_ism_routing";
-import HplTestMockHook from "../src/contracts/hpl_test_mock_hook";
-import HplTestMockMsgReceiver from "../src/contracts/hpl_test_mock_msg_receiver";
-import HplWarpCw20 from "../src/contracts/hpl_warp_cw20";
-import HplWarpNative from "../src/contracts/hpl_warp_native";
 import { Contracts } from "../src/deploy";
+import {
+  HplMailbox,
+  HplValidatorAnnounce,
+  HplHookAggregate,
+  HplHookMerkle,
+  HplHookPausable,
+  HplHookRouting,
+  HplHookRoutingCustom,
+  HplIgp,
+  HplIgpOracle,
+  HplIsmAggregate,
+  HplIsmMultisig,
+  HplIsmRouting,
+  HplTestMockHook,
+  HplTestMockMsgReceiver,
+  HplWarpCw20,
+  HplWarpNative,
+} from "../src/contracts";
 
 type Const<T> = new (
   address: string | undefined,
@@ -62,7 +64,7 @@ export class ContractFetcher {
       },
       igp: {
         core: this.get(HplIgp, "hpl_igp"),
-        oracle: this.get(HplIgpGasOracle, "hpl_igp_oracle"),
+        oracle: this.get(HplIgpOracle, "hpl_igp_oracle"),
       },
       isms: {
         aggregate: this.get(HplIsmAggregate, "hpl_ism_aggregate"),

@@ -3,10 +3,9 @@ import { Context, Migration } from "../types";
 import {
   HplMailbox,
   HplHookMerkle,
-  HplIgpOracle,
+  HplIgpGasOracle,
   HplIsmMultisig,
   HplTestMockHook,
-  HplIgp,
 } from "../contracts";
 
 @injectable()
@@ -19,7 +18,7 @@ export default class InitializeStandalone implements Migration {
     private mailbox: HplMailbox,
     private hook_merkle: HplHookMerkle,
     private igp: HplIgp,
-    private igp_oracle: HplIgpOracle,
+    private igp_oracle: HplIgpGasOracle,
     private ism_multisig: HplIsmMultisig,
     private test_mock_hook: HplTestMockHook
   ) {}

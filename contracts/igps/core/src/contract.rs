@@ -1,13 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response};
 
 use hpl_interface::hook::HookQueryMsg;
 use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg};
 use hpl_interface::igp::oracle::IgpGasOracleQueryMsg;
 use hpl_interface::to_binary;
 
-use crate::{ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, GAS_TOKEN, HRP};
+use crate::{
+    ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP,
+};
 
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_igp_core::{}", name))
@@ -31,12 +33,14 @@ pub fn instantiate(
 
     GAS_TOKEN.save(deps.storage, &msg.gas_token)?;
     HRP.save(deps.storage, &msg.hrp)?;
+    DEFAULT_GAS_USAGE.save(deps.storage, &msg.default_gas_usage)?;
 
     Ok(Response::new().add_event(
         new_event("initialize")
             .add_attribute("sender", info.sender)
             .add_attribute("owner", msg.owner)
-            .add_attribute("beneficiary", msg.beneficiary),
+            .add_attribute("beneficiary", msg.beneficiary)
+            .add_attribute("default_gas", msg.default_gas_usage.to_string()),
     ))
 }
 
@@ -53,6 +57,12 @@ pub fn execute(
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::Router(msg) => Ok(hpl_router::handle(deps, env, info, msg)?),
         ExecuteMsg::PostDispatch(msg) => Ok(execute::post_dispatch(deps, info, msg)?),
+
+        ExecuteMsg::SetDefaultGas { gas } => execute::set_default_gas(deps, info, gas),
+        ExecuteMsg::SetGasForDomain { config } => execute::set_gas_for_domain(deps, info, config),
+        ExecuteMsg::UnsetGasForDomain { domains } => {
+            execute::unset_gas_for_domain(deps, info, domains)
+        }
 
         ExecuteMsg::SetBeneficiary { beneficiary } => {
             execute::set_beneficiary(deps, info, beneficiary)
@@ -93,11 +103,25 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             }
         },
         QueryMsg::Igp(msg) => match msg {
+            IgpQueryMsg::DefaultGas {} => to_binary(get_default_gas(deps)),
+            IgpQueryMsg::GasForDomain { domains } => to_binary(get_gas_for_domain(deps, domains)),
+            IgpQueryMsg::ListGasForDomains {
+                offset,
+                limit,
+                order,
+            } => to_binary(list_gas_for_domains(deps, offset, limit, order)),
+
             IgpQueryMsg::Beneficiary {} => to_binary(get_beneficiary(deps)),
+
             IgpQueryMsg::QuoteGasPayment {
                 dest_domain,
                 gas_amount,
             } => to_binary(quote_gas_payment(deps, dest_domain, gas_amount)),
         },
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    Ok(Response::new())
 }

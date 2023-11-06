@@ -21,7 +21,7 @@ program
   .action(create);
 
 program
-  .command("setIsm")
+  .command("set-ism")
   .argument("<address>", "address of internal warp route")
   .argument("<ismAddress>", "address of ISM")
   .action(setIsm);
@@ -93,9 +93,9 @@ async function setIsm(address: string,  ism: string) {
     address,
     {
       connection: {
-          set_ism: {
-            ism,
-          },
+        set_ism: {
+          ism,
+        },
       },
     },
     "auto"
