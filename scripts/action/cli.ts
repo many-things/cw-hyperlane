@@ -31,6 +31,7 @@ ismCommand
 
 const mailboxCommand = program.command("mailbox");
 mailboxCommand.command("show").action(makeMailboxHandler("show"));
+mailboxCommand.command("dispatch").action(makeMailboxHandler("dispatch"))
 
 const igpCommand = program.command("igp");
 igpCommand.command("deploy").action(makeIgpHandler("deploy"))
@@ -160,10 +161,27 @@ function makeIgpHandler(
 }
 
 function makeMailboxHandler(
-  action: "show"
+  action: "show" | "dispatch"
 ): (...args: any[]) => void | Promise<void> {
   const ctx = loadContext(config.network.id);
   switch (action) {
+    case "dispatch": 
+      return async () => {
+        const { mailbox } = await loadDeps(ctx);
+
+        const res = await mailbox.execute(
+          {
+            dispatch: {
+              dest_domain: Number(169),
+              recipient_addr: addPad("0xdeadbeef"),
+              msg_body: Buffer.from("Hello from Neutron Mainnet to Manta Pacific oct 29, 12:55 am", "utf-8").toString("hex"),
+            },
+          },
+          [{ denom: "ibc/773B4D0A3CD667B2275D5A4A7A2F0909C0BA0F4059C0B9181E680DDF4965DCC7", amount: "540000" }]
+        );
+        console.log(res)
+
+      }
     case "show":
       return async () => {
         const { mailbox } = await loadDeps(ctx);
@@ -173,7 +191,7 @@ function makeMailboxHandler(
           default_hook: {},
         } })
         const requiredHook = await mailbox.query({ mailbox: {
-          default_hook: {},
+          required_hook: {},
         } })
         const ism = await mailbox.query({
           mailbox: { default_ism: {}}

@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { Command } from "commander";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 
