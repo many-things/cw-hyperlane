@@ -140,7 +140,7 @@ mod test {
     use cosmwasm_std::{
         coin, from_binary,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
+        Coins, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
     };
     use hpl_interface::{build_test_querier, hook::ExpectedHookQueryMsg, router::DomainRouteSet};
     use hpl_ownable::get_owner;
@@ -172,15 +172,17 @@ mod test {
             _ => unreachable!("wrong query type"),
         };
 
-        let mut gas_amount = None;
+        let mut gas_amount = Coins::default();
 
         if !req.metadata.is_empty() {
             let parsed_gas = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
 
-            gas_amount = Some(coin(parsed_gas as u128, "utest"));
+            gas_amount = Coins::from(coin(parsed_gas as u128, "utest"));
         }
 
-        let res = QuoteDispatchResponse { gas_amount };
+        let res = QuoteDispatchResponse {
+            gas_amount: gas_amount.to_vec(),
+        };
         let res = cosmwasm_std::to_binary(&res).unwrap();
         SystemResult::Ok(ContractResult::Ok(res))
     }
@@ -303,6 +305,9 @@ mod test {
                 message: rand_msg.into(),
             })),
         );
-        assert_eq!(res.gas_amount.map(|v| v.amount.u128() as u32), expected_gas);
+        assert_eq!(
+            res.gas_amount.first().map(|v| v.amount.u128() as u32),
+            expected_gas
+        );
     }
 }

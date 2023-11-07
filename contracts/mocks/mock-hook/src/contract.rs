@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
+    coins, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
     Uint256,
 };
 use cw2::set_contract_version;
@@ -92,7 +92,7 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
                 let gas_token = GAS_TOKEN.load(deps.storage)?;
 
                 Ok(to_binary(&QuoteDispatchResponse {
-                    gas_amount: Some(coin(gas.to_string().parse::<u128>().unwrap(), gas_token)),
+                    gas_amount: coins(gas.to_string().parse::<u128>().unwrap(), gas_token),
                 })?)
             }
             HookQueryMsg::Mailbox {} => {

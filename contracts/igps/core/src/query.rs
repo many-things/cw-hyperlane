@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::{BENEFICIARY, DEFAULT_GAS_USAGE, GAS_FOR_DOMAIN, GAS_TOKEN, TOKEN_EXCHANGE_RATE_SCALE};
 
-use cosmwasm_std::{coin, Addr, Deps, QuerierWrapper, StdResult, Storage, Uint256};
+use cosmwasm_std::{coins, Addr, Deps, QuerierWrapper, StdResult, Storage, Uint256};
 use hpl_interface::hook::{MailboxResponse, QuoteDispatchMsg, QuoteDispatchResponse};
 use hpl_interface::igp::core::{
     BeneficiaryResponse, DefaultGasResponse, GasForDomainResponse, QuoteGasPaymentResponse,
@@ -110,12 +110,12 @@ pub fn quote_dispatch(
 
     let gas_amount = quote_gas_payment(deps, igp_message.dest_domain, gas_limit)?.gas_needed;
     let gas_amount = if !gas_amount.is_zero() {
-        Some(coin(
+        coins(
             gas_amount.to_string().parse::<u128>()?,
             GAS_TOKEN.load(deps.storage)?,
-        ))
+        )
     } else {
-        None
+        vec![]
     };
 
     Ok(QuoteDispatchResponse { gas_amount })

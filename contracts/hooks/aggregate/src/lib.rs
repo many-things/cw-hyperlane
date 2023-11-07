@@ -3,7 +3,7 @@ mod error;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Coin, CosmosMsg, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
+    ensure_eq, Addr, Coins, CosmosMsg, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
     QueryResponse, Response, StdResult,
 };
 use cw_storage_plus::Item;
@@ -84,7 +84,7 @@ pub fn execute(
                         v,
                         metadata.clone(),
                         message.clone(),
-                        quote.gas_amount.map(|v| vec![v]),
+                        Some(quote.gas_amount),
                     )?
                     .into();
 
@@ -151,28 +151,26 @@ fn quote_dispatch(
 ) -> Result<QuoteDispatchResponse, ContractError> {
     let hooks = HOOKS.load(deps.storage)?;
 
-    let mut total: Option<Coin> = None;
+    let total = hooks
+        .into_iter()
+        .try_fold(Coins::default(), |mut acc, hook| {
+            let res = hpl_interface::hook::quote_dispatch(
+                &deps.querier,
+                hook,
+                metadata.clone(),
+                message.clone(),
+            )?;
 
-    for hook in hooks {
-        let res = hpl_interface::hook::quote_dispatch(
-            &deps.querier,
-            hook,
-            metadata.clone(),
-            message.clone(),
-        )?;
+            for gas in res.gas_amount {
+                acc.add(gas)?;
+            }
 
-        if let Some(gas_amount) = res.gas_amount {
-            total = match total {
-                Some(mut v) => {
-                    v.amount += gas_amount.amount;
-                    Some(v)
-                }
-                None => Some(gas_amount),
-            };
-        }
-    }
+            Ok::<_, ContractError>(acc)
+        })?;
 
-    Ok(QuoteDispatchResponse { gas_amount: total })
+    Ok(QuoteDispatchResponse {
+        gas_amount: total.to_vec(),
+    })
 }
 
 fn get_hooks(deps: Deps) -> Result<HooksResponse, ContractError> {
