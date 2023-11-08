@@ -27,6 +27,8 @@ cw-storage-plus.workspace = true
 cw2.workspace = true
 cw-utils.workspace = true
 
+serde.workspace = true
+prost.workspace = true
 schemars.workspace = true
 
 thiserror.workspace = true
