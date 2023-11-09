@@ -34,6 +34,9 @@ pub enum ContractError {
 
     #[error("route not found for {0}")]
     RouteNotFound(u32),
+
+    #[error("invalid arguments. reason: {reason:?}")]
+    InvalidArguments { reason: String },
 }
 
 // version info for migration info
@@ -178,6 +181,15 @@ fn register(
     );
 
     for msg in msgs.clone() {
+        let recipient = HexBinary::from_hex(&msg.recipient)?;
+        ensure_eq!(
+            recipient.len(),
+            32,
+            ContractError::InvalidArguments {
+                reason: "recipient must be 32 bytes long".into()
+            }
+        );
+
         CUSTOM_HOOKS.save(
             deps.storage,
             (
