@@ -79,6 +79,10 @@ pub fn execute(
                 ContractError::Unauthorized
             );
             ensure!(
+                threshold > 0,
+                ContractError::InvalidThreshold("threshold must not be zero".to_string())
+            );
+            ensure!(
                 isms.len() >= threshold as usize,
                 ContractError::InvalidThreshold(
                     "threshold should be less than ism count".to_string()
