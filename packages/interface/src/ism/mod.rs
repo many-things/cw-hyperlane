@@ -1,6 +1,7 @@
 pub mod aggregate;
 pub mod multisig;
 pub mod routing;
+pub mod wormhole;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, CustomQuery, HexBinary, QuerierWrapper, StdResult};
@@ -16,6 +17,7 @@ pub enum IsmType {
     MessageIdMultisig = 5,
     Null = 6, // used with relayer carrying no metadata
     CcipRead = 7,
+    Wormhole = 8,
 }
 
 #[cw_serde]
