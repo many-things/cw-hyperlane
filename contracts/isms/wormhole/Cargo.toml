@@ -26,3 +26,6 @@ thiserror.workspace = true
 cw2.workspace = true
 hpl-ownable.workspace = true
 hpl-interface.workspace = true
+
+[dev-dependencies]
+ibcx-test-utils.workspace = true
