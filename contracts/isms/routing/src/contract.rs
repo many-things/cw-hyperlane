@@ -67,6 +67,19 @@ pub fn execute(
 
             Ok(Response::default())
         }
+        Unset { domains } => {
+            ensure_eq!(
+                get_owner(deps.storage)?,
+                info.sender,
+                ContractError::Unauthorized {}
+            );
+
+            for domain in domains {
+                MODULES.remove(deps.storage, domain);
+            }
+
+            Ok(Response::default())
+        }
     }
 }
 
