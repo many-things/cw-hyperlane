@@ -64,7 +64,10 @@ pub fn instantiate(
                 )));
             }
 
-            (msgs, token.denom)
+            (
+                msgs,
+                format!("factory/{}/{}", env.contract.address, token.denom),
+            )
         }
         // use denom directly if token is native
         TokenModeMsg::Collateral(token) => {
