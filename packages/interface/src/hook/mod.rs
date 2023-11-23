@@ -69,7 +69,7 @@ pub struct MailboxResponse {
 
 #[cw_serde]
 pub struct QuoteDispatchResponse {
-    pub gas_amount: Vec<Coin>,
+    pub fees: Vec<Coin>,
 }
 
 pub fn post_dispatch(

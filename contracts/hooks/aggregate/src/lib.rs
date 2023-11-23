@@ -80,13 +80,9 @@ pub fn execute(
                         metadata.clone(),
                         message.clone(),
                     )?;
-                    let msg = post_dispatch(
-                        v,
-                        metadata.clone(),
-                        message.clone(),
-                        Some(quote.gas_amount),
-                    )?
-                    .into();
+                    let msg =
+                        post_dispatch(v, metadata.clone(), message.clone(), Some(quote.fees))?
+                            .into();
 
                     Ok(msg)
                 })
@@ -161,15 +157,15 @@ fn quote_dispatch(
                 message.clone(),
             )?;
 
-            for gas in res.gas_amount {
-                acc.add(gas)?;
+            for fee in res.fees {
+                acc.add(fee)?;
             }
 
             Ok::<_, ContractError>(acc)
         })?;
 
     Ok(QuoteDispatchResponse {
-        gas_amount: total.to_vec(),
+        fees: total.to_vec(),
     })
 }
 

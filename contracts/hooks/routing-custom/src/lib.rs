@@ -338,16 +338,16 @@ mod test {
             _ => unreachable!("wrong query type"),
         };
 
-        let mut gas_amount = Coins::default();
+        let mut fees = Coins::default();
 
         if !req.metadata.is_empty() {
-            let parsed_gas = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
+            let parsed_fee = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
 
-            gas_amount = Coins::from(coin(parsed_gas as u128, "utest"));
+            fees = Coins::from(coin(parsed_fee as u128, "utest"));
         }
 
         let res = QuoteDispatchResponse {
-            gas_amount: gas_amount.to_vec(),
+            fees: fees.to_vec(),
         };
         let res = cosmwasm_std::to_binary(&res).unwrap();
         SystemResult::Ok(ContractResult::Ok(res))
@@ -596,7 +596,7 @@ mod test {
     fn test_quote_dispatch(
         deps_custom_routes: (TestDeps, Routes, CustomRoutes),
         #[case] test_domain: u32,
-        #[case] expected_gas: Option<u32>,
+        #[case] expected_fee: Option<u32>,
     ) {
         let (mut deps, _, _) = deps_custom_routes;
 
@@ -613,8 +613,8 @@ mod test {
             })),
         );
         assert_eq!(
-            res.gas_amount.first().map(|v| v.amount.u128() as u32),
-            expected_gas
+            res.fees.first().map(|v| v.amount.u128() as u32),
+            expected_fee
         );
     }
 }

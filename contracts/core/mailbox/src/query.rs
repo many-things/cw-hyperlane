@@ -102,32 +102,32 @@ pub fn quote_dispatch(
     let default_hook = config.get_default_hook();
     let required_hook = config.get_required_hook();
 
-    let base_gas = hook::quote_dispatch(
+    let base_fee = hook::quote_dispatch(
         &deps.querier,
         dispatch_msg.get_hook_addr(deps.api, default_hook)?,
         dispatch_msg.metadata.clone().unwrap_or_default(),
         msg.clone(),
     )?
-    .gas_amount;
+    .fees;
 
-    let required_gas = hook::quote_dispatch(
+    let required_fee = hook::quote_dispatch(
         &deps.querier,
         required_hook,
         dispatch_msg.metadata.unwrap_or_default(),
         msg,
     )?
-    .gas_amount;
+    .fees;
 
-    let total_gas =
-        required_gas
+    let total_fee =
+        required_fee
             .into_iter()
-            .try_fold(Coins::try_from(base_gas)?, |mut acc, gas| {
-                acc.add(gas)?;
+            .try_fold(Coins::try_from(base_fee)?, |mut acc, fee| {
+                acc.add(fee)?;
                 StdResult::Ok(acc)
             })?;
 
     Ok(QuoteDispatchResponse {
-        gas_amount: total_gas.to_vec(),
+        fees: total_fee.to_vec(),
     })
 }
 

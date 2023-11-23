@@ -62,7 +62,7 @@ pub fn quote_gas_price(
     storage: &dyn Storage,
     querier: &QuerierWrapper,
     dest_domain: u32,
-    gas_amount: Uint256,
+    fees: Uint256,
 ) -> Result<Uint256, ContractError> {
     let gas_oracle_set = hpl_router::get_route::<Addr>(storage, dest_domain)?;
     let gas_oracle = gas_oracle_set
@@ -74,7 +74,7 @@ pub fn quote_gas_price(
         &oracle::QueryMsg::Oracle(IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain }),
     )?;
 
-    let dest_gas_cost = gas_amount * Uint256::from(gas_price_resp.gas_price);
+    let dest_gas_cost = fees * Uint256::from(gas_price_resp.gas_price);
     let gas_needed = (dest_gas_cost * Uint256::from(gas_price_resp.exchange_rate))
         / Uint256::from(TOKEN_EXCHANGE_RATE_SCALE);
 
@@ -84,9 +84,9 @@ pub fn quote_gas_price(
 pub fn quote_gas_payment(
     deps: Deps,
     dest_domain: u32,
-    gas_amount: Uint256,
+    fees: Uint256,
 ) -> Result<QuoteGasPaymentResponse, ContractError> {
-    let gas_needed = quote_gas_price(deps.storage, &deps.querier, dest_domain, gas_amount)?;
+    let gas_needed = quote_gas_price(deps.storage, &deps.querier, dest_domain, fees)?;
 
     Ok(QuoteGasPaymentResponse { gas_needed })
 }
@@ -108,17 +108,17 @@ pub fn quote_dispatch(
         }
     };
 
-    let gas_amount = quote_gas_payment(deps, igp_message.dest_domain, gas_limit)?.gas_needed;
-    let gas_amount = if !gas_amount.is_zero() {
+    let fees = quote_gas_payment(deps, igp_message.dest_domain, gas_limit)?.gas_needed;
+    let fees = if !fees.is_zero() {
         coins(
-            gas_amount.to_string().parse::<u128>()?,
+            fees.to_string().parse::<u128>()?,
             GAS_TOKEN.load(deps.storage)?,
         )
     } else {
         vec![]
     };
 
-    Ok(QuoteDispatchResponse { gas_amount })
+    Ok(QuoteDispatchResponse { fees })
 }
 
 pub fn get_exchange_rate_and_gas_price(

@@ -117,32 +117,32 @@ pub fn dispatch(
             .to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
     let msg_id = msg.id();
 
-    let base_gas = hook::quote_dispatch(
+    let base_fee = hook::quote_dispatch(
         &deps.querier,
         dispatch_msg.get_hook_addr(deps.api, default_hook)?,
         dispatch_msg.metadata.clone().unwrap_or_default(),
         msg.clone(),
     )?
-    .gas_amount;
+    .fees;
 
-    let required_gas = hook::quote_dispatch(
+    let required_fee = hook::quote_dispatch(
         &deps.querier,
         &required_hook,
         dispatch_msg.metadata.clone().unwrap_or_default(),
         msg.clone(),
     )?
-    .gas_amount;
+    .fees;
 
     // assert gas received is satisfies required gas
-    let mut total_gas = required_gas.clone().into_iter().try_fold(
-        Coins::try_from(base_gas.clone())?,
-        |mut acc, gas| {
-            acc.add(gas)?;
+    let mut total_fee = required_fee.clone().into_iter().try_fold(
+        Coins::try_from(base_fee.clone())?,
+        |mut acc, fee| {
+            acc.add(fee)?;
             StdResult::Ok(acc)
         },
     )?;
     for fund in info.funds {
-        total_gas.sub(fund)?;
+        total_fee.sub(fund)?;
     }
 
     // interaction
@@ -159,14 +159,14 @@ pub fn dispatch(
             required_hook,
             hook_metadata.clone(),
             msg.clone(),
-            Some(required_gas),
+            Some(required_fee),
         )?,
-        post_dispatch(hook, hook_metadata, msg.clone(), Some(base_gas))?,
+        post_dispatch(hook, hook_metadata, msg.clone(), Some(base_fee))?,
     ];
 
     let refund_msg = BankMsg::Send {
         to_address: info.sender.to_string(),
-        amount: total_gas.to_vec(),
+        amount: total_fee.to_vec(),
     };
 
     Ok(Response::new()
@@ -291,16 +291,16 @@ mod tests {
             _ => unreachable!("wrong query type"),
         };
 
-        let mut gas_amount = Coins::default();
+        let mut fees = Coins::default();
 
         if !req.metadata.is_empty() {
-            let parsed_gas = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
+            let parsed_fee = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
 
-            gas_amount = Coins::from(coin(parsed_gas as u128, "utest"));
+            fees = Coins::from(coin(parsed_fee as u128, "utest"));
         }
 
         let res = QuoteDispatchResponse {
-            gas_amount: gas_amount.to_vec(),
+            fees: fees.to_vec(),
         };
         let res = cosmwasm_std::to_binary(&res).unwrap();
         SystemResult::Ok(ContractResult::Ok(res))

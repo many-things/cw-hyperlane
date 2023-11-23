@@ -92,7 +92,7 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
                 let gas_token = GAS_TOKEN.load(deps.storage)?;
 
                 Ok(to_binary(&QuoteDispatchResponse {
-                    gas_amount: coins(gas.to_string().parse::<u128>().unwrap(), gas_token),
+                    fees: coins(gas.to_string().parse::<u128>().unwrap(), gas_token),
                 })?)
             }
             HookQueryMsg::Mailbox {} => {
