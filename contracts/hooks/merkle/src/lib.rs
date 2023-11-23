@@ -23,11 +23,17 @@ pub enum ContractError {
     #[error("{0}")]
     PaymentError(#[from] cw_utils::PaymentError),
 
-    #[error("unauthorized")]
-    Unauthorized {},
+    #[error("unauthorized. reason: {0}")]
+    Unauthorized(String),
 
     #[error("hook paused")]
     Paused {},
+}
+
+impl ContractError {
+    pub fn unauthorized(reason: &str) -> Self {
+        ContractError::Unauthorized(reason.into())
+    }
 }
 
 // version info for migration info
@@ -94,7 +100,7 @@ pub fn execute(
             ensure_eq!(
                 latest_dispatch_id,
                 decoded_msg.id(),
-                ContractError::Unauthorized {}
+                ContractError::unauthorized("message is not dispatching")
             );
 
             let mut tree = MESSAGE_TREE.load(deps.storage)?;
