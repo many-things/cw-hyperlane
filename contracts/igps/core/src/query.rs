@@ -51,10 +51,10 @@ pub fn list_gas_for_domains(
 }
 
 pub fn get_beneficiary(deps: Deps) -> Result<BeneficiaryResponse, ContractError> {
-    let beneficairy = BENEFICIARY.load(deps.storage)?;
+    let beneficiary = BENEFICIARY.load(deps.storage)?;
 
     Ok(BeneficiaryResponse {
-        beneficiary: beneficairy.into(),
+        beneficiary: beneficiary.into(),
     })
 }
 
