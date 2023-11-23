@@ -21,11 +21,6 @@ pub fn verify_message(
     raw_metadata: HexBinary,
     raw_message: HexBinary,
 ) -> Result<VerifyResponse, ContractError> {
-    deps.api.debug(&format!(
-        "ism_multisig::verify: metadata: {:?}, message: {:?}",
-        raw_metadata, raw_message
-    ));
-
     let metadata: MessageIdMultisigIsmMetadata = raw_metadata.into();
     let message: Message = raw_message.into();
 

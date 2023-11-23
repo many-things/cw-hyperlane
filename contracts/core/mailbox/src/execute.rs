@@ -47,11 +47,6 @@ fn get_required_value(
 
     let received = &info.funds[0];
 
-    deps.api.debug(&format!(
-        "mailbox::dispatch: required: {:?}, received: {:?}",
-        required, received
-    ));
-
     ensure_eq!(
         &received.denom,
         &required.denom,
@@ -231,8 +226,6 @@ pub fn process(
 
     let id = decoded_msg.id();
     let ism = ism::recipient(&deps.querier, &recipient)?.unwrap_or(config.get_default_ism());
-
-    deps.api.debug(&format!("mailbox::process: ism: {}", &ism));
 
     ensure!(
         !DELIVERIES.has(deps.storage, id.to_vec()),

@@ -81,11 +81,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 typ: hpl_interface::ism::IsmType::Routing,
             })?),
             Verify { metadata, message } => {
-                deps.api.debug(&format!(
-                    "ism_routing::verify: metadata: {:?}, message: {:?}",
-                    metadata, message
-                ));
-
                 let decoded = Message::from(message.clone());
 
                 let ism = MODULES
