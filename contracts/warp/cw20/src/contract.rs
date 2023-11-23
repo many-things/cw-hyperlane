@@ -2,7 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     ensure_eq, wasm_execute, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo, QueryResponse,
-    Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
+    Reply, Response, StdError, SubMsg, Uint128, Uint256, WasmMsg,
 };
 
 use cw20::Cw20ExecuteMsg;
@@ -107,7 +107,12 @@ pub fn execute(
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         REPLY_ID_CREATE_DENOM => {
-            let reply_data = msg.result.unwrap().data.unwrap();
+            let reply_data = msg
+                .result
+                .into_result()
+                .map_err(StdError::generic_err)?
+                .data
+                .ok_or(StdError::generic_err("no reply data"))?;
             let init_resp = cw_utils::parse_instantiate_response_data(&reply_data)?;
             let init_addr = deps.api.addr_validate(&init_resp.contract_address)?;
 

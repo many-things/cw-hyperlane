@@ -97,7 +97,7 @@ pub fn quote_dispatch(
     let mut required_gas = hook::quote_dispatch(
         &deps.querier,
         required_hook,
-        msg.metadata.clone().unwrap(),
+        msg.metadata.clone().unwrap_or_default(),
         msg.msg_body.clone(),
     )?
     .gas_amount
@@ -106,7 +106,7 @@ pub fn quote_dispatch(
     let target_gas = hook::quote_dispatch(
         &deps.querier,
         target_hook,
-        msg.metadata.clone().unwrap(),
+        msg.metadata.clone().unwrap_or_default(),
         msg.msg_body,
     )?
     .gas_amount;

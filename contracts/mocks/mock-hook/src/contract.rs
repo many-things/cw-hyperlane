@@ -2,8 +2,8 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
-    Uint256,
+    coin, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdError,
+    StdResult, Uint256,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
@@ -93,7 +93,14 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
             HookQueryMsg::QuoteDispatch(_) => {
                 let gas = GAS
                     .may_load(deps.storage)?
-                    .map(|v| v.to_string().parse::<u128>().unwrap());
+                    .map(|v| {
+                        v.to_string().parse::<u128>().map_err(|e| {
+                            StdError::generic_err(format!(
+                                "failed to parse Uint256 gas. reason: {e}"
+                            ))
+                        })
+                    })
+                    .transpose()?;
                 let gas_token = GAS_TOKEN.load(deps.storage)?;
 
                 let gas_amount = gas.map(|v| coin(v, gas_token));
