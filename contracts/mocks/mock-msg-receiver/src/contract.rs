@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
+    attr, to_json_binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
     StdResult,
 };
 use cw2::set_contract_version;
@@ -68,7 +68,7 @@ pub fn query(
     match msg {
         ism::ExpectedIsmSpecifierQueryMsg::IsmSpecifier(
             ism::IsmSpecifierQueryMsg::InterchainSecurityModule(),
-        ) => Ok(to_binary(&ism::InterchainSecurityModuleResponse {
+        ) => Ok(to_json_binary(&ism::InterchainSecurityModuleResponse {
             ism: None,
         })?),
     }

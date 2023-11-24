@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    ensure_eq, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
 };
 
 use hpl_interface::igp::oracle::{
@@ -84,7 +84,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
                 let gas_data = REMOTE_GAS_DATA.load(deps.storage, dest_domain)?;
 
-                Ok(to_binary(&GetExchangeRateAndGasPriceResponse {
+                Ok(to_json_binary(&GetExchangeRateAndGasPriceResponse {
                     gas_price: gas_data.gas_price,
                     exchange_rate: gas_data.token_exchange_rate,
                 })?)

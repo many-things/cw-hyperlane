@@ -200,7 +200,7 @@ mod test {
     use super::*;
 
     use cosmwasm_std::{
-        from_binary,
+        from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
         HexBinary, OwnedDeps, WasmQuery,
     };
@@ -267,12 +267,10 @@ mod test {
         #[case] message: Option<HexBinary>,
     ) {
         deps.querier.update_wasm(|query| {
-            use cosmwasm_std::{to_binary, ContractResult, SystemResult};
+            use cosmwasm_std::{to_json_binary, ContractResult, SystemResult};
 
             let (_contract_addr, msg) = match query {
-                WasmQuery::Smart { contract_addr, msg } => {
-                    (contract_addr, from_binary(msg).unwrap())
-                }
+                WasmQuery::Smart { contract_addr, msg } => (contract_addr, from_json(msg).unwrap()),
                 _ => unreachable!("noo"),
             };
 
@@ -283,7 +281,7 @@ mod test {
                             "a6d8af738f99da8a0a8a3611e6c777bc9ebf42b1f685a5ff6b1ff1f2b7b70f45",
                         ),
                     };
-                    SystemResult::Ok(ContractResult::Ok(to_binary(&res).unwrap()))
+                    SystemResult::Ok(ContractResult::Ok(to_json_binary(&res).unwrap()))
                 }
                 _ => unreachable!("unwrap noo"),
             }

@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, CosmosMsg, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, QueryResponse,
-    Reply, Response, SubMsg, Uint128, Uint256,
+    ensure, ensure_eq, to_json_binary, CosmosMsg, Deps, DepsMut, Empty, Env, HexBinary,
+    MessageInfo, QueryResponse, Reply, Response, SubMsg, Uint128, Uint256,
 };
 use hpl_connection::{get_hook, get_ism};
 use hpl_interface::{
@@ -250,11 +250,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             TokenType {} => to_binary(get_token_type(deps)),
             TokenMode {} => to_binary(get_token_mode(deps)),
         },
-        QueryMsg::IsmSpecifier(IsmSpecifierQueryMsg::InterchainSecurityModule()) => Ok(
-            cosmwasm_std::to_binary(&InterchainSecurityModuleResponse {
+        QueryMsg::IsmSpecifier(IsmSpecifierQueryMsg::InterchainSecurityModule()) => {
+            Ok(to_json_binary(&InterchainSecurityModuleResponse {
                 ism: get_ism(deps.storage)?,
-            })?,
-        ),
+            })?)
+        }
     }
 }
 

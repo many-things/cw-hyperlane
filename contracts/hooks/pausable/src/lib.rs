@@ -103,9 +103,9 @@ fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
 mod test {
     use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
     use cosmwasm_std::{
-        from_binary,
+        from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Addr, HexBinary, OwnedDeps,
+        to_json_binary, Addr, HexBinary, OwnedDeps,
     };
     use hpl_interface::hook::{PostDispatchMsg, QuoteDispatchMsg};
     use hpl_ownable::get_owner;
@@ -118,9 +118,9 @@ mod test {
     type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
 
     fn query<S: Serialize, T: DeserializeOwned>(deps: Deps, msg: S) -> T {
-        let req: QueryMsg = from_binary(&cosmwasm_std::to_binary(&msg).unwrap()).unwrap();
+        let req: QueryMsg = from_json(to_json_binary(&msg).unwrap()).unwrap();
         let res = crate::query(deps, mock_env(), req).unwrap();
-        from_binary(&res).unwrap()
+        from_json(res).unwrap()
     }
 
     #[fixture]

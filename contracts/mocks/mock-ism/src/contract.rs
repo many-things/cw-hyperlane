@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response, StdResult,
+    to_json_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response, StdResult,
 };
 use cw2::set_contract_version;
 use hpl_interface::ism::{
@@ -55,9 +55,9 @@ pub fn query(_deps: Deps, _env: Env, msg: ExpectedIsmQueryMsg) -> StdResult<Quer
 
     match msg {
         ExpectedIsmQueryMsg::Ism(msg) => match msg {
-            ModuleType {} => Ok(to_binary(&IsmType::Null)?),
-            Verify { .. } => Ok(to_binary(&VerifyResponse { verified: true })?),
-            VerifyInfo { .. } => Ok(to_binary(&VerifyInfoResponse {
+            ModuleType {} => Ok(to_json_binary(&IsmType::Null)?),
+            Verify { .. } => Ok(to_json_binary(&VerifyResponse { verified: true })?),
+            VerifyInfo { .. } => Ok(to_json_binary(&VerifyInfoResponse {
                 threshold: 1u8,
                 validators: vec![],
             })?),

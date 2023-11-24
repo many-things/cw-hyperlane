@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    coin, ensure, ensure_eq, to_binary, wasm_execute, Coin, Deps, DepsMut, Env, HexBinary,
+    coin, ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Deps, DepsMut, Env, HexBinary,
     MessageInfo, Response,
 };
 use cw_utils::PaymentError;
@@ -198,7 +198,7 @@ pub fn dispatch(
     Ok(Response::new()
         .add_event(emit_dispatch_id(msg_id.clone()))
         .add_event(emit_dispatch(msg))
-        .set_data(to_binary(&DispatchResponse { message_id: msg_id })?)
+        .set_data(to_json_binary(&DispatchResponse { message_id: msg_id })?)
         .add_messages(post_dispatch_msgs))
 }
 
@@ -279,9 +279,9 @@ pub fn process(
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
-        from_binary,
+        from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Addr, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
+        to_json_binary, Addr, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
     };
 
     use hpl_interface::{
@@ -307,7 +307,7 @@ mod tests {
 
     fn mock_query_handler(req: &WasmQuery) -> QuerierResult {
         let (req, _addr) = match req {
-            WasmQuery::Smart { msg, contract_addr } => (from_binary(msg).unwrap(), contract_addr),
+            WasmQuery::Smart { msg, contract_addr } => (from_json(msg).unwrap(), contract_addr),
             _ => unreachable!("wrong query type"),
         };
 
@@ -325,7 +325,7 @@ mod tests {
         }
 
         let res = QuoteDispatchResponse { gas_amount };
-        let res = cosmwasm_std::to_binary(&res).unwrap();
+        let res = to_json_binary(&res).unwrap();
         SystemResult::Ok(ContractResult::Ok(res))
     }
 
@@ -495,14 +495,13 @@ mod tests {
     fn test_process_query_handler(query: &WasmQuery) -> QuerierResult {
         match query {
             WasmQuery::Smart { contract_addr, msg } => {
-                if let Ok(req) = cosmwasm_std::from_binary::<ism::ExpectedIsmSpecifierQueryMsg>(msg)
-                {
+                if let Ok(req) = cosmwasm_std::from_json::<ism::ExpectedIsmSpecifierQueryMsg>(msg) {
                     match req {
                         hpl_interface::ism::ExpectedIsmSpecifierQueryMsg::IsmSpecifier(
                             ism::IsmSpecifierQueryMsg::InterchainSecurityModule(),
                         ) => {
                             return SystemResult::Ok(
-                                cosmwasm_std::to_binary(&ism::InterchainSecurityModuleResponse {
+                                to_json_binary(&ism::InterchainSecurityModuleResponse {
                                     ism: Some(addr("default_ism")),
                                 })
                                 .into(),
@@ -511,13 +510,13 @@ mod tests {
                     }
                 }
 
-                if let Ok(req) = cosmwasm_std::from_binary::<ism::ExpectedIsmQueryMsg>(msg) {
+                if let Ok(req) = cosmwasm_std::from_json::<ism::ExpectedIsmQueryMsg>(msg) {
                     assert_eq!(contract_addr, &addr("default_ism"));
 
                     match req {
                         ism::ExpectedIsmQueryMsg::Ism(IsmQueryMsg::Verify { metadata, .. }) => {
                             return SystemResult::Ok(
-                                cosmwasm_std::to_binary(&ism::VerifyResponse {
+                                to_json_binary(&ism::VerifyResponse {
                                     verified: metadata[0] == 1,
                                 })
                                 .into(),
