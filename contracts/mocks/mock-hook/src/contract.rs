@@ -27,7 +27,7 @@ pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    SetGasAmount { gas: Uint256 },
+    SetGasAmount { gas: Option<Uint256> },
     PostDispatch(PostDispatchMsg),
 }
 
@@ -75,7 +75,10 @@ pub fn execute(
                     ),
             )),
         ExecuteMsg::SetGasAmount { gas } => {
-            GAS.save(deps.storage, &gas)?;
+            match gas {
+                Some(gas) => GAS.save(deps.storage, &gas)?,
+                None => GAS.remove(deps.storage),
+            }
 
             Ok(Response::new())
         }
@@ -88,12 +91,14 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
     match msg {
         ExpectedHookQueryMsg::Hook(msg) => match msg {
             HookQueryMsg::QuoteDispatch(_) => {
-                let gas = GAS.load(deps.storage)?;
+                let gas = GAS
+                    .may_load(deps.storage)?
+                    .map(|v| v.to_string().parse::<u128>().unwrap());
                 let gas_token = GAS_TOKEN.load(deps.storage)?;
 
-                Ok(to_binary(&QuoteDispatchResponse {
-                    fees: coins(gas.to_string().parse::<u128>().unwrap(), gas_token),
-                })?)
+                let gas_amount = gas.map(|v| coin(v, gas_token));
+
+                Ok(to_binary(&QuoteDispatchResponse { gas_amount })?)
             }
             HookQueryMsg::Mailbox {} => {
                 unimplemented!("mailbox query not implemented on mock hook")

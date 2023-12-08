@@ -31,12 +31,12 @@ pub fn instantiate(
         required_hook: None,
     };
 
+    let owner = deps.api.addr_validate(&msg.owner)?;
+
     CONFIG.save(deps.storage, &config)?;
     NONCE.save(deps.storage, &0u32)?;
 
-    let owner = deps.api.addr_validate(&msg.owner)?;
     hpl_ownable::initialize(deps.storage, &owner)?;
-    hpl_pausable::initialize(deps.storage, &false)?;
 
     Ok(Response::new().add_event(emit_instantiated(owner)))
 }
