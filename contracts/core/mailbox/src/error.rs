@@ -9,6 +9,9 @@ pub enum ContractError {
     #[error("{0}")]
     Payment(#[from] cw_utils::PaymentError),
 
+    #[error("{0}")]
+    CoinsError(#[from] cosmwasm_std::CoinsError),
+
     #[error("unauthorized")]
     Unauthorized {},
 

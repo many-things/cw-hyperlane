@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, HexBinary};
+use cosmwasm_std::{Coins, Deps, HexBinary, StdResult};
 use hpl_interface::{
     core::mailbox::{
         DefaultHookResponse, DefaultIsmResponse, DispatchMsg, HrpResponse,
@@ -11,7 +11,7 @@ use hpl_interface::{
 
 use crate::{
     state::{CONFIG, DELIVERIES, LATEST_DISPATCHED_ID, NONCE},
-    ContractError,
+    ContractError, MAILBOX_VERSION,
 };
 
 pub fn get_hrp(deps: Deps) -> Result<HrpResponse, ContractError> {
@@ -87,36 +87,47 @@ pub fn get_latest_dispatch_id(deps: Deps) -> Result<LatestDispatchedIdResponse, 
 
 pub fn quote_dispatch(
     deps: Deps,
-    msg: DispatchMsg,
+    sender: String,
+    dispatch_msg: DispatchMsg,
 ) -> Result<QuoteDispatchResponse, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let sender = deps.api.addr_validate(&sender)?;
 
-    let target_hook = msg.get_hook_addr(deps.api, config.get_default_hook())?;
+    let config = CONFIG.load(deps.storage)?;
+    let nonce = NONCE.load(deps.storage)?;
+
+    let msg = dispatch_msg
+        .clone()
+        .to_msg(MAILBOX_VERSION, nonce, config.local_domain, sender)?;
+
+    let default_hook = config.get_default_hook();
     let required_hook = config.get_required_hook();
 
-    let mut required_gas = hook::quote_dispatch(
+    let base_fee = hook::quote_dispatch(
+        &deps.querier,
+        dispatch_msg.get_hook_addr(deps.api, default_hook)?,
+        dispatch_msg.metadata.clone().unwrap_or_default(),
+        msg.clone(),
+    )?
+    .fees;
+
+    let required_fee = hook::quote_dispatch(
         &deps.querier,
         required_hook,
-        msg.metadata.clone().unwrap(),
-        msg.msg_body.clone(),
+        dispatch_msg.metadata.unwrap_or_default(),
+        msg,
     )?
-    .gas_amount
-    .expect("failed to quote required gas");
+    .fees;
 
-    let target_gas = hook::quote_dispatch(
-        &deps.querier,
-        target_hook,
-        msg.metadata.clone().unwrap(),
-        msg.msg_body,
-    )?
-    .gas_amount;
-
-    if let Some(gas) = target_gas {
-        required_gas.amount += gas.amount;
-    }
+    let total_fee =
+        required_fee
+            .into_iter()
+            .try_fold(Coins::try_from(base_fee)?, |mut acc, fee| {
+                acc.add(fee)?;
+                StdResult::Ok(acc)
+            })?;
 
     Ok(QuoteDispatchResponse {
-        gas_amount: Some(required_gas),
+        fees: total_fee.to_vec(),
     })
 }
 

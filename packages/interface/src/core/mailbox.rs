@@ -154,7 +154,7 @@ pub enum QueryMsg {
 #[derive(QueryResponses)]
 pub enum MailboxHookQueryMsg {
     #[returns(QuoteDispatchResponse)]
-    QuoteDispatch(DispatchMsg),
+    QuoteDispatch { sender: String, msg: DispatchMsg },
 }
 
 #[cw_serde]
