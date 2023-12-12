@@ -2,8 +2,8 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdError,
-    StdResult, Uint256,
+    coins, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
+    Uint256,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;

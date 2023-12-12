@@ -553,7 +553,7 @@ mod test {
         .unwrap();
 
         let warp_msg = warp::Message {
-            recipient: recipient,
+            recipient,
             amount: Uint256::from_u128(100),
             metadata: HexBinary::default(),
         };

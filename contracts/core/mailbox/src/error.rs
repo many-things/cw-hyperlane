@@ -9,11 +9,17 @@ pub enum ContractError {
     #[error("{0}")]
     Payment(#[from] cw_utils::PaymentError),
 
+    #[error("{0}")]
+    CoinsError(#[from] cosmwasm_std::CoinsError),
+
     #[error("unauthorized")]
     Unauthorized {},
 
     #[error("ism verify failed")]
     VerifyFailed {},
+
+    #[error("invalid config. reason: {reason:?}")]
+    InvalidConfig { reason: String },
 
     #[error("invalid address length: {len:?}")]
     InvalidAddressLength { len: usize },
@@ -26,4 +32,12 @@ pub enum ContractError {
 
     #[error("message already delivered")]
     AlreadyDeliveredMessage {},
+}
+
+impl ContractError {
+    pub fn invalid_config(reason: &str) -> Self {
+        Self::InvalidConfig {
+            reason: reason.to_string(),
+        }
+    }
 }
