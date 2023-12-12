@@ -1,14 +1,19 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{
+    ensure, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryRequest, QueryResponse,
+    Response,
+};
 
 use hpl_interface::hook::HookQueryMsg;
 use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg};
 use hpl_interface::igp::oracle::IgpGasOracleQueryMsg;
 use hpl_interface::to_binary;
+use prost::Message;
 
 use crate::{
-    ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP,
+    proto, ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, DEFAULT_GAS_USAGE,
+    GAS_TOKEN, HRP,
 };
 
 fn new_event(name: &str) -> Event {
@@ -23,6 +28,31 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // check hrp is lowercase
+    ensure!(
+        msg.hrp.chars().all(|v| v.is_lowercase()),
+        ContractError::invalid_config("hrp must be lowercase")
+    );
+
+    // check gas token exists
+    if let Err(e) = deps
+        .querier
+        .query::<proto::QuerySupplyOfResponse>(&QueryRequest::Stargate {
+            path: "/cosmos.bank.v1beta1.QuerySupplyOfRequest".to_string(),
+            data: Binary(
+                proto::QuerySupplyOfRequest {
+                    denom: msg.gas_token.clone(),
+                }
+                .encode_to_vec(),
+            ),
+        })
+    {
+        return Err(ContractError::invalid_config(&format!(
+            "gas_token {} does not exist: {e}",
+            msg.gas_token,
+        )));
+    }
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;

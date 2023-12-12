@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{ensure, Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
 
 use hpl_interface::{
     core::mailbox::{ExecuteMsg, InstantiateMsg, MailboxHookQueryMsg, MailboxQueryMsg, QueryMsg},
@@ -22,6 +22,12 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // check hrp is lowercase
+    ensure!(
+        msg.hrp.chars().all(|v| v.is_lowercase()),
+        ContractError::invalid_config("hrp must be lowercase")
+    );
 
     let config = Config {
         hrp: msg.hrp,

@@ -18,6 +18,9 @@ pub enum ContractError {
     #[error("ism verify failed")]
     VerifyFailed {},
 
+    #[error("invalid config. reason: {reason:?}")]
+    InvalidConfig { reason: String },
+
     #[error("invalid address length: {len:?}")]
     InvalidAddressLength { len: usize },
 
@@ -35,4 +38,12 @@ pub enum ContractError {
 
     #[error("message not found")]
     MessageNotFound {},
+}
+
+impl ContractError {
+    pub fn invalid_config(reason: &str) -> Self {
+        Self::InvalidConfig {
+            reason: reason.to_string(),
+        }
+    }
 }
