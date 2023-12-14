@@ -5,6 +5,7 @@ pub mod routing;
 pub mod routing_custom;
 pub mod routing_fallback;
 pub mod wormhole;
+pub mod axelar;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{

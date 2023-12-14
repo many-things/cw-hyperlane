@@ -1,6 +1,5 @@
 use std::{ops::Deref, env};
 
-use cosmwasm_schema::serde::de;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{

@@ -46,6 +46,8 @@ cosmwasm-std = { version = "1.2.7", features = ["stargate"] }
 cosmwasm-storage = "1.2.7"
 cosmwasm-schema = "1.2.7"
 cosmwasm-crypto = "1.2.7"
+# try to get rid of this dep
+osmosis-std = "0.20.1"
 
 # cosmwasm extension
 cw-storage-plus = "1.1.0"
@@ -71,6 +73,7 @@ prost = { version = "0.12.1", default-features = false, features = [
 ] }
 prost-types = { version = "0.12.1", default-features = false }
 hex-literal = { version = "0.4.1" }
+ethabi = { version = "18.0.0", default-features = false, features = [] }
 
 # cryptography
 sha3 = "0.10.8"
