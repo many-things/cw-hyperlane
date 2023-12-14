@@ -25,7 +25,7 @@ const DESTINATION_CHAIN_KEY: &str = "destination_chain";
 const DESTINATION_CHAIN: Item<String> = Item::new(DESTINATION_CHAIN_KEY);
 
 const DESTINATION_CONTRACT_KEY: &str = "destination_contract";
-const DESTINATION_CONTRACT: Item<String> = Item::new(DESTINATION_CHAIN_KEY);
+const DESTINATION_CONTRACT: Item<String> = Item::new(DESTINATION_CONTRACT_KEY);
 
 const DESTINATION_ISM_KEY: &str = "destination_ism";
 const DESTINATION_ISM: Item<String> = Item::new(DESTINATION_ISM_KEY);
