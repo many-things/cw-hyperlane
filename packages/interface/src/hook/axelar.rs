@@ -1,14 +1,13 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use serde::{Deserialize, Serialize};
-use crate::{
-    ownable::{OwnableMsg, OwnableQueryMsg},
-};
+use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
 use super::{HookQueryMsg, PostDispatchMsg};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
+    pub mailbox: String,
     pub destination_chain: String,
     pub destination_contract: String,
     pub destination_ism: String,

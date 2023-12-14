@@ -3,11 +3,12 @@ use std::{ops::Deref, env};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    wasm_execute, Event, MessageInfo, QueryResponse, Response, DepsMut, Deps, Addr,
+    wasm_execute, ensure_eq, Event, MessageInfo, QueryResponse, Response, DepsMut, Deps, Addr,
     StdError, Env, Binary, StdResult,
 };
 use cw_storage_plus::Item;
 use hpl_interface::{
+    core::mailbox::{LatestDispatchedIdResponse, MailboxQueryMsg},
     hook::{
         wormhole::{ExecuteMsg, InstantiateMsg, QueryMsg, WormholeInfoResponse, WormholeQueryMsg},
         HookQueryMsg, MailboxResponse, QuoteDispatchResponse, PostDispatchMsg,
@@ -26,6 +27,9 @@ pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const WORMHOLE_CORE_KEY: &str = "wormhole_core";
 const WORMHOLE_CORE: Item<Addr> = Item::new(WORMHOLE_CORE_KEY);
+
+pub const MAILBOX_KEY: &str = "mailbox";
+pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
 
 fn new_event(name: &str) -> Event {
     Event::new(format!("hpl_hook_pausable::{}", name))
@@ -57,10 +61,13 @@ pub fn instantiate(
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
+    let mailbox: Addr = deps.api.addr_validate(&msg.mailbox)?;
+
     hpl_ownable::initialize(deps.storage, &owner)?;
 
     let wormhole_core = deps.api.addr_validate(&msg.wormhole_core)?;
     WORMHOLE_CORE.save(deps.storage, &wormhole_core)?;
+    MAILBOX.save(deps.storage, &mailbox)?;
 
     Ok(Response::new().add_event(
         new_event("initialize")
@@ -91,6 +98,26 @@ fn post_dispatch(
     _info: MessageInfo,
     req: PostDispatchMsg,
 ) -> Result<Response, ContractError> {
+    
+    // Ensure message_id matches latest dispatch from mailbox
+    let mailbox = MAILBOX.load(deps.storage)?;
+    let latest_dispatch_id = deps
+        .querier
+        .query_wasm_smart::<LatestDispatchedIdResponse>(
+            &mailbox,
+            &MailboxQueryMsg::LatestDispatchId {}.wrap(),
+        )?
+        .message_id;
+
+    let decoded_msg: Message = req.message.clone().into();
+
+    ensure_eq!(
+        latest_dispatch_id,
+        decoded_msg.id(),
+        ContractError::Unauthorized {}
+    );
+
+    // send message to wormhole core-bridging-contract
     let wormhole_core = WORMHOLE_CORE.load(deps.storage)?;
     let decoded_msg: Message = req.message.clone().into();
     let binary_message = Binary::from(req.message);

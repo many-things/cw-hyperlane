@@ -1,14 +1,16 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use serde_json_wasm::to_string;
-use cosmwasm_std::{Event, MessageInfo, QueryResponse, Response, DepsMut, Deps, Env, StdResult, StdError};
+use cosmwasm_std::{Event, MessageInfo, ensure_eq, QueryResponse, Response, DepsMut, Deps, Env, StdResult, StdError, Addr};
 use cw_storage_plus::Item;
 use hpl_interface::{
+    core::mailbox::{LatestDispatchedIdResponse, MailboxQueryMsg},
     hook::{
         axelar::{ExecuteMsg, InstantiateMsg, QueryMsg, AxelarInfoResponse, AxelarQueryMsg, AxelarFee, AxelarGeneralMessage},
         HookQueryMsg, MailboxResponse, QuoteDispatchResponse, PostDispatchMsg,
     },
     to_binary,
+    types::Message,
 };
 use ethabi::{Address, encode, Token};
 use ethabi::ethereum_types::H160;
@@ -32,6 +34,9 @@ const DESTINATION_ISM: Item<String> = Item::new(DESTINATION_ISM_KEY);
 
 const AXELAR_GATEWAY_CHANNEL_KEY: &str = "axelar_gateway_channel";
 const AXELAR_GATEWAY_CHANNEL: Item<String> = Item::new(AXELAR_GATEWAY_CHANNEL_KEY);
+
+pub const MAILBOX_KEY: &str = "mailbox";
+pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
 
 
 
@@ -76,11 +81,13 @@ pub fn instantiate(
     let destination_contract = &msg.destination_contract;
     let destination_ism = &msg.destination_ism;
     let axelar_gateway_channel = &msg.axelar_gateway_channel;
+    let mailbox: Addr = deps.api.addr_validate(&msg.mailbox)?;
         
     DESTINATION_CHAIN.save(deps.storage, destination_chain)?;
     DESTINATION_CONTRACT.save(deps.storage, destination_contract)?;
     DESTINATION_ISM.save(deps.storage, destination_ism)?;
     AXELAR_GATEWAY_CHANNEL.save(deps.storage, axelar_gateway_channel)?;
+    MAILBOX.save(deps.storage, &mailbox)?;
 
     Ok(Response::new().add_event(
         new_event("initialize")
@@ -116,19 +123,39 @@ fn post_dispatch(
     info: MessageInfo,
     req: PostDispatchMsg,
 ) -> Result<Response, ContractError> {
+  
+    // Ensure message_id matches latest dispatch from mailbox
+    let mailbox = MAILBOX.load(deps.storage)?;
+    let latest_dispatch_id = deps
+        .querier
+        .query_wasm_smart::<LatestDispatchedIdResponse>(
+            &mailbox,
+            &MailboxQueryMsg::LatestDispatchId {}.wrap(),
+        )?
+        .message_id;
+
+    let decoded_msg: Message = req.message.clone().into();
+
+    ensure_eq!(
+        latest_dispatch_id,
+        decoded_msg.id(),
+        ContractError::Unauthorized {}
+    );
+
+    //send message to axelar gateway
     let desination_chain = DESTINATION_CHAIN.load(deps.storage)?;
     let desination_contract = DESTINATION_CONTRACT.load(deps.storage)?;
     let desination_ism = DESTINATION_ISM.load(deps.storage)?;
     let axelar_gateway_channel = AXELAR_GATEWAY_CHANNEL.load(deps.storage)?;
     let recipients = vec![desination_ism];
 
-    // do we need to pass a fee?
+    // TODO: do we need to pass a fee?
     multi_send_to_evm(deps, env, info, axelar_gateway_channel, desination_chain, desination_contract, recipients, None)
 
 }
 
 pub fn multi_send_to_evm(
-    deps: DepsMut,
+    _deps: DepsMut,
     env: Env,
     info: MessageInfo,
     gateway_channel: String,
@@ -191,7 +218,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 pub fn handle_query(
     deps: Deps,
     _env: Env,
-    msg: AxelarQueryMsg,
+    _msg: AxelarQueryMsg,
 ) -> StdResult<QueryResponse> {
     cosmwasm_std::to_binary(&AxelarInfoResponse {
             destination_chain: DESTINATION_CHAIN.load(deps.storage)?,

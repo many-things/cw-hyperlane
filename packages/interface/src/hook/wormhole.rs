@@ -1,8 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
-use crate::{
-    ownable::{OwnableMsg, OwnableQueryMsg},
-};
+use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
 use super::{HookQueryMsg, PostDispatchMsg};
 
@@ -10,6 +8,7 @@ use super::{HookQueryMsg, PostDispatchMsg};
 pub struct InstantiateMsg {
     pub owner: String,
     pub wormhole_core: String,
+    pub mailbox: String,
 }
 
 #[cw_serde]
