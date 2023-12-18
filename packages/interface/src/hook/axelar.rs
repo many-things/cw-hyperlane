@@ -14,10 +14,15 @@ pub struct InstantiateMsg {
     pub axelar_gateway_channel: String,
 }
 
+pub struct RegisterDestinationContractMsg {
+    pub destination_contract: String,
+}
+
 #[cw_serde]
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
     PostDispatch(PostDispatchMsg),
+    RegisterDestinationContract(RegisterDestinationContractMsg)
 }
 
 #[cw_serde]

@@ -114,7 +114,30 @@ pub fn execute(
         // TODO: maybe add SetWomrholeCore Msg
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::PostDispatch(msg) => post_dispatch(deps, env, info, msg)
+        ExecuteMsg::RegisterDestinationContract(msg) => register_desination_contract(deps, info, msg)
     }
+}
+
+fn register_desination_contract(
+    deps: DepsMut,
+    info: MessageInfo,
+    msg: RegisterDestinationContractMsg
+) -> Result<Response, ContractError> {
+    ensure_eq!(
+        get_owner(deps.storage)?,
+        info.sender,
+        ContractError::Unauthorized {}
+    );
+
+    let destination_contract = &msg.destination_contract;
+    DESTINATION_CONTRACT.save(deps.storage, destination_contract)?;
+
+    Ok(Response::new().add_event(
+        new_event("register_destination_contract")
+            .add_attribute("destination_contract", destination_contract)
+
+
+    ))   
 }
 
 fn post_dispatch(
