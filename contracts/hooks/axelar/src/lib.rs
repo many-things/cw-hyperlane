@@ -6,8 +6,8 @@ use cw_storage_plus::Item;
 use hpl_interface::{
     core::mailbox::{LatestDispatchedIdResponse, MailboxQueryMsg},
     hook::{
-        axelar::{ExecuteMsg, InstantiateMsg, QueryMsg, AxelarInfoResponse, AxelarQueryMsg, AxelarFee, AxelarGeneralMessage},
-        HookQueryMsg, MailboxResponse, QuoteDispatchResponse, PostDispatchMsg,
+        axelar::{ExecuteMsg, InstantiateMsg, QueryMsg, AxelarInfoResponse, AxelarQueryMsg, AxelarFee, AxelarGeneralMessage, QuoteDispatchMetadata},
+        HookQueryMsg, MailboxResponse, QuoteDispatchResponse, PostDispatchMsg, QuoteDispatchMsg,
     },
     to_binary,
     types::Message,
@@ -233,7 +233,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
-            HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch()),
+            HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch(msg)),
         },
     }
 }
@@ -257,6 +257,7 @@ fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     })
 }
 
-fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
-    Ok(QuoteDispatchResponse { gas_amount: None })
+fn quote_dispatch(msg: QuoteDispatchMsg) -> Result<QuoteDispatchResponse, ContractError> {
+    let decoded_metadata: QuoteDispatchMetadata = req.message.clone().into();
+    Ok(QuoteDispatchResponse { gas_amount: decoded_metadata.coin})
 }

@@ -18,6 +18,11 @@ pub struct PostDispatchMsg {
     pub message: HexBinary,
 }
 
+#[cw_serde]
+pub struct QuoteDispatchMetadata {
+    pub coin: Coin,
+}
+
 impl PostDispatchMsg {
     pub fn wrap(self) -> ExpectedHookMsg {
         ExpectedHookMsg::PostDispatch(self)
