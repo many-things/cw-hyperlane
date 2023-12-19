@@ -6,7 +6,7 @@ use cw_storage_plus::Item;
 use hpl_interface::{
     core::mailbox::{LatestDispatchedIdResponse, MailboxQueryMsg},
     hook::{
-        axelar::{ExecuteMsg, InstantiateMsg, QueryMsg, AxelarInfoResponse, AxelarQueryMsg, AxelarFee, AxelarGeneralMessage, QuoteDispatchMetadata},
+        axelar::{ExecuteMsg, InstantiateMsg, QueryMsg, AxelarInfoResponse, AxelarQueryMsg, AxelarFee, AxelarGeneralMessage, QuoteDispatchMetadata, RegisterDestinationContractMsg},
         HookQueryMsg, MailboxResponse, QuoteDispatchResponse, PostDispatchMsg, QuoteDispatchMsg,
     },
     to_binary,
@@ -15,6 +15,7 @@ use hpl_interface::{
 use ethabi::{Address, encode, Token};
 use ethabi::ethereum_types::H160;
 use osmosis_std::types::ibc::applications::transfer::{v1::MsgTransfer};
+use hpl_ownable::get_owner;
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -113,15 +114,15 @@ pub fn execute(
     match msg {
         // TODO: maybe add SetWomrholeCore Msg
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
-        ExecuteMsg::PostDispatch(msg) => post_dispatch(deps, env, info, msg)
-        ExecuteMsg::RegisterDestinationContract(msg) => register_desination_contract(deps, info, msg)
+        ExecuteMsg::PostDispatch(msg) => post_dispatch(deps, env, info, msg),
+        ExecuteMsg::RegisterDestinationContract(msg) => register_desination_contract(deps, info, msg),
     }
 }
 
 fn register_desination_contract(
     deps: DepsMut,
     info: MessageInfo,
-    msg: RegisterDestinationContractMsg
+    msg: RegisterDestinationContractMsg,
 ) -> Result<Response, ContractError> {
     ensure_eq!(
         get_owner(deps.storage)?,

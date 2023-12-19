@@ -14,6 +14,7 @@ pub struct InstantiateMsg {
     pub axelar_gateway_channel: String,
 }
 
+#[cw_serde]
 pub struct RegisterDestinationContractMsg {
     pub destination_contract: String,
 }
