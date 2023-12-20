@@ -34,6 +34,9 @@ pub enum ContractError {
 
     #[error("route not found for {0}")]
     RouteNotFound(u32),
+
+    #[error("invalid arguments. reason: {reason:?}")]
+    InvalidArguments { reason: String },
 }
 
 // version info for migration info
@@ -178,6 +181,15 @@ fn register(
     );
 
     for msg in msgs.clone() {
+        let recipient = HexBinary::from_hex(&msg.recipient)?;
+        ensure_eq!(
+            recipient.len(),
+            32,
+            ContractError::InvalidArguments {
+                reason: "recipient must be 32 bytes long".into()
+            }
+        );
+
         CUSTOM_HOOKS.save(
             deps.storage,
             (
@@ -199,7 +211,11 @@ fn register(
                         .map(|v| format!("{}:{}", v.dest_domain, v.recipient))
                         .collect::<Vec<_>>(),
                 )
-                .unwrap(),
+                .map_err(|e| {
+                    ContractError::Std(StdError::generic_err(format!(
+                        "failed to marshal keys. reason: {e}",
+                    )))
+                })?,
             ),
     ))
 }
@@ -236,7 +252,11 @@ fn clear(
                         .map(|v| format!("{}:{}", v.dest_domain, v.recipient))
                         .collect::<Vec<_>>(),
                 )
-                .unwrap(),
+                .map_err(|e| {
+                    ContractError::Std(StdError::generic_err(format!(
+                        "failed to marshal keys. reason: {e}",
+                    )))
+                })?,
             ),
     ))
 }
@@ -338,16 +358,17 @@ mod test {
             _ => unreachable!("wrong query type"),
         };
 
-        let mut gas_amount = None;
+        let mut fees = Coins::default();
 
         if !req.metadata.is_empty() {
-            let parsed_gas = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
+            let parsed_fee = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
 
-            gas_amount = Some(coin(parsed_gas as u128, "utest"));
+            fees = Coins::from(coin(parsed_fee as u128, "utest"));
         }
 
         let res = QuoteDispatchResponse { gas_amount };
         let res = to_json_binary(&res).unwrap();
+
         SystemResult::Ok(ContractResult::Ok(res))
     }
 
@@ -594,7 +615,7 @@ mod test {
     fn test_quote_dispatch(
         deps_custom_routes: (TestDeps, Routes, CustomRoutes),
         #[case] test_domain: u32,
-        #[case] expected_gas: Option<u32>,
+        #[case] expected_fee: Option<u32>,
     ) {
         let (mut deps, _, _) = deps_custom_routes;
 
@@ -610,6 +631,9 @@ mod test {
                 message: rand_msg.into(),
             })),
         );
-        assert_eq!(res.gas_amount.map(|v| v.amount.u128() as u32), expected_gas);
+        assert_eq!(
+            res.fees.first().map(|v| v.amount.u128() as u32),
+            expected_fee
+        );
     }
 }

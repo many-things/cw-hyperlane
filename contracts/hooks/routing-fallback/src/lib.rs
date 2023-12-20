@@ -193,20 +193,21 @@ mod test {
             _ => unreachable!("wrong query type"),
         };
 
-        let mut gas_amount = None;
+        let mut fees = Coins::default();
 
         if !req.metadata.is_empty() {
-            let parsed_gas = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
+            let parsed_fee = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
 
-            gas_amount = Some(coin(parsed_gas as u128, "utest"));
+            fees = Coins::from(coin(parsed_fee as u128, "utest"));
         }
 
         if addr == FALLBACK_HOOK {
-            gas_amount = None;
+            fees = Coins::default();
         }
 
         let res = QuoteDispatchResponse { gas_amount };
         let res = to_json_binary(&res).unwrap();
+      
         SystemResult::Ok(ContractResult::Ok(res))
     }
 
@@ -315,7 +316,7 @@ mod test {
     fn test_quote_dispatch(
         deps_routes: (TestDeps, Routes),
         #[case] test_domain: u32,
-        #[case] expected_gas: Option<u32>,
+        #[case] expected_fee: Option<u32>,
     ) {
         let (mut deps, _) = deps_routes;
 
@@ -331,6 +332,9 @@ mod test {
                 message: rand_msg.into(),
             })),
         );
-        assert_eq!(res.gas_amount.map(|v| v.amount.u128() as u32), expected_gas);
+        assert_eq!(
+            res.fees.first().map(|v| v.amount.u128() as u32),
+            expected_fee
+        );
     }
 }

@@ -23,11 +23,17 @@ pub enum ContractError {
     #[error("{0}")]
     PaymentError(#[from] cw_utils::PaymentError),
 
-    #[error("unauthorized")]
-    Unauthorized {},
+    #[error("unauthorized. reason: {0}")]
+    Unauthorized(String),
 
     #[error("hook paused")]
     Paused {},
+}
+
+impl ContractError {
+    pub fn unauthorized(reason: &str) -> Self {
+        ContractError::Unauthorized(reason.into())
+    }
 }
 
 // version info for migration info
@@ -94,7 +100,7 @@ pub fn execute(
             ensure_eq!(
                 latest_dispatch_id,
                 decoded_msg.id(),
-                ContractError::Unauthorized {}
+                ContractError::unauthorized("message is not dispatching")
             );
 
             let mut tree = MESSAGE_TREE.load(deps.storage)?;
@@ -143,7 +149,7 @@ fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
 }
 
 fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
-    Ok(QuoteDispatchResponse { gas_amount: None })
+    Ok(QuoteDispatchResponse { fees: vec![] })
 }
 
 fn get_tree_count(deps: Deps) -> Result<merkle::CountResponse, ContractError> {
@@ -326,7 +332,7 @@ mod test {
             deps.as_ref(),
             QueryMsg::Hook(HookQueryMsg::QuoteDispatch(QuoteDispatchMsg::default())),
         );
-        assert_eq!(res.gas_amount, None);
+        assert_eq!(res.fees, vec![]);
 
         let res: merkle::CountResponse = test_query(
             deps.as_ref(),

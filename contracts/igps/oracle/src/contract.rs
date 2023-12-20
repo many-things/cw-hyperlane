@@ -50,6 +50,11 @@ pub fn execute(
 
             let mut domains = vec![];
             for config in configs {
+                ensure!(
+                    !config.token_exchange_rate.is_zero(),
+                    ContractError::invalid_config("exchange rate must be non-zero")
+                );
+
                 domains.push(config.remote_domain.to_string());
                 insert_gas_data(deps.storage, config)?;
             }

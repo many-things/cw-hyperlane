@@ -2,6 +2,7 @@ pub mod contract;
 mod error;
 mod event;
 pub mod execute;
+mod proto;
 pub mod query;
 
 #[cfg(test)]
@@ -30,8 +31,8 @@ pub const DEFAULT_GAS_USAGE: Item<u128> = Item::new(DEFAULT_GAS_USAGE_KEY);
 pub const GAS_FOR_DOMAIN_PREFIX: &str = "gas_for_domain";
 pub const GAS_FOR_DOMAIN: Map<u32, u128> = Map::new(GAS_FOR_DOMAIN_PREFIX);
 
-pub const BENEFICAIRY_KEY: &str = "beneficiary";
-pub const BENEFICIARY: Item<Addr> = Item::new(BENEFICAIRY_KEY);
+pub const BENEFICIARY_KEY: &str = "beneficiary";
+pub const BENEFICIARY: Item<Addr> = Item::new(BENEFICIARY_KEY);
 
 pub fn get_default_gas(storage: &dyn Storage, domain: u32) -> StdResult<u128> {
     let custom_gas = GAS_FOR_DOMAIN.may_load(storage, domain)?;

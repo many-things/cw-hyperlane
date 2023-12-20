@@ -107,7 +107,12 @@ pub fn execute(
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         REPLY_ID_CREATE_DENOM => {
-            let reply_data = msg.result.unwrap().data.unwrap();
+            let reply_data = msg
+                .result
+                .into_result()
+                .map_err(StdError::generic_err)?
+                .data
+                .ok_or(StdError::generic_err("no reply data"))?;
             let init_resp = cw_utils::parse_instantiate_response_data(&reply_data)?;
             let init_addr = deps.api.addr_validate(&init_resp.contract_address)?;
 
@@ -548,7 +553,7 @@ mod test {
         .unwrap();
 
         let warp_msg = warp::Message {
-            recipient: recipient,
+            recipient,
             amount: Uint256::from_u128(100),
             metadata: HexBinary::default(),
         };

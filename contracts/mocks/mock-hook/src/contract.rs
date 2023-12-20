@@ -93,7 +93,14 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
             HookQueryMsg::QuoteDispatch(_) => {
                 let gas = GAS
                     .may_load(deps.storage)?
-                    .map(|v| v.to_string().parse::<u128>().unwrap());
+                    .map(|v| {
+                        v.to_string().parse::<u128>().map_err(|e| {
+                            StdError::generic_err(format!(
+                                "failed to parse Uint256 gas. reason: {e}"
+                            ))
+                        })
+                    })
+                    .transpose()?;
                 let gas_token = GAS_TOKEN.load(deps.storage)?;
 
                 let gas_amount = gas.map(|v| coin(v, gas_token));

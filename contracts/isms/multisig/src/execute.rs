@@ -1,4 +1,6 @@
-use cosmwasm_std::{ensure_eq, DepsMut, Event, HexBinary, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    ensure_eq, DepsMut, Event, HexBinary, MessageInfo, Response, StdResult, Storage,
+};
 use hpl_interface::ism::multisig::{ThresholdSet, ValidatorSet as MsgValidatorSet};
 use hpl_ownable::get_owner;
 
@@ -45,6 +47,35 @@ pub fn set_thresholds(
     Ok(Response::new().add_events(events))
 }
 
+fn enroll(
+    storage: &mut dyn Storage,
+    domain: u32,
+    validator: HexBinary,
+) -> Result<(), ContractError> {
+    ensure_eq!(
+        validator.len(),
+        20,
+        ContractError::invalid_addr("length should be 20")
+    );
+
+    let validator_state = VALIDATORS.may_load(storage, domain)?;
+
+    if let Some(mut validators) = validator_state {
+        if validators.contains(&validator) {
+            return Err(ContractError::ValidatorDuplicate {});
+        }
+
+        validators.push(validator);
+        validators.sort();
+
+        VALIDATORS.save(storage, domain, &validators)?;
+    } else {
+        VALIDATORS.save(storage, domain, &vec![validator])?;
+    }
+
+    Ok(())
+}
+
 pub fn enroll_validator(
     deps: DepsMut,
     info: MessageInfo,
@@ -56,26 +87,7 @@ pub fn enroll_validator(
         ContractError::Unauthorized {}
     );
 
-    ensure_eq!(
-        msg.validator.len(),
-        20,
-        ContractError::invalid_addr("length should be 20")
-    );
-
-    let validator_state = VALIDATORS.may_load(deps.storage, msg.domain)?;
-
-    if let Some(mut validators) = validator_state {
-        if validators.contains(&msg.validator) {
-            return Err(ContractError::ValidatorDuplicate {});
-        }
-
-        validators.push(msg.validator.clone());
-        validators.sort();
-
-        VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-    } else {
-        VALIDATORS.save(deps.storage, msg.domain, &vec![msg.validator.clone()])?;
-    }
+    enroll(deps.storage, msg.domain, msg.validator.clone())?;
 
     Ok(Response::new().add_event(emit_enroll_validator(msg.domain, msg.validator.to_hex())))
 }
@@ -94,28 +106,8 @@ pub fn enroll_validators(
     let mut events: Vec<Event> = Vec::new();
 
     for msg in validators.into_iter() {
-        ensure_eq!(
-            msg.validator.len(),
-            20,
-            ContractError::invalid_addr("length should be 20")
-        );
-
-        let validators_state = VALIDATORS.may_load(deps.storage, msg.domain)?;
-
-        if let Some(mut validators) = validators_state {
-            if validators.contains(&msg.validator) {
-                return Err(ContractError::ValidatorDuplicate {});
-            }
-
-            validators.push(msg.validator.clone());
-            validators.sort();
-
-            VALIDATORS.save(deps.storage, msg.domain, &validators)?;
-            events.push(emit_enroll_validator(msg.domain, msg.validator.to_hex()));
-        } else {
-            VALIDATORS.save(deps.storage, msg.domain, &vec![msg.validator.clone()])?;
-            events.push(emit_enroll_validator(msg.domain, msg.validator.to_hex()));
-        }
+        enroll(deps.storage, msg.domain, msg.validator.clone())?;
+        events.push(emit_enroll_validator(msg.domain, msg.validator.to_hex()));
     }
 
     Ok(Response::new().add_events(events))

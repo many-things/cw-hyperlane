@@ -2,13 +2,12 @@ use cosmwasm_std::{
     coin, ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Deps, DepsMut, Env, HexBinary,
     MessageInfo, Response,
 };
-use cw_utils::PaymentError;
 use hpl_interface::{
     core::{
         mailbox::{DispatchMsg, DispatchResponse},
         HandleMsg,
     },
-    hook::{post_dispatch, quote_dispatch},
+    hook::{self, post_dispatch},
     ism,
     types::Message,
 };
@@ -46,11 +45,6 @@ fn get_required_value(
     }
 
     let received = &info.funds[0];
-
-    deps.api.debug(&format!(
-        "mailbox::dispatch: required: {:?}, received: {:?}",
-        required, received
-    ));
 
     ensure_eq!(
         &received.denom,
@@ -156,6 +150,7 @@ pub fn dispatch(
     );
 
     // calculate gas
+    let default_hook = config.get_default_hook();
     let required_hook = config.get_required_hook();
 
     let msg =
@@ -164,17 +159,33 @@ pub fn dispatch(
             .to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
     let msg_id = msg.id();
 
-    let (required_hook_value, hook_value) = get_required_value(
-        deps.as_ref(),
-        &info,
-        required_hook.as_str(),
+    let base_fee = hook::quote_dispatch(
+        &deps.querier,
+        dispatch_msg.get_hook_addr(deps.api, default_hook)?,
         dispatch_msg.metadata.clone().unwrap_or_default(),
-        msg.clone().into(),
+        msg.clone(),
+    )?
+    .fees;
+
+    let required_fee = hook::quote_dispatch(
+        &deps.querier,
+        &required_hook,
+        dispatch_msg.metadata.clone().unwrap_or_default(),
+        msg.clone(),
+    )?
+    .fees;
+
+    // assert gas received is satisfies required gas
+    let mut total_fee = required_fee.clone().into_iter().try_fold(
+        Coins::try_from(base_fee.clone())?,
+        |mut acc, fee| {
+            acc.add(fee)?;
+            StdResult::Ok(acc)
+        },
     )?;
-    let (required_hook_value, hook_value) = (
-        required_hook_value.map(|v| vec![v]),
-        hook_value.map(|v| vec![v]),
-    );
+    for fund in info.funds {
+        total_fee.sub(fund)?;
+    }
 
     // interaction
     let hook = dispatch_msg.get_hook_addr(deps.api, config.get_default_hook())?;
@@ -190,10 +201,15 @@ pub fn dispatch(
             required_hook,
             hook_metadata.clone(),
             msg.clone(),
-            required_hook_value,
+            Some(required_fee),
         )?,
-        post_dispatch(hook, hook_metadata, msg.clone(), hook_value)?,
+        post_dispatch(hook, hook_metadata, msg.clone(), Some(base_fee))?,
     ];
+
+    let refund_msg = BankMsg::Send {
+        to_address: info.sender.to_string(),
+        amount: total_fee.to_vec(),
+    };
 
     Ok(Response::new()
         .add_event(emit_dispatch_id(msg_id.clone()))
@@ -231,8 +247,6 @@ pub fn process(
 
     let id = decoded_msg.id();
     let ism = ism::recipient(&deps.querier, &recipient)?.unwrap_or(config.get_default_ism());
-
-    deps.api.debug(&format!("mailbox::process: ism: {}", &ism));
 
     ensure!(
         !DELIVERIES.has(deps.storage, id.to_vec()),
@@ -316,16 +330,17 @@ mod tests {
             _ => unreachable!("wrong query type"),
         };
 
-        let mut gas_amount = None;
+        let mut fees = Coins::default();
 
         if !req.metadata.is_empty() {
-            let parsed_gas = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
+            let parsed_fee = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
 
-            gas_amount = Some(coin(parsed_gas as u128, "utest"));
+            fees = Coins::from(coin(parsed_fee as u128, "utest"));
         }
 
         let res = QuoteDispatchResponse { gas_amount };
         let res = to_json_binary(&res).unwrap();
+
         SystemResult::Ok(ContractResult::Ok(res))
     }
 

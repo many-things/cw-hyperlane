@@ -64,7 +64,10 @@ pub fn instantiate(
                 )));
             }
 
-            (msgs, token.denom)
+            (
+                msgs,
+                format!("factory/{}/{}", env.contract.address, token.denom),
+            )
         }
         // use denom directly if token is native
         TokenModeMsg::Collateral(token) => {
@@ -106,7 +109,12 @@ pub fn execute(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
-    let reply_data = msg.result.unwrap().data.unwrap();
+    let reply_data = msg
+        .result
+        .into_result()
+        .map_err(StdError::generic_err)?
+        .data
+        .ok_or(StdError::generic_err("no reply data"))?;
 
     match msg.id {
         REPLY_ID_CREATE_DENOM => {

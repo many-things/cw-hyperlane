@@ -96,7 +96,7 @@ fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
 }
 
 fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
-    Ok(QuoteDispatchResponse { gas_amount: None })
+    Ok(QuoteDispatchResponse { fees: vec![] })
 }
 
 #[cfg(test)]
@@ -182,6 +182,6 @@ mod test {
             deps.as_ref(),
             QueryMsg::Hook(HookQueryMsg::QuoteDispatch(QuoteDispatchMsg::default())),
         );
-        assert_eq!(res.gas_amount, None);
+        assert_eq!(res.fees, vec![]);
     }
 }

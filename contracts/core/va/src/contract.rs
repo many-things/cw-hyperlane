@@ -150,7 +150,7 @@ fn announce(
     let replay_id = replay_hash(&validator, &storage_location)?;
     ensure!(
         !REPLAY_PROTECITONS.has(deps.storage, replay_id.to_vec()),
-        ContractError::Unauthorized {}
+        ContractError::unauthorized("replay protection triggered")
     );
     REPLAY_PROTECITONS.save(deps.storage, replay_id.to_vec(), &Empty {})?;
 
