@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response,
+    ensure_eq, to_json_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response,
 };
 use cw2::set_contract_version;
 use hpl_interface::{
@@ -90,7 +90,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Ism(msg) => match msg {
-            ModuleType {} => Ok(to_binary(&ModuleTypeResponse {
+            ModuleType {} => Ok(to_json_binary(&ModuleTypeResponse {
                 typ: hpl_interface::ism::IsmType::Routing,
             })?),
             Verify { metadata, message } => {
@@ -104,7 +104,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                     .querier
                     .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message }.wrap())?;
 
-                Ok(to_binary(&verify_resp)?)
+                Ok(to_json_binary(&verify_resp)?)
             }
             VerifyInfo { message } => {
                 let decoded = Message::from(message.clone());
@@ -117,7 +117,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                     .querier
                     .query_wasm_smart(ism, &IsmQueryMsg::VerifyInfo { message })?;
 
-                Ok(to_binary(&verify_resp)?)
+                Ok(to_json_binary(&verify_resp)?)
             }
         },
         QueryMsg::RoutingIsm(msg) => match msg {
@@ -129,7 +129,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                     .ok_or(ContractError::RouteNotFound {})?
                     .to_string();
 
-                Ok(to_binary(&RouteResponse { ism })?)
+                Ok(to_json_binary(&RouteResponse { ism })?)
             }
         },
     }

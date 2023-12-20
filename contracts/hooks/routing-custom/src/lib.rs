@@ -315,9 +315,9 @@ fn quote_dispatch(
 #[cfg(test)]
 mod test {
     use cosmwasm_std::{
-        coin, from_binary,
+        coin, from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Coins, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
+        to_json_binary, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
     };
     use hpl_interface::{build_test_querier, hook::ExpectedHookQueryMsg, router::DomainRouteSet};
     use hpl_ownable::get_owner;
@@ -349,7 +349,7 @@ mod test {
 
     fn mock_query_handler(req: &WasmQuery) -> QuerierResult {
         let (req, _addr) = match req {
-            WasmQuery::Smart { msg, contract_addr } => (from_binary(msg).unwrap(), contract_addr),
+            WasmQuery::Smart { msg, contract_addr } => (from_json(msg).unwrap(), contract_addr),
             _ => unreachable!("wrong query type"),
         };
 
@@ -366,10 +366,9 @@ mod test {
             fees = Coins::from(coin(parsed_fee as u128, "utest"));
         }
 
-        let res = QuoteDispatchResponse {
-            fees: fees.to_vec(),
-        };
-        let res = cosmwasm_std::to_binary(&res).unwrap();
+        let res = QuoteDispatchResponse { gas_amount };
+        let res = to_json_binary(&res).unwrap();
+
         SystemResult::Ok(ContractResult::Ok(res))
     }
 

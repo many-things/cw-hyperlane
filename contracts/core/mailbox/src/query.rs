@@ -135,7 +135,7 @@ pub fn quote_dispatch(
 mod test {
 
     use cosmwasm_std::{
-        from_binary,
+        from_json,
         testing::{mock_dependencies, mock_env},
         Addr,
     };
@@ -152,7 +152,7 @@ mod test {
     use super::*;
 
     fn query<T: DeserializeOwned>(deps: Deps, req: MailboxQueryMsg) -> T {
-        from_binary(&contract::query(deps, mock_env(), req.wrap()).unwrap()).unwrap()
+        from_json(contract::query(deps, mock_env(), req.wrap()).unwrap()).unwrap()
     }
 
     fn query_hrp(deps: Deps) -> HrpResponse {

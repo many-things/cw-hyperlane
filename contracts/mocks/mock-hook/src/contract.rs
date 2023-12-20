@@ -2,8 +2,8 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coins, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
-    Uint256,
+    coin, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    StdResult, Uint256,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
@@ -105,7 +105,7 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
 
                 let gas_amount = gas.map(|v| coin(v, gas_token));
 
-                Ok(to_binary(&QuoteDispatchResponse { gas_amount })?)
+                Ok(to_json_binary(&QuoteDispatchResponse { gas_amount })?)
             }
             HookQueryMsg::Mailbox {} => {
                 unimplemented!("mailbox query not implemented on mock hook")
@@ -116,7 +116,7 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
 
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{from_binary, to_binary, HexBinary};
+    use cosmwasm_std::{from_json, to_json_binary, HexBinary};
     use hpl_interface::hook::{ExpectedHookMsg, PostDispatchMsg};
 
     use super::ExecuteMsg;
@@ -126,8 +126,8 @@ mod test {
         // no need to test query - because it uses ExecptedHookQueryMsg directly!
 
         // test execute
-        let _: ExecuteMsg = from_binary(
-            &to_binary(&ExpectedHookMsg::PostDispatch(PostDispatchMsg {
+        let _: ExecuteMsg = from_json(
+            to_json_binary(&ExpectedHookMsg::PostDispatch(PostDispatchMsg {
                 metadata: HexBinary::default(),
                 message: HexBinary::default(),
             }))

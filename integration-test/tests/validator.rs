@@ -22,6 +22,7 @@ pub struct TestValidator {
     pub pub_key: VerifyingKey,
 }
 
+#[allow(dead_code)]
 impl TestValidator {
     fn random() -> Self {
         let priv_key = SigningKey::random(&mut OsRng);

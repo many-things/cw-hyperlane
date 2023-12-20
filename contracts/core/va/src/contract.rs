@@ -207,7 +207,7 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contr
 mod test {
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_env, mock_info},
-        ContractResult, QuerierResult, SystemResult, WasmQuery,
+        to_json_binary, ContractResult, QuerierResult, SystemResult, WasmQuery,
     };
 
     use hpl_interface::build_test_querier;
@@ -317,7 +317,7 @@ mod test {
 
         deps.querier.update_wasm(|_: &WasmQuery| -> QuerierResult {
             SystemResult::Ok(ContractResult::Ok(
-                cosmwasm_std::to_binary(&mailbox::LocalDomainResponse {
+                to_json_binary(&mailbox::LocalDomainResponse {
                     local_domain: 26657,
                 })
                 .unwrap(),

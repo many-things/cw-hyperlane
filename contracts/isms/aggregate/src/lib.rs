@@ -4,8 +4,8 @@ pub use crate::error::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo,
-    QueryResponse, Response, StdResult,
+    ensure, ensure_eq, to_json_binary, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary,
+    MessageInfo, QueryResponse, Response, StdResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
@@ -121,7 +121,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         },
 
         QueryMsg::AggregateIsm(msg) => match msg {
-            AggregateIsmQueryMsg::Isms {} => Ok(cosmwasm_std::to_binary(&IsmsResponse {
+            AggregateIsmQueryMsg::Isms {} => Ok(to_json_binary(&IsmsResponse {
                 isms: ISMS
                     .load(deps.storage)?
                     .into_iter()

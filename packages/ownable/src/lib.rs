@@ -2,7 +2,7 @@
 mod test;
 
 use cosmwasm_std::{
-    ensure, ensure_eq, to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo,
+    ensure, ensure_eq, to_json_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo,
     QueryResponse, Response, StdError, StdResult, Storage,
 };
 use cw_storage_plus::Item;
@@ -123,10 +123,10 @@ pub fn handle_query<C: CustomQuery>(
     msg: OwnableQueryMsg,
 ) -> StdResult<QueryResponse> {
     match msg {
-        OwnableQueryMsg::GetOwner {} => to_binary(&OwnerResponse {
+        OwnableQueryMsg::GetOwner {} => to_json_binary(&OwnerResponse {
             owner: get_owner(deps.storage)?,
         }),
-        OwnableQueryMsg::GetPendingOwner {} => to_binary(&PendingOwnerResponse {
+        OwnableQueryMsg::GetPendingOwner {} => to_json_binary(&PendingOwnerResponse {
             pending_owner: get_pending_owner(deps.storage)?,
         }),
     }
