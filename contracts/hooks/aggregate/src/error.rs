@@ -13,7 +13,4 @@ pub enum ContractError {
 
     #[error("unauthorized")]
     Unauthorized {},
-
-    #[error("hook paused")]
-    Paused {},
 }

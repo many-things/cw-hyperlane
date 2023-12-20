@@ -23,6 +23,48 @@ use crate::{
     ContractError, MAILBOX_VERSION,
 };
 
+fn get_required_value(
+    deps: Deps,
+    info: &MessageInfo,
+    hook: impl Into<String>,
+    metadata: HexBinary,
+    msg_body: HexBinary,
+) -> Result<(Option<Coin>, Option<Coin>), ContractError> {
+    let required = quote_dispatch(&deps.querier, hook, metadata, msg_body)?.gas_amount;
+    let required = match required {
+        Some(v) => v,
+        None => return Ok((None, None)),
+    };
+
+    if info.funds.is_empty() {
+        return Ok((None, None));
+    }
+
+    if info.funds.len() > 1 {
+        return Err(PaymentError::MultipleDenoms {}.into());
+    }
+
+    let received = &info.funds[0];
+
+    ensure_eq!(
+        &received.denom,
+        &required.denom,
+        PaymentError::ExtraDenom(received.clone().denom)
+    );
+
+    if received.amount <= required.amount {
+        return Ok((Some(received.clone()), None));
+    }
+
+    Ok((
+        Some(required.clone()),
+        Some(coin(
+            (received.amount - required.amount).u128(),
+            required.denom,
+        )),
+    ))
+}
+
 pub fn set_default_ism(
     deps: DepsMut,
     info: MessageInfo,
@@ -206,8 +248,6 @@ pub fn process(
 
     let id = decoded_msg.id();
     let ism = ism::recipient(&deps.querier, &recipient)?.unwrap_or(config.get_default_ism());
-
-    deps.api.debug(&format!("mailbox::process: ism: {}", &ism));
 
     ensure!(
         !DELIVERIES.has(deps.storage, id.to_vec()),

@@ -211,7 +211,11 @@ fn register(
                         .map(|v| format!("{}:{}", v.dest_domain, v.recipient))
                         .collect::<Vec<_>>(),
                 )
-                .unwrap(),
+                .map_err(|e| {
+                    ContractError::Std(StdError::generic_err(format!(
+                        "failed to marshal keys. reason: {e}",
+                    )))
+                })?,
             ),
     ))
 }
@@ -248,7 +252,11 @@ fn clear(
                         .map(|v| format!("{}:{}", v.dest_domain, v.recipient))
                         .collect::<Vec<_>>(),
                 )
-                .unwrap(),
+                .map_err(|e| {
+                    ContractError::Std(StdError::generic_err(format!(
+                        "failed to marshal keys. reason: {e}",
+                    )))
+                })?,
             ),
     ))
 }

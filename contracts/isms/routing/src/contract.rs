@@ -67,6 +67,19 @@ pub fn execute(
 
             Ok(Response::default())
         }
+        Unset { domains } => {
+            ensure_eq!(
+                get_owner(deps.storage)?,
+                info.sender,
+                ContractError::Unauthorized {}
+            );
+
+            for domain in domains {
+                MODULES.remove(deps.storage, domain);
+            }
+
+            Ok(Response::default())
+        }
     }
 }
 
@@ -81,11 +94,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 typ: hpl_interface::ism::IsmType::Routing,
             })?),
             Verify { metadata, message } => {
-                deps.api.debug(&format!(
-                    "ism_routing::verify: metadata: {:?}, message: {:?}",
-                    metadata, message
-                ));
-
                 let decoded = Message::from(message.clone());
 
                 let ism = MODULES

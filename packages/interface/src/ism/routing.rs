@@ -24,6 +24,7 @@ pub enum ExecuteMsg {
     Ownable(OwnableMsg),
 
     Set { ism: IsmSet },
+    Unset { domains: Vec<u32> },
 }
 
 #[cw_serde]

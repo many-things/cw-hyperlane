@@ -9,8 +9,8 @@ pub enum ContractError {
     #[error("{0}")]
     RecoverPubkeyError(#[from] RecoverPubkeyError),
 
-    #[error("unauthorized")]
-    Unauthorized {},
+    #[error("unauthorized. reason: {0}")]
+    Unauthorized(String),
 
     #[error("invalid address. reason: {0}")]
     InvalidAddress(String),
@@ -20,6 +20,10 @@ pub enum ContractError {
 }
 
 impl ContractError {
+    pub fn unauthorized(reason: &str) -> Self {
+        ContractError::Unauthorized(reason.into())
+    }
+
     pub fn invalid_addr(reason: &str) -> Self {
         ContractError::InvalidAddress(reason.into())
     }
