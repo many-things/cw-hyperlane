@@ -12,6 +12,7 @@ pub struct InstantiateMsg {
     pub destination_contract: String,
     pub destination_ism: String,
     pub axelar_gateway_channel: String,
+    pub gas_token: String,
 }
 
 #[cw_serde]

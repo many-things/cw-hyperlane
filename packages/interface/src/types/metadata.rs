@@ -265,6 +265,18 @@ impl IGPMetadata {
     }
 }
 
+pub struct AxelarMetadata {
+    pub gas_amount: u128,
+}
+
+impl From<HexBinary> for AxelarMetadata {
+    fn from(v: HexBinary) -> Self {
+        Self {
+            gas_amount: u128::from_be_bytes(v[0..32].try_into().unwrap()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use ibcx_test_utils::{addr, gen_bz, hex};

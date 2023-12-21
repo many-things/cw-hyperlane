@@ -1,16 +1,16 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use serde_json_wasm::to_string;
-use cosmwasm_std::{Event, MessageInfo, ensure_eq, QueryResponse, Response, DepsMut, Deps, Env, StdResult, StdError, Addr};
+use cosmwasm_std::{Event, MessageInfo, ensure_eq, QueryResponse, Response, DepsMut, Deps, Env, StdResult, StdError, Addr, coin};
 use cw_storage_plus::Item;
 use hpl_interface::{
     core::mailbox::{LatestDispatchedIdResponse, MailboxQueryMsg},
     hook::{
-        axelar::{ExecuteMsg, InstantiateMsg, QueryMsg, AxelarInfoResponse, AxelarQueryMsg, AxelarFee, AxelarGeneralMessage, QuoteDispatchMetadata, RegisterDestinationContractMsg},
+        axelar::{ExecuteMsg, InstantiateMsg, QueryMsg, AxelarInfoResponse, AxelarQueryMsg, AxelarFee, AxelarGeneralMessage, RegisterDestinationContractMsg},
         HookQueryMsg, MailboxResponse, QuoteDispatchResponse, PostDispatchMsg, QuoteDispatchMsg,
     },
     to_binary,
-    types::Message,
+    types::{Message, AxelarMetadata}
 };
 use ethabi::{Address, encode, Token};
 use ethabi::ethereum_types::H160;
@@ -39,6 +39,8 @@ const AXELAR_GATEWAY_CHANNEL: Item<String> = Item::new(AXELAR_GATEWAY_CHANNEL_KE
 pub const MAILBOX_KEY: &str = "mailbox";
 pub const MAILBOX: Item<Addr> = Item::new(MAILBOX_KEY);
 
+pub const GAS_TOKEN_KEY: &str = "mailbox";
+pub const GAS_TOKEN: Item<String> = Item::new(GAS_TOKEN_KEY);
 
 
 fn new_event(name: &str) -> Event {
@@ -82,12 +84,14 @@ pub fn instantiate(
     let destination_contract = &msg.destination_contract;
     let destination_ism = &msg.destination_ism;
     let axelar_gateway_channel = &msg.axelar_gateway_channel;
+    let gas_token = &msg.gas_token;
     let mailbox: Addr = deps.api.addr_validate(&msg.mailbox)?;
         
     DESTINATION_CHAIN.save(deps.storage, destination_chain)?;
     DESTINATION_CONTRACT.save(deps.storage, destination_contract)?;
     DESTINATION_ISM.save(deps.storage, destination_ism)?;
     AXELAR_GATEWAY_CHANNEL.save(deps.storage, axelar_gateway_channel)?;
+    GAS_TOKEN.save(deps.storage, gas_token)?;
     MAILBOX.save(deps.storage, &mailbox)?;
 
     Ok(Response::new().add_event(
@@ -234,7 +238,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
-            HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch(msg)),
+            HookQueryMsg::QuoteDispatch(msg) => to_binary(quote_dispatch(deps, msg)),
         },
     }
 }
@@ -258,7 +262,13 @@ fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     })
 }
 
-fn quote_dispatch(msg: QuoteDispatchMsg) -> Result<QuoteDispatchResponse, ContractError> {
-    let decoded_metadata: QuoteDispatchMetadata = req.message.clone().into();
-    Ok(QuoteDispatchResponse { gas_amount: decoded_metadata.coin})
+fn quote_dispatch(deps: Deps, msg: QuoteDispatchMsg) -> Result<QuoteDispatchResponse, ContractError> {
+    let decoded_metadata: AxelarMetadata = msg.metadata.clone().into();
+    // TODO: add better check to make sure the right metadata is present
+    Ok(QuoteDispatchResponse {
+        gas_amount: Some(coin(
+            decoded_metadata.gas_amount,
+            GAS_TOKEN.load(deps.storage)?,
+        )),
+    })
 }

@@ -9,18 +9,13 @@ pub mod axelar;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{
-    wasm_execute, Coin, CustomQuery, HexBinary, QuerierWrapper, StdResult, WasmMsg,
+    wasm_execute, Coin, CustomQuery, HexBinary, QuerierWrapper, StdResult, WasmMsg, Uint128,
 };
 
 #[cw_serde]
 pub struct PostDispatchMsg {
     pub metadata: HexBinary,
     pub message: HexBinary,
-}
-
-#[cw_serde]
-pub struct QuoteDispatchMetadata {
-    pub coin: Coin,
 }
 
 impl PostDispatchMsg {
