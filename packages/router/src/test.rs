@@ -94,7 +94,7 @@ where
         Self {
             deps: mock_dependencies(),
             env: mock_env(),
-            _marker: PhantomData::<T>::default(),
+            _marker: PhantomData::<T>,
         }
     }
 }

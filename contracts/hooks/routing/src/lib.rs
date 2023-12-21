@@ -140,7 +140,7 @@ mod test {
     use cosmwasm_std::{
         coin, from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        to_json_binary, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
+        to_json_binary, Coins, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
     };
     use hpl_interface::{build_test_querier, hook::ExpectedHookQueryMsg, router::DomainRouteSet};
     use hpl_ownable::get_owner;
@@ -180,7 +180,9 @@ mod test {
             fees = Coins::from(coin(parsed_fee as u128, "utest"));
         }
 
-        let res = QuoteDispatchResponse { gas_amount };
+        let res = QuoteDispatchResponse {
+            fees: fees.into_vec(),
+        };
         let res = to_json_binary(&res).unwrap();
 
         SystemResult::Ok(ContractResult::Ok(res))

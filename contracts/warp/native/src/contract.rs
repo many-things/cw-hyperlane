@@ -2,7 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     ensure, ensure_eq, to_json_binary, CosmosMsg, Deps, DepsMut, Empty, Env, HexBinary,
-    MessageInfo, QueryResponse, Reply, Response, SubMsg, Uint128, Uint256,
+    MessageInfo, QueryResponse, Reply, Response, StdError, SubMsg, Uint128, Uint256,
 };
 use hpl_connection::{get_hook, get_ism};
 use hpl_interface::{
@@ -561,7 +561,7 @@ mod test {
                 .into(),
                 None,
                 None,
-                vec![
+                [
                     vec![coin(50, DENOM)],
                     funds.into_iter().filter(|v| v.denom != DENOM).collect()
                 ]

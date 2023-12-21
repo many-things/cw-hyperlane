@@ -88,6 +88,9 @@ pub fn to_binary<T: serde::Serialize, E: Error, F: From<E> + From<StdError>>(
 }
 
 #[cfg(test)]
+pub use test::msg_checker;
+
+#[cfg(test)]
 mod test {
     use cosmwasm_std::{from_json, to_json_binary};
     use serde::{de::DeserializeOwned, Serialize};
@@ -96,6 +99,3 @@ mod test {
         from_json::<Output>(to_json_binary(&input).unwrap()).unwrap()
     }
 }
-
-#[cfg(test)]
-pub use test::msg_checker;

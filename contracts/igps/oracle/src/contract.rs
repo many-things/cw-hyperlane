@@ -1,7 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    ensure, ensure_eq, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse,
+    Response,
 };
 
 use hpl_interface::igp::oracle::{

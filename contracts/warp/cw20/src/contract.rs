@@ -2,7 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     ensure_eq, to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo,
-    QueryResponse, Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
+    QueryResponse, Reply, Response, StdError, SubMsg, Uint128, Uint256, WasmMsg,
 };
 
 use cw20::Cw20ExecuteMsg;

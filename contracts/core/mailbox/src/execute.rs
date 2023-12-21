@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    coin, ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Deps, DepsMut, Env, HexBinary,
-    MessageInfo, Response,
+    ensure, ensure_eq, to_json_binary, wasm_execute, BankMsg, Coins, DepsMut, Env, HexBinary,
+    MessageInfo, Response, StdResult,
 };
 use hpl_interface::{
     core::{
@@ -22,48 +22,6 @@ use crate::{
     state::{Delivery, CONFIG, DELIVERIES, LATEST_DISPATCHED_ID, NONCE},
     ContractError, MAILBOX_VERSION,
 };
-
-fn get_required_value(
-    deps: Deps,
-    info: &MessageInfo,
-    hook: impl Into<String>,
-    metadata: HexBinary,
-    msg_body: HexBinary,
-) -> Result<(Option<Coin>, Option<Coin>), ContractError> {
-    let required = quote_dispatch(&deps.querier, hook, metadata, msg_body)?.gas_amount;
-    let required = match required {
-        Some(v) => v,
-        None => return Ok((None, None)),
-    };
-
-    if info.funds.is_empty() {
-        return Ok((None, None));
-    }
-
-    if info.funds.len() > 1 {
-        return Err(PaymentError::MultipleDenoms {}.into());
-    }
-
-    let received = &info.funds[0];
-
-    ensure_eq!(
-        &received.denom,
-        &required.denom,
-        PaymentError::ExtraDenom(received.clone().denom)
-    );
-
-    if received.amount <= required.amount {
-        return Ok((Some(received.clone()), None));
-    }
-
-    Ok((
-        Some(required.clone()),
-        Some(coin(
-            (received.amount - required.amount).u128(),
-            required.denom,
-        )),
-    ))
-}
 
 pub fn set_default_ism(
     deps: DepsMut,
@@ -215,7 +173,8 @@ pub fn dispatch(
         .add_event(emit_dispatch_id(msg_id.clone()))
         .add_event(emit_dispatch(msg))
         .set_data(to_json_binary(&DispatchResponse { message_id: msg_id })?)
-        .add_messages(post_dispatch_msgs))
+        .add_messages(post_dispatch_msgs)
+        .add_message(refund_msg))
 }
 
 pub fn process(
@@ -293,7 +252,7 @@ pub fn process(
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
-        from_json,
+        coin, from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
         to_json_binary, Addr, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
     };
@@ -338,7 +297,9 @@ mod tests {
             fees = Coins::from(coin(parsed_fee as u128, "utest"));
         }
 
-        let res = QuoteDispatchResponse { gas_amount };
+        let res = QuoteDispatchResponse {
+            fees: fees.into_vec(),
+        };
         let res = to_json_binary(&res).unwrap();
 
         SystemResult::Ok(ContractResult::Ok(res))

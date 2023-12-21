@@ -2,8 +2,8 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
-    StdResult, Uint256,
+    coins, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    StdError, StdResult, Uint256,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
@@ -102,10 +102,9 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
                     })
                     .transpose()?;
                 let gas_token = GAS_TOKEN.load(deps.storage)?;
+                let fees = gas.map(|v| coins(v, &gas_token)).unwrap_or_default();
 
-                let gas_amount = gas.map(|v| coin(v, gas_token));
-
-                Ok(to_json_binary(&QuoteDispatchResponse { gas_amount })?)
+                Ok(to_json_binary(&QuoteDispatchResponse { fees })?)
             }
             HookQueryMsg::Mailbox {} => {
                 unimplemented!("mailbox query not implemented on mock hook")
