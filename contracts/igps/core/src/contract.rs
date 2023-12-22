@@ -36,23 +36,9 @@ pub fn instantiate(
     );
 
     // check gas token exists
-    if let Err(e) = deps
-        .querier
-        .query::<proto::QuerySupplyOfResponse>(&QueryRequest::Stargate {
-            path: "/cosmos.bank.v1beta1.QuerySupplyOfRequest".to_string(),
-            data: Binary(
-                proto::QuerySupplyOfRequest {
-                    denom: msg.gas_token.clone(),
-                }
-                .encode_to_vec(),
-            ),
-        })
-    {
-        return Err(ContractError::invalid_config(&format!(
-            "gas_token {} does not exist: {e}",
-            msg.gas_token,
-        )));
-    }
+    deps.querier.query_supply(&msg.gas_token).map_err(|e| {
+        ContractError::invalid_config(&format!("gas_token {} does not exist: {e}", msg.gas_token,))
+    })?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;

@@ -42,7 +42,7 @@ keywords = ["hyperlane", "cosmos", "cosmwasm"]
 
 [workspace.dependencies]
 # cosmwasm
-cosmwasm-std = { version = "1.5.0", features = ["stargate"] }
+cosmwasm-std = { version = "1.5.0", features = ["stargate", "cosmwasm_1_1"] }
 cosmwasm-storage = "1.5.0"
 cosmwasm-schema = "1.5.0"
 cosmwasm-crypto = "1.5.0"
@@ -80,10 +80,10 @@ k256 = { version = "0.13.1", default-features = false, features = ["ecdsa"] }
 digest = { version = "0.10.7" }
 
 # testing
-cw-multi-test = "0.18.1"
+cw-multi-test = "0.20.0"
 rstest = "0.18.2"
-test-tube = { version = "0.2.0" }
-osmosis-test-tube = { version = "20.1.2" }
+test-tube = { version = "0.3.0" }
+osmosis-test-tube = { version = "21.0.0" }
 ibcx-test-utils = { version = "0.1.2" }
 
 tokio = { version = "1", features = ["full"] }

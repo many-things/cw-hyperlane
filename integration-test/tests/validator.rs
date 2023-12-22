@@ -1,11 +1,11 @@
 use cosmwasm_std::{
-    testing::{mock_dependencies, mock_info},
+    testing::{mock_dependencies, mock_env, mock_info},
     Binary, HexBinary,
 };
 use ethers::types::{Address, H160};
 use ethers::utils::hex::FromHex;
 use hpl_interface::{
-    ism::multisig::{ThresholdSet, ValidatorSet},
+    ism::multisig::ValidatorSet,
     types::{
         bech32_encode, eth_addr, eth_hash, pub_to_addr, Message, MessageIdMultisigIsmMetadata,
     },
@@ -177,19 +177,18 @@ fn test_validator() {
 
     hpl_ownable::initialize(deps.as_mut().storage, &owner).unwrap();
 
-    hpl_ism_multisig::execute::enroll_validators(
+    hpl_ism_multisig::contract::execute(
         deps.as_mut(),
+        mock_env(),
         mock_info(owner.as_str(), &[]),
-        validators.to_set(),
-    )
-    .unwrap();
-
-    hpl_ism_multisig::execute::set_threshold(
-        deps.as_mut(),
-        mock_info(owner.as_str(), &[]),
-        ThresholdSet {
+        hpl_interface::ism::multisig::ExecuteMsg::SetValidators {
             domain: validators.domain,
             threshold: validators.threshold,
+            validators: validators
+                .to_set()
+                .iter()
+                .map(|v| v.validator.clone())
+                .collect(),
         },
     )
     .unwrap();

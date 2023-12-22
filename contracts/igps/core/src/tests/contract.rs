@@ -1,8 +1,8 @@
 use cosmwasm_std::{
     coin, from_json,
-    testing::{mock_dependencies, mock_env, mock_info},
-    to_json_binary, Addr, BankMsg, Coin, ContractResult, HexBinary, Order, QuerierResult,
-    StdResult, SubMsg, SystemResult, Uint128, Uint256, WasmQuery,
+    testing::{mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info},
+    to_json_binary, Addr, BankMsg, Coin, ContractResult, Empty, HexBinary, Order, QuerierResult,
+    QueryRequest, StdResult, SubMsg, SystemResult, Uint128, Uint256, WasmQuery,
 };
 use hpl_interface::{
     igp::{
