@@ -117,7 +117,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 })
             }),
             Verify { metadata, message } => to_binary(verify(deps, metadata, message)),
-            ModulesAndThreshold { message } => to_binary(verify_info(deps, message)),
+            ModulesAndThreshold { message } => to_binary(modules_and_threshold(deps, message)),
         },
 
         QueryMsg::AggregateIsm(msg) => match msg {
@@ -159,7 +159,7 @@ fn verify(
     })
 }
 
-fn verify_info(
+fn modules_and_threshold(
     deps: Deps,
     _message: HexBinary,
 ) -> Result<ModulesAndThresholdResponse, ContractError> {
