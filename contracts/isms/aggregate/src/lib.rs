@@ -12,7 +12,7 @@ use cw_storage_plus::Item;
 use hpl_interface::{
     ism::{
         aggregate::{AggregateIsmQueryMsg, ExecuteMsg, InstantiateMsg, IsmsResponse, QueryMsg},
-        IsmQueryMsg, IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse,
+        IsmQueryMsg, IsmType, ModuleTypeResponse, ModulesAndThresholdResponse, VerifyResponse,
     },
     to_binary,
     types::{bech32_decode, AggregateMetadata},
@@ -117,7 +117,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 })
             }),
             Verify { metadata, message } => to_binary(verify(deps, metadata, message)),
-            VerifyInfo { message } => to_binary(verify_info(deps, message)),
+            ModulesAndThreshold { message } => to_binary(verify_info(deps, message)),
         },
 
         QueryMsg::AggregateIsm(msg) => match msg {
@@ -159,10 +159,13 @@ fn verify(
     })
 }
 
-fn verify_info(deps: Deps, _message: HexBinary) -> Result<VerifyInfoResponse, ContractError> {
-    Ok(VerifyInfoResponse {
+fn verify_info(
+    deps: Deps,
+    _message: HexBinary,
+) -> Result<ModulesAndThresholdResponse, ContractError> {
+    Ok(ModulesAndThresholdResponse {
         threshold: THRESHOLD.load(deps.storage)?,
-        validators: ISMS
+        modules: ISMS
             .load(deps.storage)?
             .into_iter()
             .map(|v| Ok(bech32_decode(v.as_str())?.into()))

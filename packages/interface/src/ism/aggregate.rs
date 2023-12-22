@@ -60,7 +60,7 @@ mod test {
             .wrap(),
         );
         let _checked: QueryMsg = msg_checker(
-            IsmQueryMsg::VerifyInfo {
+            IsmQueryMsg::ModulesAndThreshold {
                 message: HexBinary::default(),
             }
             .wrap(),
