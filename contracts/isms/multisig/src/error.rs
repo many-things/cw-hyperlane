@@ -24,6 +24,9 @@ pub enum ContractError {
     #[error("invalid address. reason: {0}")]
     InvalidAddress(String),
 
+    #[error("invalid arguments. reason: {reason:?}")]
+    InvalidArguments { reason: String },
+
     #[error("duplicate validator")]
     ValidatorDuplicate,
 
@@ -34,5 +37,11 @@ pub enum ContractError {
 impl ContractError {
     pub fn invalid_addr(reason: &str) -> Self {
         ContractError::InvalidAddress(reason.into())
+    }
+
+    pub fn invalid_args(reason: &str) -> Self {
+        ContractError::InvalidArguments {
+            reason: reason.into(),
+        }
     }
 }

@@ -19,21 +19,17 @@ pub struct ValidatorSet {
 }
 
 #[cw_serde]
-pub struct ThresholdSet {
-    pub domain: u32,
-    pub threshold: u8,
-}
-
-#[cw_serde]
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
 
-    EnrollValidator { set: ValidatorSet },
-    EnrollValidators { set: Vec<ValidatorSet> },
-    UnenrollValidator { domain: u32, validator: HexBinary },
-
-    SetThreshold { set: ThresholdSet },
-    SetThresholds { set: Vec<ThresholdSet> },
+    SetValidators {
+        domain: u32,
+        threshold: u8,
+        validators: Vec<HexBinary>, // should be 20 lenghted
+    },
+    UnsetDomain {
+        domain: u32,
+    },
 }
 
 #[cw_serde]
