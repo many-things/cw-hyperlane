@@ -16,6 +16,8 @@ fn generate_bind(name: &str, abi_file: &str, bind_out: PathBuf) {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=abis/");
+
     let abi_base = current_dir().unwrap().join("abis");
     let bind_base = current_dir()
         .unwrap()
@@ -25,8 +27,10 @@ fn main() {
         ("Mailbox", "mailbox"),
         ("FastHypERC20", "fast_hyp_erc20"),
         ("FastHypERC20Collateral", "fast_hyp_erc20_collateral"),
-        ("TestMultisigIsm", "test_mock_ism"),
-        ("TestRecipient", "test_mock_msg_receiver"),
+        ("TestHook", "test_mock_hook"),
+        ("TestMerkleTreeHook", "test_mock_merkle_tree_hook"),
+        ("TestIsm", "test_mock_ism"),
+        ("TestRecipient", "test_mock_recipient"),
     ];
 
     for (abi_file, bind_out) in deployments {

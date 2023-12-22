@@ -1,3 +1,4 @@
+use cosmwasm_schema::cw_serde;
 use hpl_interface::{
     igp::{self, oracle::RemoteGasDataConfig},
     router::{DomainRouteSet, RouterMsg},
@@ -28,15 +29,24 @@ impl Igp {
         owner: &SigningAccount,
         deployer: &SigningAccount,
     ) -> eyre::Result<IgpDeployment> {
+        #[cw_serde]
+        pub struct InstantiateMsg {
+            pub hrp: String,
+            pub owner: String,
+            pub gas_token: String,
+            pub beneficiary: String,
+            pub default_gas_usage: String,
+        }
+
         let igp = wasm
             .instantiate(
                 codes.igp,
-                &igp::core::InstantiateMsg {
+                &InstantiateMsg {
                     hrp: self.hrp,
                     owner: owner.address(),
                     gas_token: self.gas_token,
                     beneficiary: self.beneficiary,
-                    default_gas_usage: 25_000,
+                    default_gas_usage: "25000".to_string(),
                 },
                 Some(deployer.address().as_str()),
                 Some("cw-hpl-igp"),

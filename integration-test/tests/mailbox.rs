@@ -49,7 +49,7 @@ where
     R: Runner<'a>,
 {
     let mut receiver = [0u8; 32];
-    receiver[12..].copy_from_slice(&to.core.msg_receiver.address().0);
+    receiver[12..].copy_from_slice(&to.core.recipient.address().0);
     let _sender = bech32_decode(from.acc_tester.address().as_str())?;
     let msg_body = b"hello world";
 
@@ -97,7 +97,7 @@ where
     let dispatch_tx_call = from
         .core
         .mailbox
-        .dispatch(DOMAIN_OSMO, receiver, msg_body.into());
+        .dispatch_0(DOMAIN_OSMO, receiver, msg_body.into());
     let dispatch_res = dispatch_tx_call.send().await?.await?.unwrap();
 
     let dispatch: DispatchFilter = parse_log(dispatch_res.logs[0].clone())?;
@@ -106,8 +106,8 @@ where
     // generate ism metadata
     let multisig_ism_metadata = to.get_validator_set(DOMAIN_EVM)?.make_metadata(
         from.core.mailbox.address(),
-        from.core.mailbox.root().await?,
-        from.core.mailbox.count().await? - 1,
+        from.core.required_hook.root().await?,
+        from.core.required_hook.count().await? - 1,
         dispatch_id.message_id,
         true,
     )?;

@@ -60,7 +60,7 @@ impl Ism {
                     owner: owner.address(),
                 },
                 None,
-                None,
+                Some("multisig"),
                 &[],
                 deployer,
             )?
@@ -112,7 +112,7 @@ impl Ism {
                         .collect::<eyre::Result<Vec<_>>>()?,
                 },
                 None,
-                None,
+                Some("routing-ism"),
                 &[],
                 deployer,
             )?
@@ -146,7 +146,7 @@ impl Ism {
                     threshold,
                 },
                 None,
-                None,
+                Some("aggregate-ism"),
                 &[],
                 deployer,
             )?

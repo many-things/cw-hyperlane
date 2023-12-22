@@ -1,0 +1,59 @@
+{
+  "abi": [
+    {
+      "type": "function",
+      "name": "fee",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "hookType",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "postDispatch",
+      "inputs": [
+        { "name": "metadata", "type": "bytes", "internalType": "bytes" },
+        { "name": "message", "type": "bytes", "internalType": "bytes" }
+      ],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "quoteDispatch",
+      "inputs": [
+        { "name": "metadata", "type": "bytes", "internalType": "bytes" },
+        { "name": "message", "type": "bytes", "internalType": "bytes" }
+      ],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "setFee",
+      "inputs": [
+        { "name": "_fee", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "supportsMetadata",
+      "inputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
+      "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+      "stateMutability": "pure"
+    }
+  ],
+  "bytecode": {
+    "object": "0x60806040526000805534801561001457600080fd5b50610284806100246000396000f3fe6080604052600436106100655760003560e01c8063ddca3f4311610043578063ddca3f43146100d9578063e445e7dd146100ef578063e5320bb91461010b57600080fd5b8063086011b91461006a57806369fe0e2d14610080578063aaccd230146100a0575b600080fd5b61007e610078366004610187565b50505050565b005b34801561008c57600080fd5b5061007e61009b3660046101f3565b600055565b3480156100ac57600080fd5b506100c66100bb366004610187565b505060005492915050565b6040519081526020015b60405180910390f35b3480156100e557600080fd5b506100c660005481565b3480156100fb57600080fd5b50604051600081526020016100d0565b34801561011757600080fd5b5061012e61012636600461020c565b600192915050565b60405190151581526020016100d0565b60008083601f84011261015057600080fd5b50813567ffffffffffffffff81111561016857600080fd5b60208301915083602082850101111561018057600080fd5b9250929050565b6000806000806040858703121561019d57600080fd5b843567ffffffffffffffff808211156101b557600080fd5b6101c18883890161013e565b909650945060208701359150808211156101da57600080fd5b506101e78782880161013e565b95989497509550505050565b60006020828403121561020557600080fd5b5035919050565b6000806020838503121561021f57600080fd5b823567ffffffffffffffff81111561023657600080fd5b6102428582860161013e565b9096909550935050505056fea2646970667358221220107808ab934609489b98cea1c8fe9bdc30a1f01e5a3e4661bd751c07ad25fb8064736f6c63430008130033",
+    "sourceMap": "235:995:213:-:0;;;404:1;383:22;;235:995;;;;;;;;;;;;;;;;",
+    "linkReferences": {}
+  }
+}
