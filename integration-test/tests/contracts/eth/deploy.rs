@@ -8,8 +8,6 @@ pub async fn deploy<'a, M: Middleware + 'static, S: Signer + 'static>(
     signer: Arc<SignerMiddleware<M, S>>,
     evm_domain: u32,
 ) -> eyre::Result<Deployments<M, S>> {
-    println!("{}", signer.get_block_number().await?);
-
     let ism = TestIsm::deploy(signer.clone(), ())?.send().await?;
 
     let recipient = TestRecipient::deploy(signer.clone(), ())?.send().await?;
@@ -33,7 +31,7 @@ pub async fn deploy<'a, M: Middleware + 'static, S: Signer + 'static>(
         .send()
         .await?;
 
-    let _ = mailbox
+    mailbox
         .set_required_hook(required_hook.address())
         .send()
         .await?;

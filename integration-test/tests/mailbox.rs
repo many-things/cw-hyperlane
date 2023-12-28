@@ -4,14 +4,18 @@ mod contracts;
 mod event;
 mod validator;
 
+use std::time::Duration;
+
 use cosmwasm_std::{attr, coin, Attribute, Binary, Uint128};
 use ethers::{
     prelude::parse_log, providers::Middleware, signers::Signer, types::TransactionReceipt,
 };
 use ibcx_test_utils::addr;
 use osmosis_test_tube::{
-    osmosis_std::types::cosmwasm::wasm::v1::MsgExecuteContractResponse, Account, Module,
-    OsmosisTestApp, Wasm,
+    osmosis_std::types::{
+        cosmos::bank::v1beta1::QueryBalanceRequest, cosmwasm::wasm::v1::MsgExecuteContractResponse,
+    },
+    Account, Module, OsmosisTestApp, Wasm,
 };
 
 use hpl_interface::{
@@ -19,7 +23,8 @@ use hpl_interface::{
     igp::oracle::RemoteGasDataConfig,
     types::{bech32_decode, bech32_encode, bech32_to_h256, AggregateMetadata},
 };
-use test_tube::{ExecuteResponse, Runner};
+use test_tube::{Bank, ExecuteResponse, Runner};
+use tokio::time::sleep;
 
 use crate::{
     constants::*,
@@ -53,6 +58,14 @@ where
     let _sender = bech32_decode(from.acc_tester.address().as_str())?;
     let msg_body = b"hello world";
 
+    let tester_balance = Bank::new(from.app)
+        .query_balance(&QueryBalanceRequest {
+            address: from.acc_tester.address(),
+            denom: "uosmo".to_string(),
+        })?
+        .balance;
+    println!("tester balance: {tester_balance:?}");
+
     // dispatch
     let dispatch_res = Wasm::new(from.app).execute(
         &from.core.mailbox,
@@ -63,12 +76,24 @@ where
             hook: None,
             metadata: None,
         }),
-        &[coin(56_000_000, "uosmo")],
+        &[coin(25_300_000, "uosmo")],
         &from.acc_tester,
     )?;
 
     let dispatch = parse_dispatch_from_res(&dispatch_res.events);
     let _dispatch_id = parse_dispatch_id_from_res(&dispatch_res.events);
+
+    // wait one block to prevent nonce error
+    let block_number = to.signer.get_block_number().await?;
+    while to
+        .signer
+        .get_block_number()
+        .await?
+        .abs_diff(block_number)
+        .is_zero()
+    {
+        sleep(Duration::from_millis(100)).await;
+    }
 
     let process_tx = to
         .core
@@ -92,6 +117,18 @@ where
     let sender = bech32_encode("osmo", from.acc_owner.address().as_bytes())?;
     let receiver = bech32_to_h256(&to.core.msg_receiver)?;
     let msg_body = b"hello world";
+
+    // wait one block to prevent nonce error
+    let block_number = from.signer.get_block_number().await?;
+    while from
+        .signer
+        .get_block_number()
+        .await?
+        .abs_diff(block_number)
+        .is_zero()
+    {
+        sleep(Duration::from_millis(100)).await;
+    }
 
     // dispatch
     let dispatch_tx_call = from

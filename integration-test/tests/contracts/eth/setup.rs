@@ -15,6 +15,7 @@ pub struct Env<M: Middleware, S: Signer> {
     pub core: Deployments<M, S>,
     pub domain: u32,
 
+    pub signer: Arc<SignerMiddleware<M, S>>,
     pub acc_owner: S,
 }
 
@@ -43,6 +44,7 @@ pub async fn setup_env(domain: u32) -> eyre::Result<Env<Provider<Http>, Wallet<S
         core,
         domain,
 
+        signer,
         acc_owner: wallet,
     })
 }
