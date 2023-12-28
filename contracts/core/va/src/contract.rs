@@ -10,7 +10,7 @@ use hpl_interface::{
         mailbox::{self, MailboxQueryMsg},
         va::{
             ExecuteMsg, GetAnnounceStorageLocationsResponse, GetAnnouncedValidatorsResponse,
-            InstantiateMsg, QueryMsg,
+            InstantiateMsg, LocalDomainResponse, MailboxResponse, QueryMsg,
         },
     },
     to_binary,
@@ -77,6 +77,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
             to_binary(get_announce(deps, validators))
         }
         QueryMsg::GetAnnouncedValidators {} => to_binary(get_validators(deps)),
+        QueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
+        QueryMsg::LocalDomain {} => to_binary(get_local_domain(deps)),
     }
 }
 
@@ -104,6 +106,18 @@ fn get_validators(deps: Deps) -> Result<GetAnnouncedValidatorsResponse, Contract
         .collect::<StdResult<Vec<_>>>()?;
 
     Ok(GetAnnouncedValidatorsResponse { validators })
+}
+
+fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+    Ok(MailboxResponse {
+        mailbox: HexBinary::from(MAILBOX.load(deps.storage)?).to_hex(),
+    })
+}
+
+fn get_local_domain(deps: Deps) -> Result<LocalDomainResponse, ContractError> {
+    Ok(LocalDomainResponse {
+        local_domain: LOCAL_DOMAIN.load(deps.storage)?,
+    })
 }
 
 fn replay_hash(validator: &HexBinary, storage_location: &str) -> StdResult<HexBinary> {

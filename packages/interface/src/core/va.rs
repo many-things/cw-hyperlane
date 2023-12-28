@@ -24,6 +24,12 @@ pub enum QueryMsg {
 
     #[returns(GetAnnouncedValidatorsResponse)]
     GetAnnouncedValidators {},
+
+    #[returns(MailboxResponse)]
+    Mailbox {},
+
+    #[returns(LocalDomainResponse)]
+    LocalDomain {},
 }
 
 #[cw_serde]
@@ -34,4 +40,14 @@ pub struct GetAnnounceStorageLocationsResponse {
 #[cw_serde]
 pub struct GetAnnouncedValidatorsResponse {
     pub validators: Vec<String>,
+}
+
+#[cw_serde]
+pub struct MailboxResponse {
+    pub mailbox: String,
+}
+
+#[cw_serde]
+pub struct LocalDomainResponse {
+    pub local_domain: u32,
 }
