@@ -5,7 +5,7 @@ use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
 use super::IsmQueryMsg;
 #[allow(unused_imports)]
-use super::{ModuleTypeResponse, VerifyInfoResponse, VerifyResponse};
+use super::{ModuleTypeResponse, ModulesAndThresholdResponse, VerifyResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -70,7 +70,7 @@ mod test {
             .wrap(),
         );
         let _checked: QueryMsg = msg_checker(
-            IsmQueryMsg::VerifyInfo {
+            IsmQueryMsg::ModulesAndThreshold {
                 message: HexBinary::default(),
             }
             .wrap(),

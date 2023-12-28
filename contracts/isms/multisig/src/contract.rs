@@ -115,9 +115,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 metadata: raw_metadata,
                 message: raw_message,
             } => to_binary(query::verify_message(deps, raw_metadata, raw_message)),
-            VerifyInfo {
+            ModulesAndThreshold {
                 message: raw_message,
-            } => to_binary(query::get_verify_info(deps, raw_message)),
+            } => to_binary(query::modules_and_threshold(deps, raw_message)),
         },
         QueryMsg::MultisigIsm(msg) => match msg {
             MultisigIsmQueryMsg::EnrolledValidators { domain } => to_binary({
