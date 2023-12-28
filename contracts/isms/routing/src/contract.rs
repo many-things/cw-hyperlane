@@ -13,7 +13,7 @@ use hpl_interface::{
 };
 use hpl_ownable::get_owner;
 
-use crate::{error::ContractError, state::MODULES, CONTRACT_NAME, CONTRACT_VERSION};
+use crate::{error::ContractError, new_event, state::MODULES, CONTRACT_NAME, CONTRACT_VERSION};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -65,7 +65,12 @@ pub fn execute(
                 &deps.api.addr_validate(&ism.address)?,
             )?;
 
-            Ok(Response::default())
+            Ok(Response::default().add_event(
+                new_event("set")
+                    .add_attribute("sender", info.sender)
+                    .add_attribute("domain", ism.domain.to_string())
+                    .add_attribute("ism", ism.address),
+            ))
         }
         Unset { domains } => {
             ensure_eq!(
@@ -74,11 +79,22 @@ pub fn execute(
                 ContractError::Unauthorized {}
             );
 
-            for domain in domains {
+            for domain in domains.clone() {
                 MODULES.remove(deps.storage, domain);
             }
 
-            Ok(Response::default())
+            Ok(Response::default().add_event(
+                new_event("unset")
+                    .add_attribute("sender", info.sender)
+                    .add_attribute(
+                        "domains",
+                        domains
+                            .into_iter()
+                            .map(|v| v.to_string())
+                            .collect::<Vec<_>>()
+                            .join(","),
+                    ),
+            ))
         }
     }
 }
