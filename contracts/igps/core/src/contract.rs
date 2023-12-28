@@ -1,19 +1,16 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryRequest, QueryResponse,
-    Response,
+    ensure, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
 };
 
 use hpl_interface::hook::HookQueryMsg;
 use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg};
 use hpl_interface::igp::oracle::IgpGasOracleQueryMsg;
 use hpl_interface::to_binary;
-use prost::Message;
 
 use crate::{
-    proto, ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, DEFAULT_GAS_USAGE,
-    GAS_TOKEN, HRP,
+    ContractError, BENEFICIARY, CONTRACT_NAME, CONTRACT_VERSION, DEFAULT_GAS_USAGE, GAS_TOKEN, HRP,
 };
 
 fn new_event(name: &str) -> Event {
