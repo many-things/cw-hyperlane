@@ -100,6 +100,11 @@ pub fn execute(
             Ok(Response::new()
                 .add_event(new_event("set_isms").add_attribute("isms", isms.join(","))))
         }
+        ExecuteMsg::SimulateVerify { metadata, message } => {
+            verify(deps.as_ref(), metadata, message)?;
+
+            Ok(Response::new())
+        }
     }
 }
 
