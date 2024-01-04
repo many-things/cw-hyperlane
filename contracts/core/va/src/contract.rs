@@ -10,7 +10,7 @@ use hpl_interface::{
         mailbox::{self, MailboxQueryMsg},
         va::{
             ExecuteMsg, GetAnnounceStorageLocationsResponse, GetAnnouncedValidatorsResponse,
-            InstantiateMsg, QueryMsg,
+            InstantiateMsg, LocalDomainResponse, MailboxResponse, QueryMsg,
         },
     },
     to_binary,
@@ -77,6 +77,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, Cont
             to_binary(get_announce(deps, validators))
         }
         QueryMsg::GetAnnouncedValidators {} => to_binary(get_validators(deps)),
+        QueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
+        QueryMsg::LocalDomain {} => to_binary(get_local_domain(deps)),
     }
 }
 
@@ -104,6 +106,18 @@ fn get_validators(deps: Deps) -> Result<GetAnnouncedValidatorsResponse, Contract
         .collect::<StdResult<Vec<_>>>()?;
 
     Ok(GetAnnouncedValidatorsResponse { validators })
+}
+
+fn get_mailbox(deps: Deps) -> Result<MailboxResponse, ContractError> {
+    Ok(MailboxResponse {
+        mailbox: HexBinary::from(MAILBOX.load(deps.storage)?).to_hex(),
+    })
+}
+
+fn get_local_domain(deps: Deps) -> Result<LocalDomainResponse, ContractError> {
+    Ok(LocalDomainResponse {
+        local_domain: LOCAL_DOMAIN.load(deps.storage)?,
+    })
 }
 
 fn replay_hash(validator: &HexBinary, storage_location: &str) -> StdResult<HexBinary> {
@@ -150,7 +164,7 @@ fn announce(
     let replay_id = replay_hash(&validator, &storage_location)?;
     ensure!(
         !REPLAY_PROTECITONS.has(deps.storage, replay_id.to_vec()),
-        ContractError::Unauthorized {}
+        ContractError::unauthorized("replay protection triggered")
     );
     REPLAY_PROTECITONS.save(deps.storage, replay_id.to_vec(), &Empty {})?;
 
@@ -207,7 +221,7 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contr
 mod test {
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_env, mock_info},
-        ContractResult, QuerierResult, SystemResult, WasmQuery,
+        to_json_binary, ContractResult, QuerierResult, SystemResult, WasmQuery,
     };
 
     use hpl_interface::build_test_querier;
@@ -317,7 +331,7 @@ mod test {
 
         deps.querier.update_wasm(|_: &WasmQuery| -> QuerierResult {
             SystemResult::Ok(ContractResult::Ok(
-                cosmwasm_std::to_binary(&mailbox::LocalDomainResponse {
+                to_json_binary(&mailbox::LocalDomainResponse {
                     local_domain: 26657,
                 })
                 .unwrap(),

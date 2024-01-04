@@ -20,6 +20,17 @@ pub enum ContractError {
         gas_needed: Uint256,
     },
 
+    #[error("invalid config. reason: {reason:?}")]
+    InvalidConfig { reason: String },
+
     #[error("gas oracle not found for {0}")]
     GasOracleNotFound(u32),
+}
+
+impl ContractError {
+    pub fn invalid_config(reason: &str) -> Self {
+        Self::InvalidConfig {
+            reason: reason.to_string(),
+        }
+    }
 }

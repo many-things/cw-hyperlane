@@ -1,6 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{
+    ensure, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
+};
 
 use hpl_interface::hook::HookQueryMsg;
 use hpl_interface::igp::core::{ExecuteMsg, IgpQueryMsg, InstantiateMsg, QueryMsg};
@@ -23,6 +25,17 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // check hrp is lowercase
+    ensure!(
+        msg.hrp.chars().all(|v| v.is_lowercase()),
+        ContractError::invalid_config("hrp must be lowercase")
+    );
+
+    // check gas token exists
+    deps.querier.query_supply(&msg.gas_token).map_err(|e| {
+        ContractError::invalid_config(&format!("gas_token {} does not exist: {e}", msg.gas_token,))
+    })?;
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;

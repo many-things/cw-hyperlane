@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    from_binary,
+    from_json,
     testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
     Addr, CustomQuery, Empty, Env, MessageInfo, OwnedDeps, Response, StdError, StdResult,
 };
@@ -27,7 +27,7 @@ where
     }
 
     fn query<T: DeserializeOwned>(&self, msg: OwnableQueryMsg) -> StdResult<T> {
-        from_binary(&handle_query(self.deps.as_ref(), self.env.clone(), msg)?)
+        from_json(handle_query(self.deps.as_ref(), self.env.clone(), msg)?)
     }
 
     pub fn init(&mut self, sender: &Addr, next_owner: &Addr) -> StdResult<Response> {

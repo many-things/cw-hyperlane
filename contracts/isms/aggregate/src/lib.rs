@@ -4,15 +4,15 @@ pub use crate::error::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo, QueryResponse,
-    Response, StdResult,
+    ensure, ensure_eq, to_json_binary, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary,
+    MessageInfo, QueryResponse, Response, StdResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
 use hpl_interface::{
     ism::{
         aggregate::{AggregateIsmQueryMsg, ExecuteMsg, InstantiateMsg, IsmsResponse, QueryMsg},
-        IsmQueryMsg, IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse,
+        IsmQueryMsg, IsmType, ModuleTypeResponse, ModulesAndThresholdResponse, VerifyResponse,
     },
     to_binary,
     types::{bech32_decode, AggregateMetadata},
@@ -72,11 +72,21 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
-        ExecuteMsg::SetIsms { isms } => {
+        ExecuteMsg::SetIsms { isms, threshold } => {
             ensure_eq!(
                 get_owner(deps.storage)?,
                 info.sender,
                 ContractError::Unauthorized
+            );
+            ensure!(
+                threshold > 0,
+                ContractError::InvalidThreshold("threshold must not be zero".to_string())
+            );
+            ensure!(
+                isms.len() >= threshold as usize,
+                ContractError::InvalidThreshold(
+                    "threshold should be less than ism count".to_string()
+                )
             );
 
             let parsed_isms = isms
@@ -85,9 +95,15 @@ pub fn execute(
                 .collect::<StdResult<_>>()?;
 
             ISMS.save(deps.storage, &parsed_isms)?;
+            THRESHOLD.save(deps.storage, &threshold)?;
 
             Ok(Response::new()
                 .add_event(new_event("set_isms").add_attribute("isms", isms.join(","))))
+        }
+        ExecuteMsg::SimulateVerify { metadata, message } => {
+            verify(deps.as_ref(), metadata, message)?;
+
+            Ok(Response::new())
         }
     }
 }
@@ -106,16 +122,17 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 })
             }),
             Verify { metadata, message } => to_binary(verify(deps, metadata, message)),
-            VerifyInfo { message } => to_binary(verify_info(deps, message)),
+            ModulesAndThreshold { message } => to_binary(modules_and_threshold(deps, message)),
         },
 
         QueryMsg::AggregateIsm(msg) => match msg {
-            AggregateIsmQueryMsg::Isms {} => Ok(cosmwasm_std::to_binary(&IsmsResponse {
+            AggregateIsmQueryMsg::Isms {} => Ok(to_json_binary(&IsmsResponse {
                 isms: ISMS
                     .load(deps.storage)?
                     .into_iter()
                     .map(|v| v.into())
                     .collect(),
+                threshold: THRESHOLD.load(deps.storage)?,
             })?),
         },
     }
@@ -147,10 +164,13 @@ fn verify(
     })
 }
 
-fn verify_info(deps: Deps, _message: HexBinary) -> Result<VerifyInfoResponse, ContractError> {
-    Ok(VerifyInfoResponse {
+fn modules_and_threshold(
+    deps: Deps,
+    _message: HexBinary,
+) -> Result<ModulesAndThresholdResponse, ContractError> {
+    Ok(ModulesAndThresholdResponse {
         threshold: THRESHOLD.load(deps.storage)?,
-        validators: ISMS
+        modules: ISMS
             .load(deps.storage)?
             .into_iter()
             .map(|v| Ok(bech32_decode(v.as_str())?.into()))

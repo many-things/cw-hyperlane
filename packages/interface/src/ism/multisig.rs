@@ -5,7 +5,7 @@ use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
 use super::IsmQueryMsg;
 #[allow(unused_imports)]
-use super::{ModuleTypeResponse, VerifyInfoResponse, VerifyResponse};
+use super::{ModuleTypeResponse, ModulesAndThresholdResponse, VerifyResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -19,21 +19,22 @@ pub struct ValidatorSet {
 }
 
 #[cw_serde]
-pub struct ThresholdSet {
-    pub domain: u32,
-    pub threshold: u8,
-}
-
-#[cw_serde]
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
 
-    EnrollValidator { set: ValidatorSet },
-    EnrollValidators { set: Vec<ValidatorSet> },
-    UnenrollValidator { domain: u32, validator: HexBinary },
+    SimulateVerify {
+        metadata: HexBinary,
+        message: HexBinary,
+    },
 
-    SetThreshold { set: ThresholdSet },
-    SetThresholds { set: Vec<ThresholdSet> },
+    SetValidators {
+        domain: u32,
+        threshold: u8,
+        validators: Vec<HexBinary>, // should be 20 lenghted
+    },
+    UnsetDomain {
+        domain: u32,
+    },
 }
 
 #[cw_serde]
@@ -61,10 +62,15 @@ pub struct EnrolledValidatorsResponse {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::msg_checker;
+    use crate::{ism::ExpectedIsmMsg, msg_checker};
 
     #[test]
     fn test_ism_interface() {
+        let _checked: ExecuteMsg = msg_checker(ExpectedIsmMsg::SimulateVerify {
+            metadata: HexBinary::default(),
+            message: HexBinary::default(),
+        });
+
         let _checked: QueryMsg = msg_checker(IsmQueryMsg::ModuleType {}.wrap());
         let _checked: QueryMsg = msg_checker(
             IsmQueryMsg::Verify {
@@ -74,7 +80,7 @@ mod test {
             .wrap(),
         );
         let _checked: QueryMsg = msg_checker(
-            IsmQueryMsg::VerifyInfo {
+            IsmQueryMsg::ModulesAndThreshold {
                 message: HexBinary::default(),
             }
             .wrap(),

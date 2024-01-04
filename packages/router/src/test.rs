@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use cosmwasm_std::{
-    from_binary,
+    from_json,
     testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
     Addr, Binary, Empty, Env, MessageInfo, OwnedDeps, Response, StdResult,
 };
@@ -61,7 +61,7 @@ where
     }
 
     fn handle_query<R: DeserializeOwned>(&self, msg: RouterQuery<T>) -> StdResult<R> {
-        from_binary(&handle_query(self.deps.as_ref(), self.env.clone(), msg)?)
+        from_json(handle_query(self.deps.as_ref(), self.env.clone(), msg)?)
     }
 
     pub fn query_domains(&self) -> StdResult<DomainsResponse> {
@@ -94,7 +94,7 @@ where
         Self {
             deps: mock_dependencies(),
             env: mock_env(),
-            _marker: PhantomData::<T>::default(),
+            _marker: PhantomData::<T>,
         }
     }
 }

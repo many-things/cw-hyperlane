@@ -2,8 +2,8 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response, StdResult,
-    Uint256,
+    coins, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    StdError, StdResult, Uint256,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Item;
@@ -27,7 +27,7 @@ pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    SetGasAmount { gas: Uint256 },
+    SetGasAmount { gas: Option<Uint256> },
     PostDispatch(PostDispatchMsg),
 }
 
@@ -75,7 +75,10 @@ pub fn execute(
                     ),
             )),
         ExecuteMsg::SetGasAmount { gas } => {
-            GAS.save(deps.storage, &gas)?;
+            match gas {
+                Some(gas) => GAS.save(deps.storage, &gas)?,
+                None => GAS.remove(deps.storage),
+            }
 
             Ok(Response::new())
         }
@@ -88,12 +91,20 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
     match msg {
         ExpectedHookQueryMsg::Hook(msg) => match msg {
             HookQueryMsg::QuoteDispatch(_) => {
-                let gas = GAS.load(deps.storage)?;
+                let gas = GAS
+                    .may_load(deps.storage)?
+                    .map(|v| {
+                        v.to_string().parse::<u128>().map_err(|e| {
+                            StdError::generic_err(format!(
+                                "failed to parse Uint256 gas. reason: {e}"
+                            ))
+                        })
+                    })
+                    .transpose()?;
                 let gas_token = GAS_TOKEN.load(deps.storage)?;
+                let fees = gas.map(|v| coins(v, &gas_token)).unwrap_or_default();
 
-                Ok(to_binary(&QuoteDispatchResponse {
-                    gas_amount: Some(coin(gas.to_string().parse::<u128>().unwrap(), gas_token)),
-                })?)
+                Ok(to_json_binary(&QuoteDispatchResponse { fees })?)
             }
             HookQueryMsg::Mailbox {} => {
                 unimplemented!("mailbox query not implemented on mock hook")
@@ -104,7 +115,7 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
 
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{from_binary, to_binary, HexBinary};
+    use cosmwasm_std::{from_json, to_json_binary, HexBinary};
     use hpl_interface::hook::{ExpectedHookMsg, PostDispatchMsg};
 
     use super::ExecuteMsg;
@@ -114,8 +125,8 @@ mod test {
         // no need to test query - because it uses ExecptedHookQueryMsg directly!
 
         // test execute
-        let _: ExecuteMsg = from_binary(
-            &to_binary(&ExpectedHookMsg::PostDispatch(PostDispatchMsg {
+        let _: ExecuteMsg = from_json(
+            to_json_binary(&ExpectedHookMsg::PostDispatch(PostDispatchMsg {
                 metadata: HexBinary::default(),
                 message: HexBinary::default(),
             }))

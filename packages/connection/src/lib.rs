@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    ensure_eq, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
-    StdError, StdResult, Storage,
+    ensure_eq, to_json_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo,
+    QueryResponse, Response, StdError, StdResult, Storage,
 };
 use cw_storage_plus::Item;
 use hpl_interface::connection::{
@@ -75,13 +75,13 @@ pub fn handle_query<C: CustomQuery>(
     msg: ConnectionQueryMsg,
 ) -> StdResult<QueryResponse> {
     match msg {
-        ConnectionQueryMsg::GetMailbox {} => Ok(cosmwasm_std::to_binary(&MailboxResponse {
+        ConnectionQueryMsg::GetMailbox {} => Ok(to_json_binary(&MailboxResponse {
             mailbox: get_mailbox(deps.storage)?.map(|v| v.into()),
         })?),
-        ConnectionQueryMsg::GetHook {} => Ok(cosmwasm_std::to_binary(&HookResponse {
+        ConnectionQueryMsg::GetHook {} => Ok(to_json_binary(&HookResponse {
             hook: get_hook(deps.storage)?.map(|v| v.into()),
         })?),
-        ConnectionQueryMsg::GetIsm {} => Ok(cosmwasm_std::to_binary(&IsmResponse {
+        ConnectionQueryMsg::GetIsm {} => Ok(to_json_binary(&IsmResponse {
             ism: get_ism(deps.storage)?.map(|v| v.into()),
         })?),
     }

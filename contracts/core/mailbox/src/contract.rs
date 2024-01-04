@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{ensure, Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
 
 use hpl_interface::{
     core::mailbox::{ExecuteMsg, InstantiateMsg, MailboxHookQueryMsg, MailboxQueryMsg, QueryMsg},
@@ -23,6 +23,12 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    // check hrp is lowercase
+    ensure!(
+        msg.hrp.chars().all(|v| v.is_lowercase()),
+        ContractError::invalid_config("hrp must be lowercase")
+    );
+
     let config = Config {
         hrp: msg.hrp,
         local_domain: msg.domain,
@@ -31,12 +37,12 @@ pub fn instantiate(
         required_hook: None,
     };
 
+    let owner = deps.api.addr_validate(&msg.owner)?;
+
     CONFIG.save(deps.storage, &config)?;
     NONCE.save(deps.storage, &0u32)?;
 
-    let owner = deps.api.addr_validate(&msg.owner)?;
     hpl_ownable::initialize(deps.storage, &owner)?;
-    hpl_pausable::initialize(deps.storage, &false)?;
 
     Ok(Response::new().add_event(emit_instantiated(owner)))
 }
@@ -71,7 +77,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
-            MailboxHookQueryMsg::QuoteDispatch(msg) => to_binary(quote_dispatch(deps, msg)),
+            MailboxHookQueryMsg::QuoteDispatch { sender, msg } => {
+                to_binary(quote_dispatch(deps, sender, msg))
+            }
         },
         QueryMsg::Mailbox(msg) => match msg {
             Hrp {} => to_binary(get_hrp(deps)),

@@ -2,8 +2,8 @@
 mod test;
 
 use cosmwasm_std::{
-    ensure_eq, to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse,
-    Response, StdError, StdResult, Storage,
+    ensure_eq, to_json_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo,
+    QueryResponse, Response, StdError, StdResult, Storage,
 };
 use cw_storage_plus::Map;
 use hpl_interface::{
@@ -116,17 +116,17 @@ where
     T: Serialize + DeserializeOwned + Clone + Eq,
 {
     match msg {
-        RouterQuery::Domains {} => to_binary(&DomainsResponse {
+        RouterQuery::Domains {} => to_json_binary(&DomainsResponse {
             domains: get_domains::<T>(deps.storage)?,
         }),
-        RouterQuery::GetRoute { domain } => to_binary(&RouteResponse::<T> {
+        RouterQuery::GetRoute { domain } => to_json_binary(&RouteResponse::<T> {
             route: get_route(deps.storage, domain)?,
         }),
         RouterQuery::ListRoutes {
             offset,
             limit,
             order,
-        } => to_binary(&RoutesResponse::<T> {
+        } => to_json_binary(&RoutesResponse::<T> {
             routes: get_routes(deps.storage, offset, limit, order)?,
         }),
         RouterQuery::Placeholder(_) => unreachable!(),

@@ -11,11 +11,11 @@ macro_rules! build_test_querier {
             let res = $handler(
                 deps,
                 cosmwasm_std::testing::mock_env(),
-                cosmwasm_std::from_binary(&cosmwasm_std::to_binary(&msg).unwrap()).unwrap(),
+                cosmwasm_std::from_json(cosmwasm_std::to_json_binary(&msg).unwrap()).unwrap(),
             )
             .map_err(|e| e.to_string())
             .unwrap();
-            cosmwasm_std::from_binary(&res).unwrap()
+            cosmwasm_std::from_json(&res).unwrap()
         }
     };
 }
@@ -33,7 +33,7 @@ macro_rules! build_test_executor {
                 deps,
                 cosmwasm_std::testing::mock_env(),
                 cosmwasm_std::testing::mock_info(sender.as_str(), &funds),
-                cosmwasm_std::from_binary(&cosmwasm_std::to_binary(&msg).unwrap()).unwrap(),
+                cosmwasm_std::from_json(cosmwasm_std::to_json_binary(&msg).unwrap()).unwrap(),
             )
             .map_err(|e| e.to_string())
             .unwrap()

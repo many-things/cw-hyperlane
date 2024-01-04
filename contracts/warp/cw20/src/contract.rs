@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, wasm_execute, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo, QueryResponse,
-    Reply, Response, SubMsg, Uint128, Uint256, WasmMsg,
+    ensure_eq, to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo,
+    QueryResponse, Reply, Response, StdError, SubMsg, Uint128, Uint256, WasmMsg,
 };
 
 use cw20::Cw20ExecuteMsg;
@@ -56,7 +56,7 @@ pub fn instantiate(
                 WasmMsg::Instantiate {
                     admin: Some(env.contract.address.to_string()),
                     code_id: token.code_id,
-                    msg: cosmwasm_std::to_binary(&token_init_msg)?,
+                    msg: to_json_binary(&token_init_msg)?,
                     funds: vec![],
                     label: "token warp cw20".to_string(),
                 },
@@ -107,7 +107,12 @@ pub fn execute(
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         REPLY_ID_CREATE_DENOM => {
-            let reply_data = msg.result.unwrap().data.unwrap();
+            let reply_data = msg
+                .result
+                .into_result()
+                .map_err(StdError::generic_err)?
+                .data
+                .ok_or(StdError::generic_err("no reply data"))?;
             let init_resp = cw_utils::parse_instantiate_response_data(&reply_data)?;
             let init_addr = deps.api.addr_validate(&init_resp.contract_address)?;
 
@@ -240,11 +245,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             TokenType {} => to_binary(get_token_type(deps)),
             TokenMode {} => to_binary(get_token_mode(deps)),
         },
-        QueryMsg::IsmSpecifier(IsmSpecifierQueryMsg::InterchainSecurityModule()) => Ok(
-            cosmwasm_std::to_binary(&InterchainSecurityModuleResponse {
+        QueryMsg::IsmSpecifier(IsmSpecifierQueryMsg::InterchainSecurityModule()) => {
+            Ok(to_json_binary(&InterchainSecurityModuleResponse {
                 ism: get_ism(deps.storage)?,
-            })?,
-        ),
+            })?)
+        }
     }
 }
 
@@ -417,7 +422,7 @@ mod test {
                     CosmosMsg::Wasm(WasmMsg::Instantiate {
                         admin: Some(mock_env().contract.address.to_string()),
                         code_id: v.code_id,
-                        msg: cosmwasm_std::to_binary(&v.init_msg).unwrap(),
+                        msg: to_json_binary(&v.init_msg).unwrap(),
                         funds: vec![],
                         label: "token warp cw20".to_string()
                     })
@@ -474,8 +479,8 @@ mod test {
         match token_mode {
             TokenModeMsg::Bridged(_) => {
                 assert_eq!(
-                    cosmwasm_std::to_binary(msg).unwrap(),
-                    cosmwasm_std::to_binary(&CosmosMsg::<Empty>::Wasm(
+                    to_json_binary(msg).unwrap(),
+                    to_json_binary(&CosmosMsg::<Empty>::Wasm(
                         conv::to_mint_msg(
                             TOKEN,
                             bech32_encode(hrp, warp_msg.recipient.as_slice()).unwrap(),
@@ -488,8 +493,8 @@ mod test {
             }
             TokenModeMsg::Collateral(_) => {
                 assert_eq!(
-                    cosmwasm_std::to_binary(msg).unwrap(),
-                    cosmwasm_std::to_binary(&CosmosMsg::<Empty>::Wasm(
+                    to_json_binary(msg).unwrap(),
+                    to_json_binary(&CosmosMsg::<Empty>::Wasm(
                         conv::to_send_msg(
                             TOKEN,
                             bech32_encode(hrp, warp_msg.recipient.as_slice()).unwrap(),
@@ -548,7 +553,7 @@ mod test {
         .unwrap();
 
         let warp_msg = warp::Message {
-            recipient: recipient,
+            recipient,
             amount: Uint256::from_u128(100),
             metadata: HexBinary::default(),
         };
@@ -559,8 +564,8 @@ mod test {
         match token_mode {
             TokenModeMsg::Bridged(_) => {
                 assert_eq!(
-                    cosmwasm_std::to_binary(&msgs).unwrap(),
-                    cosmwasm_std::to_binary(&vec![
+                    to_json_binary(&msgs).unwrap(),
+                    to_json_binary(&vec![
                         transfer_from_msg.into(),
                         CosmosMsg::from(conv::to_burn_msg(TOKEN, Uint128::new(100)).unwrap()),
                         dispatch_msg,
@@ -570,8 +575,8 @@ mod test {
             }
             TokenModeMsg::Collateral(_) => {
                 assert_eq!(
-                    cosmwasm_std::to_binary(&msgs).unwrap(),
-                    cosmwasm_std::to_binary(&vec![transfer_from_msg.into(), dispatch_msg]).unwrap(),
+                    to_json_binary(&msgs).unwrap(),
+                    to_json_binary(&vec![transfer_from_msg.into(), dispatch_msg]).unwrap(),
                 );
             }
         }

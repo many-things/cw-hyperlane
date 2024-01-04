@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{QueryResponse, StdError, StdResult};
+use cosmwasm_std::{to_json_binary, QueryResponse, StdError, StdResult};
 use cw_storage_plus::Bound;
 
 pub mod connection;
@@ -84,19 +84,18 @@ pub fn range_option<'a, T: cw_storage_plus::PrimaryKey<'a>>(
 pub fn to_binary<T: serde::Serialize, E: Error, F: From<E> + From<StdError>>(
     data: Result<T, E>,
 ) -> Result<QueryResponse, F> {
-    data.map(|v| cosmwasm_std::to_binary(&v))?
-        .map_err(|err| err.into())
-}
-
-#[cfg(test)]
-mod test {
-    use cosmwasm_std::{from_binary, to_binary};
-    use serde::{de::DeserializeOwned, Serialize};
-
-    pub fn msg_checker<Input: Serialize, Output: DeserializeOwned>(input: Input) -> Output {
-        from_binary::<Output>(&to_binary(&input).unwrap()).unwrap()
-    }
+    data.map(|v| to_json_binary(&v))?.map_err(|err| err.into())
 }
 
 #[cfg(test)]
 pub use test::msg_checker;
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::{from_json, to_json_binary};
+    use serde::{de::DeserializeOwned, Serialize};
+
+    pub fn msg_checker<Input: Serialize, Output: DeserializeOwned>(input: Input) -> Output {
+        from_json::<Output>(to_json_binary(&input).unwrap()).unwrap()
+    }
+}

@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response,
+    ensure_eq, to_json_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response,
 };
 use cw2::set_contract_version;
 use hpl_interface::{
@@ -13,7 +13,7 @@ use hpl_interface::{
 };
 use hpl_ownable::get_owner;
 
-use crate::{error::ContractError, state::MODULES, CONTRACT_NAME, CONTRACT_VERSION};
+use crate::{error::ContractError, new_event, state::MODULES, CONTRACT_NAME, CONTRACT_VERSION};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -65,7 +65,49 @@ pub fn execute(
                 &deps.api.addr_validate(&ism.address)?,
             )?;
 
-            Ok(Response::default())
+            Ok(Response::default().add_event(
+                new_event("set")
+                    .add_attribute("sender", info.sender)
+                    .add_attribute("domain", ism.domain.to_string())
+                    .add_attribute("ism", ism.address),
+            ))
+        }
+        Unset { domains } => {
+            ensure_eq!(
+                get_owner(deps.storage)?,
+                info.sender,
+                ContractError::Unauthorized {}
+            );
+
+            for domain in domains.clone() {
+                MODULES.remove(deps.storage, domain);
+            }
+
+            Ok(Response::default().add_event(
+                new_event("unset")
+                    .add_attribute("sender", info.sender)
+                    .add_attribute(
+                        "domains",
+                        domains
+                            .into_iter()
+                            .map(|v| v.to_string())
+                            .collect::<Vec<_>>()
+                            .join(","),
+                    ),
+            ))
+        }
+        SimulateVerify { metadata, message } => {
+            let decoded = Message::from(message.clone());
+
+            let ism = MODULES
+                .may_load(deps.storage, decoded.origin_domain)?
+                .ok_or(ContractError::RouteNotFound {})?;
+
+            let _: VerifyResponse = deps
+                .querier
+                .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message }.wrap())?;
+
+            Ok(Response::new())
         }
     }
 }
@@ -77,15 +119,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
     match msg {
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Ism(msg) => match msg {
-            ModuleType {} => Ok(to_binary(&ModuleTypeResponse {
+            ModuleType {} => Ok(to_json_binary(&ModuleTypeResponse {
                 typ: hpl_interface::ism::IsmType::Routing,
             })?),
             Verify { metadata, message } => {
-                deps.api.debug(&format!(
-                    "ism_routing::verify: metadata: {:?}, message: {:?}",
-                    metadata, message
-                ));
-
                 let decoded = Message::from(message.clone());
 
                 let ism = MODULES
@@ -96,9 +133,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                     .querier
                     .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message }.wrap())?;
 
-                Ok(to_binary(&verify_resp)?)
+                Ok(to_json_binary(&verify_resp)?)
             }
-            VerifyInfo { message } => {
+            ModulesAndThreshold { message } => {
                 let decoded = Message::from(message.clone());
 
                 let ism = MODULES
@@ -107,9 +144,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 
                 let verify_resp: VerifyResponse = deps
                     .querier
-                    .query_wasm_smart(ism, &IsmQueryMsg::VerifyInfo { message })?;
+                    .query_wasm_smart(ism, &IsmQueryMsg::ModulesAndThreshold { message })?;
 
-                Ok(to_binary(&verify_resp)?)
+                Ok(to_json_binary(&verify_resp)?)
             }
         },
         QueryMsg::RoutingIsm(msg) => match msg {
@@ -121,7 +158,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                     .ok_or(ContractError::RouteNotFound {})?
                     .to_string();
 
-                Ok(to_binary(&RouteResponse { ism })?)
+                Ok(to_json_binary(&RouteResponse { ism })?)
             }
         },
     }

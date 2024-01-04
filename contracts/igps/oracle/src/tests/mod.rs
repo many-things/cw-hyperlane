@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    from_binary, testing::mock_info, Addr, Api, Empty, Env, MessageInfo, OwnedDeps, Querier,
+    from_json, testing::mock_info, Addr, Api, Empty, Env, MessageInfo, OwnedDeps, Querier,
     Response, Storage,
 };
 use hpl_interface::igp::oracle::{
@@ -51,7 +51,7 @@ where
 
     fn query<T: DeserializeOwned>(&self, msg: QueryMsg) -> Result<T, ContractError> {
         query(self.deps.as_ref(), self.env.clone(), msg)
-            .map(|v| from_binary::<T>(&v))?
+            .map(|v| from_json::<T>(&v))?
             .map_err(|e| e.into())
     }
 

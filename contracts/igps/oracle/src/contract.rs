@@ -1,7 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    ensure, ensure_eq, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse,
+    Response,
 };
 
 use hpl_interface::igp::oracle::{
@@ -50,6 +51,11 @@ pub fn execute(
 
             let mut domains = vec![];
             for config in configs {
+                ensure!(
+                    !config.token_exchange_rate.is_zero(),
+                    ContractError::invalid_config("exchange rate must be non-zero")
+                );
+
                 domains.push(config.remote_domain.to_string());
                 insert_gas_data(deps.storage, config)?;
             }
@@ -84,7 +90,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
             IgpGasOracleQueryMsg::GetExchangeRateAndGasPrice { dest_domain } => {
                 let gas_data = REMOTE_GAS_DATA.load(deps.storage, dest_domain)?;
 
-                Ok(to_binary(&GetExchangeRateAndGasPriceResponse {
+                Ok(to_json_binary(&GetExchangeRateAndGasPriceResponse {
                     gas_price: gas_data.gas_price,
                     exchange_rate: gas_data.token_exchange_rate,
                 })?)

@@ -1,6 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response};
+use cosmwasm_std::{
+    ensure, ensure_eq, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
+};
 use cw2::set_contract_version;
 use hpl_interface::{
     ism::{
@@ -11,10 +13,10 @@ use hpl_interface::{
     },
     to_binary,
 };
+use hpl_ownable::get_owner;
 
 use crate::{
     error::ContractError,
-    execute,
     state::{THRESHOLD, VALIDATORS},
     CONTRACT_NAME, CONTRACT_VERSION,
 };
@@ -47,14 +49,61 @@ pub fn execute(
 
     match msg {
         Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
-        EnrollValidator { set: msg } => execute::enroll_validator(deps, info, msg),
-        EnrollValidators { set: validators } => execute::enroll_validators(deps, info, validators),
-        UnenrollValidator {
+        SetValidators {
             domain,
-            validator: vald,
-        } => execute::unenroll_validator(deps, info, domain, vald),
-        SetThreshold { set: threshold } => execute::set_threshold(deps, info, threshold),
-        SetThresholds { set: thresholds } => execute::set_thresholds(deps, info, thresholds),
+            threshold,
+            validators,
+        } => {
+            ensure_eq!(
+                info.sender,
+                get_owner(deps.storage)?,
+                ContractError::Unauthorized {}
+            );
+            ensure!(
+                validators.iter().all(|v| v.len() == 20),
+                ContractError::invalid_addr("length should be 20")
+            );
+            ensure!(
+                validators.len() > threshold as usize && threshold > 0,
+                ContractError::invalid_args(&format!(
+                    "threshold not in range. 0 <  <= {}",
+                    validators.len(),
+                ))
+            );
+
+            VALIDATORS.save(deps.storage, domain, &validators)?;
+            THRESHOLD.save(deps.storage, domain, &threshold)?;
+
+            Ok(Response::new().add_event(
+                Event::new("ism_multisig_set_validators")
+                    .add_attribute("sender", info.sender)
+                    .add_attribute("domain", domain.to_string())
+                    .add_attribute("validators", validators.len().to_string())
+                    .add_attribute("threshold", threshold.to_string()),
+            ))
+        }
+        UnsetDomain { domain } => {
+            ensure_eq!(
+                info.sender,
+                get_owner(deps.storage)?,
+                ContractError::Unauthorized {}
+            );
+
+            VALIDATORS.remove(deps.storage, domain);
+            THRESHOLD.remove(deps.storage, domain);
+
+            Ok(Response::new().add_event(
+                Event::new("ism_multisig_unset_domain")
+                    .add_attribute("sender", info.sender)
+                    .add_attribute("domain", domain.to_string()),
+            ))
+        }
+
+        SimulateVerify { metadata, message } => {
+            crate::query::verify_message(deps.as_ref(), metadata, message)?;
+
+            Ok(Response::new())
+        }
     }
 }
 
@@ -72,9 +121,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 metadata: raw_metadata,
                 message: raw_message,
             } => to_binary(query::verify_message(deps, raw_metadata, raw_message)),
-            VerifyInfo {
+            ModulesAndThreshold {
                 message: raw_message,
-            } => to_binary(query::get_verify_info(deps, raw_message)),
+            } => to_binary(query::modules_and_threshold(deps, raw_message)),
         },
         QueryMsg::MultisigIsm(msg) => match msg {
             MultisigIsmQueryMsg::EnrolledValidators { domain } => to_binary({

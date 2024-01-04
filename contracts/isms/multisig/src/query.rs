@@ -1,6 +1,6 @@
 use cosmwasm_std::{Deps, HexBinary};
 use hpl_interface::{
-    ism::{IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse},
+    ism::{IsmType, ModuleTypeResponse, ModulesAndThresholdResponse, VerifyResponse},
     types::{eth_addr, eth_hash, Message, MessageIdMultisigIsmMetadata},
 };
 
@@ -21,11 +21,6 @@ pub fn verify_message(
     raw_metadata: HexBinary,
     raw_message: HexBinary,
 ) -> Result<VerifyResponse, ContractError> {
-    deps.api.debug(&format!(
-        "ism_multisig::verify: metadata: {:?}, message: {:?}",
-        raw_metadata, raw_message
-    ));
-
     let metadata: MessageIdMultisigIsmMetadata = raw_metadata.into();
     let message: Message = raw_message.into();
 
@@ -65,18 +60,18 @@ pub fn verify_message(
     })
 }
 
-pub fn get_verify_info(
+pub fn modules_and_threshold(
     deps: Deps,
     raw_message: HexBinary,
-) -> Result<VerifyInfoResponse, ContractError> {
+) -> Result<ModulesAndThresholdResponse, ContractError> {
     let message: Message = raw_message.into();
 
     let threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
     let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
 
-    Ok(VerifyInfoResponse {
+    Ok(ModulesAndThresholdResponse {
         threshold,
-        validators,
+        modules: validators,
     })
 }
 
@@ -92,7 +87,7 @@ mod test {
     use k256::{ecdsa::SigningKey, elliptic_curve::rand_core::OsRng};
     use rstest::rstest;
 
-    use super::{get_module_type, get_verify_info, verify_message};
+    use super::{get_module_type, modules_and_threshold, verify_message};
 
     #[test]
     fn test_get_module_type() {
@@ -160,9 +155,9 @@ mod test {
             .unwrap();
         THRESHOLD.save(deps.as_mut().storage, 26658, &1u8).unwrap();
 
-        let info = get_verify_info(deps.as_ref(), raw_message).unwrap();
+        let info = modules_and_threshold(deps.as_ref(), raw_message).unwrap();
 
-        assert_eq!(info.validators, vec![addr]);
+        assert_eq!(info.modules, vec![addr]);
         assert_eq!(info.threshold, 1);
     }
 }

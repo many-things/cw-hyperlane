@@ -1,8 +1,8 @@
 use cosmwasm_std::{
-    coin, from_binary,
+    coin, from_json,
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, Addr, BankMsg, Coin, ContractResult, HexBinary, Order, QuerierResult, StdResult,
-    SubMsg, SystemResult, Uint128, Uint256, WasmQuery,
+    to_json_binary, Addr, BankMsg, Coin, ContractResult, HexBinary, Order, QuerierResult,
+    StdResult, SubMsg, SystemResult, Uint128, Uint256, WasmQuery,
 };
 use hpl_interface::{
     igp::{
@@ -28,7 +28,7 @@ const DEC_9: u128 = 10u128.pow(9);
 
 fn test_mock_querier(v: &WasmQuery) -> QuerierResult {
     let (contract_addr, msg) = match v {
-        WasmQuery::Smart { contract_addr, msg } => (contract_addr, from_binary(msg).unwrap()),
+        WasmQuery::Smart { contract_addr, msg } => (contract_addr, from_json(msg).unwrap()),
         _ => unreachable!("only smart query"),
     };
 
@@ -42,7 +42,7 @@ fn test_mock_querier(v: &WasmQuery) -> QuerierResult {
                 let gas_price = split.pop().unwrap().parse::<u128>().unwrap();
                 let exchange_rate = split.pop().unwrap().parse::<u128>().unwrap();
 
-                let res = to_binary(&oracle::GetExchangeRateAndGasPriceResponse {
+                let res = to_json_binary(&oracle::GetExchangeRateAndGasPriceResponse {
                     gas_price: Uint128::new(gas_price * DEC_9), // 150 gwei gas price
                     exchange_rate: Uint128::new(exchange_rate * DEC_9), // 0.2 exchange rate (remote token less valuable)
                 })

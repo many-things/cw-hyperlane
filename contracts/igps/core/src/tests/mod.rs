@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    from_binary,
+    from_json,
     testing::{mock_info, MockApi, MockQuerier, MockStorage},
     Addr, Coin, Deps, DepsMut, Empty, Env, HexBinary, MessageInfo, OwnedDeps, Response,
 };
@@ -65,7 +65,7 @@ impl IGP {
 
     fn query<T: DeserializeOwned>(&self, msg: QueryMsg) -> Result<T, ContractError> {
         query(self.deps.as_ref(), self.env.clone(), msg)
-            .map(|v| from_binary::<T>(&v))?
+            .map(|v| from_json::<T>(&v))?
             .map_err(|e| e.into())
     }
 

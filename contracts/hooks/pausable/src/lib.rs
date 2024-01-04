@@ -96,16 +96,16 @@ fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
 }
 
 fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
-    Ok(QuoteDispatchResponse { gas_amount: None })
+    Ok(QuoteDispatchResponse { fees: vec![] })
 }
 
 #[cfg(test)]
 mod test {
     use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
     use cosmwasm_std::{
-        from_binary,
+        from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        Addr, HexBinary, OwnedDeps,
+        to_json_binary, Addr, HexBinary, OwnedDeps,
     };
     use hpl_interface::hook::{PostDispatchMsg, QuoteDispatchMsg};
     use hpl_ownable::get_owner;
@@ -118,9 +118,9 @@ mod test {
     type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
 
     fn query<S: Serialize, T: DeserializeOwned>(deps: Deps, msg: S) -> T {
-        let req: QueryMsg = from_binary(&cosmwasm_std::to_binary(&msg).unwrap()).unwrap();
+        let req: QueryMsg = from_json(to_json_binary(&msg).unwrap()).unwrap();
         let res = crate::query(deps, mock_env(), req).unwrap();
-        from_binary(&res).unwrap()
+        from_json(res).unwrap()
     }
 
     #[fixture]
@@ -182,6 +182,6 @@ mod test {
             deps.as_ref(),
             QueryMsg::Hook(HookQueryMsg::QuoteDispatch(QuoteDispatchMsg::default())),
         );
-        assert_eq!(res.gas_amount, None);
+        assert_eq!(res.fees, vec![]);
     }
 }

@@ -2,7 +2,7 @@
 mod test;
 
 use cosmwasm_std::{
-    ensure, ensure_eq, to_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo,
+    ensure, ensure_eq, to_json_binary, Addr, CustomQuery, Deps, DepsMut, Env, Event, MessageInfo,
     QueryResponse, Response, StdError, StdResult, Storage,
 };
 use cw_storage_plus::Item;
@@ -69,7 +69,7 @@ pub fn handle_query<C: CustomQuery>(
     msg: PausableQueryMsg,
 ) -> StdResult<QueryResponse> {
     match msg {
-        PausableQueryMsg::PauseInfo {} => to_binary(&PauseInfoResponse {
+        PausableQueryMsg::PauseInfo {} => to_json_binary(&PauseInfoResponse {
             paused: get_pause_info(deps.storage)?,
         }),
     }

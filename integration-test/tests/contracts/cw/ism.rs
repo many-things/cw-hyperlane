@@ -1,5 +1,5 @@
-use cosmwasm_std::Empty;
-use hpl_interface::ism::multisig::ThresholdSet;
+use cosmwasm_std::{Empty, HexBinary, StdResult};
+use hpl_interface::types::pub_to_addr;
 use osmosis_test_tube::Wasm;
 use test_tube::{Account, Runner, SigningAccount};
 
@@ -69,18 +69,18 @@ impl Ism {
 
         wasm.execute(
             &multisig_ism,
-            &hpl_interface::ism::multisig::ExecuteMsg::EnrollValidators { set: set.to_set() },
-            &[],
-            owner,
-        )?;
-
-        wasm.execute(
-            &multisig_ism,
-            &hpl_interface::ism::multisig::ExecuteMsg::SetThreshold {
-                set: ThresholdSet {
-                    domain: set.domain,
-                    threshold: set.threshold,
-                },
+            &hpl_interface::ism::multisig::ExecuteMsg::SetValidators {
+                domain: set.domain,
+                threshold: set.threshold,
+                validators: set
+                    .validators
+                    .iter()
+                    .map(|v| {
+                        pub_to_addr(HexBinary::from(
+                            v.pub_key.to_encoded_point(true).as_bytes().to_vec(),
+                        ))
+                    })
+                    .collect::<StdResult<Vec<_>>>()?,
             },
             &[],
             owner,

@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, Addr, ContractResult, HexBinary, SystemResult, WasmQuery};
+use cosmwasm_std::{to_json_binary, Addr, ContractResult, HexBinary, SystemResult, WasmQuery};
 use hpl_interface::{
     ism::{routing::IsmSet, IsmType, VerifyResponse},
     types::Message,
@@ -88,7 +88,7 @@ fn test_query() -> anyhow::Result<()> {
     // register mock handler
     ism.deps.querier.update_wasm(|v| match v {
         WasmQuery::Smart { contract_addr, .. } => SystemResult::Ok(ContractResult::Ok(
-            to_binary(&VerifyResponse {
+            to_json_binary(&VerifyResponse {
                 verified: contract_addr == "ism1",
             })
             .unwrap(),

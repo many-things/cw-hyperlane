@@ -1,7 +1,5 @@
 pub mod contract;
 mod error;
-pub mod event;
-pub mod execute;
 pub mod query;
 pub mod state;
 
