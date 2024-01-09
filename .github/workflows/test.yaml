@@ -30,12 +30,19 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Rust
-        run: rustup update stable
+        run: rustup update 1.69
 
       - name: Install target
         run: rustup target add wasm32-unknown-unknown
 
-      - run: cargo test --workspace --exclude hpl-tests
+      - name: Install cw-optimizoor
+        run: cargo install cw-optimizoor
+
+      - name: Run tests
+        run: cargo test --workspace --exclude hpl-tests
+
+      - name: Optimize wasm
+        run: cargo cw-optimizoor
 
   coverage:
     runs-on: ubuntu-latest
