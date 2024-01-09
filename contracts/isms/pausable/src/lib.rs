@@ -107,10 +107,9 @@ mod test {
 
     type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
 
-    fn query<S: Serialize, T: DeserializeOwned>(deps: Deps, msg: S) -> T {
+    fn query(deps: Deps, msg: crate::QueryMsg) -> Result<QueryResponse, ContractError> {
         let req: QueryMsg = from_json(to_json_binary(&msg).unwrap()).unwrap();
-        let res = crate::query(deps, mock_env(), req).unwrap();
-        from_json(res).unwrap()
+        crate::query(deps, mock_env(), req)
     }
 
     #[fixture]
@@ -153,12 +152,14 @@ mod test {
         let raw_message = hex("0000000000000068220000000000000000000000000d1255b09d94659bb0888e0aa9fca60245ce402a0000682155208cd518cffaac1b5d8df216a9bd050c9a03f0d4f3ba88e5268ac4cd12ee2d68656c6c6f");
         let raw_metadata = raw_message.clone();
 
-        query::<_, VerifyResponse>(
+        query(
             deps.as_ref(),
             QueryMsg::Ism(IsmQueryMsg::Verify {
                 metadata: raw_metadata,
                 message: raw_message,
             }),
-        );
+        )
+        .map_err(|e| e.to_string())
+        .unwrap();
     }
 }
