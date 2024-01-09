@@ -1,6 +1,7 @@
 pub mod aggregate;
 pub mod multisig;
 pub mod routing;
+pub mod pausable;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, CustomQuery, HexBinary, QuerierWrapper, StdResult};
