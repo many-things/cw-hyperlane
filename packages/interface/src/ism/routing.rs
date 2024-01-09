@@ -23,17 +23,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
 
-    SimulateVerify {
-        metadata: HexBinary,
-        message: HexBinary,
-    },
-
-    Set {
-        ism: IsmSet,
-    },
-    Unset {
-        domains: Vec<u32>,
-    },
+    Set { ism: IsmSet },
+    Unset { domains: Vec<u32> },
 }
 
 #[cw_serde]
@@ -62,18 +53,10 @@ mod test {
     use cosmwasm_std::HexBinary;
 
     use super::*;
-    use crate::{
-        ism::{ExpectedIsmMsg, IsmQueryMsg},
-        msg_checker,
-    };
+    use crate::{ism::IsmQueryMsg, msg_checker};
 
     #[test]
     fn test_ism_interface() {
-        let _checked: ExecuteMsg = msg_checker(ExpectedIsmMsg::SimulateVerify {
-            metadata: HexBinary::default(),
-            message: HexBinary::default(),
-        });
-
         let _checked: QueryMsg = msg_checker(IsmQueryMsg::ModuleType {}.wrap());
         let _checked: QueryMsg = msg_checker(
             IsmQueryMsg::Verify {

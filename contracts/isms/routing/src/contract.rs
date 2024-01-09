@@ -96,19 +96,6 @@ pub fn execute(
                     ),
             ))
         }
-        SimulateVerify { metadata, message } => {
-            let decoded = Message::from(message.clone());
-
-            let ism = MODULES
-                .may_load(deps.storage, decoded.origin_domain)?
-                .ok_or(ContractError::RouteNotFound {})?;
-
-            let _: VerifyResponse = deps
-                .querier
-                .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message }.wrap())?;
-
-            Ok(Response::new())
-        }
     }
 }
 

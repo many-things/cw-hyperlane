@@ -94,15 +94,9 @@ pub fn execute(
 
             Ok(Response::new().add_event(
                 Event::new("ism_multisig_unset_domain")
-                    .add_attribute("sender", info.sender)
+                    .add_attribute("sener", info.sender)
                     .add_attribute("domain", domain.to_string()),
             ))
-        }
-
-        SimulateVerify { metadata, message } => {
-            crate::query::verify_message(deps.as_ref(), metadata, message)?;
-
-            Ok(Response::new())
         }
     }
 }

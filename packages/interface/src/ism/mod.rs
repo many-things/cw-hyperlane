@@ -19,14 +19,6 @@ pub enum IsmType {
 }
 
 #[cw_serde]
-pub enum ExpectedIsmMsg {
-    SimulateVerify {
-        metadata: HexBinary,
-        message: HexBinary,
-    },
-}
-
-#[cw_serde]
 #[derive(QueryResponses)]
 pub enum IsmQueryMsg {
     #[returns(ModuleTypeResponse)]
