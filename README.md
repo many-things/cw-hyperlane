@@ -67,6 +67,8 @@ grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existin
 
    - [aggregate ism](./contracts/isms/aggregate)
 
+   - [pausable](./contracts/isms/pausable)
+
    - For testing: [mock ism](./contracts/mocks/mock-ism)
 
 5. Set deployed hooks and isms to Mailbox
