@@ -92,7 +92,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 
 #[cfg(test)]
 mod test {
-    use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
     use cosmwasm_std::{
         from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
