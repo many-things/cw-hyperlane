@@ -1,18 +1,18 @@
-import { Command } from "commander";
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
+import { Command } from "commander";
 
 import { version } from "../package.json";
 import { config, getSigningClient } from "../src/config";
+import {
+    HplHookMerkle,
+    HplIgp,
+    HplIgpOracle,
+    HplIsmAggregate,
+    HplMailbox,
+} from "../src/contracts";
 import { addPad } from "../src/conv";
 import { loadContext } from "../src/load_context";
 import { ContractFetcher } from "./fetch";
-import {
-  HplMailbox,
-  HplIgp,
-  HplIgpGasOracle,
-  HplHookMerkle,
-  HplIsmAggregate,
-} from "../src/contracts";
 
 const program = new Command();
 
@@ -54,7 +54,7 @@ function makeHandler(
     const fetcher = new ContractFetcher(ctx, client);
     const mailbox = fetcher.get(HplMailbox, "hpl_mailbox");
     const igp = fetcher.get(HplIgp, "hpl_igp");
-    const igp_oracle = fetcher.get(HplIgpGasOracle, "hpl_igp_oracle");
+    const igp_oracle = fetcher.get(HplIgpOracle, "hpl_igp_oracle");
     const hook_merkle = fetcher.get(HplHookMerkle, "hpl_hook_merkle");
     const hook_aggregate = fetcher.get(HplIsmAggregate, "hpl_hook_aggregate");
 

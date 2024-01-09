@@ -8,6 +8,7 @@ export * from "./hpl_igp";
 export * from "./hpl_igp_oracle";
 export * from "./hpl_ism_aggregate";
 export * from "./hpl_ism_multisig";
+export * from "./hpl_ism_pausable";
 export * from "./hpl_ism_routing";
 export * from "./hpl_mailbox";
 export * from "./hpl_test_mock_hook";
@@ -16,10 +17,10 @@ export * from "./hpl_validator_announce";
 export * from "./hpl_warp_cw20";
 export * from "./hpl_warp_native";
 
-import { readdirSync } from "fs";
-import { Context, Contract, ContractConstructor } from "../types";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { readdirSync } from "fs";
 import { Container } from "inversify";
+import { Context, Contract, ContractConstructor } from "../types";
 
 const contractNames: string[] = readdirSync(__dirname)
   .filter((f) => f !== "index.ts")
