@@ -35,7 +35,7 @@ jobs:
       - name: Install target
         run: rustup target add wasm32-unknown-unknown
 
-      - name: Install cw-optimizoor
+      - name: Install cw-optimizoor --force
         run: cargo install cw-optimizoor
 
       - name: Run tests
