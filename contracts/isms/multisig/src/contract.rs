@@ -64,7 +64,7 @@ pub fn execute(
                 ContractError::invalid_addr("length should be 20")
             );
             ensure!(
-                validators.len() > threshold as usize && threshold > 0,
+                validators.len() >= threshold as usize && threshold > 0,
                 ContractError::invalid_args(&format!(
                     "threshold not in range. 0 <  <= {}",
                     validators.len(),
@@ -136,4 +136,78 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
     Ok(Response::new())
+}
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::{
+        testing::mock_dependencies, HexBinary,
+    };
+    use hpl_interface::{
+        build_test_executor, build_test_querier,
+        ism::multisig::ExecuteMsg,
+    };
+    use ibcx_test_utils::{addr, hex};
+    use rstest::rstest;
+
+    use crate::state::VALIDATORS;
+
+    build_test_executor!(crate::contract::execute);
+    build_test_querier!(crate::contract::query);
+
+    #[rstest]
+    #[case("owner", vec![hex(&"deadbeef".repeat(5))])]
+    #[should_panic(expected = "unauthorized")]
+    #[case("someone", vec![hex(&"deadbeef".repeat(5))])]
+    fn test_enroll(#[case] sender: &str, #[case] validators: Vec<HexBinary>) {
+        let mut deps = mock_dependencies();
+
+        hpl_ownable::initialize(deps.as_mut().storage, &addr("owner")).unwrap();
+
+        test_execute(
+            deps.as_mut(),
+            &addr(sender),
+            ExecuteMsg::SetValidators {
+                domain: 1,
+                threshold: 1,
+                validators: validators.clone(),
+            },
+            vec![],
+        );
+
+        assert_eq!(
+            VALIDATORS.load(deps.as_ref().storage, 1).unwrap(),
+            validators
+        );
+    }
+
+    #[rstest]
+    #[case("owner")]
+    #[should_panic(expected = "unauthorized")]
+    #[case("someone")]
+    fn test_unenroll(#[case] sender: &str) {
+        let mut deps = mock_dependencies();
+
+        hpl_ownable::initialize(deps.as_mut().storage, &addr("owner")).unwrap();
+
+        test_execute(
+            deps.as_mut(),
+            &addr("owner"),
+            ExecuteMsg::SetValidators {
+                domain: 1,
+                threshold: 1,
+                validators: vec![hex(&"deadbeef".repeat(5))],
+            },
+            vec![],
+        );
+
+        test_execute(
+            deps.as_mut(),
+            &addr(sender),
+            ExecuteMsg::UnsetDomain { domain: 1 } ,
+            vec![],
+        );
+
+        assert!(!VALIDATORS.has(deps.as_ref().storage, 1));
+    }
 }
