@@ -1,12 +1,13 @@
 import { injectable } from "inversify";
-import { Context, Migration } from "../types";
 import {
-  HplMailbox,
   HplHookMerkle,
-  HplIgpGasOracle,
+  HplIgp,
+  HplIgpOracle,
   HplIsmMultisig,
+  HplMailbox,
   HplTestMockHook,
 } from "../contracts";
+import { Context, Migration } from "../types";
 
 @injectable()
 export default class InitializeStandalone implements Migration {
@@ -18,7 +19,7 @@ export default class InitializeStandalone implements Migration {
     private mailbox: HplMailbox,
     private hook_merkle: HplHookMerkle,
     private igp: HplIgp,
-    private igp_oracle: HplIgpGasOracle,
+    private igp_oracle: HplIgpOracle,
     private ism_multisig: HplIsmMultisig,
     private test_mock_hook: HplTestMockHook
   ) {}

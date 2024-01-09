@@ -1,10 +1,10 @@
 import {
-  ExecuteResult,
-  SigningCosmWasmClient,
+    ExecuteResult,
+    SigningCosmWasmClient,
 } from "@cosmjs/cosmwasm-stargate";
-import { getWasmPath } from "./load_wasm";
-import fs from "fs";
 import { fromBech32 } from "@cosmjs/encoding";
+import fs from "fs";
+import { getWasmPath } from "./load_wasm";
 
 export interface ContractContext {
   codeId: number | undefined;
@@ -165,7 +165,7 @@ export interface HplIgpCoreInstantiateMsg {
   beneficiary: string;
 }
 
-export interface HplIgpGasOracleInstantiateMsg {}
+export interface HplIgpOracleInstantiateMsg {}
 
 export interface HplIsmMultisigInstantiateMsg {
   owner: string;
