@@ -38,8 +38,8 @@ pub enum IsmQueryMsg {
         message: HexBinary,
     },
 
-    #[returns(ModulesAndThresholdResponse)]
-    ModulesAndThreshold { message: HexBinary },
+    #[returns(VerifyInfoResponse)]
+    VerifyInfo { message: HexBinary },
 }
 
 impl IsmQueryMsg {
@@ -87,9 +87,9 @@ pub struct VerifyResponse {
 }
 
 #[cw_serde]
-pub struct ModulesAndThresholdResponse {
+pub struct VerifyInfoResponse {
     pub threshold: u8,
-    pub modules: Vec<HexBinary>,
+    pub validators: Vec<HexBinary>,
 }
 
 #[cw_serde]
