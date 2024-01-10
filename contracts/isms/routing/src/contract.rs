@@ -96,19 +96,6 @@ pub fn execute(
                     ),
             ))
         }
-        SimulateVerify { metadata, message } => {
-            let decoded = Message::from(message.clone());
-
-            let ism = MODULES
-                .may_load(deps.storage, decoded.origin_domain)?
-                .ok_or(ContractError::RouteNotFound {})?;
-
-            let _: VerifyResponse = deps
-                .querier
-                .query_wasm_smart(ism, &IsmQueryMsg::Verify { metadata, message }.wrap())?;
-
-            Ok(Response::new())
-        }
     }
 }
 
@@ -135,7 +122,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 
                 Ok(to_json_binary(&verify_resp)?)
             }
-            ModulesAndThreshold { message } => {
+            VerifyInfo { message } => {
                 let decoded = Message::from(message.clone());
 
                 let ism = MODULES
@@ -144,7 +131,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
 
                 let verify_resp: VerifyResponse = deps
                     .querier
-                    .query_wasm_smart(ism, &IsmQueryMsg::ModulesAndThreshold { message })?;
+                    .query_wasm_smart(ism, &IsmQueryMsg::VerifyInfo { message })?;
 
                 Ok(to_json_binary(&verify_resp)?)
             }

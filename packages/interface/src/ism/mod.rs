@@ -19,14 +19,6 @@ pub enum IsmType {
 }
 
 #[cw_serde]
-pub enum ExpectedIsmMsg {
-    SimulateVerify {
-        metadata: HexBinary,
-        message: HexBinary,
-    },
-}
-
-#[cw_serde]
 #[derive(QueryResponses)]
 pub enum IsmQueryMsg {
     #[returns(ModuleTypeResponse)]
@@ -38,8 +30,8 @@ pub enum IsmQueryMsg {
         message: HexBinary,
     },
 
-    #[returns(ModulesAndThresholdResponse)]
-    ModulesAndThreshold { message: HexBinary },
+    #[returns(VerifyInfoResponse)]
+    VerifyInfo { message: HexBinary },
 }
 
 impl IsmQueryMsg {
@@ -87,9 +79,9 @@ pub struct VerifyResponse {
 }
 
 #[cw_serde]
-pub struct ModulesAndThresholdResponse {
+pub struct VerifyInfoResponse {
     pub threshold: u8,
-    pub modules: Vec<HexBinary>,
+    pub validators: Vec<HexBinary>,
 }
 
 #[cw_serde]

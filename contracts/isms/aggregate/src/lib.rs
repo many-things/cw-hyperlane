@@ -12,7 +12,7 @@ use cw_storage_plus::Item;
 use hpl_interface::{
     ism::{
         aggregate::{AggregateIsmQueryMsg, ExecuteMsg, InstantiateMsg, IsmsResponse, QueryMsg},
-        IsmQueryMsg, IsmType, ModuleTypeResponse, ModulesAndThresholdResponse, VerifyResponse,
+        IsmQueryMsg, IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse,
     },
     to_binary,
     types::{bech32_decode, AggregateMetadata},
@@ -100,11 +100,6 @@ pub fn execute(
             Ok(Response::new()
                 .add_event(new_event("set_isms").add_attribute("isms", isms.join(","))))
         }
-        ExecuteMsg::SimulateVerify { metadata, message } => {
-            verify(deps.as_ref(), metadata, message)?;
-
-            Ok(Response::new())
-        }
     }
 }
 
@@ -122,7 +117,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 })
             }),
             Verify { metadata, message } => to_binary(verify(deps, metadata, message)),
-            ModulesAndThreshold { message } => to_binary(modules_and_threshold(deps, message)),
+            VerifyInfo { message } => to_binary(verify_info(deps, message)),
         },
 
         QueryMsg::AggregateIsm(msg) => match msg {
@@ -164,13 +159,10 @@ fn verify(
     })
 }
 
-fn modules_and_threshold(
-    deps: Deps,
-    _message: HexBinary,
-) -> Result<ModulesAndThresholdResponse, ContractError> {
-    Ok(ModulesAndThresholdResponse {
+fn verify_info(deps: Deps, _message: HexBinary) -> Result<VerifyInfoResponse, ContractError> {
+    Ok(VerifyInfoResponse {
         threshold: THRESHOLD.load(deps.storage)?,
-        modules: ISMS
+        validators: ISMS
             .load(deps.storage)?
             .into_iter()
             .map(|v| Ok(bech32_decode(v.as_str())?.into()))

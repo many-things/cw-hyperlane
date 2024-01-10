@@ -94,15 +94,9 @@ pub fn execute(
 
             Ok(Response::new().add_event(
                 Event::new("ism_multisig_unset_domain")
-                    .add_attribute("sender", info.sender)
+                    .add_attribute("sener", info.sender)
                     .add_attribute("domain", domain.to_string()),
             ))
-        }
-
-        SimulateVerify { metadata, message } => {
-            crate::query::verify_message(deps.as_ref(), metadata, message)?;
-
-            Ok(Response::new())
         }
     }
 }
@@ -121,9 +115,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
                 metadata: raw_metadata,
                 message: raw_message,
             } => to_binary(query::verify_message(deps, raw_metadata, raw_message)),
-            ModulesAndThreshold {
+            VerifyInfo {
                 message: raw_message,
-            } => to_binary(query::modules_and_threshold(deps, raw_message)),
+            } => to_binary(query::get_verify_info(deps, raw_message)),
         },
         QueryMsg::MultisigIsm(msg) => match msg {
             MultisigIsmQueryMsg::EnrolledValidators { domain } => to_binary({

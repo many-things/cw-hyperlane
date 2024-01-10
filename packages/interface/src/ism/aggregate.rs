@@ -1,5 +1,4 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::HexBinary;
 
 use crate::ownable::{OwnableMsg, OwnableQueryMsg};
 
@@ -16,15 +15,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Ownable(OwnableMsg),
 
-    SimulateVerify {
-        metadata: HexBinary,
-        message: HexBinary,
-    },
-
-    SetIsms {
-        isms: Vec<String>,
-        threshold: u8,
-    },
+    SetIsms { isms: Vec<String>, threshold: u8 },
 }
 
 #[cw_serde]
@@ -56,18 +47,10 @@ mod test {
     use cosmwasm_std::HexBinary;
 
     use super::*;
-    use crate::{
-        ism::{ExpectedIsmMsg, IsmQueryMsg},
-        msg_checker,
-    };
+    use crate::{ism::IsmQueryMsg, msg_checker};
 
     #[test]
     fn test_ism_interface() {
-        let _checked: ExecuteMsg = msg_checker(ExpectedIsmMsg::SimulateVerify {
-            metadata: HexBinary::default(),
-            message: HexBinary::default(),
-        });
-
         let _checked: QueryMsg = msg_checker(IsmQueryMsg::ModuleType {}.wrap());
         let _checked: QueryMsg = msg_checker(
             IsmQueryMsg::Verify {
@@ -77,7 +60,7 @@ mod test {
             .wrap(),
         );
         let _checked: QueryMsg = msg_checker(
-            IsmQueryMsg::ModulesAndThreshold {
+            IsmQueryMsg::VerifyInfo {
                 message: HexBinary::default(),
             }
             .wrap(),
