@@ -1,0 +1,77 @@
+{
+  "contracts": {
+    "hpl_hook_aggregate": {
+      "codeId": 6176,
+      "digest": "977813f4f02201c87678e5a7e9d9ad6c184f0e6031cdf3a3a72b796b3f88ab00"
+    },
+    "hpl_hook_merkle": {
+      "codeId": 6177,
+      "digest": "c2f6065fa75c334e7d3423cd23da1a8147ac9b8971e91c5771b1d846e457b62b"
+    },
+    "hpl_hook_pausable": {
+      "codeId": 6178,
+      "digest": "6a5087d4ebecec08439a73f2e45d7bc07f384dc1d60e63dbb0fedac891364a18"
+    },
+    "hpl_hook_routing": {
+      "codeId": 6179,
+      "digest": "3218ea7b5758f33575ebeada23bdb58323444ed8c3ccb5fcc79eede5fa5ad5f7"
+    },
+    "hpl_hook_routing_custom": {
+      "codeId": 6180,
+      "digest": "88e78b2073577f6122ff6e910a3710c5f5523ae8b27d38f221fa26b74e9b9d26"
+    },
+    "hpl_hook_routing_fallback": {
+      "codeId": 6181,
+      "digest": "e1b8044e6b543db2a9e46939b8ca6b91ae5cef94efda36b4aecf7ccd8dbaf284"
+    },
+    "hpl_igp": {
+      "codeId": 6182,
+      "digest": "4914b55ca8347ac392c8c6f32cd86fe4c29366ff97e582a4a811863c596b6599"
+    },
+    "hpl_igp_oracle": {
+      "codeId": 6183,
+      "digest": "c3f9d2859cce5036a9dc9e575534f73094641f94cf7625e3e9212080df2a811f"
+    },
+    "hpl_ism_aggregate": {
+      "codeId": 6184,
+      "digest": "e1dee705d3500d1c21c209de42910ce3559138743246a3bd1dfddd8fb9d36620"
+    },
+    "hpl_ism_multisig": {
+      "codeId": 6185,
+      "digest": "eb31327e288888262e0072cbb2a0283dfd8b9508878f3995c7f33131089fba91"
+    },
+    "hpl_ism_pausable": {
+      "codeId": 6186,
+      "digest": "ea99783338118ad18cd81f6a3924a9826a328333314791a6379d5fdc940fd54d"
+    },
+    "hpl_ism_routing": {
+      "codeId": 6187,
+      "digest": "aa6aeb31486d585dc887b9a03b47a7f1d8bcf6e96e75c5160cbaf5ee8ce494fd"
+    },
+    "hpl_mailbox": {
+      "codeId": 6188,
+      "digest": "9815c3c37ebde6702273b47d1ae806d3170cd703e2784ad1043d63b4e8728de6"
+    },
+    "hpl_test_mock_hook": {
+      "codeId": 6189,
+      "digest": "52d57c90addd6e5019637c396be9446d595d1cfa8dea2223a1a1338a31ec6ef4"
+    },
+    "hpl_test_mock_msg_receiver": {
+      "codeId": 6190,
+      "digest": "356f407eed36584feaa610fc278422c190c26093f5356e5a7f9dddf3d894758a"
+    },
+    "hpl_validator_announce": {
+      "codeId": 6191,
+      "digest": "eeb5d32ceebf6f467040a981fab3d3ecd144d0fdf27939ed12335e7a5fdba165"
+    },
+    "hpl_warp_cw20": {
+      "codeId": 6192,
+      "digest": "5a292442e9f5107a66e85faf61bb23172f7c713ef2fe7733daf4c5870493b5a5"
+    },
+    "hpl_warp_native": {
+      "codeId": 6193,
+      "digest": "5a50fe598804046dd787113af85154be5df938458463388129ff79d5971531b6"
+    }
+  },
+  "address": "inj1cj08fl9hycsvdhctfqv6rq22al3hjttyxdx768"
+}
