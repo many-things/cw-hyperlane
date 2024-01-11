@@ -33,5 +33,13 @@
     "ts-yaml": "^1.0.0",
     "tsx": "^3.13.0",
     "typescript": "^5.1.6"
+  },
+  "resolutions": {
+    "@cosmjs/stargate": "0.31.0"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@cosmjs/cosmwasm-stargate@0.31.0": "patches/@cosmjs__cosmwasm-stargate@0.31.0.patch"
+    }
   }
 }

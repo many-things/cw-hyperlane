@@ -1,0 +1,41 @@
+diff --git a/build/cosmwasmclient.js b/build/cosmwasmclient.js
+index 8f6305b0263886c5c31fab661c9235723ba1e6e9..b2aac8730ae07b2e62fec2c0a5ee9e6808239a68 100644
+--- a/build/cosmwasmclient.js
++++ b/build/cosmwasmclient.js
+@@ -81,6 +81,10 @@ class CosmWasmClient {
+     async getAccount(searchAddress) {
+         try {
+             const account = await this.forceGetQueryClient().auth.account(searchAddress);
++            if (searchAddress.startsWith('inj')) {
++                const m = await require('@injectivelabs/sdk-ts');
++                return m.injectiveAccountParser(account);
++            }
+             return account ? (0, stargate_1.accountFromAny)(account) : null;
+         }
+         catch (error) {
+diff --git a/build/signingcosmwasmclient.js b/build/signingcosmwasmclient.js
+index 2780b8c5ff5ed95c1e3a2994266279d1d682d994..61c9f1f154cc54a9dfc654cb1541d11fc57fc072 100644
+--- a/build/signingcosmwasmclient.js
++++ b/build/signingcosmwasmclient.js
+@@ -107,7 +107,8 @@ class SigningCosmWasmClient extends cosmwasmclient_1.CosmWasmClient {
+             throw new Error(createDeliverTxResponseErrorMessage(result));
+         }
+         const parsedLogs = stargate_1.logs.parseRawLog(result.rawLog);
+-        const codeIdAttr = stargate_1.logs.findAttribute(parsedLogs, "store_code", "code_id");
++        const escapedCodeIdAttr = stargate_1.logs.findAttribute(parsedLogs, "cosmwasm.wasm.v1.EventCodeStored", "code_id");
++        const codeIdAttr = { value: escapedCodeIdAttr.value.replace(/\"/g, "") };
+         return {
+             checksum: (0, encoding_1.toHex)((0, crypto_1.sha256)(wasmCode)),
+             originalSize: wasmCode.length,
+diff --git a/package.json b/package.json
+index b073b4317319dbfd761befe3d163bfe6a00dbcef..293b53bdc5e9a62f624de27ee562ae9677f670d8 100644
+--- a/package.json
++++ b/package.json
+@@ -38,6 +38,7 @@
+     "pack-web": "yarn build-or-skip && webpack --mode development --config webpack.web.config.js"
+   },
+   "dependencies": {
++    "@injectivelabs/sdk-ts": "^1.14.4",
+     "@cosmjs/amino": "^0.31.0",
+     "@cosmjs/crypto": "^0.31.0",
+     "@cosmjs/encoding": "^0.31.0",
