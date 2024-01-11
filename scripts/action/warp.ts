@@ -1,3 +1,6 @@
+// prevents "TypeError: Reflect.hasOwnMetadata is not a function"
+import "reflect-metadata";
+
 import { version } from "../package.json";
 import { loadContext } from "../src/load_context";
 import { config, getSigningClient } from "../src/config";
