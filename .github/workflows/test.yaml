@@ -32,6 +32,9 @@ jobs:
       - name: Install Rust
         run: rustup update 1.69
 
+      - name: Install rename
+        run: apt-get install -y rename
+
       - name: Install target
         run: rustup target add wasm32-unknown-unknown
 
