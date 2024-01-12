@@ -1,11 +1,14 @@
+// prevents "TypeError: Reflect.hasOwnMetadata is not a function"
+import "reflect-metadata";
+
 import { writeFileSync } from "fs";
 
-import { loadContext } from "../src/load_context";
 import { Client, HookType, config, getSigningClient } from "../src/config";
+import { loadContext } from "../src/load_context";
 
-import { ContractFetcher } from "./fetch";
-import { Context } from "../src/types";
 import { Contracts, deploy_ism } from "../src/deploy";
+import { Context } from "../src/types";
+import { ContractFetcher } from "./fetch";
 
 const name = (c: any) => c.contractName;
 const addr = (ctx: Context, c: any) => ctx.contracts[name(c)].address!;
@@ -97,6 +100,7 @@ const deploy_igp = async (
     owner: client.signer,
     gas_token: config.deploy.igp.token || config.network.gas.denom,
     beneficiary: client.signer,
+    default_gas_usage: "25000" // must be string
   });
 
   // init igp oracle
@@ -154,8 +158,8 @@ const deploy_ism_hook = async (
         type: "multisig",
         owner: "<signer>",
         validators: {
-          5: {
-            addrs: [client.signer_addr],
+          123: {
+            addrs: [client.signer_addr, client.signer_addr],
             threshold: 1,
           },
         },

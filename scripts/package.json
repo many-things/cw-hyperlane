@@ -19,6 +19,7 @@
     "@cosmjs/proto-signing": "^0.31.0",
     "@cosmjs/stargate": "^0.31.0",
     "@cosmjs/tendermint-rpc": "0.31.0",
+    "@injectivelabs/sdk-ts": "^1.14.5",
     "axios": "^1.6.2",
     "colors": "^1.4.0",
     "commander": "^11.1.0",
@@ -33,5 +34,13 @@
     "ts-yaml": "^1.0.0",
     "tsx": "^3.13.0",
     "typescript": "^5.1.6"
+  },
+  "resolutions": {
+    "@cosmjs/stargate": "0.31.0"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@cosmjs/cosmwasm-stargate@0.31.0": "patches/@cosmjs__cosmwasm-stargate@0.31.0.patch"
+    }
   }
 }

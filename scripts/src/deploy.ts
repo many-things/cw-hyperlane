@@ -1,21 +1,21 @@
 import { Client, IsmType } from "../src/config";
 import {
-  HplMailbox,
-  HplValidatorAnnounce,
   HplHookAggregate,
   HplHookMerkle,
   HplHookPausable,
   HplHookRouting,
   HplHookRoutingCustom,
   HplIgp,
+  HplIgpOracle,
   HplIsmAggregate,
   HplIsmMultisig,
   HplIsmRouting,
+  HplMailbox,
   HplTestMockHook,
   HplTestMockMsgReceiver,
+  HplValidatorAnnounce,
   HplWarpCw20,
   HplWarpNative,
-  HplIgpOracle,
 } from "./contracts";
 
 export type Contracts = {
@@ -76,36 +76,19 @@ export const deploy_ism = async (
           }))
         )
       );
-      await client.wasm.execute(
+      const setValidatorMessages = Object.entries(ism.validators).flatMap(([domain, set]) => ({
+        contractAddress: multisig_ism_res.address!,
+        msg: {
+          set_validators: {
+            domain: Number(domain),
+            threshold: set.threshold,
+            validators: set.addrs
+          }
+        }
+      }));
+      await client.wasm.executeMultiple(
         client.signer,
-        multisig_ism_res.address!,
-        {
-          enroll_validators: {
-            set: Object.entries(ism.validators).flatMap(([domain, validator]) =>
-              validator.addrs.map((v) => ({
-                domain: Number(domain),
-                validator: v,
-              }))
-            ),
-          },
-        },
-        "auto"
-      );
-
-      console.log("Set thresholds");
-      await client.wasm.execute(
-        client.signer,
-        multisig_ism_res.address!,
-        {
-          set_thresholds: {
-            set: Object.entries(ism.validators).map(
-              ([domain, { threshold }]) => ({
-                domain: Number(domain),
-                threshold,
-              })
-            ),
-          },
-        },
+        setValidatorMessages,
         "auto"
       );
 
