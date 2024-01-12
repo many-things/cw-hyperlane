@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    ensure, ensure_eq, has_coins, to_json_binary, wasm_execute, BankMsg, Coin, Coins, DepsMut, Env,
-    HexBinary, MessageInfo, Response, StdResult,
+    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env,
+    HexBinary, MessageInfo, Response,
 };
 use cw_utils::PaymentError::MissingDenom;
 use hpl_interface::{
