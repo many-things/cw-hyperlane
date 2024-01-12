@@ -1,14 +1,17 @@
+// prevents "TypeError: Reflect.hasOwnMetadata is not a function"
+import "reflect-metadata";
+
 import { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Command } from "commander";
 
 import { version } from "../package.json";
 import { config, getSigningClient } from "../src/config";
 import {
-    HplHookMerkle,
-    HplIgp,
-    HplIgpOracle,
-    HplIsmAggregate,
-    HplMailbox,
+  HplHookMerkle,
+  HplIgp,
+  HplIgpOracle,
+  HplIsmAggregate,
+  HplMailbox,
 } from "../src/contracts";
 import { addPad } from "../src/conv";
 import { loadContext } from "../src/load_context";
@@ -83,7 +86,7 @@ function makeHandler(
               msg_body: Buffer.from(msg_body, "utf-8").toString("hex"),
             },
           },
-          [{ denom: "token", amount: "26000000" }]
+          [{ denom: "inj", amount: "2500" }]
         );
         console.log(parseWasmEventLog(res));
       };
