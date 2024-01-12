@@ -25,12 +25,12 @@
       "digest": "e1b8044e6b543db2a9e46939b8ca6b91ae5cef94efda36b4aecf7ccd8dbaf284"
     },
     "hpl_igp": {
-      "address": "inj1zju872205d4v6m7p8gjfrkqgth6muf50vcxk7t",
+      "address": "inj1u70j2p7zsc3vlapyh6u2sar8wz9k9njqt9u0vy",
       "codeId": 6182,
       "digest": "4914b55ca8347ac392c8c6f32cd86fe4c29366ff97e582a4a811863c596b6599"
     },
     "hpl_igp_oracle": {
-      "address": "inj13qzhseqr54vqtt57zm79p4t7qcrlsvmv6m5g37",
+      "address": "inj1627vkljz6dxq8jq5423p8pln3qhu3qgzmajy2f",
       "codeId": 6183,
       "digest": "c3f9d2859cce5036a9dc9e575534f73094641f94cf7625e3e9212080df2a811f"
     },
@@ -51,7 +51,7 @@
       "digest": "aa6aeb31486d585dc887b9a03b47a7f1d8bcf6e96e75c5160cbaf5ee8ce494fd"
     },
     "hpl_mailbox": {
-      "address": "inj14wh3ulp9kwv023hpgay75559m5w9f6muus28c5",
+      "address": "inj1ralyv2xnzga08s70v6ncfglp9glu7gwgds4el8",
       "codeId": 6188,
       "digest": "9815c3c37ebde6702273b47d1ae806d3170cd703e2784ad1043d63b4e8728de6"
     },
@@ -60,12 +60,12 @@
       "digest": "52d57c90addd6e5019637c396be9446d595d1cfa8dea2223a1a1338a31ec6ef4"
     },
     "hpl_test_mock_msg_receiver": {
-      "address": "inj1zg7k8gcpt55v2y6jp0aas7rgytwt9jvhtyx80z",
+      "address": "inj1xaevlalutahaphep3c02y250px7cpgqne4avfx",
       "codeId": 6190,
       "digest": "356f407eed36584feaa610fc278422c190c26093f5356e5a7f9dddf3d894758a"
     },
     "hpl_validator_announce": {
-      "address": "inj1u6vljdpdeljvzlpm5wezjpwj08es08ywypcyu5",
+      "address": "inj1zw7wz7dd3wtdgwd4e358q0d9pvcs72zhzfak0l",
       "codeId": 6191,
       "digest": "eeb5d32ceebf6f467040a981fab3d3ecd144d0fdf27939ed12335e7a5fdba165"
     },
@@ -80,17 +80,17 @@
     "hpl_default_ism": {
       "codeId": 6185,
       "digest": "eb31327e288888262e0072cbb2a0283dfd8b9508878f3995c7f33131089fba91",
-      "address": "inj155gpjxrz2tcf6203z339akkscc8ve0gssghr0s"
+      "address": "inj12s96znn087acwv0pzs64nvnpqcq8hru7lnmn7z"
     },
     "hpl_default_hook": {
       "codeId": 6189,
       "digest": "52d57c90addd6e5019637c396be9446d595d1cfa8dea2223a1a1338a31ec6ef4",
-      "address": "inj120kxmy7u0cf6t53k2ftpghdmcmnm0x48tuhz0w"
+      "address": "inj1evwugy02r8cpunp2qwxmwes5d25ljjthuuuh7f"
     },
     "hpl_required_hook": {
       "codeId": 6189,
       "digest": "52d57c90addd6e5019637c396be9446d595d1cfa8dea2223a1a1338a31ec6ef4",
-      "address": "inj1jw97fkpays529hg8qz0vke4tcrl7lve30p4upz"
+      "address": "inj1tv02afkjs8nel7xgdmayv4q6tk7zcdzzxzyark"
     }
   },
   "address": "inj1cj08fl9hycsvdhctfqv6rq22al3hjttyxdx768"
