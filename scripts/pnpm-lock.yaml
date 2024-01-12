@@ -4,6 +4,14 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@cosmjs/stargate': 0.31.0
+
+patchedDependencies:
+  '@cosmjs/cosmwasm-stargate@0.31.0':
+    hash: cu4322e3ou7zilwfoydhfcb2te
+    path: patches/@cosmjs__cosmwasm-stargate@0.31.0.patch
+
 dependencies:
   '@cosmjs/cosmwasm':
     specifier: ^0.25.6
@@ -13,7 +21,7 @@ dependencies:
     version: 0.25.6
   '@cosmjs/cosmwasm-stargate':
     specifier: ^0.31.0
-    version: 0.31.0
+    version: 0.31.0(patch_hash=cu4322e3ou7zilwfoydhfcb2te)
   '@cosmjs/crypto':
     specifier: ^0.31.0
     version: 0.31.0
@@ -24,7 +32,7 @@ dependencies:
     specifier: ^0.31.0
     version: 0.31.0
   '@cosmjs/stargate':
-    specifier: ^0.31.0
+    specifier: 0.31.0
     version: 0.31.0
   '@cosmjs/tendermint-rpc':
     specifier: 0.31.0
@@ -108,7 +116,7 @@ packages:
       - debug
     dev: false
 
-  /@cosmjs/cosmwasm-stargate@0.31.0:
+  /@cosmjs/cosmwasm-stargate@0.31.0(patch_hash=cu4322e3ou7zilwfoydhfcb2te):
     resolution: {integrity: sha512-l6aX++3LhaAGZO46qIgrrNF40lYhOrdPfl35Z32ks6Wf3mwgbQEZwaxnoGzwUePY7/yaIiEFJ1JO6MlVPZVuag==}
     dependencies:
       '@cosmjs/amino': 0.31.0
@@ -127,6 +135,7 @@ packages:
       - debug
       - utf-8-validate
     dev: false
+    patched: true
 
   /@cosmjs/cosmwasm@0.25.6:
     resolution: {integrity: sha512-o+YM2NvL3/2O5lnG/vHk9QE+DvDH6FNYfvzO/evit17sAr/m5G2E8fuROlU+Z9Ml6Nj0QXgqhsR81WCGcup1Sw==}
@@ -267,12 +276,12 @@ packages:
     dependencies:
       '@confio/ics23': 0.6.8
       '@cosmjs/amino': 0.31.0
-      '@cosmjs/encoding': 0.31.0
-      '@cosmjs/math': 0.31.0
+      '@cosmjs/encoding': 0.31.1
+      '@cosmjs/math': 0.31.1
       '@cosmjs/proto-signing': 0.31.0
-      '@cosmjs/stream': 0.31.0
+      '@cosmjs/stream': 0.31.1
       '@cosmjs/tendermint-rpc': 0.31.0
-      '@cosmjs/utils': 0.31.0
+      '@cosmjs/utils': 0.31.1
       cosmjs-types: 0.8.0
       long: 4.0.0
       protobufjs: 6.11.4
@@ -281,12 +290,6 @@ packages:
       - bufferutil
       - debug
       - utf-8-validate
-    dev: false
-
-  /@cosmjs/stream@0.31.0:
-    resolution: {integrity: sha512-Y+aSHwhHkLGIaQOdqRob+yga2zr9ifl9gZDKD+B7+R5pdWN5f2TTDhYWxA6YZcZ6xRmfr7u8a7tDh7iYLC/zKA==}
-    dependencies:
-      xstream: 11.14.0
     dev: false
 
   /@cosmjs/stream@0.31.1:

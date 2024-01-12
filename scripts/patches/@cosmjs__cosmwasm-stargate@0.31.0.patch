@@ -14,10 +14,21 @@ index 8f6305b0263886c5c31fab661c9235723ba1e6e9..b2aac8730ae07b2e62fec2c0a5ee9e68
          }
          catch (error) {
 diff --git a/build/signingcosmwasmclient.js b/build/signingcosmwasmclient.js
-index 2780b8c5ff5ed95c1e3a2994266279d1d682d994..61c9f1f154cc54a9dfc654cb1541d11fc57fc072 100644
+index 2780b8c5ff5ed95c1e3a2994266279d1d682d994..a940d39b781dbd0e20a19411fe25d9b8034e104c 100644
 --- a/build/signingcosmwasmclient.js
 +++ b/build/signingcosmwasmclient.js
-@@ -107,7 +107,8 @@ class SigningCosmWasmClient extends cosmwasmclient_1.CosmWasmClient {
+@@ -86,6 +86,10 @@ class SigningCosmWasmClient extends cosmwasmclient_1.CosmWasmClient {
+             throw new Error("Failed to retrieve account from signer");
+         }
+         const pubkey = (0, amino_1.encodeSecp256k1Pubkey)(accountFromSigner.pubkey);
++        if (signerAddress.startsWith('inj')) {
++            pubkey['typeUrl'] = '/injective.crypto.v1beta1.ethsecp256k1.PubKey';
++        }
++
+         const { sequence } = await this.getSequence(signerAddress);
+         const { gasInfo } = await this.forceGetQueryClient().tx.simulate(anyMsgs, memo, pubkey, sequence);
+         (0, utils_1.assertDefined)(gasInfo);
+@@ -107,7 +111,8 @@ class SigningCosmWasmClient extends cosmwasmclient_1.CosmWasmClient {
              throw new Error(createDeliverTxResponseErrorMessage(result));
          }
          const parsedLogs = stargate_1.logs.parseRawLog(result.rawLog);
@@ -27,6 +38,27 @@ index 2780b8c5ff5ed95c1e3a2994266279d1d682d994..61c9f1f154cc54a9dfc654cb1541d11f
          return {
              checksum: (0, encoding_1.toHex)((0, crypto_1.sha256)(wasmCode)),
              originalSize: wasmCode.length,
+@@ -388,6 +393,10 @@ class SigningCosmWasmClient extends cosmwasmclient_1.CosmWasmClient {
+             throw new Error("Failed to retrieve account from signer");
+         }
+         const pubkey = (0, proto_signing_1.encodePubkey)((0, amino_1.encodeSecp256k1Pubkey)(accountFromSigner.pubkey));
++        if (signerAddress.startsWith('inj')) {
++            pubkey['typeUrl'] = '/injective.crypto.v1beta1.ethsecp256k1.PubKey';
++        }
++
+         const signMode = signing_1.SignMode.SIGN_MODE_LEGACY_AMINO_JSON;
+         const msgs = messages.map((msg) => this.aminoTypes.toAmino(msg));
+         const signDoc = (0, amino_1.makeSignDoc)(msgs, fee, chainId, memo, accountNumber, sequence);
+@@ -416,6 +425,9 @@ class SigningCosmWasmClient extends cosmwasmclient_1.CosmWasmClient {
+             throw new Error("Failed to retrieve account from signer");
+         }
+         const pubkey = (0, proto_signing_1.encodePubkey)((0, amino_1.encodeSecp256k1Pubkey)(accountFromSigner.pubkey));
++        if (signerAddress.startsWith('inj')) {
++            pubkey['typeUrl'] = '/injective.crypto.v1beta1.ethsecp256k1.PubKey';
++        }
+         const txBody = {
+             typeUrl: "/cosmos.tx.v1beta1.TxBody",
+             value: {
 diff --git a/package.json b/package.json
 index b073b4317319dbfd761befe3d163bfe6a00dbcef..293b53bdc5e9a62f624de27ee562ae9677f670d8 100644
 --- a/package.json
