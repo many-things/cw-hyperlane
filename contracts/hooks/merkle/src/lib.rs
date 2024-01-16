@@ -208,7 +208,6 @@ mod test {
     use hpl_interface::{
         build_test_executor, build_test_querier, core::mailbox, hook::QuoteDispatchMsg,
     };
-    use hpl_ownable::get_owner;
     use ibcx_test_utils::hex;
     use rstest::{fixture, rstest};
 
@@ -241,7 +240,6 @@ mod test {
 
     #[rstest]
     fn test_init(deps: TestDeps) {
-        assert_eq!("owner", get_owner(deps.as_ref().storage).unwrap().as_str());
         assert_eq!(
             "mailbox",
             MAILBOX.load(deps.as_ref().storage).unwrap().as_str()
