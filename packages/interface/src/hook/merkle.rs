@@ -1,21 +1,17 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
 
-use crate::ownable::{OwnableMsg, OwnableQueryMsg};
-
 use super::{HookQueryMsg, PostDispatchMsg};
 
 pub const TREE_DEPTH: usize = 32;
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub owner: String,
     pub mailbox: String,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Ownable(OwnableMsg),
     PostDispatch(PostDispatchMsg),
 }
 
@@ -23,7 +19,6 @@ pub enum ExecuteMsg {
 #[derive(QueryResponses)]
 #[query_responses(nested)]
 pub enum QueryMsg {
-    Ownable(OwnableQueryMsg),
     Hook(HookQueryMsg),
     MerkleHook(MerkleHookQueryMsg),
 }
