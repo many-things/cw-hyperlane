@@ -59,10 +59,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let owner = deps.api.addr_validate(&msg.owner)?;
     let mailbox = deps.api.addr_validate(&msg.mailbox)?;
-
-    hpl_ownable::initialize(deps.storage, &owner)?;
 
     MAILBOX.save(deps.storage, &mailbox)?;
     MESSAGE_TREE.save(deps.storage, &MerkleTree::default())?;
@@ -70,7 +67,6 @@ pub fn instantiate(
     Ok(Response::new().add_event(
         new_event("initialize")
             .add_attribute("sender", info.sender)
-            .add_attribute("owner", owner)
             .add_attribute("mailbox", mailbox),
     ))
 }
@@ -78,12 +74,11 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
+    _env: Env,
+    _info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::PostDispatch(PostDispatchMsg { message, .. }) => {
             let mailbox = MAILBOX.load(deps.storage)?;
 
@@ -123,11 +118,10 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<QueryResponse, ContractError> {
     use MerkleHookQueryMsg::*;
 
     match msg {
-        QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
             HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch()),
@@ -214,7 +208,6 @@ mod test {
     use hpl_interface::{
         build_test_executor, build_test_querier, core::mailbox, hook::QuoteDispatchMsg,
     };
-    use hpl_ownable::get_owner;
     use ibcx_test_utils::hex;
     use rstest::{fixture, rstest};
 
@@ -228,7 +221,6 @@ mod test {
     #[fixture]
     fn deps(
         #[default(Addr::unchecked("deployer"))] sender: Addr,
-        #[default(Addr::unchecked("owner"))] owner: Addr,
         #[default(Addr::unchecked("mailbox"))] mailbox: Addr,
     ) -> TestDeps {
         let mut deps = mock_dependencies();
@@ -238,7 +230,6 @@ mod test {
             mock_env(),
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
-                owner: owner.to_string(),
                 mailbox: mailbox.to_string(),
             },
         )
@@ -249,7 +240,6 @@ mod test {
 
     #[rstest]
     fn test_init(deps: TestDeps) {
-        assert_eq!("owner", get_owner(deps.as_ref().storage).unwrap().as_str());
         assert_eq!(
             "mailbox",
             MAILBOX.load(deps.as_ref().storage).unwrap().as_str()
