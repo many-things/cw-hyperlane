@@ -129,7 +129,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse, Contr
         QueryMsg::Ownable(msg) => Ok(hpl_ownable::handle_query(deps, env, msg)?),
         QueryMsg::Hook(msg) => match msg {
             HookQueryMsg::Mailbox {} => to_binary(get_mailbox(deps)),
-            HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch()),
+            HookQueryMsg::QuoteDispatch(_) => to_binary(quote_dispatch(deps)),
         },
         QueryMsg::FeeHook(FeeHookQueryMsg::Fee {}) => to_binary(get_fee(deps)),
     }
@@ -141,8 +141,9 @@ fn get_mailbox(_deps: Deps) -> Result<MailboxResponse, ContractError> {
     })
 }
 
-fn quote_dispatch() -> Result<QuoteDispatchResponse, ContractError> {
-    Ok(QuoteDispatchResponse { fees: vec![] })
+fn quote_dispatch(deps: Deps) -> Result<QuoteDispatchResponse, ContractError> {
+    let fee = COIN_FEE.load(deps.storage)?;
+    Ok(QuoteDispatchResponse { fees: vec![fee] })
 }
 
 #[cfg(test)]
@@ -151,7 +152,7 @@ mod test {
     use cosmwasm_std::{
         from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        to_json_binary, Addr, HexBinary, OwnedDeps, Uint128,
+        to_json_binary, Addr, HexBinary, OwnedDeps, coin,
     };
     use hpl_interface::hook::{PostDispatchMsg, QuoteDispatchMsg};
     use hpl_ownable::get_owner;
@@ -172,7 +173,7 @@ mod test {
     fn deps(
         #[default(addr("deployer"))] sender: Addr,
         #[default(addr("owner"))] owner: Addr,
-        #[default(false)] paused: bool,
+        #[default(coin(100, "uusd"))] fee: Coin,
     ) -> TestDeps {
         let mut deps = mock_dependencies();
 
@@ -182,10 +183,7 @@ mod test {
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
                 owner: owner.to_string(),
-                fee: Coin {
-                    denom: "uusd".to_string(),
-                    amount: Uint128::new(100),
-                },
+                fee
             },
         )
         .unwrap();
@@ -230,6 +228,6 @@ mod test {
             deps.as_ref(),
             QueryMsg::Hook(HookQueryMsg::QuoteDispatch(QuoteDispatchMsg::default())),
         );
-        assert_eq!(res.fees, vec![]);
+        assert_eq!(res.fees, vec![coin(100, "uusd")]);
     }
 }
