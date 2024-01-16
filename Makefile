@@ -3,7 +3,7 @@ clean:
 	@rm -rf ./artifacts
 
 install:
-	cargo install cw-optimizoor cosmwasm-check beaker
+	cargo install --force cw-optimizoor cosmwasm-check beaker
 	rustup target add wasm32-unknown-unknown
 
 schema:
