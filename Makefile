@@ -4,7 +4,7 @@ clean:
 
 install:
 	cargo install cw-optimizoor cosmwasm-check beaker
-  rustup target add wasm32-unknown-unknown
+	rustup target add wasm32-unknown-unknown
 
 schema:
 	ls ./contracts | xargs -n 1 -t beaker wasm ts-gen
