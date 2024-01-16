@@ -131,7 +131,10 @@ fn replay_hash(validator: &HexBinary, storage_location: &str) -> StdResult<HexBi
 fn domain_hash(local_domain: u32, mailbox: HexBinary) -> StdResult<HexBinary> {
     let mut bz = vec![];
     bz.append(&mut local_domain.to_be_bytes().to_vec());
-    bz.append(&mut mailbox.to_vec());
+    // left pad with zeroes
+    let mut addr = [0u8; 32];
+    addr[32 - mailbox.len()..].copy_from_slice(&mailbox);
+    bz.append(&mut addr.to_vec());
     bz.append(&mut "HYPERLANE_ANNOUNCEMENT".as_bytes().to_vec());
 
     let hash = keccak256_hash(&bz);
