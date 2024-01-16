@@ -30,13 +30,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Rust
-        run: rustup update 1.69
+        run: rustup update 1.72
 
       - name: Install rename
         run: sudo apt-get install -y rename
 
-      - name: Install target
-        run: rustup target add wasm32-unknown-unknown
+      - name: Install rust deps
+        run: make install
 
       - name: Run tests
         run: cargo test --workspace --exclude hpl-tests
@@ -44,7 +44,7 @@ jobs:
       - name: Build wasm
         run: make ci-build
 
-      - name: Upload artifacts
+      - name: Upload wasm archive
         uses: actions/upload-artifact@v2
         with:
           name: wasm_codes
