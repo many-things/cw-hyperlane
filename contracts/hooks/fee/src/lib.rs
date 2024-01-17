@@ -111,7 +111,8 @@ pub fn execute(
 
             ensure!(
                 supplied.u128() >= fee.amount.u128(),
-                StdError::generic_err("insufficient fee")
+                // TODO: improve error
+                StdError::generic_err("insufficient funds")
             );
 
             Ok(Response::new().add_event(
@@ -195,21 +196,20 @@ mod test {
     fn test_init(deps: TestDeps) {
         assert_eq!(
             "uusd",
-            query::<_, MailboxResponse>(deps.as_ref(), QueryMsg::Hook(HookQueryMsg::Mailbox {}))
-                .mailbox
+            get_fee(deps.as_ref()).unwrap().fee.denom.as_str()
         );
         assert_eq!("owner", get_owner(deps.as_ref().storage).unwrap().as_str());
     }
 
     #[rstest]
-    #[case("owner")]
-    #[should_panic(expected = "hook paused")]
-    #[case("owner")]
-    fn test_post_dispatch(mut deps: TestDeps, #[case] sender: &str) {
+    #[case(&[coin(100, "uusd")])]
+    #[should_panic(expected = "Generic error: insufficient funds")]
+    #[case(&[coin(99, "uusd")])]
+    fn test_post_dispatch(mut deps: TestDeps, #[case] funds: &[Coin]) {
         execute(
             deps.as_mut(),
             mock_env(),
-            mock_info(sender, &[]),
+            mock_info("owner", funds),
             ExecuteMsg::PostDispatch(PostDispatchMsg {
                 metadata: HexBinary::default(),
                 message: gen_bz(100),

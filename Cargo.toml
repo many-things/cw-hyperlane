@@ -94,6 +94,7 @@ hpl-mailbox = { path = "./contracts/core/mailbox" }
 hpl-validator-announce = { path = "./contracts/core/va" }
 
 hpl-hook-merkle = { path = "./contracts/hooks/merkle" }
+hpl-hook-fee = { path = "./contracts/hooks/fee" }
 hpl-hook-pausable = { path = "./contracts/hooks/pausable" }
 hpl-hook-routing = { path = "./contracts/hooks/routing" }
 hpl-hook-routing-custom = { path = "./contracts/hooks/routing-custom" }
