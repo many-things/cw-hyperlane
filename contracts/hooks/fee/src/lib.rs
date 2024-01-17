@@ -79,6 +79,9 @@ pub fn execute(
         ExecuteMsg::Ownable(msg) => Ok(hpl_ownable::handle(deps, env, info, msg)?),
         ExecuteMsg::FeeHook(msg) => match msg {
             FeeHookMsg::SetFee { fee } => {
+                let owner = hpl_ownable::get_owner(deps.storage)?;
+                ensure_eq!(owner, info.sender, StdError::generic_err("unauthorized"));
+
                 COIN_FEE.save(deps.storage, &fee)?;
 
                 Ok(Response::new().add_event(
@@ -229,5 +232,15 @@ mod test {
             QueryMsg::Hook(HookQueryMsg::QuoteDispatch(QuoteDispatchMsg::default())),
         );
         assert_eq!(res.fees, vec![coin(100, "uusd")]);
+    }
+
+    #[rstest]
+    fn test_set_fee(_deps: TestDeps) {
+        unimplemented!("TODO");
+    }
+
+    #[rstest]
+    fn test_claim(_deps: TestDeps) {
+        unimplemented!("TODO");
     }
 }
