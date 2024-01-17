@@ -131,7 +131,10 @@ fn replay_hash(validator: &HexBinary, storage_location: &str) -> StdResult<HexBi
 fn domain_hash(local_domain: u32, mailbox: HexBinary) -> StdResult<HexBinary> {
     let mut bz = vec![];
     bz.append(&mut local_domain.to_be_bytes().to_vec());
-    bz.append(&mut mailbox.to_vec());
+    // left pad with zeroes
+    let mut addr = [0u8; 32];
+    addr[32 - mailbox.len()..].copy_from_slice(&mailbox);
+    bz.append(&mut addr.to_vec());
     bz.append(&mut "HYPERLANE_ANNOUNCEMENT".as_bytes().to_vec());
 
     let hash = keccak256_hash(&bz);
@@ -272,6 +275,12 @@ mod test {
             )
         }
 
+        fn preset_20_byte_address() -> Self {
+            let mut p = Announcement::preset();
+            p.mailbox = "49cfd6ef774acab14814d699e3f7ee36fdfba932".into();
+            return p;
+        }
+
         fn rand() -> Self {
             // prepare test data
             let mailbox = gen_bz(32);
@@ -387,7 +396,8 @@ mod test {
 
     #[rstest]
     #[case::rand(Announcement::rand(), false)]
-    #[case::actual_data_1(Announcement::preset(), false)]
+    #[case::actual_data(Announcement::preset(), false)]
+    #[case::actual_data_20_bytes(Announcement::preset_20_byte_address(), false)]
     #[should_panic(expected = "unauthorized")]
     #[case::replay(Announcement::rand(), true)]
     #[should_panic(expected = "verify failed")]
