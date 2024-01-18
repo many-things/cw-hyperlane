@@ -2,7 +2,6 @@ pub mod contract;
 mod error;
 mod event;
 pub mod execute;
-mod proto;
 pub mod query;
 
 #[cfg(test)]
