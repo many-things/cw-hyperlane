@@ -25,10 +25,12 @@
       "digest": "14fa5137267486053d8b065a5420d215c0c7b33dec51f573d26d7d231a432883"
     },
     "hpl_igp": {
+      "address": "inj1p0q2uylnnv226xpg9hn8jylf0fy9vwyea85qhr",
       "codeId": 6413,
       "digest": "b42c7d9b2c77d01ddbc77e027ce1d6950b635ed7e564df928095056c2ae2759a"
     },
     "hpl_igp_oracle": {
+      "address": "inj1k4ju5nppwcucpet7ggjhefdweme35husalxm9a",
       "codeId": 6414,
       "digest": "53872a2989164ee487187910fe0813adcfdb04f3876f5ceead14aafed2c181c1"
     },
@@ -49,6 +51,7 @@
       "digest": "f86fc1bbabf2688770a2900ef25a02fa2e2c198b0e42b861162a3900f9a6c7aa"
     },
     "hpl_mailbox": {
+      "address": "inj1rk600zvjzw0ype8q9526m63d7upk2usg40fu72",
       "codeId": 6419,
       "digest": "2ed06bf3633ff0af4821527b1eca5a2633f2865f1bd577c3c6a4e694c7f688b1"
     },
@@ -57,10 +60,12 @@
       "digest": "3a03d211d98ac3d32a39ff188be19e4ec9a5f992269f696197b7f09952c909df"
     },
     "hpl_test_mock_msg_receiver": {
+      "address": "inj1q33naqf9zqx6zf0de7m0znjtaxsueyn7928f3r",
       "codeId": 6421,
       "digest": "9dba7ab71a392b369561370eaffbcd450abaeca64111d2ff5daa389912846313"
     },
     "hpl_validator_announce": {
+      "address": "inj1vghn9za7kdxpjx8hjckv86e7h77kl0r2pte7xw",
       "codeId": 6422,
       "digest": "4d8d5b22b1ebbd8cc221ee9bcf3e79587bfbfc91845e5726dd9de052d410c8dc"
     },
@@ -71,6 +76,19 @@
     "hpl_warp_native": {
       "codeId": 6424,
       "digest": "3dbf222865d96c9496bdddc815ff3c0b776bc143d7d56045330ec4ebfd5a69fe"
+    },
+    "hpl_default_ism": {
+      "codeId": 6416,
+      "digest": "8969e6927592b91b0cd8755bc79cf0152a2a5f51375dd86980ea36670623e2ac",
+      "address": "inj1xk20l3fcmycqyezu808q2lrt3xvfq8l3363w5a"
+    },
+    "hpl_default_hook": {
+      "address": "inj1p0q2uylnnv226xpg9hn8jylf0fy9vwyea85qhr"
+    },
+    "hpl_required_hook": {
+      "codeId": 6408,
+      "digest": "25e0c969f233c2db5dd81b17005a0367935bfea9f6b8275873026562d9583920",
+      "address": "inj13wcydgk47m74k4qucq59l74gs249u5zmlqsjxn"
     }
   },
   "address": "inj1cj08fl9hycsvdhctfqv6rq22al3hjttyxdx768"
