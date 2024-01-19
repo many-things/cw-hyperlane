@@ -1,13 +1,14 @@
 use cosmwasm_std::{
-    ensure, ensure_eq, to_json_binary, wasm_execute, BankMsg, Coins, DepsMut, Env, HexBinary,
-    MessageInfo, Response, StdResult,
+    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env,
+    HexBinary, MessageInfo, Response,
 };
+use cw_utils::PaymentError::MissingDenom;
 use hpl_interface::{
     core::{
         mailbox::{DispatchMsg, DispatchResponse},
         HandleMsg,
     },
-    hook::{self, post_dispatch},
+    hook::{post_dispatch, quote_dispatch},
     ism,
     types::Message,
 };
@@ -107,74 +108,47 @@ pub fn dispatch(
         }
     );
 
-    // calculate gas
-    let default_hook = config.get_default_hook();
-    let required_hook = config.get_required_hook();
-
+    // build hyperlane message
     let msg =
         dispatch_msg
             .clone()
             .to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
-    let msg_id = msg.id();
+    let metadata = dispatch_msg.clone().metadata.unwrap_or_default();
+    let hook = dispatch_msg.get_hook_addr(deps.api, config.get_default_hook())?;
 
-    let base_fee = hook::quote_dispatch(
-        &deps.querier,
-        dispatch_msg.get_hook_addr(deps.api, default_hook)?,
-        dispatch_msg.metadata.clone().unwrap_or_default(),
-        msg.clone(),
-    )?
-    .fees;
+    // assert gas received satisfies required gas
+    let required_hook = config.get_required_hook();
+    let required_hook_fees: Vec<Coin> =
+        quote_dispatch(&deps.querier, &required_hook, metadata.clone(), msg.clone())?.fees;
 
-    let required_fee = hook::quote_dispatch(
-        &deps.querier,
-        &required_hook,
-        dispatch_msg.metadata.clone().unwrap_or_default(),
-        msg.clone(),
-    )?
-    .fees;
-
-    // assert gas received is satisfies required gas
-    let mut total_fee = required_fee.clone().into_iter().try_fold(
-        Coins::try_from(base_fee.clone())?,
-        |mut acc, fee| {
-            acc.add(fee)?;
-            StdResult::Ok(acc)
-        },
-    )?;
-    for fund in info.funds {
-        total_fee.sub(fund)?;
+    let mut funds = Coins::try_from(info.funds)?;
+    for coin in required_hook_fees.iter() {
+        if let Err(_) = funds.sub(coin.clone()) {
+            return Err(ContractError::Payment(MissingDenom(coin.denom.clone())));
+        }
     }
 
-    // interaction
-    let hook = dispatch_msg.get_hook_addr(deps.api, config.get_default_hook())?;
-    let hook_metadata = dispatch_msg.metadata.unwrap_or_default();
-
-    // effects
+    // commit to message
+    let msg_id = msg.id();
     NONCE.save(deps.storage, &(nonce + 1))?;
     LATEST_DISPATCHED_ID.save(deps.storage, &msg_id.to_vec())?;
 
-    // make message
+    // build post dispatch calls
     let post_dispatch_msgs = vec![
         post_dispatch(
             required_hook,
-            hook_metadata.clone(),
+            metadata.clone(),
             msg.clone(),
-            Some(required_fee),
+            Some(required_hook_fees),
         )?,
-        post_dispatch(hook, hook_metadata, msg.clone(), Some(base_fee))?,
+        post_dispatch(hook, metadata, msg.clone(), Some(funds.to_vec()))?,
     ];
-
-    let refund_msg = BankMsg::Send {
-        to_address: info.sender.to_string(),
-        amount: total_fee.to_vec(),
-    };
 
     Ok(Response::new()
         .add_event(emit_dispatch_id(msg_id.clone()))
         .add_event(emit_dispatch(msg))
         .set_data(to_json_binary(&DispatchResponse { message_id: msg_id })?)
-        .add_messages(post_dispatch_msgs)
-        .add_message(refund_msg))
+        .add_messages(post_dispatch_msgs))
 }
 
 pub fn process(
