@@ -1,13 +1,13 @@
 use cosmwasm_std::{
-    ensure, ensure_eq, to_json_binary, wasm_execute, BankMsg, Coins, DepsMut, Env, HexBinary,
-    MessageInfo, Response, StdResult,
+    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env, HexBinary,
+    MessageInfo, Response
 };
 use hpl_interface::{
     core::{
         mailbox::{DispatchMsg, DispatchResponse},
         HandleMsg,
     },
-    hook::{self, post_dispatch},
+    hook::{post_dispatch, quote_dispatch},
     ism,
     types::Message,
 };
@@ -107,74 +107,50 @@ pub fn dispatch(
         }
     );
 
-    // calculate gas
-    let default_hook = config.get_default_hook();
-    let required_hook = config.get_required_hook();
-
+    // build hyperlane message
     let msg =
         dispatch_msg
             .clone()
             .to_msg(MAILBOX_VERSION, nonce, config.local_domain, &info.sender)?;
-    let msg_id = msg.id();
+    let metadata = dispatch_msg.clone().metadata.unwrap_or_default();
+    let hook = dispatch_msg.get_hook_addr(deps.api, config.get_default_hook())?;
 
-    let base_fee = hook::quote_dispatch(
-        &deps.querier,
-        dispatch_msg.get_hook_addr(deps.api, default_hook)?,
-        dispatch_msg.metadata.clone().unwrap_or_default(),
-        msg.clone(),
-    )?
-    .fees;
+    // assert gas received satisfies required gas
+    let required_hook = config.get_required_hook();
+    let required_hook_fees: Vec<Coin> =
+        quote_dispatch(&deps.querier, &required_hook, metadata.clone(), msg.clone())?.fees;
 
-    let required_fee = hook::quote_dispatch(
-        &deps.querier,
-        &required_hook,
-        dispatch_msg.metadata.clone().unwrap_or_default(),
-        msg.clone(),
-    )?
-    .fees;
-
-    // assert gas received is satisfies required gas
-    let mut total_fee = required_fee.clone().into_iter().try_fold(
-        Coins::try_from(base_fee.clone())?,
-        |mut acc, fee| {
-            acc.add(fee)?;
-            StdResult::Ok(acc)
-        },
-    )?;
-    for fund in info.funds {
-        total_fee.sub(fund)?;
+    let mut funds = Coins::try_from(info.funds.clone())?;
+    for coin in required_hook_fees.iter() {
+        if let Err(_) = funds.sub(coin.clone()) {
+            return Err(ContractError::HookPayment {
+                wanted: required_hook_fees,
+                received: info.funds,
+            });
+        }
     }
 
-    // interaction
-    let hook = dispatch_msg.get_hook_addr(deps.api, config.get_default_hook())?;
-    let hook_metadata = dispatch_msg.metadata.unwrap_or_default();
-
-    // effects
+    // commit to message
+    let msg_id = msg.id();
     NONCE.save(deps.storage, &(nonce + 1))?;
     LATEST_DISPATCHED_ID.save(deps.storage, &msg_id.to_vec())?;
 
-    // make message
+    // build post dispatch calls
     let post_dispatch_msgs = vec![
         post_dispatch(
             required_hook,
-            hook_metadata.clone(),
+            metadata.clone(),
             msg.clone(),
-            Some(required_fee),
+            Some(required_hook_fees),
         )?,
-        post_dispatch(hook, hook_metadata, msg.clone(), Some(base_fee))?,
+        post_dispatch(hook, metadata, msg.clone(), Some(funds.to_vec()))?,
     ];
-
-    let refund_msg = BankMsg::Send {
-        to_address: info.sender.to_string(),
-        amount: total_fee.to_vec(),
-    };
 
     Ok(Response::new()
         .add_event(emit_dispatch_id(msg_id.clone()))
         .add_event(emit_dispatch(msg))
         .set_data(to_json_binary(&DispatchResponse { message_id: msg_id })?)
-        .add_messages(post_dispatch_msgs)
-        .add_message(refund_msg))
+        .add_messages(post_dispatch_msgs))
 }
 
 pub fn process(
@@ -251,15 +227,18 @@ pub fn process(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use cosmwasm_std::{
         coin, from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        to_json_binary, Addr, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
+        to_json_binary, Addr, ContractResult, CosmosMsg, OwnedDeps, QuerierResult,
+        SystemResult, WasmMsg, WasmQuery,
     };
 
     use hpl_interface::{
         core::mailbox::InstantiateMsg,
-        hook::{ExpectedHookQueryMsg, HookQueryMsg, QuoteDispatchResponse},
+        hook::{ExpectedHookQueryMsg, HookQueryMsg, PostDispatchMsg, QuoteDispatchResponse},
         ism::IsmQueryMsg,
         types::bech32_encode,
     };
@@ -278,8 +257,11 @@ mod tests {
 
     type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
 
-    fn mock_query_handler(req: &WasmQuery) -> QuerierResult {
-        let (req, _addr) = match req {
+    fn mock_query_handler(
+        req: &WasmQuery,
+        addr_fees: &Option<HashMap<String, Vec<Coin>>>,
+    ) -> QuerierResult {
+        let (req, addr) = match req {
             WasmQuery::Smart { msg, contract_addr } => (from_json(msg).unwrap(), contract_addr),
             _ => unreachable!("wrong query type"),
         };
@@ -289,17 +271,18 @@ mod tests {
             _ => unreachable!("wrong query type"),
         };
 
-        let mut fees = Coins::default();
+        let mut fees = match addr_fees {
+            Some(fees) => fees.get(addr).unwrap_or(&vec![]).clone(),
+            None => vec![],
+        };
 
         if !req.metadata.is_empty() {
             let parsed_fee = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
 
-            fees = Coins::from(coin(parsed_fee as u128, "utest"));
+            fees = vec![coin(parsed_fee as u128, "utest")];
         }
 
-        let res = QuoteDispatchResponse {
-            fees: fees.into_vec(),
-        };
+        let res = QuoteDispatchResponse { fees };
         let res = to_json_binary(&res).unwrap();
 
         SystemResult::Ok(ContractResult::Ok(res))
@@ -422,7 +405,7 @@ mod tests {
 
         let mut deps = mock_dependencies();
 
-        deps.querier.update_wasm(mock_query_handler);
+        deps.querier.update_wasm(|q| mock_query_handler(q, &None));
 
         instantiate(
             deps.as_mut(),
@@ -465,6 +448,102 @@ mod tests {
         assert_eq!(
             LATEST_DISPATCHED_ID.load(deps.as_ref().storage).unwrap(),
             msg.id().to_vec()
+        );
+    }
+
+    #[rstest]
+    #[case(vec![coin(100, "usd")], vec![coin(100, "usd")])]
+    #[should_panic]
+    #[case(vec![coin(100, "usd")], vec![coin(50, "usd")])]
+    #[should_panic]
+    #[case(vec![coin(100, "usdt")], vec![coin(100, "usd")])]
+    #[case(vec![coin(50, "usd")], vec![coin(100, "usd")])]
+    fn test_post_dispatch(#[case] required_hook_fees: Vec<Coin>, #[case] funds: Vec<Coin>) {
+        let mut deps = mock_dependencies();
+
+        let mut hook_fees = HashMap::new();
+        hook_fees.insert("required_hook".into(), required_hook_fees.clone());
+
+        // not enforced by mailbox
+        // hook_fees.insert("default_hook".into(), default_hook_fees);
+
+        let opt = Some(hook_fees);
+
+        deps.querier
+            .update_wasm(move |q| mock_query_handler(q, &opt));
+
+        let hrp = "osmo";
+
+        instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(OWNER, &[]),
+            InstantiateMsg {
+                hrp: "osmo".to_string(),
+                owner: OWNER.to_string(),
+                domain: LOCAL_DOMAIN,
+            },
+        )
+        .unwrap();
+
+        set_default_hook(deps.as_mut(), mock_info(OWNER, &[]), "default_hook".into()).unwrap();
+        set_required_hook(deps.as_mut(), mock_info(OWNER, &[]), "required_hook".into()).unwrap();
+
+        let dispatch_msg = DispatchMsg::new(DEST_DOMAIN, gen_bz(32), gen_bz(123));
+
+        let sender = bech32_encode(hrp, gen_bz(32).as_slice()).unwrap();
+
+        let msg = dispatch_msg
+            .clone()
+            .to_msg(
+                MAILBOX_VERSION,
+                NONCE.load(deps.as_ref().storage).unwrap(),
+                LOCAL_DOMAIN,
+                &sender,
+            )
+            .unwrap();
+
+        let post_dispatch_msg = to_json_binary(
+            &PostDispatchMsg {
+                metadata: HexBinary::default(),
+                message: msg.into(),
+            }
+            .wrap(), // not sure why I need this
+        )
+        .unwrap();
+
+        let res = dispatch(
+            deps.as_mut(),
+            mock_info(sender.as_str(), &funds),
+            dispatch_msg.clone(),
+        )
+        .map_err(|e| e.to_string())
+        .unwrap();
+
+        let msgs: Vec<_> = res.messages.into_iter().map(|v| v.msg).collect();
+
+        assert_eq!(
+            msgs[0],
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: "required_hook".to_string(),
+                msg: post_dispatch_msg.clone(),
+                funds: required_hook_fees.clone()
+            },)
+        );
+
+        // subtract required_hook_fees from funds
+        let mut remaining_funds = Coins::try_from(funds).unwrap();
+        for coin in required_hook_fees {
+            remaining_funds.sub(coin).unwrap();
+        }
+
+        assert_eq!(
+            msgs[1],
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: "default_hook".to_string(),
+                msg: post_dispatch_msg,
+                funds: remaining_funds.into_vec() // forward all remaining funds
+            })
         );
     }
 
