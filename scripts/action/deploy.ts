@@ -229,7 +229,6 @@ const deploy_hook = async (
 
     case "merkle":
       const merkle_hook_res = await hooks.merkle.instantiate({
-        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
         mailbox: addr(ctx, mailbox),
       });
 
