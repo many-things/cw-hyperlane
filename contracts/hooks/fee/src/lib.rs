@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event,
-    MessageInfo, QueryResponse, Response, StdError,
+    ensure, ensure_eq, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo,
+    QueryResponse, Response, StdError,
 };
 use cw_storage_plus::Item;
 use hpl_interface::{
@@ -154,9 +154,9 @@ fn quote_dispatch(deps: Deps) -> Result<QuoteDispatchResponse, ContractError> {
 mod test {
     use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
     use cosmwasm_std::{
-        from_json,
+        coin, from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        to_json_binary, Addr, HexBinary, OwnedDeps, coin,
+        to_json_binary, Addr, HexBinary, OwnedDeps,
     };
     use hpl_interface::hook::{PostDispatchMsg, QuoteDispatchMsg};
     use hpl_ownable::get_owner;
@@ -187,7 +187,7 @@ mod test {
             mock_info(sender.as_str(), &[]),
             InstantiateMsg {
                 owner: owner.to_string(),
-                fee
+                fee,
             },
         )
         .unwrap();
@@ -197,10 +197,7 @@ mod test {
 
     #[rstest]
     fn test_init(deps: TestDeps) {
-        assert_eq!(
-            "uusd",
-            get_fee(deps.as_ref()).unwrap().fee.denom.as_str()
-        );
+        assert_eq!("uusd", get_fee(deps.as_ref()).unwrap().fee.denom.as_str());
         assert_eq!("owner", get_owner(deps.as_ref().storage).unwrap().as_str());
     }
 
@@ -235,12 +232,44 @@ mod test {
     }
 
     #[rstest]
-    fn test_set_fee(_deps: TestDeps) {
-        unimplemented!("TODO");
+    #[case(addr("owner"), coin(200, "uusd"))]
+    #[should_panic(expected = "unauthorized")]
+    #[case(addr("deployer"), coin(200, "uusd"))]
+    fn test_set_fee(mut deps: TestDeps, #[case] sender: Addr, #[case] fee: Coin) {
+        execute(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(sender.as_str(), &[]),
+            ExecuteMsg::FeeHook(FeeHookMsg::SetFee { fee: fee.clone() }),
+        )
+        .map_err(|e| e.to_string())
+        .unwrap();
+
+        assert_eq!(fee, get_fee(deps.as_ref()).unwrap().fee);
     }
 
     #[rstest]
-    fn test_claim(_deps: TestDeps) {
-        unimplemented!("TODO");
+    #[case(addr("owner"), Some(addr("deployer")))]
+    #[case(addr("owner"), None)]
+    #[should_panic(expected = "unauthorized")]
+    #[case(addr("deployer"), None)]
+    fn test_claim(mut deps: TestDeps, #[case] sender: Addr, #[case] recipient: Option<Addr>) {
+        let res = execute(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(sender.as_str(), &[]),
+            ExecuteMsg::FeeHook(FeeHookMsg::Claim { recipient: recipient.clone() }),
+        )
+        .map_err(|e| e.to_string())
+        .unwrap();
+
+        assert_eq!(
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: recipient.unwrap_or_else(|| addr("owner")).into_string(),
+                amount: vec![],
+            }),
+            res.messages[0].msg
+        );
+        println!("{:?}", res);
     }
 }
