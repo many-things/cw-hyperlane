@@ -1,8 +1,7 @@
 use cosmwasm_std::{
-    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env,
-    HexBinary, MessageInfo, Response,
+    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env, HexBinary,
+    MessageInfo, Response
 };
-use cw_utils::PaymentError::MissingDenom;
 use hpl_interface::{
     core::{
         mailbox::{DispatchMsg, DispatchResponse},
@@ -121,10 +120,13 @@ pub fn dispatch(
     let required_hook_fees: Vec<Coin> =
         quote_dispatch(&deps.querier, &required_hook, metadata.clone(), msg.clone())?.fees;
 
-    let mut funds = Coins::try_from(info.funds)?;
+    let mut funds = Coins::try_from(info.funds.clone())?;
     for coin in required_hook_fees.iter() {
         if let Err(_) = funds.sub(coin.clone()) {
-            return Err(ContractError::Payment(MissingDenom(coin.denom.clone())));
+            return Err(ContractError::HookPayment {
+                wanted: required_hook_fees,
+                received: info.funds,
+            });
         }
     }
 
@@ -225,15 +227,18 @@ pub fn process(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use cosmwasm_std::{
         coin, from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        to_json_binary, Addr, ContractResult, OwnedDeps, QuerierResult, SystemResult, WasmQuery,
+        to_json_binary, Addr, ContractResult, CosmosMsg, OwnedDeps, QuerierResult,
+        SystemResult, WasmMsg, WasmQuery,
     };
 
     use hpl_interface::{
         core::mailbox::InstantiateMsg,
-        hook::{ExpectedHookQueryMsg, HookQueryMsg, QuoteDispatchResponse},
+        hook::{ExpectedHookQueryMsg, HookQueryMsg, PostDispatchMsg, QuoteDispatchResponse},
         ism::IsmQueryMsg,
         types::bech32_encode,
     };
@@ -252,8 +257,11 @@ mod tests {
 
     type TestDeps = OwnedDeps<MockStorage, MockApi, MockQuerier>;
 
-    fn mock_query_handler(req: &WasmQuery) -> QuerierResult {
-        let (req, _addr) = match req {
+    fn mock_query_handler(
+        req: &WasmQuery,
+        addr_fees: &Option<HashMap<String, Vec<Coin>>>,
+    ) -> QuerierResult {
+        let (req, addr) = match req {
             WasmQuery::Smart { msg, contract_addr } => (from_json(msg).unwrap(), contract_addr),
             _ => unreachable!("wrong query type"),
         };
@@ -263,17 +271,18 @@ mod tests {
             _ => unreachable!("wrong query type"),
         };
 
-        let mut fees = Coins::default();
+        let mut fees = match addr_fees {
+            Some(fees) => fees.get(addr).unwrap_or(&vec![]).clone(),
+            None => vec![],
+        };
 
         if !req.metadata.is_empty() {
             let parsed_fee = u32::from_be_bytes(req.metadata.as_slice().try_into().unwrap());
 
-            fees = Coins::from(coin(parsed_fee as u128, "utest"));
+            fees = vec![coin(parsed_fee as u128, "utest")];
         }
 
-        let res = QuoteDispatchResponse {
-            fees: fees.into_vec(),
-        };
+        let res = QuoteDispatchResponse { fees };
         let res = to_json_binary(&res).unwrap();
 
         SystemResult::Ok(ContractResult::Ok(res))
@@ -396,7 +405,7 @@ mod tests {
 
         let mut deps = mock_dependencies();
 
-        deps.querier.update_wasm(mock_query_handler);
+        deps.querier.update_wasm(|q| mock_query_handler(q, &None));
 
         instantiate(
             deps.as_mut(),
@@ -439,6 +448,102 @@ mod tests {
         assert_eq!(
             LATEST_DISPATCHED_ID.load(deps.as_ref().storage).unwrap(),
             msg.id().to_vec()
+        );
+    }
+
+    #[rstest]
+    #[case(vec![coin(100, "usd")], vec![coin(100, "usd")])]
+    #[should_panic]
+    #[case(vec![coin(100, "usd")], vec![coin(50, "usd")])]
+    #[should_panic]
+    #[case(vec![coin(100, "usdt")], vec![coin(100, "usd")])]
+    #[case(vec![coin(50, "usd")], vec![coin(100, "usd")])]
+    fn test_post_dispatch(#[case] required_hook_fees: Vec<Coin>, #[case] funds: Vec<Coin>) {
+        let mut deps = mock_dependencies();
+
+        let mut hook_fees = HashMap::new();
+        hook_fees.insert("required_hook".into(), required_hook_fees.clone());
+
+        // not enforced by mailbox
+        // hook_fees.insert("default_hook".into(), default_hook_fees);
+
+        let opt = Some(hook_fees);
+
+        deps.querier
+            .update_wasm(move |q| mock_query_handler(q, &opt));
+
+        let hrp = "osmo";
+
+        instantiate(
+            deps.as_mut(),
+            mock_env(),
+            mock_info(OWNER, &[]),
+            InstantiateMsg {
+                hrp: "osmo".to_string(),
+                owner: OWNER.to_string(),
+                domain: LOCAL_DOMAIN,
+            },
+        )
+        .unwrap();
+
+        set_default_hook(deps.as_mut(), mock_info(OWNER, &[]), "default_hook".into()).unwrap();
+        set_required_hook(deps.as_mut(), mock_info(OWNER, &[]), "required_hook".into()).unwrap();
+
+        let dispatch_msg = DispatchMsg::new(DEST_DOMAIN, gen_bz(32), gen_bz(123));
+
+        let sender = bech32_encode(hrp, gen_bz(32).as_slice()).unwrap();
+
+        let msg = dispatch_msg
+            .clone()
+            .to_msg(
+                MAILBOX_VERSION,
+                NONCE.load(deps.as_ref().storage).unwrap(),
+                LOCAL_DOMAIN,
+                &sender,
+            )
+            .unwrap();
+
+        let post_dispatch_msg = to_json_binary(
+            &PostDispatchMsg {
+                metadata: HexBinary::default(),
+                message: msg.into(),
+            }
+            .wrap(), // not sure why I need this
+        )
+        .unwrap();
+
+        let res = dispatch(
+            deps.as_mut(),
+            mock_info(sender.as_str(), &funds),
+            dispatch_msg.clone(),
+        )
+        .map_err(|e| e.to_string())
+        .unwrap();
+
+        let msgs: Vec<_> = res.messages.into_iter().map(|v| v.msg).collect();
+
+        assert_eq!(
+            msgs[0],
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: "required_hook".to_string(),
+                msg: post_dispatch_msg.clone(),
+                funds: required_hook_fees.clone()
+            },)
+        );
+
+        // subtract required_hook_fees from funds
+        let mut remaining_funds = Coins::try_from(funds).unwrap();
+        for coin in required_hook_fees {
+            remaining_funds.sub(coin).unwrap();
+        }
+
+        assert_eq!(
+            msgs[1],
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: "default_hook".to_string(),
+                msg: post_dispatch_msg,
+                funds: remaining_funds.into_vec() // forward all remaining funds
+            })
         );
     }
 
