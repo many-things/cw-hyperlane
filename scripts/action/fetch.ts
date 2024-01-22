@@ -1,10 +1,6 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { Context } from "../src/types";
 import { Client } from "../src/config";
-import { Contracts } from "../src/deploy";
 import {
-  HplMailbox,
-  HplValidatorAnnounce,
   HplHookAggregate,
   HplHookMerkle,
   HplHookPausable,
@@ -15,11 +11,15 @@ import {
   HplIsmAggregate,
   HplIsmMultisig,
   HplIsmRouting,
+  HplMailbox,
   HplTestMockHook,
   HplTestMockMsgReceiver,
+  HplValidatorAnnounce,
   HplWarpCw20,
   HplWarpNative,
 } from "../src/contracts";
+import { Contracts } from "../src/deploy";
+import { Context } from "../src/types";
 
 type Const<T> = new (
   address: string | undefined,
@@ -70,6 +70,7 @@ export class ContractFetcher {
         aggregate: this.get(HplIsmAggregate, "hpl_ism_aggregate"),
         multisig: this.get(HplIsmMultisig, "hpl_ism_multisig"),
         routing: this.get(HplIsmRouting, "hpl_ism_routing"),
+        pausable: this.get(HplHookPausable, "hpl_ism_pausable"),
       },
       mocks: {
         hook: this.get(HplTestMockHook, "hpl_test_mock_hook"),

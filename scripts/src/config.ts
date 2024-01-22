@@ -1,14 +1,14 @@
-import yaml from "js-yaml";
-import { readFileSync } from "fs";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { Secp256k1, keccak256 } from "@cosmjs/crypto";
+import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing";
+import { GasPrice, SigningStargateClient } from "@cosmjs/stargate";
 import {
   Tendermint34Client,
   Tendermint37Client,
   TendermintClient,
 } from "@cosmjs/tendermint-rpc";
-import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing";
-import { GasPrice, SigningStargateClient } from "@cosmjs/stargate";
-import { Secp256k1, keccak256 } from "@cosmjs/crypto";
+import { readFileSync } from "fs";
+import yaml from "js-yaml";
 
 export type IsmType =
   | {
@@ -27,6 +27,11 @@ export type IsmType =
       type: "routing";
       owner: string;
       isms: { [domain: number]: IsmType };
+    }
+  | {
+      type: "pausable";
+      owner: string;
+      paused?: boolean;
     };
 
 export type HookType =

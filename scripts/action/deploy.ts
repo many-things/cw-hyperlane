@@ -159,7 +159,7 @@ const deploy_ism_hook = async (
         owner: "<signer>",
         validators: {
           123: {
-            addrs: [client.signer_addr, client.signer_addr],
+            addrs: [client.signer_addr],
             threshold: 1,
           },
         },

@@ -9,6 +9,7 @@ import {
   HplIgpOracle,
   HplIsmAggregate,
   HplIsmMultisig,
+  HplIsmPausable,
   HplIsmRouting,
   HplMailbox,
   HplTestMockHook,
@@ -39,6 +40,7 @@ export type Contracts = {
     aggregate: HplIsmAggregate;
     multisig: HplIsmMultisig;
     routing: HplIsmRouting;
+    pausable: HplIsmPausable;
   };
   mocks: {
     hook: HplTestMockHook;
@@ -128,7 +130,15 @@ export const deploy_ism = async (
 
       return routing_ism_res.address!;
 
+    case "pausable":
+      const pausable_ism_res = await isms.pausable.instantiate({
+        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
+        paused: ism.paused ?? false
+      });
+
+      return pausable_ism_res.address!;
+
     default:
-      throw new Error("invalid ism type");
+      throw new Error(`unsupported ism ${ism}`);
   }
 };
