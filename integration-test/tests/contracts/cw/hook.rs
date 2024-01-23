@@ -99,7 +99,6 @@ impl Hook {
             .instantiate(
                 codes.hook_merkle,
                 &hook::merkle::InstantiateMsg {
-                    owner: owner.address(),
                     mailbox,
                 },
                 Some(deployer.address().as_str()),
