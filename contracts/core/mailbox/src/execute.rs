@@ -1,7 +1,8 @@
 use cosmwasm_std::{
-    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env, HexBinary,
-    MessageInfo, Response
+    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env,
+    HexBinary, MessageInfo, Response,
 };
+use cw_utils::PaymentError::MissingDenom;
 use hpl_interface::{
     core::{
         mailbox::{DispatchMsg, DispatchResponse},
