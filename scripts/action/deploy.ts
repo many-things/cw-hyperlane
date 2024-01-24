@@ -100,7 +100,7 @@ const deploy_igp = async (
     owner: client.signer,
     gas_token: config.deploy.igp.token || config.network.gas.denom,
     beneficiary: client.signer,
-    default_gas_usage: "25000" // must be string
+    default_gas_usage: "250000" // must be string
   });
 
   // init igp oracle

@@ -22,6 +22,7 @@ export type IsmType =
       type: "aggregate";
       owner: string;
       isms: IsmType[];
+      threshold: number;
     }
   | {
       type: "routing";

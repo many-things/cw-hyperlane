@@ -97,11 +97,14 @@ export const deploy_ism = async (
       return multisig_ism_res.address!;
 
     case "aggregate":
+      let sub_modules = [];
+      for (const v of ism.isms) {
+        sub_modules.push(await deploy_ism(client, v, contracts));
+      }
       const aggregate_ism_res = await isms.aggregate.instantiate({
         owner: ism.owner === "<signer>" ? client.signer : ism.owner,
-        isms: await Promise.all(
-          ism.isms.map((v) => deploy_ism(client, v, contracts))
-        ),
+        isms: sub_modules,
+        threshold: ism.threshold,
       });
 
       return aggregate_ism_res.address!;
@@ -131,6 +134,7 @@ export const deploy_ism = async (
       return routing_ism_res.address!;
 
     case "pausable":
+
       const pausable_ism_res = await isms.pausable.instantiate({
         owner: ism.owner === "<signer>" ? client.signer : ism.owner,
         paused: ism.paused ?? false
