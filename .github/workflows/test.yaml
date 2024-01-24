@@ -33,9 +33,6 @@ jobs:
       - name: Install rename
         run: sudo apt-get install -y rename
 
-      - name: Install rust deps
-        run: make install
-
       - name: Run tests
         run: cargo test --workspace --exclude hpl-tests
 
