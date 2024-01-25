@@ -10,6 +10,10 @@ jobs:
   unit-test:
     strategy:
       fail-fast: true
+    
+    permissions:
+      contents: write
+      pull-requests: write
 
     name: unit-test
     runs-on: ubuntu-latest
@@ -45,11 +49,13 @@ jobs:
       - name: Build wasm
         run: make ci-build
 
-      - name: Upload wasm archive
-        uses: actions/upload-artifact@v2
+      - name: Pull request artifacts
+        uses: gavv/pull-request-artifacts@v2
         with:
-          name: wasm_codes
-          path: wasm_codes.zip
+          commit: ${{ github.event.pull_request.head.sha }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: |
+            wasm_codes.zip
 
   coverage:
     runs-on: ubuntu-latest
