@@ -22,7 +22,10 @@ jobs:
             --profile minimal \
             --target wasm32-unknown-unknown \
             --no-self-update
-      
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
       - name: Install Deps
         run: make install-prod
 
