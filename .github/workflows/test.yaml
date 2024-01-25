@@ -67,7 +67,11 @@ jobs:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v4
-
+      
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
       - name: Install Rust
         run: rustup update nightly
 
