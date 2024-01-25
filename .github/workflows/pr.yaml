@@ -1,0 +1,47 @@
+name: pr
+
+on:
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  artifact:
+    permissions:
+      contents: write
+      pull-requests: write
+
+    name: artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.72 \
+            --profile minimal \
+            --target wasm32-unknown-unknown \
+            --no-self-update
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Deps
+        run: make install-prod
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build wasm
+        run: |
+          cargo generate-lockfile
+          make ci-build
+
+      - name: Pull request artifacts
+        uses: gavv/pull-request-artifacts@v2
+        with:
+          commit: ${{ github.event.pull_request.head.sha }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-branch: artifacts
+          artifacts: |
+            wasm_codes.zip
