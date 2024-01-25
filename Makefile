@@ -1,9 +1,12 @@
+PWD:=$(shell pwd)
+BASE:=$(shell basename "$(PWD)")
+
 clean:
 	@cargo clean
 	@rm -rf ./artifacts
 
 install:
-	cargo install --force cw-optimizoor cosmwasm-check beaker
+	cargo install --force cosmwasm-check
 	rustup target add wasm32-unknown-unknown
 
 schema:
@@ -12,7 +15,10 @@ schema:
 build:
 	cargo build
 	cargo wasm
-	cargo cw-optimizoor
+	docker run --rm -v "$(PWD)":/code \
+		--mount type=volume,source="$(BASE)_cache",target=/code/target \
+		--mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+		cosmwasm/optimizer:0.15.0
 	rename --force 's/(.*)-(.*)\.wasm/$$1\.wasm/d' artifacts/*
 
 check: build
