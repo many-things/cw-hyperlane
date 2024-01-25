@@ -43,37 +43,6 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --exclude hpl-tests
 
-  artifact:
-    permissions:
-      contents: write
-      pull-requests: write
-
-    name: artifact
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Dependencies
-        run: |
-          rustup update 1.72
-          sudo apt-get install -y rename
-          make install
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build wasm
-        run: make ci-build
-
-      - name: Pull request artifacts
-        uses: gavv/pull-request-artifacts@v2
-        with:
-          commit: ${{ github.event.pull_request.head.sha }}
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts-branch: artifacts
-          artifacts: |
-            wasm_codes.zip
-
   coverage:
     runs-on: ubuntu-latest
     env:
