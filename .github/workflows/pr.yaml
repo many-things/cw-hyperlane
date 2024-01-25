@@ -30,7 +30,9 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Build wasm
-        run: make ci-build
+        run: |
+          cargo generate-lockfile
+          make ci-build
 
       - name: Pull request artifacts
         uses: gavv/pull-request-artifacts@v2
