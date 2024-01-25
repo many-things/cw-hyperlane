@@ -20,25 +20,15 @@ jobs:
         with:
           go-version: '1.21'
 
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
       - name: Install Rust
-        run: rustup update 1.72
+        run: |
+          rustup toolchain install 1.72 \
+            --profile minimal \
+            --target wasm32-unknown-unknown \
+            --no-self-update
 
-      - name: Install rename
-        run: sudo apt-get install -y rename
-
-      - name: Install rust deps
-        run: make install
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
 
       - name: Run tests
         run: cargo test --workspace --exclude hpl-tests
@@ -56,8 +46,13 @@ jobs:
       
       - name: Install Rust
         run: |
-          rustup update nightly
-          rustup target add wasm32-unknown-unknown
+          rustup toolchain install 1.72 \
+            --profile minimal \
+            --target wasm32-unknown-unknown \
+            --no-self-update
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
