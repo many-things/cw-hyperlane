@@ -16,6 +16,8 @@ import {
   HplWarpCw20,
   HplWarpNative,
   HplIgpOracle,
+  HplHookFee,
+  HplTestMockIsm,
 } from "./contracts";
 
 export type Contracts = {
@@ -25,6 +27,7 @@ export type Contracts = {
   };
   hooks: {
     aggregate: HplHookAggregate;
+    fee: HplHookFee;
     merkle: HplHookMerkle;
     pausable: HplHookPausable;
     routing: HplHookRouting;
@@ -42,6 +45,7 @@ export type Contracts = {
   };
   mocks: {
     hook: HplTestMockHook;
+    ism: HplTestMockIsm;
     receiver: HplTestMockMsgReceiver;
   };
   warp: {
