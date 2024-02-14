@@ -3,11 +3,19 @@
 [![codecov](https://codecov.io/gh/many-things/cw-hyperlane/branch/main/graph/badge.svg?token=SGYE7FBTAO)](https://codecov.io/gh/many-things/cw-hyperlane)
 [![crates.io](https://img.shields.io/crates/v/hpl-interface)](https://crates.io/crates/hpl-interface)
 
-## Architecture Overview
+## Overview
 
-![Architecture Overview](./asset/hyperlane-all.png)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [How to build](#how-to-build)
+- [How to test](#how-to-test)
 
-### Components
+## Architecture
+
+![Architecture](./asset/hyperlane-all.png)
+
+## Project Structure
 
 ```
 ├── contracts
@@ -18,14 +26,14 @@
 │   │
 │   ├── hooks
 │   │   ├── aggregate
-│   │   ├── fee
+│   │   ├── fee # protocol fee
 │   │   ├── merkle
 │   │   ├── pausable
 │   │   ├── routing
 │   │   ├── routing-custom
 │   │   └── routing-fallback
 │   │
-│   ├── igps
+│   ├── igps # also this is a part of `hook`
 │   │   ├── core
 │   │   └── oracle
 │   │
@@ -35,7 +43,7 @@
 │   │   ├── pausable
 │   │   └── routing
 │   │
-│   ├── mocks
+│   ├── mocks # for testing
 │   │   ├── mock-hook
 │   │   ├── mock-ism
 │   │   └── mock-msg-receiver
@@ -48,17 +56,16 @@
 │
 ├── packages
 │   │
-│   ├── connection
-│   ├── interface
+│   ├── connection # same as `MailboxClient` of evm implementation
+│   ├── interface # package for contract interfaces (external)
 │   ├── ownable
 │   ├── pausable
-│   ├── router
-│   └── schema
+│   └── router
 │
-├── scripts
+├── scripts # useful scripts for development (e.g. code uploading. contract deployment)
 │
 └── ts
-    └── sdk
+    └── sdk # typescript sdk for contract integration. (auto generated via ts-codegen)
 ```
 
 ## Prerequisites
