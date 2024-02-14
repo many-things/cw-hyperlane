@@ -1,4 +1,5 @@
 export * from "./hpl_hook_aggregate";
+export * from "./hpl_hook_fee";
 export * from "./hpl_hook_merkle";
 export * from "./hpl_hook_pausable";
 export * from "./hpl_hook_routing";
@@ -12,6 +13,7 @@ export * from "./hpl_ism_pausable";
 export * from "./hpl_ism_routing";
 export * from "./hpl_mailbox";
 export * from "./hpl_test_mock_hook";
+export * from "./hpl_test_mock_ism";
 export * from "./hpl_test_mock_msg_receiver";
 export * from "./hpl_validator_announce";
 export * from "./hpl_warp_cw20";

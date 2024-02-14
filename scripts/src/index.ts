@@ -122,7 +122,7 @@ async function main() {
     console.log("No contracts to upload.");
   }
 
-  runMigrations(config.network.id, false);
+  // runMigrations(config.network.id, false);
 }
 
 main();

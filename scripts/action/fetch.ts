@@ -19,6 +19,8 @@ import {
   HplTestMockMsgReceiver,
   HplWarpCw20,
   HplWarpNative,
+  HplHookFee,
+  HplTestMockIsm,
 } from "../src/contracts";
 
 type Const<T> = new (
@@ -50,6 +52,7 @@ export class ContractFetcher {
       },
       hooks: {
         aggregate: this.get(HplHookAggregate, "hpl_hook_aggregate"),
+        fee: this.get(HplHookFee, "hpl_hook_fee"),
         merkle: this.get(HplHookMerkle, "hpl_hook_merkle"),
         pausable: this.get(HplHookPausable, "hpl_hook_pausable"),
         routing: this.get(HplHookRouting, "hpl_hook_routing"),
@@ -73,6 +76,7 @@ export class ContractFetcher {
       },
       mocks: {
         hook: this.get(HplTestMockHook, "hpl_test_mock_hook"),
+        ism: this.get(HplTestMockIsm, "hpl_test_mock_ism"),
         receiver: this.get(
           HplTestMockMsgReceiver,
           "hpl_test_mock_msg_receiver"

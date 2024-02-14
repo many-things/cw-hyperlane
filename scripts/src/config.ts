@@ -10,6 +10,19 @@ import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing";
 import { GasPrice, SigningStargateClient } from "@cosmjs/stargate";
 import { Secp256k1, keccak256 } from "@cosmjs/crypto";
 
+export const DEFAULT_ISM = (signer: string): IsmType => ({
+  type: "multisig",
+  owner: "<signer>",
+  validators: {
+    5: {
+      addrs: [signer],
+      threshold: 1,
+    },
+  },
+});
+
+export const DEFAULT_HOOK = { type: "mock" } as HookType;
+
 export type IsmType =
   | {
       type: "multisig";
@@ -17,6 +30,9 @@ export type IsmType =
       validators: {
         [domain: number]: { addrs: string[]; threshold: number };
       };
+    }
+  | {
+      type: "mock";
     }
   | {
       type: "aggregate";
@@ -29,10 +45,40 @@ export type IsmType =
       isms: { [domain: number]: IsmType };
     };
 
+export type FeeHookType = {
+  type: "fee";
+  owner: string;
+  fee: {
+    denom: string;
+    amount: bigint;
+  };
+};
+
+export type IgpHookType = {
+  type: "igp";
+  token?: string;
+  configs: {
+    [domain: number]: {
+      exchange_rate: number;
+      gas_price: number;
+    };
+  };
+};
+
+export type RoutingHookType = {
+  type: "routing";
+  owner: string;
+  hooks: { [domain: number]: HookType };
+  custom_hooks?: {
+    [domain: number]: { recipient: string; hook: string };
+  };
+  fallback_hook?: string;
+};
+
 export type HookType =
+  | FeeHookType
   | {
       type: "merkle";
-      owner: string;
     }
   | {
       type: "mock";
@@ -40,20 +86,11 @@ export type HookType =
   | {
       type: "pausable";
       owner: string;
+      paused: boolean;
     }
-  | {
-      type: "igp";
-    }
+  | IgpHookType
   | { type: "aggregate"; owner: string; hooks: HookType[] }
-  | {
-      type: "routing";
-      owner: string;
-      hooks: { [domain: number]: HookType };
-      custom_hooks?: {
-        [domain: number]: { recipient: string; hook: string };
-      };
-      fallback_hook?: string;
-    };
+  | RoutingHookType;
 
 export type Config = {
   network: {
@@ -71,15 +108,6 @@ export type Config = {
   signer: string;
 
   deploy: {
-    igp: {
-      token?: string;
-      configs: {
-        [domain: number]: {
-          exchange_rate: number;
-          gas_price: number;
-        };
-      };
-    };
     ism?: IsmType;
     hooks?: {
       default?: HookType;

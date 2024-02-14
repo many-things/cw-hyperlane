@@ -1,11 +1,20 @@
+import "reflect-metadata";
+
 import { writeFileSync } from "fs";
 
 import { loadContext } from "../src/load_context";
-import { Client, HookType, config, getSigningClient } from "../src/config";
+import {
+  Client,
+  DEFAULT_HOOK,
+  DEFAULT_ISM,
+  HookType,
+  config,
+  getSigningClient,
+} from "../src/config";
 
 import { ContractFetcher } from "./fetch";
 import { Context } from "../src/types";
-import { Contracts, deploy_ism } from "../src/deploy";
+import { Contracts, deploy_ism, deploy_hook } from "../src/deploy";
 
 const name = (c: any) => c.contractName;
 const addr = (ctx: Context, c: any) => ctx.contracts[name(c)].address!;
@@ -22,8 +31,7 @@ async function main() {
   } = contracts;
 
   ctx = await deploy_core(ctx, client, contracts);
-  ctx = await deploy_igp(ctx, client, contracts);
-  ctx = await deploy_ism_hook(ctx, client, contracts);
+  ctx = await deploy_ism_and_hook(ctx, client, contracts);
 
   // init test mock msg receiver
   ctx.contracts[name(mocks.receiver)] = await mocks.receiver.instantiate({
@@ -86,83 +94,25 @@ const deploy_core = async (
   return ctx;
 };
 
-const deploy_igp = async (
-  ctx: Context,
-  client: Client,
-  { igp }: Contracts
-): Promise<Context> => {
-  // init igp
-  ctx.contracts[name(igp.core)] = await igp.core.instantiate({
-    hrp: config.network.hrp,
-    owner: client.signer,
-    gas_token: config.deploy.igp.token || config.network.gas.denom,
-    beneficiary: client.signer,
-  });
-
-  // init igp oracle
-  ctx.contracts[name(igp.oracle)] = await igp.oracle.instantiate({
-    owner: client.signer,
-  });
-
-  await client.wasm.execute(
-    client.signer,
-    addr(ctx, igp.oracle),
-    {
-      set_remote_gas_data_configs: {
-        configs: Object.entries(config.deploy.igp.configs).map(
-          ([domain, v]) => ({
-            remote_domain: Number(domain),
-            token_exchange_rate: v.exchange_rate.toString(),
-            gas_price: v.gas_price.toString(),
-          })
-        ),
-      },
-    },
-    "auto"
-  );
-
-  await client.wasm.execute(
-    client.signer,
-    addr(ctx, igp.core),
-    {
-      router: {
-        set_routes: {
-          set: Object.keys(config.deploy.igp.configs).map((domain) => ({
-            domain: Number(domain),
-            route: addr(ctx, igp.oracle),
-          })),
-        },
-      },
-    },
-    "auto"
-  );
-
-  return ctx;
-};
-
-const deploy_ism_hook = async (
+const deploy_ism_and_hook = async (
   ctx: Context,
   client: Client,
   contracts: Contracts
 ) => {
+  // deploy default ism
+
   ctx.contracts["hpl_default_ism"] = {
     ...ctx.contracts[`hpl_ism_${config.deploy.ism?.type || "multisig"}`],
-
-    address: await deploy_ism(
-      client,
-      config.deploy.ism || {
-        type: "multisig",
-        owner: "<signer>",
-        validators: {
-          5: {
-            addrs: [client.signer_addr],
-            threshold: 1,
-          },
-        },
-      },
-      contracts
-    ),
   };
+
+  [ctx, ctx.contracts["hpl_default_ism"].address] = await deploy_ism(
+    ctx,
+    client,
+    config.deploy.ism || DEFAULT_ISM(client.signer_addr),
+    contracts
+  );
+
+  // deploy default hook
 
   ctx.contracts["hpl_default_hook"] = {
     ...ctx.contracts[
@@ -171,14 +121,16 @@ const deploy_ism_hook = async (
         ? `hpl_hook_${config.deploy.hooks.default.type}`
         : "hpl_test_mock_hook"
     ],
-
-    address: await deploy_hook(
-      ctx,
-      client,
-      config.deploy.hooks?.default || { type: "mock" },
-      contracts
-    ),
   };
+
+  [ctx, ctx.contracts["hpl_default_hook"].address] = await deploy_hook(
+    ctx,
+    client,
+    config.deploy.hooks?.default || DEFAULT_HOOK,
+    contracts
+  );
+
+  // deploy required hook
 
   ctx.contracts["hpl_required_hook"] = {
     ...ctx.contracts[
@@ -187,90 +139,16 @@ const deploy_ism_hook = async (
         ? `hpl_hook_${config.deploy.hooks.required.type}`
         : "hpl_test_mock_hook"
     ],
-
-    address: await deploy_hook(
-      ctx,
-      client,
-      config.deploy.hooks?.required || { type: "mock" },
-      contracts
-    ),
   };
 
+  [ctx, ctx.contracts["hpl_required_hook"].address] = await deploy_hook(
+    ctx,
+    client,
+    config.deploy.hooks?.required || DEFAULT_HOOK,
+    contracts
+  );
+
   return ctx;
-};
-
-const deploy_hook = async (
-  ctx: Context,
-  client: Client,
-  hook: HookType,
-  contracts: Contracts
-): Promise<string> => {
-  const {
-    core: { mailbox },
-    hooks,
-    igp,
-    mocks,
-  } = contracts;
-
-  switch (hook.type) {
-    case "aggregate":
-      const aggregate_hook_res = await hooks.aggregate.instantiate({
-        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
-        hooks: await Promise.all(
-          hook.hooks.map((v) => deploy_hook(ctx, client, v, contracts))
-        ),
-      });
-
-      return aggregate_hook_res.address!;
-
-    case "merkle":
-      const merkle_hook_res = await hooks.merkle.instantiate({
-        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
-        mailbox: addr(ctx, mailbox),
-      });
-
-      return merkle_hook_res.address!;
-
-    case "mock":
-      const mock_hook_res = await mocks.hook.instantiate({});
-
-      return mock_hook_res.address!;
-
-    case "pausable":
-      const pausable_hook_res = await hooks.pausable.instantiate({
-        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
-      });
-
-      return pausable_hook_res.address!;
-
-    case "igp":
-      return ctx.contracts[name(igp.core)].address!;
-
-    case "routing":
-      const routing_hook_res = await hooks.routing.instantiate({
-        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
-      });
-
-      await client.wasm.execute(
-        client.signer,
-        routing_hook_res.address!,
-        {
-          router: {
-            set_routes: {
-              set: await Promise.all(
-                Object.entries(hook.hooks).map(async ([domain, v]) => {
-                  const route = await deploy_hook(ctx, client, v, contracts);
-                  return { domain, route };
-                })
-              ),
-            },
-          },
-        },
-        "auto"
-      );
-    default:
-      throw new Error("invalid hook type");
-  }
 };
 
 main().catch(console.error);
