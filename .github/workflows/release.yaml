@@ -1,0 +1,53 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  artifact:
+    permissions:
+      contents: write
+      pull-requests: write
+
+    env:
+      REPO_NAME: ${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}
+      ARTIFACT_NAME: $REPO_NAME-${{  github.ref_name }}.zip
+
+      name: artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.72 \
+            --profile minimal \
+            --target wasm32-unknown-unknown \
+            --no-self-update
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Deps
+        run: make install-prod
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build wasm
+        run: |
+          cargo generate-lockfile
+          make ci-build
+          mv wasm_codes.zip $ARTIFACT_NAME
+          sha256sum $ARTIFACT_NAME.zip > $ARTIFACT_NAME.CHECKSUM
+          md5sum $ARTIFACT_NAME.zip > $ARTIFACT_NAME.CHECKSUM.MD5
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            $ARTIFACT_NAME
+            $ARTIFACT_NAME.CHECKSUM
+            $ARTIFACT_NAME.CHECKSUM.MD5
