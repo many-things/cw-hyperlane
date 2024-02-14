@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "upload": "ts-node src/index.ts",
+    "deploy": "ts-node action/deploy.ts",
     "build": "npx tsc"
   },
   "keywords": [],
