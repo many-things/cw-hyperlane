@@ -1,18 +1,22 @@
 {
   "contracts": {
     "hpl_hook_aggregate": {
+      "address": "osmo10sr7uqmdxf70eym34g3agpqcg3dlhalj2qhskg40224advh5a74qc5htag",
       "codeId": 6715,
       "digest": "2ae680bad348a4cf289b1cc951bbaf0c68a9c31693b7deb2e0985cd65b5268be"
     },
     "hpl_hook_fee": {
+      "address": "osmo143008a6pn465z8u5pxmjy8dypkhwhkxchua99wq9ukj94k7mvs5syfdpnx",
       "codeId": 6716,
       "digest": "a7d2db4c76cd6e34978ee19ce25268b705e16db0f0e4fb815f343b289e892777"
     },
     "hpl_hook_merkle": {
+      "address": "osmo164y69rngl4n3uny0mejfpve9pe2j75lwcn4why5c9a4lwtethyksm75wu0",
       "codeId": 6717,
       "digest": "35da6025ef81ace5ad9b36edf0997828b65b434d87cecdd171a05b50679d263e"
     },
     "hpl_hook_pausable": {
+      "address": "osmo19d0cj9wys0556stak9wvrhg7yr4u3xp77wwy6egmvse4rrfv8e2qhcqjpv",
       "codeId": 6718,
       "digest": "493a4a637a9a9d73e926a42797524cec6799e895973b6a41e4a9cb7082c138f6"
     },
@@ -41,6 +45,7 @@
       "digest": "fa9ae6d1a129f88e56a35bc836f39427c2a589db6795d97b1c19c18c7eb8b823"
     },
     "hpl_ism_multisig": {
+      "address": "osmo1kcgs2qw2lgsqlg0ah4t9e5d5trz7pha56pzjae4yjnjnpuey2qwqape0mx",
       "codeId": 6725,
       "digest": "17ffef91b62b5fdb715e598f555901f55df277d94e3a157c63b5d73f883bb80a"
     },
@@ -53,10 +58,12 @@
       "digest": "641c803101059ab7bc40ebf5f9730e463733b7d0486364367e979873004afe2a"
     },
     "hpl_mailbox": {
+      "address": "osmo17w8776pqahas8el82xcq6lp6ylcreqv9jl3wq32x5l9hm4jds7yqaunlyt",
       "codeId": 6728,
       "digest": "5e3b0f950b4bcf5e67b12e9cdab953e37c22ee9190f82de5ce2e5e92fa33820b"
     },
     "hpl_test_mock_hook": {
+      "address": "osmo18ssgfr36mnqzmjt6r86jxxunte92zhrhwx6x8ckvmlrysy6cqpks94efx6",
       "codeId": 6729,
       "digest": "ca19b41ad96e6105d0a63d0984c52b50c3849dd15bf4a4e2c083c9628e19167b"
     },
@@ -65,10 +72,12 @@
       "digest": "c4cd903cdaf43c73932c3bdd3c9717d0cb9c4647541e9ec5ab4c16e86b9b70ec"
     },
     "hpl_test_mock_msg_receiver": {
+      "address": "osmo18ughnf23dqd5tdwmh3fnm4amapdn27shgjmr9akraujx9t80uuxqw8l679",
       "codeId": 6731,
       "digest": "ba40b0ed08399fd7a00d7453f74f4994c1dc1cba365e7149f63ceb9e9e29b34a"
     },
     "hpl_validator_announce": {
+      "address": "osmo1y25235tnv7y8levemflae8wllq32jfrr8rerseyt9mm2t2pa6pgsqksg20",
       "codeId": 6732,
       "digest": "716f8b3124e53f5d3534106ae40640dee11e7df2003106f0f2476d1ff3c12e57"
     },
@@ -79,6 +88,21 @@
     "hpl_warp_native": {
       "codeId": 6734,
       "digest": "581c35d20a031d11debbf452ac1b18dfe18a16da2d43b31767c963dfc7e90fd6"
+    },
+    "hpl_default_ism": {
+      "codeId": 6725,
+      "digest": "17ffef91b62b5fdb715e598f555901f55df277d94e3a157c63b5d73f883bb80a",
+      "address": "osmo1kcgs2qw2lgsqlg0ah4t9e5d5trz7pha56pzjae4yjnjnpuey2qwqape0mx"
+    },
+    "hpl_default_hook": {
+      "codeId": 6729,
+      "digest": "ca19b41ad96e6105d0a63d0984c52b50c3849dd15bf4a4e2c083c9628e19167b",
+      "address": "osmo18ssgfr36mnqzmjt6r86jxxunte92zhrhwx6x8ckvmlrysy6cqpks94efx6"
+    },
+    "hpl_required_hook": {
+      "codeId": 6715,
+      "digest": "2ae680bad348a4cf289b1cc951bbaf0c68a9c31693b7deb2e0985cd65b5268be",
+      "address": "osmo10sr7uqmdxf70eym34g3agpqcg3dlhalj2qhskg40224advh5a74qc5htag"
     }
   },
   "address": "osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6"
