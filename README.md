@@ -15,9 +15,31 @@
 
 ![Architecture](./asset/hyperlane-all.png)
 
+## Prerequisites
+
+- rust (wasm32-wasm32-unknown target)
+- go 1.20 or higher
+- llvm-cov
+
+## How to build
+
+```bash
+make install-dev
+
+make build
+```
+
+## How to test
+
+```bash
+cargo test --workspace --exclude hpl-tests
+
+cargo llvm-cov --workspace --exclude hpl-tests
+```
+
 ## Project Structure
 
-```
+```text
 ├── contracts
 │   │
 │   ├── core
@@ -66,26 +88,4 @@
 │
 └── ts
     └── sdk # typescript sdk for contract integration. (auto generated via ts-codegen)
-```
-
-## Prerequisites
-
-- rust (wasm32-wasm32-unknown target)
-- go 1.20 or higher
-- llvm-cov
-
-## How to build
-
-```bash
-make install-dev
-
-make build
-```
-
-## How to test
-
-```bash
-cargo test --workspace --exclude hpl-tests
-
-cargo llvm-cov --workspace --exclude hpl-tests
 ```
