@@ -25,37 +25,45 @@
     "core": {
       "mailbox": {
         "type": "hpl_mailbox",
-        "address": "osmo1d6h26wx7sdzlxseanukm75v0rphj52pn20ge5tp52eatr7s02f8qxmpd5k"
+        "address": "osmo1p22axu7exjn3wt9z4pnzkjgxcsnu0vdte05unzukvw5aspdfsdeqqfafg9"
       },
       "validator_announce": {
         "type": "hpl_validator_announce",
-        "address": "osmo18r9myflwtr9tjqqvphus0508a2zf9xl2n3a30gq3jm644xwnyl2qxch6n6"
+        "address": "osmo1ytdgah9gx2h3dvrf5crrdm9l0kenftrndmp86wdgmx37a9w60t4ql8ay0m"
       }
     },
     "isms": {
       "type": "hpl_ism_multisig",
-      "address": "osmo1v6x3qn3wfwcmy3c3pwy9n8xfep4hy3w9dlrfzwqcxsf62k04clqqu93l8h"
+      "address": "osmo12g6stla9wg08ldjtclggdjat92k56z4syd3kllyyqndevtmqywdswcxra7"
     },
     "hooks": {
       "default": {
         "type": "hpl_test_mock_hook",
-        "address": "osmo13gm7yu86en9vgqwudj6eex2u04jaw9cx4yg4xgdjf92850hattms6keska"
+        "address": "osmo1enqacrex66qkydc47qdn9qj8ll377a8lqfa8n9mndrx2vr7ydsas3px2rq"
       },
       "required": {
         "type": "hpl_hook_aggregate",
-        "address": "osmo1wfxxzq3kuz3lpcdf0820szghteff3a60wfmuh6097376jgdn50ls7km4cl",
+        "address": "osmo1f3rthx5smpjm84leg2rca8nj50n352h03esgvzmk806e4yuqc20q9ng8at",
         "hooks": [
           {
             "type": "hpl_hook_merkle",
-            "address": "osmo1md8ua6jgr5qu38gmzf4z4vntvk7d9ma800phc05sek7vcdztl9usfqyg0m"
+            "address": "osmo1jp0sdkxzvy9lh48xe0a6238y6x9g7g2jkvkrmsuaffu99ycd2wmqtrmmf4"
           },
           {
             "type": "hpl_hook_pausable",
-            "address": "osmo1yrtl6lqwjck0vvkl9ke8vcwu8hzpquaxtfsswfsrwled470k4euqkskprl"
+            "address": "osmo1j7e78zj84yqaqc5yks5jy2n2yjw20c79mksgp0w08cfgfl7mnp4stqu87v"
           },
           {
             "type": "hpl_hook_fee",
-            "address": "osmo1yd0kc7zzc8gcqy9kewmj63ygt289mh3rhcr8dkjtk5w74nn7g6gqm90wye"
+            "address": "osmo1kuqjrpjawwrpg0dt6w5z30fhv223gz92nyxygsqj4a6tu5spmxxsxtjgnu"
+          },
+          {
+            "type": "hpl_igp",
+            "address": "osmo1vjpuc27ep8tptwsd2pg9qvlhy72azrlcn6r4k3rg2knnedz9wqasjzm5zr",
+            "oracle": {
+              "type": "hpl_igp_oracle",
+              "address": "osmo1mgm77tukuk0zxz74sftyk4afer2l8ef9jqcny6qz9aejlupd0fzqy783qf"
+            }
           }
         ]
       }
@@ -63,7 +71,7 @@
     "test": {
       "msg_receiver": {
         "type": "hpl_test_mock_msg_receiver",
-        "address": "osmo1rrrv7vqy9almwr8nnad7kxr8j8gzvuxrhdun0cas96cpp0ftnl3swh5v9d"
+        "address": "osmo1pzhfa50cuywqw8xwtp4vgp7nnzqy3v3nga4uyzf59eqxp760pcrq5004vn"
       }
     }
   }
