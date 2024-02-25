@@ -45,6 +45,7 @@ export type FeeHookType = {
 
 export type IgpHookType = {
   type: "igp";
+  owner: string;
   token?: string;
   configs: {
     [domain: number]: {

@@ -13,8 +13,9 @@ export const deployCmd = new Command("deploy")
 
 async function handleDeploy(_: any, cmd: any) {
   const opts = cmd.optsWithGlobals();
-  const { ctx, client }: Dependencies = CONTAINER.get(Dependencies);
+  const { ctx, client } = CONTAINER.get(Dependencies);
 
+  ctx.deployments = ctx.deployments || {};
   ctx.deployments.core = await deployCore(opts, ctx, client);
   ctx.deployments.isms = await deployIsms(ctx, client);
   ctx.deployments.hooks = await deployHooks(opts, ctx, client);
@@ -106,13 +107,16 @@ const deployIsms = async (
             validators: config.deploy.ism
               .map((domain) => ({
                 domain,
-                validators: client.signer_addr,
+                addrs: [client.signer_addr],
                 threshold: 1,
               }))
-              .reduce((acc, v) => ({
-                [v.domain]: { addrs: v.validators, threshold: v.threshold },
-                ...acc,
-              })),
+              .reduce(
+                (acc, v) => ({
+                  [v.domain]: { addrs: v.addrs, threshold: v.threshold },
+                  ...acc,
+                }),
+                {} as Record<string, any>
+              ),
           }
         : config.deploy.ism
     ));
