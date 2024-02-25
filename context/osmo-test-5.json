@@ -1,0 +1,70 @@
+{
+  "artifacts": {
+    "hpl_mailbox": 7058,
+    "hpl_validator_announce": 7059,
+    "hpl_ism_aggregate": 7060,
+    "hpl_ism_multisig": 7061,
+    "hpl_ism_pausable": 7062,
+    "hpl_ism_routing": 7063,
+    "hpl_igp": 7064,
+    "hpl_hook_aggregate": 7065,
+    "hpl_hook_fee": 7066,
+    "hpl_hook_merkle": 7067,
+    "hpl_hook_pausable": 7068,
+    "hpl_hook_routing": 7069,
+    "hpl_hook_routing_custom": 7070,
+    "hpl_hook_routing_fallback": 7071,
+    "hpl_test_mock_hook": 7072,
+    "hpl_test_mock_ism": 7073,
+    "hpl_test_mock_msg_receiver": 7074,
+    "hpl_igp_oracle": 7075,
+    "hpl_warp_cw20": 7076,
+    "hpl_warp_native": 7077
+  },
+  "deployments": {
+    "core": {
+      "mailbox": {
+        "type": "hpl_mailbox",
+        "address": "osmo1d6h26wx7sdzlxseanukm75v0rphj52pn20ge5tp52eatr7s02f8qxmpd5k"
+      },
+      "validator_announce": {
+        "type": "hpl_validator_announce",
+        "address": "osmo18r9myflwtr9tjqqvphus0508a2zf9xl2n3a30gq3jm644xwnyl2qxch6n6"
+      }
+    },
+    "isms": {
+      "type": "hpl_ism_multisig",
+      "address": "osmo1v6x3qn3wfwcmy3c3pwy9n8xfep4hy3w9dlrfzwqcxsf62k04clqqu93l8h"
+    },
+    "hooks": {
+      "default": {
+        "type": "hpl_test_mock_hook",
+        "address": "osmo13gm7yu86en9vgqwudj6eex2u04jaw9cx4yg4xgdjf92850hattms6keska"
+      },
+      "required": {
+        "type": "hpl_hook_aggregate",
+        "address": "osmo1wfxxzq3kuz3lpcdf0820szghteff3a60wfmuh6097376jgdn50ls7km4cl",
+        "hooks": [
+          {
+            "type": "hpl_hook_merkle",
+            "address": "osmo1md8ua6jgr5qu38gmzf4z4vntvk7d9ma800phc05sek7vcdztl9usfqyg0m"
+          },
+          {
+            "type": "hpl_hook_pausable",
+            "address": "osmo1yrtl6lqwjck0vvkl9ke8vcwu8hzpquaxtfsswfsrwled470k4euqkskprl"
+          },
+          {
+            "type": "hpl_hook_fee",
+            "address": "osmo1yd0kc7zzc8gcqy9kewmj63ygt289mh3rhcr8dkjtk5w74nn7g6gqm90wye"
+          }
+        ]
+      }
+    },
+    "test": {
+      "msg_receiver": {
+        "type": "hpl_test_mock_msg_receiver",
+        "address": "osmo1rrrv7vqy9almwr8nnad7kxr8j8gzvuxrhdun0cas96cpp0ftnl3swh5v9d"
+      }
+    }
+  }
+}
