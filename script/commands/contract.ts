@@ -22,7 +22,9 @@ contractCmd
   .action(async (destDomain, recipientAddr, msgBody) => {
     const { ctx, client } = CONTAINER.get(Dependencies);
 
-    const mailbox = ctx.deployments.core?.mailbox!;
+    const mailbox = ctx.deployments.core?.mailbox;
+    if (!mailbox)
+      throw new Error("Mailbox contract is not deployed. Run `deploy` first.");
 
     const res = await executeContract(
       client,
