@@ -1,0 +1,58 @@
+version: "2"
+services:
+  relayer:
+    container_name: hpl-relayer
+    image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
+    user: root
+    # restart: always
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        rm -rf /app/config/* && \
+        cp "/etc/hyperlane/agent-config.docker.json" "/app/config/agent-config.json" && \
+        CONFIG_FILES="/etc/hyperlane/relayer.json" \
+          ./relayer
+    ports:
+      - 9110:9090
+    volumes:
+      - ${DATA_PATH}/hyperlane:/etc/hyperlane
+      - ${DATA_PATH}/relayer:/etc/data
+      - ${DATA_PATH}/validator:/etc/validator
+
+  validator-sepolia:
+    container_name: hpl-validator-sepolia
+    image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
+    user: root
+    # restart: always
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        rm -rf /app/config/* && \
+        cp "/etc/hyperlane/agent-config.docker.json" "/app/config/agent-config.json" && \
+        CONFIG_FILES="/etc/hyperlane/validator.sepolia.json" \
+          ./validator
+    ports:
+      - 9120:9090
+    volumes:
+      - ${DATA_PATH}/hyperlane:/etc/hyperlane
+      - ${DATA_PATH}/validator:/etc/validator
+      - ${DATA_PATH}/validator/sepolia:/etc/data
+
+  validator-localosmosis:
+    container_name: hpl-validator-localosmosis
+    image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
+    user: root
+    # restart: always
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        rm -rf /app/config/* && \
+        cp "/etc/hyperlane/agent-config.docker.json" "/app/config/agent-config.json" && \
+        CONFIG_FILES="/etc/hyperlane/validator.localosmosis.json" \
+          ./validator
+    ports:
+      - 9121:9090
+    volumes:
+      - ${DATA_PATH}/hyperlane:/etc/hyperlane
+      - ${DATA_PATH}/validator:/etc/validator
+      - ${DATA_PATH}/validator/localosmosis:/etc/data

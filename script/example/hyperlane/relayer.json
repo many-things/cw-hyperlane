@@ -1,0 +1,29 @@
+{
+  "db": "/etc/data/db",
+  "relayChains": "localosmosis,sepolia",
+  "allowLocalCheckpointSyncers": "true",
+  "gasPaymentEnforcement": [{ "type": "none" }],
+  "whitelist": [
+    {
+      "origindomain": [11155111],
+      "destinationDomain": [1304]
+    },
+    {
+      "origindomain": [1304],
+      "destinationDomain": [11155111]
+    }
+  ],
+  "defaultsigner": {
+    "type": "hexKey",
+    "key": "{private_key}"
+  },
+  "chains": {
+    "localosmosis": {
+      "signer": {
+        "type": "cosmosKey",
+        "key": "{private_key}",
+        "prefix": "osmo"
+      }
+    }
+  }
+}

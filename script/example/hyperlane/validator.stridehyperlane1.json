@@ -1,0 +1,21 @@
+{
+  "db": "/etc/data/db",
+  "checkpointSyncer": {
+    "type": "localStorage",
+    "path": "/etc/validator/localosmosis/checkpoint"
+  },
+  "originChainName": "localosmosis",
+  "validator": {
+    "type": "hexKey",
+    "key": "{private_key}"
+  },
+  "chains": {
+    "localosmosis": {
+      "signer": {
+        "type": "cosmosKey",
+        "key": "{private_key}",
+        "prefix": "osmo"
+      }
+    }
+  }
+}
