@@ -1,4 +1,15 @@
 networks:
+  - id: "localwasmd"
+    hrp: "uwasm"
+    endpoint:
+      rpc: "http://localhost:26657"
+      rest: "http://localhost:1317"
+      grpc: "http://localhost:9090"
+    gas:
+      price: "0.025"
+      denom: "uwasm"
+    domain: 1063 # localwasmd -> ascii / decimal -> sum
+
   - id: "localosmosis"
     hrp: "osmo"
     endpoint:
