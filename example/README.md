@@ -96,6 +96,8 @@ You can upload contract codes from local environment or from [Github](https://gi
 ### Local
 
 ```bash
+$ yarn install
+
 # Build contracts from local environment
 $ make optimize
 # Run compatibility test
@@ -109,6 +111,8 @@ $ yarn cw-hpl upload local -n localosmosis
 ### Remote
 
 ```bash
+$ yarn install
+
 # check all versions of contract codes from Github
 $ yarn cw-hpl upload remote-list -n localosmosis
 
