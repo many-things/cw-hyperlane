@@ -1,54 +1,46 @@
-# Deploy Guide with LocalOsmosis
+# Deploy Guide with Local CosmWasm Chain
 
-> This guide will help you to setup Hyperlane betweeen LocalOsmosis and Ethereum Sepolia Testnet.
+> This guide will help you to setup Hyperlane betweeen Local CosmWasm Chain and Ethereum Sepolia Testnet.
 
 ## Prerequisites
 
 - Sepolia Testnet account with enough balance
   - will use for deploying test contracts on Sepolia
-  - and relaying / validating messages between LocalOsmosis and Sepolia
+  - and relaying / validating messages between localwasmd and Sepolia
 
-## 0. Run LocalOsmosis
+## 0. Run Local CosmWasm Chain
 
 ```bash
-# Move to your working directory
-$ cd {working_directory}
-
-# Clone osmosis repository & cd to it
-$ git clone https://github.com/osmosis-labs/osmosis.git && cd osmosis
-
-# Run localnet in background
-$ make localnet-startd
-
-# Stop / Clean localnet
-$ make localnet-stop
-$ make localnet-clean
+$ docker run --rm -it \
+    -e PASSWORD=xxxxxxxx -e STAKE_TOKEN="uwasm" -e CHAIN_ID="localwasmd" -e MONIKER="localwasmd" \
+    -p 26657:26657 -p 26656:26656 -p 9090:9090 -p 1317:1317 \
+    cosmwasm/wasmd:latest /opt/setup_and_run.sh wasm12smx2wdlyttvyzvzg54y2vnqwq2qjate7wuwgt
 ```
 
 ## 1. Create `config.yaml` with your network config
 
 > Don't forget to setup deploy settings below
 
-Below is an example of `config.yaml` file for localosmosis.
+Below is an example of `config.yaml` file for localwasmd.
 
 You can check full list of example in [config.example.yaml](../config.example.yaml) file.
 
 ```yaml
 networks:
-  - id: localosmosis
-    hrp: osmo
+  - id: "localwasmd"
+    hrp: "uwasm"
     endpoint:
-      rpc: http://localhost:26657
-      rest: http://localhost:1317
-      grpc: http://localhost:9090
+      rpc: "http://localhost:26657"
+      rest: "http://localhost:1317"
+      grpc: "http://localhost:9090"
     gas:
-      price: 0.025
-      denom: uosmo
-    # localosmosis -> ascii / decimal -> sum.
+      price: "0.025"
+      denom: "uwasm"
+    # localwasmd -> ascii / decimal -> sum.
     # It's very arbitrary value, Perhaps you must need to change this value.
-    domain: 1304
+    domain: 1063
 
-# default mnemonic key of LocalOsmosis (https://github.com/osmosis-labs/osmosis/blob/d45a3baf684e55cdc83ef23c4fc11ae1df1726af/tests/localosmosis/scripts/setup.sh#L9C11-L9C159)
+# default mnemonic key of localwasmd (https://github.com/osmosis-labs/osmosis/blob/d45a3baf684e55cdc83ef23c4fc11ae1df1726af/tests/localwasmd/scripts/setup.sh#L9C11-L9C159)
 # osmo12smx2wdlyttvyzvzg54y2vnqwq2qjateuf7thj
 # 0xae7d1F30e324D4e348EF04D9a9e867F863f23067
 # 9ff80c31b47c7f2946654f569a6b1530db78d7fa5b3ea16db82570cdfd6d43f6
@@ -104,8 +96,8 @@ $ make optimize
 $ make check
 
 # This command will make one file.
-# - context with artifacts (default path: {project-root}/context/localosmosis.json)
-$ yarn cw-hpl upload local -n localosmosis
+# - context with artifacts (default path: {project-root}/context/localwasmd.json)
+$ yarn cw-hpl upload local -n localwasmd
 ```
 
 ### Remote
@@ -114,11 +106,11 @@ $ yarn cw-hpl upload local -n localosmosis
 $ yarn install
 
 # check all versions of contract codes from Github
-$ yarn cw-hpl upload remote-list -n localosmosis
+$ yarn cw-hpl upload remote-list -n localwasmd
 
 # This command will make one file.
-# - context with artifacts (default path: {project-root}/context/localosmosis.json)
-$ yarn cw-hpl upload remote v0.0.6-rc8 -n localosmosis
+# - context with artifacts (default path: {project-root}/context/localwasmd.json)
+$ yarn cw-hpl upload remote v0.0.6-rc8 -n localwasmd
 ```
 
 ## 3. Instantiate Contracts
@@ -127,9 +119,9 @@ If you configured / uploaded contract codes correctly, you can deploy contract w
 
 ```bash
 # This command will output two results.
-# - context + deployment    (default path: ./context/localosmosis.json)
-# - Hyperlane agent-config  (default path: ./context/localosmosis.config.json)
-$ yarn cw-hpl deploy -n localosmosis
+# - context + deployment    (default path: ./context/localwasmd.json)
+# - Hyperlane agent-config  (default path: ./context/localwasmd.config.json)
+$ yarn cw-hpl deploy -n localwasmd
 ```
 
 ## 4. Setup Validator / Relayer config
@@ -142,11 +134,11 @@ Replace every `{private_key}` from files below with your Sepolia Testnet private
 And run with below command.
 
 ```bash
-# Merge localosmosis.config.json and agent-config.docker.json
-$ LOCALOSMOSIS_AGENT_CONFIG=$(cat ../context/localosmosis.config.json) && \
-  LOCALOSMOSIS_AGENT_CONFIG_NAME=$(echo $LOCALOSMOSIS_AGENT_CONFIG | jq -r '.name') && \
+# Merge localwasmd.config.json and agent-config.docker.json
+$ LOCALWASMD_AGENT_CONFIG=$(cat ../context/localwasmd.config.json) && \
+  LOCALWASMD_AGENT_CONFIG_NAME=$(echo $LOCALWASMD_AGENT_CONFIG | jq -r '.name') && \
     cat ./hyperlane/agent-config.docker.json \
-      | jq ".chains.$LOCALOSMOSIS_AGENT_CONFIG_NAME=$(echo $LOCALOSMOSIS_AGENT_CONFIG)" > merge.tmp && \
+      | jq ".chains.$LOCALWASMD_AGENT_CONFIG_NAME=$(echo $LOCALWASMD_AGENT_CONFIG)" > merge.tmp && \
   mv merge.tmp ./hyperlane/agent-config.docker.json
 
 # Run Hyperlane with docker-compose
@@ -171,7 +163,7 @@ $ cast send \
     --private-key $SEPOLIA_PRIVATE_KEY \
     --create $(cat ./TestRecipient.bin)
 
-# 2. Deploy MultisigIsm for validating localosmosis network
+# 2. Deploy MultisigIsm for validating localwasmd network
 # Below address is messageIdMultisigIsmFactory came from agent-config.docker.json
 $ cast send \
     0xFEb9585b2f948c1eD74034205a7439261a9d27DD \
@@ -191,21 +183,21 @@ $ cast send \
 
 ## 6. Run Messaging Test
 
-### Sepolia -> LocalOsmosis
+### Sepolia -> localwasmd
 
 ```bash
 # Below address is mailbox came from agent-config.docker.json
 $ cast send \
     0xfFAEF09B3cd11D9b20d1a19bECca54EEC2884766 --value 1wei \
     'dispatch(uint32,bytes32,bytes)' \
-    1304 $LOCALOSMOSIS_TEST_RECIPIENT_ADDRESS 0x68656c6c6f \ # 0x68656c6c6f -> 'hello'
+    1063 $LOCALWASMD_TEST_RECIPIENT_ADDRESS 0x68656c6c6f \ # 0x68656c6c6f -> 'hello'
     --rpc-url 'https://rpc.sepolia.org' \
     --private-key $SEPOLIA_PRIVATE_KEY
 ```
 
-### LocalOsmosis -> Sepolia
+### localwasmd -> Sepolia
 
 ```bash
 # [dest-domain] [recipient-address] [message]
-$ yarn cw-hpl contract test-dispatch -n localosmosis 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
+$ yarn cw-hpl contract test-dispatch -n localwasmd 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
 ```
