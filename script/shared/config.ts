@@ -104,7 +104,10 @@ export type Config = {
   networks: {
     id: string;
     hrp: string;
-    url: string;
+    endpoint: {
+      http: string;
+      grpc: string;
+    };
     gas: {
       price: string;
       denom: string;
@@ -147,7 +150,7 @@ export async function getSigningClient(
   networkId: string,
   { signer }: Config
 ): Promise<Client> {
-  const { tm_version, hrp, gas, url } = getNetwork(networkId);
+  const { tm_version, hrp, gas, endpoint } = getNetwork(networkId);
 
   const wallet =
     signer.split(" ").length > 0
@@ -161,13 +164,13 @@ export async function getSigningClient(
 
   switch (tm_version || "38") {
     case "34":
-      clientBase = await Tendermint34Client.connect(url);
+      clientBase = await Tendermint34Client.connect(endpoint.http);
       break;
     case "37":
-      clientBase = await Tendermint37Client.connect(url);
+      clientBase = await Tendermint37Client.connect(endpoint.http);
       break;
     case "38":
-      clientBase = await Comet38Client.connect(url);
+      clientBase = await Comet38Client.connect(endpoint.http);
       break;
   }
 

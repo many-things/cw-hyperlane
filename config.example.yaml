@@ -1,15 +1,19 @@
 networks:
   - id: "localosmosis"
     hrp: "osmo"
-    url: "http://localhost:26657"
+    endpoint:
+      http: "http://localhost:26657"
+      grpc: "http://localhost:9090"
     gas:
       price: "0.025"
       denom: "uosmo"
-    domain: 1304
+    domain: 1304 # localosmosis -> ascii / decimal -> sum
 
   - id: "localneutron"
     hrp: "neutron"
-    url: "http://localhost:26657"
+    endpoint:
+      http: "http://localhost:26657"
+      grpc: "http://localhost:9090"
     gas:
       price: "0.025"
       denom: "untrn"

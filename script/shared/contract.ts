@@ -34,11 +34,19 @@ export async function deployContract<T extends ContractNames>(
 export async function executeContract(
   { wasm, stargate, signer }: Client,
   deployment: { type: ContractNames; address: string },
-  msg: any
+  msg: any,
+  funds: { amount: string; denom: string }[] = []
 ): Promise<IndexedTx> {
   console.log(`Executing ${deployment.type}'s ${Object.keys(msg)[0]}`);
 
-  const res = await wasm.execute(signer, deployment.address, msg, "auto");
+  const res = await wasm.execute(
+    signer,
+    deployment.address,
+    msg,
+    "auto",
+    undefined,
+    funds
+  );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
     throw new Error(`Error executing ${deployment.type}: ${receipt.hash}`);
