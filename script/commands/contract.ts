@@ -1,8 +1,8 @@
 import { Command } from "commander";
+
 import { contractNames } from "../shared/constants";
 import { executeContract } from "../shared/contract";
 import { CONTAINER, Dependencies } from "../shared/ioc";
-import { getNetwork } from "../shared/config";
 import { addPad } from "../shared/utils";
 
 export const contractCmd = new Command("contract").configureHelp({
@@ -19,7 +19,7 @@ contractCmd
   .argument("dest-domian")
   .argument("recipient-addr")
   .argument("msg-body")
-  .action(async (destDomain, recipientAddr, msgBody, _, cmd) => {
+  .action(async (destDomain, recipientAddr, msgBody) => {
     const { ctx, client } = CONTAINER.get(Dependencies);
 
     const mailbox = ctx.deployments.core?.mailbox!;
