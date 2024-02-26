@@ -2,6 +2,12 @@
 
 > This guide will help you to setup Hyperlane betweeen LocalOsmosis and Ethereum Sepolia Testnet.
 
+## Prerequisites
+
+- Sepolia Testnet account with enough balance
+  - will use for deploying test contracts on Sepolia
+  - and relaying / validating messages between LocalOsmosis and Sepolia
+
 ## 0. Run LocalOsmosis
 
 ```bash
@@ -85,7 +91,7 @@ deploy:
 
 ## 2. Upload Contract Codes
 
-You can upload contract codes from local environment or from [Github](https://github.com/many-things/cw-hyperlane/releases/).
+You can upload contract codes from local environment or from [Github](https://github.com/many-things/cw-hyperlane/releases).
 
 ### Local
 
@@ -96,7 +102,7 @@ $ make optimize
 $ make check
 
 # This command will make one file.
-# - context with artifacts (default path: ./context/localosmosis.json)
+# - context with artifacts (default path: {project-root}/context/localosmosis.json)
 $ yarn cw-hpl upload local -n localosmosis
 ```
 
@@ -107,7 +113,7 @@ $ yarn cw-hpl upload local -n localosmosis
 $ yarn cw-hpl upload remote-list -n localosmosis
 
 # This command will make one file.
-# - context with artifacts (default path: ./context/localosmosis.json)
+# - context with artifacts (default path: {project-root}/context/localosmosis.json)
 $ yarn cw-hpl upload remote v0.0.6-rc8 -n localosmosis
 ```
 
@@ -123,3 +129,79 @@ $ yarn cw-hpl deploy -n localosmosis
 ```
 
 ## 4. Setup Validator / Relayer config
+
+Replace every `{private_key}` from files below with your Sepolia Testnet private key.
+
+- [./hyperlane/relayer.json](./hyperlane/relayer.json)
+- [./hyperlane/validator.sepolia.json](./hyperlane/validator.sepolia.json)
+
+And run with below command.
+
+```bash
+# Merge localosmosis.config.json and agent-config.docker.json
+$ LOCALOSMOSIS_AGENT_CONFIG=$(cat ../context/localosmosis.config.json) && \
+  LOCALOSMOSIS_AGENT_CONFIG_NAME=$(echo $LOCALOSMOSIS_AGENT_CONFIG | jq -r '.name') && \
+    cat ./hyperlane/agent-config.docker.json \
+      | jq ".chains.$LOCALOSMOSIS_AGENT_CONFIG_NAME=$(echo $LOCALOSMOSIS_AGENT_CONFIG)" > merge.tmp && \
+  mv merge.tmp ./hyperlane/agent-config.docker.json
+
+# Run Hyperlane with docker-compose
+$ docker compose up
+
+# Run this if you want to run in background
+$ docker compose up -d
+
+# Run this if you want to see logs
+$ docker compose logs -f
+
+# Run this if you want to stop
+$ docker compose down
+```
+
+## 5. Deploy Test contracts on Sepolia
+
+```bash
+# 1. Deploy TestRecipient contract
+$ cast send \
+    --rpc-url https://rpc.sepolia.org \
+    --private-key $SEPOLIA_PRIVATE_KEY \
+    --create $(cat ./TestRecipient.bin)
+
+# 2. Deploy MultisigIsm for validating localosmosis network
+# Below address is messageIdMultisigIsmFactory came from agent-config.docker.json
+$ cast send \
+    0xFEb9585b2f948c1eD74034205a7439261a9d27DD \
+    'deploy(address[],uint8)(address)' \
+    [$(cast wallet address --private-key $SEPOLIA_PRIVATE_KEY)] 1 \ # 1 validator and 1/1 threshold
+    --rpc-url https://rpc.sepolia.org \
+    --private-key $SEPOLIA_PRIVATE_KEY
+
+# 3. Get deployed multisig ism address from receipt of above command
+$ cast send \
+    $SEPOLIA_TEST_RECIPIENT_ADDRESS \ # output of step 1
+    'setInterchainSecurityModule(address)' \
+    $SEPOLIA_MULTISIG_ISM_ADDRESS \ # output of step 2
+    --rpc-url https://rpc.sepolia.org \
+    --private-key $SEPOLIA_PRIVATE_KEY
+```
+
+## 6. Run Messaging Test
+
+### Sepolia -> LocalOsmosis
+
+```bash
+# Below address is mailbox came from agent-config.docker.json
+$ cast send \
+    0xfFAEF09B3cd11D9b20d1a19bECca54EEC2884766 --value 1wei \
+    'dispatch(uint32,bytes32,bytes)' \
+    1304 $LOCALOSMOSIS_TEST_RECIPIENT_ADDRESS 0x68656c6c6f \ # 0x68656c6c6f -> 'hello'
+    --rpc-url 'https://rpc.sepolia.org' \
+    --private-key $SEPOLIA_PRIVATE_KEY
+```
+
+### LocalOsmosis -> Sepolia
+
+```bash
+# [dest-domain] [recipient-address] [message]
+$ yarn cw-hpl contract test-dispatch -n localosmosis 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
+```
