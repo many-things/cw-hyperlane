@@ -38,8 +38,8 @@ services:
       - ./validator:/etc/validator
       - ./validator/sepolia:/etc/data
 
-  validator-localosmosis:
-    container_name: hpl-validator-localosmosis
+  validator-osmotest5:
+    container_name: hpl-validator-osmotest5
     image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
     user: root
     # restart: always
@@ -48,11 +48,11 @@ services:
       - |
         rm -rf /app/config/* && \
         cp "/etc/hyperlane/agent-config.docker.json" "/app/config/agent-config.json" && \
-        CONFIG_FILES="/etc/hyperlane/validator.localosmosis.json" \
+        CONFIG_FILES="/etc/hyperlane/validator.osmotest5.json" \
           ./validator
     ports:
       - 9121:9090
     volumes:
       - ./hyperlane:/etc/hyperlane
       - ./validator:/etc/validator
-      - ./validator/localosmosis:/etc/data
+      - ./validator/osmotest5:/etc/data
