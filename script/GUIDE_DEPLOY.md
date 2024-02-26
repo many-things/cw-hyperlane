@@ -42,7 +42,11 @@ networks:
     # It's very arbitrary value, Perhaps you must need to change this value.
     domain: 1304
 
-signer: <private_key> | <mnemonic>
+# default mnemonic key of LocalOsmosis (https://github.com/osmosis-labs/osmosis/blob/d45a3baf684e55cdc83ef23c4fc11ae1df1726af/tests/localosmosis/scripts/setup.sh#L9C11-L9C159)
+# osmo12smx2wdlyttvyzvzg54y2vnqwq2qjateuf7thj
+# 0xae7d1F30e324D4e348EF04D9a9e867F863f23067
+# 9ff80c31b47c7f2946654f569a6b1530db78d7fa5b3ea16db82570cdfd6d43f6
+signer: "bottom loan skill merry east cradle onion journey palm apology verb edit desert impose absurd oil bubble sweet glove shallow size build burst effort"
 
 deploy:
   ism:

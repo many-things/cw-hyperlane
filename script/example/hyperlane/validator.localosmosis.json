@@ -7,13 +7,13 @@
   "originChainName": "localosmosis",
   "validator": {
     "type": "hexKey",
-    "key": "{private_key}"
+    "key": "9ff80c31b47c7f2946654f569a6b1530db78d7fa5b3ea16db82570cdfd6d43f6"
   },
   "chains": {
     "localosmosis": {
       "signer": {
         "type": "cosmosKey",
-        "key": "{private_key}",
+        "key": "9ff80c31b47c7f2946654f569a6b1530db78d7fa5b3ea16db82570cdfd6d43f6",
         "prefix": "osmo"
       }
     }
