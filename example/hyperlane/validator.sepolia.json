@@ -1,0 +1,13 @@
+{
+  "db": "/etc/data/db",
+  "checkpointSyncer": {
+    "type": "localStorage",
+    "path": "/etc/validator/sepolia/checkpoint"
+  },
+  "originChainName": "sepolia",
+  "validator": {
+    "signerType": "hexKey",
+    "key": "{private_key}",
+    "type": "hexKey"
+  }
+}
