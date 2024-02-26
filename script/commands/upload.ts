@@ -24,7 +24,7 @@ import {
   defaultArtifactPath,
   defaultTmpDir,
 } from "../shared/constants";
-import { askQuestion, sleep, waitTx } from "../shared/utils";
+import { askQuestion, waitTx } from "../shared/utils";
 import { saveContext } from "../shared/context";
 import { ContractNames } from "../shared/contract";
 
