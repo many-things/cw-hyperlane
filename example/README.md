@@ -28,7 +28,7 @@ You can check full list of example in [config.example.yaml](../config.example.ya
 ```yaml
 networks:
   - id: "localwasmd"
-    hrp: "uwasm"
+    hrp: "wasm"
     endpoint:
       rpc: "http://localhost:26657"
       rest: "http://localhost:1317"
