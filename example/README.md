@@ -213,3 +213,12 @@ $ cast send \
 # [dest-domain] [recipient-address] [message]
 $ yarn cw-hpl contract test-dispatch -n osmo-test-5 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
 ```
+
+## 7. Done 🎉
+
+This is it! You have successfully deployed Hyperlane between Osmosis Testnet and Sepolia Testnet.
+
+Current setup you've made is for testing purpose, and not production ready. So, if you want to run Hyperlane agents in production, you need to check these guides below.
+
+- [Running Relayers](https://docs.hyperlane.xyz/docs/operate/relayer/run-relayer)
+- [Running Validators](https://docs.hyperlane.xyz/docs/operate/validators/run-validators)
