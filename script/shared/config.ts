@@ -154,7 +154,7 @@ export async function getSigningClient(
   const { tm_version, hrp, gas, endpoint } = getNetwork(networkId);
 
   const wallet =
-    signer.split(" ").length > 0
+    signer.split(" ").length > 1
       ? await DirectSecp256k1HdWallet.fromMnemonic(signer, { prefix: hrp })
       : await DirectSecp256k1Wallet.fromKey(Buffer.from(signer, "hex"), hrp);
 
