@@ -7,13 +7,13 @@
   "originChainName": "osmotest5",
   "validator": {
     "type": "hexKey",
-    "key": "{private_key}"
+    "key": "{osmosis_private_key}"
   },
   "chains": {
     "osmotest5": {
       "signer": {
         "type": "cosmosKey",
-        "key": "{private_key}",
+        "key": "{osmosis_private_key}",
         "prefix": "osmo"
       }
     }
