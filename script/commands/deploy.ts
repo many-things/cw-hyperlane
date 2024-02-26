@@ -3,7 +3,12 @@ import { Command } from "commander";
 import { deployIsm, deployHook } from "../deploy";
 import { CONTAINER, Dependencies } from "../shared/ioc";
 import { Client, config, getNetwork } from "../shared/config";
-import { Context, ContextDeployments, saveContext } from "../shared/context";
+import {
+  Context,
+  ContextDeployments,
+  saveAgentConfig,
+  saveContext,
+} from "../shared/context";
 import { deployContract, executeMultiMsg } from "../shared/contract";
 
 export const deployCmd = new Command("deploy")
@@ -50,6 +55,7 @@ async function handleDeploy(_: any, cmd: any) {
   ]);
 
   saveContext(opts.networkId, ctx);
+  saveAgentConfig(getNetwork(opts.networkId), ctx);
 }
 
 const deployCore = async (

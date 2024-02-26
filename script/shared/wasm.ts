@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { defaultArtifactPath } from "./constants";
 import { generateSha256 } from "./utils";
+import { Config } from "./config";
 
 function getWasmFilesPath(
   { artifactPath }: { artifactPath: string } = {
@@ -38,4 +39,32 @@ export function getWasmPath(
   }
 ): string {
   return path.join(artifactPath, `${contractName}.wasm`);
+}
+
+export type ContractInfoResp = {
+  address: string;
+  contract_info: {
+    code_id: string;
+    creator: string;
+    admin?: string;
+    label: string;
+    created: {
+      block_height: string;
+      tx_index: string;
+    };
+    ibc_por_id?: string;
+    extension?: any;
+  };
+};
+
+export async function getContractInfo(
+  network: Config["networks"][number],
+  addr: string
+): Promise<ContractInfoResp> {
+  const res = await fetch(
+    path.join(network.endpoint.rest, "/cosmwasm/wasm/v1/contract/", addr)
+  );
+  const body = await res.json();
+
+  return body as ContractInfoResp;
 }

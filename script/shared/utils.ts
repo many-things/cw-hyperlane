@@ -4,6 +4,7 @@ import { finished } from "stream/promises";
 import { Readable } from "stream";
 import { createHash } from "crypto";
 import { IndexedTx, StargateClient } from "@cosmjs/stargate";
+import { fromBech32 } from "@cosmjs/encoding";
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,6 +30,12 @@ export const addPad = (v: string): string => {
 
 export const withLink = (text: string, url: string) =>
   `${text} (\u200B${url}\u200B)`;
+
+export const extractByte32AddrFromBech32 = (addr: string): string => {
+  const { data } = fromBech32(addr);
+  const hexed = Buffer.from(data).toString("hex");
+  return hexed.length === 64 ? hexed : addPad(hexed);
+};
 
 export const downloadFile = async (url: string, dest: string) => {
   const res = await fetch(url);

@@ -3,11 +3,13 @@ import colors from "colors";
 import { Command, Option } from "commander";
 
 import { uploadCmd, deployCmd, contractCmd, migrateCmd } from "./commands";
-import { config, getSigningClient } from "./shared/config";
-import { loadContext } from "./shared/context";
+import { config, getNetwork, getSigningClient } from "./shared/config";
+import { loadContext, saveAgentConfig } from "./shared/context";
 import { CONTAINER, Dependencies } from "./shared/ioc";
 
 import { version } from "../package.json";
+import { fromContext } from "./shared/agent";
+import { sleep } from "./shared/utils";
 
 colors.enable();
 

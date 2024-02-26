@@ -2,7 +2,8 @@ networks:
   - id: "localosmosis"
     hrp: "osmo"
     endpoint:
-      http: "http://localhost:26657"
+      rpc: "http://localhost:26657"
+      rest: "http://localhost:1317"
       grpc: "http://localhost:9090"
     gas:
       price: "0.025"
@@ -12,7 +13,8 @@ networks:
   - id: "localneutron"
     hrp: "neutron"
     endpoint:
-      http: "http://localhost:26657"
+      rpc: "http://localhost:26657"
+      rest: "http://localhost:1317"
       grpc: "http://localhost:9090"
     gas:
       price: "0.025"

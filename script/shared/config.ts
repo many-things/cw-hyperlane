@@ -105,7 +105,8 @@ export type Config = {
     id: string;
     hrp: string;
     endpoint: {
-      http: string;
+      rpc: string;
+      rest: string;
       grpc: string;
     };
     gas: {
@@ -164,13 +165,13 @@ export async function getSigningClient(
 
   switch (tm_version || "38") {
     case "34":
-      clientBase = await Tendermint34Client.connect(endpoint.http);
+      clientBase = await Tendermint34Client.connect(endpoint.rpc);
       break;
     case "37":
-      clientBase = await Tendermint37Client.connect(endpoint.http);
+      clientBase = await Tendermint37Client.connect(endpoint.rpc);
       break;
     case "38":
-      clientBase = await Comet38Client.connect(endpoint.http);
+      clientBase = await Comet38Client.connect(endpoint.rpc);
       break;
   }
 
