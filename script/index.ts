@@ -2,7 +2,7 @@ import "reflect-metadata";
 import colors from "colors";
 import { Command, Option } from "commander";
 
-import { uploadCmd, deployCmd, contractCmd } from "./commands";
+import { uploadCmd, deployCmd, contractCmd, migrateCmd } from "./commands";
 import { config, getSigningClient } from "./shared/config";
 import { loadContext } from "./shared/context";
 import { CONTAINER, Dependencies } from "./shared/ioc";
@@ -30,6 +30,7 @@ cli
 cli.addCommand(uploadCmd);
 cli.addCommand(deployCmd);
 cli.addCommand(contractCmd);
+cli.addCommand(migrateCmd);
 
 cli.parseAsync(process.argv).catch(console.error);
 
