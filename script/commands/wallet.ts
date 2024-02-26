@@ -41,7 +41,10 @@ walletCmd
     const opts = cmd.optsWithGlobals();
     const network = getNetwork(opts.networkId);
 
-    if (opts.privateKey && opts.mnemonic) {
+    if (
+      (opts.privateKey && opts.mnemonic) ||
+      (!opts.privateKey && !opts.mnemonic)
+    ) {
       throw new Error(
         "Only one of --private-key and --mnemonic can be specified"
       );
@@ -49,7 +52,12 @@ walletCmd
 
     const wallet = opts.privateKey
       ? await DirectSecp256k1Wallet.fromKey(
-          Buffer.from(opts.privateKey, "hex"),
+          Buffer.from(
+            opts.privateKey.startsWith("0x")
+              ? opts.privateKey.slice(2)
+              : opts.privateKey,
+            "hex"
+          ),
           network.hrp
         )
       : await DirectSecp256k1HdWallet.fromMnemonic(opts.mnemonic, {
