@@ -1,0 +1,138 @@
+networks:
+  - id: "localosmosis"
+    hrp: "osmo"
+    endpoint:
+      rpc: "http://localhost:26657"
+      rest: "http://localhost:1317"
+      grpc: "http://localhost:9090"
+    gas:
+      price: "0.025"
+      denom: "uosmo"
+    domain: 1304 # localosmosis -> ascii / decimal -> sum
+
+  - id: "localneutron"
+    hrp: "neutron"
+    endpoint:
+      rpc: "http://localhost:26657"
+      rest: "http://localhost:1317"
+      grpc: "http://localhost:9090"
+    gas:
+      price: "0.025"
+      denom: "untrn"
+    domain: 1302
+
+signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+
+deploy:
+  ism:
+    # # hpl_ism_multisig with default validator setup (signer = validator, threshold = 1)
+    # - 5
+    # - 420
+    # - 421613
+
+    # # hpl_ism_multisig
+    # type: multisig
+    # owner: <signer>
+    # validators:
+    #   5:
+    #     addrs:
+    #       - 2F47b319809A58bBBFa8e706171762eFBF168A62
+    #     threshold: 1
+    #   420:
+    #     addrs:
+    #       - 2F47b319809A58bBBFa8e706171762eFBF168A62
+    #     threshold: 1
+    #   421613:
+    #     addrs:
+    #       - 2F47b319809A58bBBFa8e706171762eFBF168A62
+    #     threshold: 1
+
+    # # hpl_test_mock_ism
+    # type: "mock"
+
+    # # hpl_ism_aggregate
+    # type: "aggregate"
+    # owner: <signer>
+    # isms:
+    #   - type: "mock"
+    #   - type: "multisig"
+    #   ...
+
+    # # hpl_ism_routing
+    # type: "routing"
+    # owner: <signer>
+    # isms:
+    #   5:
+    #     type: "mock"
+    #   420:
+    #     type: "multisig"
+    #     ...
+    #   421613:
+    #     type: "aggregate"
+    #     ...
+
+  hooks:
+    default:
+      # same as required field.
+    required:
+      # # hpl_test_mock_hook
+      # type: "mock"
+
+      # # hpl_hook_fee
+      # type: "fee"
+      # owner: <signer> # you can use "<signer>" alias to owner field.
+      # fee:
+      #   denom: uosmo
+      #   amount: 1
+
+      # # hpl_hook_merkle
+      # type: "merkle"
+
+      # # hpl_hook_pausable
+      # type: "pausable"
+      # owner: <signer>
+      # paused: false
+
+      # # hpl_igp + hpl_igp_oracle
+      # type: "igp"
+      # token: "uosmo" # or default to gas token (in this case, uosmo will be set)
+      # configs:
+      #   5:
+      #     exchange_rate: 1.0
+      #     gas_price: 40000
+      #   420:
+      #     exchange_rate: 1.4
+      #     gas_price: 10322
+      #   ...
+
+      # # hpl_hook_aggregate
+      # type: aggregate
+      # owner: <signer>
+      # hooks:
+      #   - type: merkle
+      #   - type: pausable
+      #     owner: <signer>
+      #     paused: false
+      #   - type: fee
+      #     owner: <signer>
+      #     fee:
+      #       denom: uosmo
+      #       amount: 1
+
+      # # hpl_hook_routing / hpl_hook_routing_custom / hpl_hook_routing_fallback
+      # type: "routing"
+      # owner: <signer>
+      # hooks:
+      #   5:
+      #     type: fee
+      #     owner: <signer>
+      #     fee:
+      #       denom: uosmo
+      #       amount: 1
+      #   420:
+      #     type: "mock"
+      # custom_hooks: # optional
+      #   5:
+      #     recipient: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      #     hook: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      # fallback_hook: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6 # optional
