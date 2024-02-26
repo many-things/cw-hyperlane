@@ -60,11 +60,16 @@ export type ContractInfoResp = {
 export async function getContractInfo(
   network: Config["networks"][number],
   addr: string
-): Promise<ContractInfoResp> {
-  const res = await fetch(
-    path.join(network.endpoint.rest, "/cosmwasm/wasm/v1/contract/", addr)
-  );
-  const body = await res.json();
+): Promise<ContractInfoResp | undefined> {
+  try {
+    const res = await fetch(
+      path.join(network.endpoint.rest, "/cosmwasm/wasm/v1/contract/", addr)
+    );
+    const body = await res.json();
 
-  return body as ContractInfoResp;
+    return body as ContractInfoResp;
+  } catch (err) {
+    console.error("Error fetching contract info", err);
+    return undefined;
+  }
 }

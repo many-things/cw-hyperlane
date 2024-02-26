@@ -22,7 +22,7 @@ export type HplAgentConfig = {
   };
   contractAddressBytes: 32;
   index: {
-    from: number;
+    from?: number;
     chunk: number;
   };
   blocks: {
@@ -71,6 +71,7 @@ export async function fromContext(
     index: {
       from:
         // sub 1 block to make sure we don't miss any block
+        mailboxContractInfo &&
         parseInt(mailboxContractInfo.contract_info.created.block_height) - 1,
       chunk: 10_000,
     },
