@@ -7,7 +7,10 @@ import {
   Tendermint37Client,
   CometClient,
 } from "@cosmjs/tendermint-rpc";
-import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing";
+import {
+  DirectSecp256k1HdWallet,
+  DirectSecp256k1Wallet,
+} from "@cosmjs/proto-signing";
 import { GasPrice, SigningStargateClient } from "@cosmjs/stargate";
 import { Secp256k1, keccak256 } from "@cosmjs/crypto";
 
@@ -38,7 +41,7 @@ export type FeeHookType = {
   type: "fee";
   owner: string;
   fee: {
-    denom: string;
+    denom?: string;
     amount: bigint;
   };
 };
@@ -146,10 +149,10 @@ export async function getSigningClient(
 ): Promise<Client> {
   const { tm_version, hrp, gas, url } = getNetwork(networkId);
 
-  const wallet = await DirectSecp256k1Wallet.fromKey(
-    Buffer.from(signer, "hex"),
-    hrp
-  );
+  const wallet =
+    signer.split(" ").length > 0
+      ? await DirectSecp256k1HdWallet.fromMnemonic(signer, { prefix: hrp })
+      : await DirectSecp256k1Wallet.fromKey(Buffer.from(signer, "hex"), hrp);
 
   const [account] = await wallet.getAccounts();
   const gasPrice = GasPrice.fromString(`${gas.price}${gas.denom}`);
