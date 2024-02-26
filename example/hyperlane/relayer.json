@@ -6,10 +6,10 @@
   "whitelist": [
     {
       "origindomain": [11155111],
-      "destinationDomain": [1304]
+      "destinationDomain": [1037]
     },
     {
-      "origindomain": [1304],
+      "origindomain": [1037],
       "destinationDomain": [11155111]
     }
   ],

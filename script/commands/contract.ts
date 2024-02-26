@@ -4,6 +4,7 @@ import { contractNames } from "../shared/constants";
 import { executeContract } from "../shared/contract";
 import { CONTAINER, Dependencies } from "../shared/ioc";
 import { addPad } from "../shared/utils";
+import { getNetwork } from "../shared/config";
 
 export const contractCmd = new Command("contract").configureHelp({
   showGlobalOptions: true,
@@ -19,8 +20,10 @@ contractCmd
   .argument("dest-domian")
   .argument("recipient-addr")
   .argument("msg-body")
-  .action(async (destDomain, recipientAddr, msgBody) => {
+  .action(async (destDomain, recipientAddr, msgBody, _, cmd) => {
+    const opts = cmd.optsWithGlobals();
     const { ctx, client } = CONTAINER.get(Dependencies);
+    const network = getNetwork(opts.networkId);
 
     const mailbox = ctx.deployments.core?.mailbox;
     if (!mailbox)
@@ -40,7 +43,7 @@ contractCmd
           msg_body: Buffer.from(msgBody, "utf-8").toString("hex"),
         },
       },
-      [{ amount: "500", denom: "ustrd" }]
+      [{ amount: "500", denom: network.gas.denom }]
     );
 
     console.log(res.hash);
