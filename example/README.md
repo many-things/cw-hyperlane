@@ -5,35 +5,23 @@
 ## Prerequisites
 
 - [Cast](https://book.getfoundry.sh/cast/)
-
-- Sepolia Testnet account with enough balance
-
-  - [Visit faucet](https://sepolia-faucet.pk910.de/) to get some test tokens
-
-- Osmosis Testnet account with enough balance
-
-  - [Visit faucet](https://faucet.testnet.osmosis.zone/) to get some test tokens
+- Sepolia Testnet account with enough balance ([faucet](https://sepolia-faucet.pk910.de/))
+- Osmosis Testnet account with enough balance ([faucet](https://faucet.testnet.osmosis.zone/))
 
 - Recommanded to use same account for both networks
 
   - You can easily get the bech32 address by running below command (need to setup `config.yaml` first)
 
-    - Get from private key
-
+    - Get from private key  
       `yarn cw-hpl wallet address -n [network-id] --private-key [private-key]`
-
-    - Get from mnemonic phrase
-
+    - Get from mnemonic phrase  
       `yarn cw-hpl wallet address -n [network-id] --mnemonic [mnemonic]`
 
   - You also can get the ethereum address by running below command
 
-    - Get from private key
-
+    - Get from private key  
       `cast wallet address --private-key [private-key]`
-
-    - Get from mnemonic phrase
-
+    - Get from mnemonic phrase  
       `cast wallet address --mnemonic [mnemonic]`
 
   - Or, You can use `yarn cw-hpl wallet new -n [network-id]` to create new wallet
