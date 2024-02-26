@@ -1,21 +1,42 @@
-# Deploy Guide with Local CosmWasm Chain
+# Deploy Guide with Osmosis Testnet
 
-> This guide will help you to setup Hyperlane betweeen Local CosmWasm Chain and Ethereum Sepolia Testnet.
+> This guide will help you to setup Hyperlane betweeen Osmosis Testnet and Ethereum Sepolia Testnet.
 
 ## Prerequisites
 
+- [Cast](https://book.getfoundry.sh/cast/)
+
 - Sepolia Testnet account with enough balance
-  - will use for deploying test contracts on Sepolia
-  - and relaying / validating messages between localwasmd and Sepolia
 
-## 0. Run Local CosmWasm Chain
+  - [Visit faucet](https://sepolia-faucet.pk910.de/) to get some test tokens
 
-```bash
-$ docker run --rm -it \
-    -e PASSWORD=xxxxxxxx -e STAKE_TOKEN="uwasm" -e CHAIN_ID="localwasmd" -e MONIKER="localwasmd" \
-    -p 26657:26657 -p 26656:26656 -p 9090:9090 -p 1317:1317 \
-    cosmwasm/wasmd:latest /opt/setup_and_run.sh wasm12smx2wdlyttvyzvzg54y2vnqwq2qjate7wuwgt
-```
+- Osmosis Testnet account with enough balance
+
+  - [Visit faucet](https://faucet.testnet.osmosis.zone/) to get some test tokens
+
+- Recommanded to use same account for both networks
+
+  - You can easily get the bech32 address by running below command (need to setup `config.yaml` first)
+
+    - Get from private key
+
+      `yarn cw-hpl wallet address -n [network-id] --private-key [private-key]`
+
+    - Get from mnemonic phrase
+
+      `yarn cw-hpl wallet address -n [network-id] --mnemonic [mnemonic]`
+
+  - You also can get the ethereum address by running below command
+
+    - Get from private key
+
+      `cast wallet address --private-key [private-key]`
+
+    - Get from mnemonic phrase
+
+      `cast wallet address --mnemonic [mnemonic]`
+
+  - Or, You can use `yarn cw-hpl wallet new -n [network-id]` to create new wallet
 
 ## 1. Create `config.yaml` with your network config
 
@@ -27,24 +48,20 @@ You can check full list of example in [config.example.yaml](../config.example.ya
 
 ```yaml
 networks:
-  - id: "localwasmd"
-    hrp: "wasm"
+  - id: "osmo-test-5"
+    hrp: "osmo"
     endpoint:
-      rpc: "http://localhost:26657"
-      rest: "http://localhost:1317"
-      grpc: "http://localhost:9090"
+      rpc: "https://rpc.testnet.osmosis.zone"
+      rest: "https://lcd.testnet.osmosis.zone"
+      grpc: "https://grpc.testnet.osmosis.zone"
     gas:
       price: "0.025"
-      denom: "uwasm"
-    # localwasmd -> ascii / decimal -> sum.
+      denom: "uosmo"
+    # osmo-test-5 -> ascii / decimal -> sum.
     # It's very arbitrary value, Perhaps you must need to change this value.
-    domain: 1063
+    domain: 1037 # osmo-test-5 -> ascii / decimal -> sum
 
-# default mnemonic key of localwasmd (https://github.com/osmosis-labs/osmosis/blob/d45a3baf684e55cdc83ef23c4fc11ae1df1726af/tests/localwasmd/scripts/setup.sh#L9C11-L9C159)
-# osmo12smx2wdlyttvyzvzg54y2vnqwq2qjateuf7thj
-# 0xae7d1F30e324D4e348EF04D9a9e867F863f23067
-# 9ff80c31b47c7f2946654f569a6b1530db78d7fa5b3ea16db82570cdfd6d43f6
-signer: "bottom loan skill merry east cradle onion journey palm apology verb edit desert impose absurd oil bubble sweet glove shallow size build burst effort"
+signer: "<private-key> or <mnemonic>"
 
 deploy:
   ism:
@@ -96,8 +113,8 @@ $ make optimize
 $ make check
 
 # This command will make one file.
-# - context with artifacts (default path: {project-root}/context/localwasmd.json)
-$ yarn cw-hpl upload local -n localwasmd
+# - context with artifacts (default path: {project-root}/context/osmo-test-5.json)
+$ yarn cw-hpl upload local -n osmo-test-5
 ```
 
 ### Remote
@@ -106,11 +123,11 @@ $ yarn cw-hpl upload local -n localwasmd
 $ yarn install
 
 # check all versions of contract codes from Github
-$ yarn cw-hpl upload remote-list -n localwasmd
+$ yarn cw-hpl upload remote-list -n osmo-test-5
 
 # This command will make one file.
-# - context with artifacts (default path: {project-root}/context/localwasmd.json)
-$ yarn cw-hpl upload remote v0.0.6-rc8 -n localwasmd
+# - context with artifacts (default path: {project-root}/context/osmo-test-5.json)
+$ yarn cw-hpl upload remote v0.0.6-rc8 -n osmo-test-5
 ```
 
 ## 3. Instantiate Contracts
@@ -119,9 +136,9 @@ If you configured / uploaded contract codes correctly, you can deploy contract w
 
 ```bash
 # This command will output two results.
-# - context + deployment    (default path: ./context/localwasmd.json)
-# - Hyperlane agent-config  (default path: ./context/localwasmd.config.json)
-$ yarn cw-hpl deploy -n localwasmd
+# - context + deployment    (default path: ./context/osmo-test-5.json)
+# - Hyperlane agent-config  (default path: ./context/osmo-test-5.config.json)
+$ yarn cw-hpl deploy -n osmo-test-5
 ```
 
 ## 4. Setup Validator / Relayer config
@@ -134,11 +151,11 @@ Replace every `{private_key}` from files below with your Sepolia Testnet private
 And run with below command.
 
 ```bash
-# Merge localwasmd.config.json and agent-config.docker.json
-$ LOCALWASMD_AGENT_CONFIG=$(cat ../context/localwasmd.config.json) && \
-  LOCALWASMD_AGENT_CONFIG_NAME=$(echo $LOCALWASMD_AGENT_CONFIG | jq -r '.name') && \
+# Merge osmo-test-5.config.json and agent-config.docker.json
+$ OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ../context/osmo-test-5.config.json) && \
+  OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG | jq -r '.name') && \
     cat ./hyperlane/agent-config.docker.json \
-      | jq ".chains.$LOCALWASMD_AGENT_CONFIG_NAME=$(echo $LOCALWASMD_AGENT_CONFIG)" > merge.tmp && \
+      | jq ".chains.$OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG)" > merge.tmp && \
   mv merge.tmp ./hyperlane/agent-config.docker.json
 
 # Run Hyperlane with docker-compose
@@ -163,7 +180,7 @@ $ cast send \
     --private-key $SEPOLIA_PRIVATE_KEY \
     --create $(cat ./TestRecipient.bin)
 
-# 2. Deploy MultisigIsm for validating localwasmd network
+# 2. Deploy MultisigIsm for validating osmo-test-5 network
 # Below address is messageIdMultisigIsmFactory came from agent-config.docker.json
 $ cast send \
     0xFEb9585b2f948c1eD74034205a7439261a9d27DD \
@@ -183,21 +200,21 @@ $ cast send \
 
 ## 6. Run Messaging Test
 
-### Sepolia -> localwasmd
+### Sepolia -> osmo-test-5
 
 ```bash
 # Below address is mailbox came from agent-config.docker.json
 $ cast send \
     0xfFAEF09B3cd11D9b20d1a19bECca54EEC2884766 --value 1wei \
     'dispatch(uint32,bytes32,bytes)' \
-    1063 $LOCALWASMD_TEST_RECIPIENT_ADDRESS 0x68656c6c6f \ # 0x68656c6c6f -> 'hello'
+    1037 $OSMOSIS_TESTNET_TEST_RECIPIENT_ADDRESS 0x68656c6c6f \ # 0x68656c6c6f -> 'hello'
     --rpc-url 'https://rpc.sepolia.org' \
     --private-key $SEPOLIA_PRIVATE_KEY
 ```
 
-### localwasmd -> Sepolia
+### osmo-test-5 -> Sepolia
 
 ```bash
 # [dest-domain] [recipient-address] [message]
-$ yarn cw-hpl contract test-dispatch -n localwasmd 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
+$ yarn cw-hpl contract test-dispatch -n osmo-test-5 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
 ```
