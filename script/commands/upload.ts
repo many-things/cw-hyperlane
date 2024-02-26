@@ -10,7 +10,7 @@
 
 import * as fs from "fs";
 import { Command } from "commander";
-import { CodeDetails, IndexedTx } from "@cosmjs/cosmwasm-stargate";
+import { CodeDetails } from "@cosmjs/cosmwasm-stargate";
 
 import { getWasmPath, loadWasmFileDigest } from "../shared/wasm";
 import { CONTAINER, Dependencies } from "../shared/ioc";
