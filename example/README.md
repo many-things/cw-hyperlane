@@ -1,4 +1,4 @@
-# Deploy Guide with Osmosis Testnet
+# Deploying Hyperlane with Osmosis Testnet
 
 > This guide will help you to setup Hyperlane betweeen Osmosis Testnet and Ethereum Sepolia Testnet.
 
