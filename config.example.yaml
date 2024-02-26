@@ -32,7 +32,7 @@ deploy:
 
     # # hpl_ism_multisig
     # type: multisig
-    # owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+    # owner: <signer>
     # validators:
     #   5:
     #     addrs:
@@ -52,7 +52,7 @@ deploy:
 
     # # hpl_ism_aggregate
     # type: "aggregate"
-    # owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+    # owner: <signer>
     # isms:
     #   - type: "mock"
     #   - type: "multisig"
@@ -60,7 +60,7 @@ deploy:
 
     # # hpl_ism_routing
     # type: "routing"
-    # owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+    # owner: <signer>
     # isms:
     #   5:
     #     type: "mock"
@@ -80,7 +80,7 @@ deploy:
 
       # # hpl_hook_fee
       # type: "fee"
-      # owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      # owner: <signer> # you can use "<signer>" alias to owner field.
       # fee:
       #   denom: uosmo
       #   amount: 1
@@ -90,7 +90,7 @@ deploy:
 
       # # hpl_hook_pausable
       # type: "pausable"
-      # owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      # owner: <signer>
       # paused: false
 
       # # hpl_igp + hpl_igp_oracle
@@ -107,25 +107,25 @@ deploy:
 
       # # hpl_hook_aggregate
       # type: aggregate
-      # owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      # owner: <signer>
       # hooks:
       #   - type: merkle
       #   - type: pausable
-      #     owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      #     owner: <signer>
       #     paused: false
       #   - type: fee
-      #     owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      #     owner: <signer>
       #     fee:
       #       denom: uosmo
       #       amount: 1
 
       # # hpl_hook_routing / hpl_hook_routing_custom / hpl_hook_routing_fallback
       # type: "routing"
-      # owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      # owner: <signer>
       # hooks:
       #   5:
       #     type: fee
-      #     owner: osmo1g3q542hpttdrj9aaczsq0tkl0uyfk7nkydklz6
+      #     owner: <signer>
       #     fee:
       #       denom: uosmo
       #       amount: 1
