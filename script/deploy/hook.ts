@@ -4,6 +4,7 @@ import {
   RoutingCustomHookType,
   RoutingFallbackHookType,
   RoutingHookType,
+  getNetwork,
 } from "../shared/config";
 import { Context, ContextHook } from "../shared/context";
 import {
@@ -183,9 +184,14 @@ export const deployHook = async (
   switch (hook.type) {
     // deploy fee hook
     case "fee":
+      const { gas } = getNetwork(networkId);
+
       return deployContract(ctx, client, "hpl_hook_fee", {
         owner: hook.owner === "<signer>" ? client.signer : hook.owner,
-        fee: { ...hook.fee, amount: hook.fee.amount.toString() },
+        fee: {
+          denom: hook.fee.denom || gas.denom,
+          amount: hook.fee.amount.toString(),
+        },
       });
 
     // deploy merkle hook
