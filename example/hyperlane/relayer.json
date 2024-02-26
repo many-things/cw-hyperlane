@@ -1,6 +1,6 @@
 {
   "db": "/etc/data/db",
-  "relayChains": "localosmosis,sepolia",
+  "relayChains": "osmotest5,sepolia",
   "allowLocalCheckpointSyncers": "true",
   "gasPaymentEnforcement": [{ "type": "none" }],
   "whitelist": [
@@ -17,13 +17,13 @@
     "sepolia": {
       "signer": {
         "type": "hexKey",
-        "key": "{private_key}"
+        "key": "{sepolia_private_key}"
       }
     },
-    "localosmosis": {
+    "osmotest5": {
       "signer": {
         "type": "cosmosKey",
-        "key": "{private_key}",
+        "key": "{osmosis_private_key}",
         "prefix": "osmo"
       }
     }

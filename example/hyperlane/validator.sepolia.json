@@ -7,7 +7,7 @@
   "originChainName": "sepolia",
   "validator": {
     "signerType": "hexKey",
-    "key": "{private_key}",
+    "key": "{sepolia_private_key}",
     "type": "hexKey"
   }
 }
