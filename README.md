@@ -39,6 +39,8 @@ cargo llvm-cov --workspace --exclude hpl-tests
 
 ## How to deploy
 
+[Go to README of ./example](./example/README.md)
+
 [Go to README of ./script](./script/README.md)
 
 ## Project Structure
