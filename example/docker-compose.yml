@@ -15,9 +15,9 @@ services:
     ports:
       - 9110:9090
     volumes:
-      - ${DATA_PATH}/hyperlane:/etc/hyperlane
-      - ${DATA_PATH}/relayer:/etc/data
-      - ${DATA_PATH}/validator:/etc/validator
+      - ./hyperlane:/etc/hyperlane
+      - ./relayer:/etc/data
+      - ./validator:/etc/validator
 
   validator-sepolia:
     container_name: hpl-validator-sepolia
@@ -34,9 +34,9 @@ services:
     ports:
       - 9120:9090
     volumes:
-      - ${DATA_PATH}/hyperlane:/etc/hyperlane
-      - ${DATA_PATH}/validator:/etc/validator
-      - ${DATA_PATH}/validator/sepolia:/etc/data
+      - ./hyperlane:/etc/hyperlane
+      - ./validator:/etc/validator
+      - ./validator/sepolia:/etc/data
 
   validator-localosmosis:
     container_name: hpl-validator-localosmosis
@@ -53,6 +53,6 @@ services:
     ports:
       - 9121:9090
     volumes:
-      - ${DATA_PATH}/hyperlane:/etc/hyperlane
-      - ${DATA_PATH}/validator:/etc/validator
-      - ${DATA_PATH}/validator/localosmosis:/etc/data
+      - ./hyperlane:/etc/hyperlane
+      - ./validator:/etc/validator
+      - ./validator/localosmosis:/etc/data
