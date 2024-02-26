@@ -7,10 +7,6 @@ export type HplAgentConfig = {
   name: string;
   domainId: string;
   chainId: string;
-  mailbox: string; // hexed
-  interchainGasPaymaster: string; // hexed
-  validatorAnnounce: string; // hexed
-  merkleTreeHook: string; // hexed
   protocol: "cosmos";
   rpcUrls: { http: string }[];
   grpcUrl: string;
@@ -28,6 +24,12 @@ export type HplAgentConfig = {
   blocks: {
     reorgPeriod: 1; // instant finality ⭐️
   };
+
+  mailbox: string; // hexed
+  interchainGasPaymaster: string; // hexed
+  validatorAnnounce: string; // hexed
+  merkleTreeHook: string; // hexed
+  testRecipient: string; // hexed
 };
 
 export async function fromContext(
@@ -36,7 +38,7 @@ export async function fromContext(
 ): Promise<HplAgentConfig> {
   const toHex = (v: string) => `0x${extractByte32AddrFromBech32(v)}`;
 
-  const { hooks, core } = context.deployments;
+  const { hooks, core, test } = context.deployments;
 
   const mailboxAddr = core?.mailbox?.address!;
   const mailboxContractInfo = await getContractInfo(network, mailboxAddr);
@@ -84,6 +86,7 @@ export async function fromContext(
     validatorAnnounce: toHex(core?.validator_announce?.address!),
     interchainGasPaymaster: toHex(igp.address),
     merkleTreeHook: toHex(merkleTreeHook.address),
+    testRecipient: toHex(test?.msg_receiver?.address!),
   };
 
   return agent;
