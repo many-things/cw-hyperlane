@@ -77,9 +77,9 @@ export async function executeMultiMsg(
 
   logger.debug(
     `executing ${msgs.length} msgs.\n`,
-    ...msgs.flatMap((v) => [
+    ...msgs.flatMap((v, i, arr) => [
       `- ${v.contract.type.padEnd(long, " ")}:`,
-      `${Object.keys(v.msg)[0]}\n`,
+      `${Object.keys(v.msg)[0]}${i === arr.length - 1 ? "" : "\n"}`,
     ])
   );
 
@@ -102,9 +102,9 @@ export async function executeMultiMsg(
 
   logger.info(
     `executed ${msgs.length} msgs.\n`,
-    ...msgs.flatMap((v) => [
+    ...msgs.flatMap((v, i, arr) => [
       `- ${v.contract.type.padEnd(long, " ")}:`,
-      `${Object.keys(v.msg)[0]}\n`,
+      `${Object.keys(v.msg)[0]}${i === arr.length - 1 ? "" : "\n"}`,
     ])
   );
   return receipt;
