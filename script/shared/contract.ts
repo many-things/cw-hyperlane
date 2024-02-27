@@ -3,6 +3,9 @@ import { Context } from "./context";
 import { waitTx } from "./utils";
 import { Client } from "./config";
 import { IndexedTx } from "@cosmjs/stargate";
+import { Logger } from "./logger";
+
+const logger = new Logger("contract");
 
 export type ContractNames = (typeof contractNames)[number];
 
@@ -12,7 +15,7 @@ export async function deployContract<T extends ContractNames>(
   contractName: T,
   initMsg: any
 ): Promise<{ type: T; address: string }> {
-  console.log(`Deploying ${contractName}`);
+  logger.debug(`deploying ${contractName}`);
 
   const codeId = ctx.artifacts[contractName];
   const res = await wasm.instantiate(
@@ -24,10 +27,14 @@ export async function deployContract<T extends ContractNames>(
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
-    throw new Error(`Error deploying ${contractName}: ${receipt.hash}`);
+    logger.error(
+      "deploy tx failed.",
+      `contract=${contractName}, hash=${receipt.hash}`
+    );
+    throw new Error(JSON.stringify(receipt.events));
   }
 
-  console.log(`Deployed ${contractName} at ${res.contractAddress}`);
+  logger.info(`deployed ${contractName} at ${res.contractAddress}`);
   return { type: contractName, address: res.contractAddress };
 }
 
@@ -37,7 +44,7 @@ export async function executeContract(
   msg: any,
   funds: { amount: string; denom: string }[] = []
 ): Promise<IndexedTx> {
-  console.log(`Executing ${deployment.type}'s ${Object.keys(msg)[0]}`);
+  logger.debug(`executing ${deployment.type}'s ${Object.keys(msg)[0]}`);
 
   const res = await wasm.execute(
     signer,
@@ -49,9 +56,14 @@ export async function executeContract(
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
-    throw new Error(`Error executing ${deployment.type}: ${receipt.hash}`);
+    logger.error(
+      "execute tx failed.",
+      `contract=${deployment.type}, hash=${receipt.hash}`
+    );
+    throw new Error(JSON.stringify(receipt.events));
   }
 
+  logger.info(`executed ${deployment.type}'s ${Object.keys(msg)[0]}`);
   return receipt;
 }
 
@@ -63,12 +75,13 @@ export async function executeMultiMsg(
     .map((v) => v.contract.type.length)
     .reduce((max, v) => Math.max(v, max), 0);
 
-  console.log("Executing multiple messages.");
-  for (const msg of msgs) {
-    console.log(
-      `- ${msg.contract.type.padEnd(long, " ")}: ${Object.keys(msg.msg)[0]}`
-    );
-  }
+  logger.debug(
+    `executing ${msgs.length} msgs.\n`,
+    ...msgs.flatMap((v) => [
+      `- ${v.contract.type.padEnd(long, " ")}:`,
+      `${Object.keys(v.msg)[0]}\n`,
+    ])
+  );
 
   const res = await wasm.executeMultiple(
     signer,
@@ -80,7 +93,19 @@ export async function executeMultiMsg(
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
-    throw new Error(`Error executing multiple contracts: ${receipt.hash}`);
+    logger.error(
+      `execute multiple tx failed.`,
+      `msgs=${msgs.length}, hash=${receipt.hash}`
+    );
+    throw new Error(JSON.stringify(receipt.events));
   }
+
+  logger.info(
+    `executed ${msgs.length} msgs.\n`,
+    ...msgs.flatMap((v) => [
+      `- ${v.contract.type.padEnd(long, " ")}:`,
+      `${Object.keys(v.msg)[0]}\n`,
+    ])
+  );
   return receipt;
 }

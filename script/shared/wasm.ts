@@ -16,7 +16,9 @@ function getWasmFilesPath(
       .map((file) => path.join(artifactPath, file));
   } catch (err) {
     console.error(
-      "Cannot find wasm folder. Are you sure you compiled the wasm projects?"
+      "[error]".red,
+      "cannot find wasm folder.",
+      "did you compiled the wasm projects?"
     );
     process.exit(1);
   }

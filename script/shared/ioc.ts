@@ -1,7 +1,7 @@
 import { Container } from "inversify";
 
 import { Context } from "./context";
-import { Client } from "./config";
+import { Client, Config } from "./config";
 
 export const CONTAINER = new Container({
   autoBindInjectable: true,
@@ -14,4 +14,5 @@ export const iocContainer = CONTAINER;
 export class Dependencies {
   ctx: Context;
   client: Client;
+  network: Config["networks"][number];
 }
