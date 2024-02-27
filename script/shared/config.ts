@@ -13,6 +13,7 @@ import {
 } from "@cosmjs/proto-signing";
 import { GasPrice, SigningStargateClient } from "@cosmjs/stargate";
 import { Secp256k1, keccak256 } from "@cosmjs/crypto";
+import { addPad } from "./utils";
 
 export type IsmType =
   | {
@@ -156,7 +157,10 @@ export async function getSigningClient(
   const wallet =
     signer.split(" ").length > 1
       ? await DirectSecp256k1HdWallet.fromMnemonic(signer, { prefix: hrp })
-      : await DirectSecp256k1Wallet.fromKey(Buffer.from(signer, "hex"), hrp);
+      : await DirectSecp256k1Wallet.fromKey(
+          Buffer.from(addPad(signer), "hex"),
+          hrp
+        );
 
   const [account] = await wallet.getAccounts();
   const gasPrice = GasPrice.fromString(`${gas.price}${gas.denom}`);
