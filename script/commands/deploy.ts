@@ -24,7 +24,7 @@ async function handleDeploy(_: any, cmd: any) {
   ctx.deployments.core = await deployCore(opts, ctx, client);
   ctx.deployments.isms = await deployIsms(ctx, client);
   ctx.deployments.hooks = await deployHooks(opts, ctx, client);
-  // TODO: deploy warp
+  ctx.deployments.warp = { native: [], cw20: [] };
   ctx.deployments.test = await deployTest(opts, ctx, client);
 
   await executeMultiMsg(client, [
