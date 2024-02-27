@@ -27,24 +27,10 @@ async function deployWarpRoute() {
     provider: { query, exec },
   } = CONTAINER.get(Dependencies);
 
-  // deploy proxy admin
-  const proxyAdminAddr = await expectNextContractAddr(query, account);
-  console.log(`Deploying ProxyAdmin at "${proxyAdminAddr.green}"...`);
-
-  {
-    const tx = await exec.deployContract({
-      abi: ProxyAdmin.abi,
-      bytecode: ProxyAdmin.bytecode.object as Hex,
-      args: [],
-    });
-    logTx("Deploying ProxyAdmin", tx);
-    await query.waitForTransactionReceipt({ hash: tx });
-  }
-
   // deploy hyp erc20 (implementation)
 
-  const hypErc20Addr = await expectNextContractAddr(query, account);
-  console.log(`Deploying HypERC20 at "${hypErc20Addr.green}"...`);
+  const hypErc20OsmoAddr = await expectNextContractAddr(query, account);
+  console.log(`Deploying HypERC20 at "${hypErc20OsmoAddr.green}"...`);
 
   {
     const tx = await exec.deployContract({
@@ -52,38 +38,24 @@ async function deployWarpRoute() {
       bytecode: HypERC20.bytecode.object as Hex,
       args: [6, HYP_MAILBOX],
     });
-    logTx("Deploying HypERC20", tx);
+    logTx("Deploying HypERC20Osmo", tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
 
-  // deploy hyp erc20 (for uosmo!)
-
-  const hypErc20OsmoAddr = await expectNextContractAddr(query, account);
-  console.log(`Deploying HypERC20Osmo at "${hypErc20OsmoAddr.green}"...`);
-
   {
-    const tx = await exec.deployContract({
-      abi: TransparentUpgradeableProxy.abi,
-      bytecode: TransparentUpgradeableProxy.bytecode.object as Hex,
-      args: [
-        hypErc20Addr,
-        proxyAdminAddr,
-        encodeFunctionData({
-          abi: HypERC20.abi,
-          functionName: "initialize",
-          args: [0n, "Hyperlane Bridged Osmosis", "OSMO"],
-        }),
-      ],
+    const tx = await exec.writeContract({
+      abi: HypERC20.abi,
+      address: hypErc20OsmoAddr,
+      functionName: "initialize",
+      args: [0n, "Hyperlane Bridged Osmosis", "OSMO"],
     });
-    logTx("Deploy HypERC20Osmo", tx);
+    logTx("Initialize HypERC20Osmo", tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
 
   console.log("== Done! ==");
 
   console.log({
-    proxyAdmin: proxyAdminAddr,
-    hypErc20: hypErc20Addr,
     hypErc20Osmo: hypErc20OsmoAddr,
   });
 }
@@ -100,7 +72,7 @@ async function linkWarpRoute(warp: string, domain: string, route: string) {
     abi: HypERC20.abi,
     address: warp,
     functionName: "enrollRemoteRouter",
-    args: [parseInt(domain), addPad(route) as Hex],
+    args: [parseInt(domain), `0x${addPad(route)}`],
   });
   logTx(`Linking warp route with external chain ${domain}`, tx);
   await query.waitForTransactionReceipt({ hash: tx });
