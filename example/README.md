@@ -172,10 +172,7 @@ docker compose down
 # if you want to use private key as signing account. then you can set `--pk` option
 # if you want to use mnemonic as signing account. then you can set `--mn` option
 # or if you want to use custom rpc endpoint. then you can set `--endpoint` option
-yarn cw-hpl-exp deploy-test-recipient \
-  --pk 'YOUR_PRIVATE_KEY'
-  --mn 'YOUR_MNEMONIC_PHRASE'
-  --endpoint 'https://rpc.sepolia.org'
+yarn cw-hpl-exp deploy-test-recipient --pk 'YOUR_PRIVATE_KEY'
 ```
 
 ## 6. Run Messaging Test
@@ -199,7 +196,38 @@ cast send \
 yarn cw-hpl contract test-dispatch -n osmo-test-5 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
 ```
 
-## 7. Done 🎉
+## 7. Warp Route
+
+```bash
+# deploy warp route on sepolia
+yarn cw-hpl-exp warp deploy --pk 'YOUR_PRIVATE_KEY'
+
+# then output will like this
+{ "hypErc20Osmo": "0x..." }
+
+# deploy warp route on osmo-test-5
+yarn cw-hpl warp deploy create ./warp/uosmo.json -n osmo-test-5
+
+# regiter osmo-test-5 warp route to sepolia warp route
+yarn cw-hpl-exp warp link $hypErc20Osmo 1037 $OSMOSIS_WARP_ROUTE_ADDRESS --pk 'YOUR_PRIVATE_KEY'
+
+# also register sepolia warp route to osmo-test-5 warp route
+yarn cw-hpl warp link \
+  --asset-type native \
+  --asset-id uosmo \
+  --target-domain 11155111 \
+  --warp-address $hypErc20Osmo \
+  -n osmo-test-5
+
+# test transfer
+yarn cw-hpl warp transfer \
+  --asset-type native \
+  --asset-id uosmo \
+  --target-domain 11155111 \
+  -n osmo-test-5
+```
+
+## 8. Done 🎉
 
 This is it! You have successfully deployed Hyperlane between Osmosis Testnet and Sepolia Testnet.
 

@@ -1,19 +1,21 @@
-import { Hex, encodeFunctionData, isAddress, isHex } from "viem";
+import { Command } from "commander";
+import { Hex, isAddress } from "viem";
 
 import { HypERC20 } from "../abi/HypERC20";
-import { ProxyAdmin } from "../abi/ProxyAdmin";
-import { TransparentUpgradeableProxy } from "../abi/TransparentUpgradeableProxy";
 
 import { HYP_MAILBOX } from "./constants";
 import { CONTAINER, Dependencies } from "./ioc";
-import { addPad, expectNextContractAddr, logTx } from "./utils";
-import { Command } from "commander";
+import {
+  expectNextContractAddr,
+  extractByte32AddrFromBech32,
+  logTx,
+} from "./utils";
 
 const warpCmd = new Command("warp");
 
-warpCmd.command("deploy-route").action(deployWarpRoute);
+warpCmd.command("deploy").action(deployWarpRoute);
 warpCmd
-  .command("link-route")
+  .command("link")
   .argument("<warp>", "address of warp route")
   .argument("<domain>", "destination domain to set")
   .argument("<route>", "destination address to set")
@@ -66,13 +68,12 @@ async function linkWarpRoute(warp: string, domain: string, route: string) {
   } = CONTAINER.get(Dependencies);
 
   if (!isAddress(warp)) throw new Error("Invalid warp address");
-  if (!isHex(route)) throw new Error("Invalid route address");
 
   const tx = await exec.writeContract({
     abi: HypERC20.abi,
     address: warp,
     functionName: "enrollRemoteRouter",
-    args: [parseInt(domain), `0x${addPad(route)}`],
+    args: [parseInt(domain), `0x${extractByte32AddrFromBech32(route)}`],
   });
   logTx(`Linking warp route with external chain ${domain}`, tx);
   await query.waitForTransactionReceipt({ hash: tx });

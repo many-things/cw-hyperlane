@@ -1,3 +1,4 @@
+import { fromBech32 } from "@cosmjs/encoding";
 import {
   PublicClient,
   Transport,
@@ -19,6 +20,12 @@ export const logTx = (title: string, tx: string) =>
     "=>".green,
     `tx hash: "${tx.green}". Waiting for confirmation...`
   );
+
+export const extractByte32AddrFromBech32 = (addr: string): string => {
+  const { data } = fromBech32(addr);
+  const hexed = Buffer.from(data).toString("hex");
+  return hexed.length === 64 ? hexed : addPad(hexed);
+};
 
 export const expectNextContractAddr = async (
   query: PublicClient<Transport, Chain>,
