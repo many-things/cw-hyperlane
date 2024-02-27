@@ -58,8 +58,8 @@ async function deployWarpRoute() {
 
   // deploy hyp erc20 (for uosmo!)
 
-  const hypErc20UosmoAddr = await expectNextContractAddr(query, account);
-  console.log(`Deploying HypERC20Uosmo at "${hypErc20UosmoAddr.green}"...`);
+  const hypErc20OsmoAddr = await expectNextContractAddr(query, account);
+  console.log(`Deploying HypERC20Osmo at "${hypErc20OsmoAddr.green}"...`);
 
   {
     const tx = await exec.deployContract({
@@ -84,7 +84,7 @@ async function deployWarpRoute() {
   console.log({
     proxyAdmin: proxyAdminAddr,
     hypErc20: hypErc20Addr,
-    hypErc20Uosmo: hypErc20UosmoAddr,
+    hypErc20Osmo: hypErc20OsmoAddr,
   });
 }
 
