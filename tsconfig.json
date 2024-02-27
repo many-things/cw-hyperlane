@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "lib": ["es6", "es2021"],
+    "target": "es2021",
+    "lib": ["es2021"],
     "types": ["reflect-metadata", "node"],
     "module": "commonjs",
     "moduleResolution": "node",
@@ -16,5 +16,5 @@
     "outDir": "dist",
     "declaration": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["script/**/*.ts"]
+  "include": ["script/**/*.ts", "example/**/*.ts"]
 }
