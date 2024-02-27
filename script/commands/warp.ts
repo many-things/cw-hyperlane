@@ -52,6 +52,31 @@ warpCmd
   )
   .action(handleLink);
 
+warpCmd
+  .command("transfer")
+  .description("Transfer a warp route to external chain")
+  .addOption(
+    new Option(
+      "--asset-type <asset-type>",
+      "type of asset, it can be native or cw20"
+    )
+      .makeOptionMandatory()
+      .choices(["native", "cw20"])
+  )
+  .addOption(
+    new Option(
+      "--asset-id <asset-id>",
+      "asset id to link with warp route"
+    ).makeOptionMandatory()
+  )
+  .addOption(
+    new Option(
+      "--target-domain <target-domain>",
+      "target domain id to link"
+    ).makeOptionMandatory()
+  )
+  .action(handleTransfer);
+
 export { warpCmd };
 
 function checkConfigType<
@@ -128,7 +153,7 @@ async function handleLink(_: any, cmd: Command) {
   type Option = {
     assetType: "native" | "cw20";
     assetId: string;
-    targetDomain: number;
+    targetDomain: string;
     warpAddress: string;
   };
 
@@ -161,11 +186,64 @@ async function handleLink(_: any, cmd: Command) {
   }
 
   const linkResp = await executeContract(deps.client, route, {
-    set_route: {
-      domain: opts.targetDomain,
-      route: addPad(opts.warpAddress),
+    router: {
+      set_route: {
+        set: {
+          domain: parseInt(opts.targetDomain),
+          route: addPad(opts.warpAddress),
+        },
+      },
     },
   });
 
   console.log(linkResp.hash);
+}
+
+async function handleTransfer(_: any, cmd: Command) {
+  type Option = {
+    assetType: "native" | "cw20";
+    assetId: string;
+    targetDomain: string;
+  };
+
+  const opts: Option = cmd.optsWithGlobals();
+  const deps = CONTAINER.get(Dependencies);
+
+  const warp = deps.ctx.deployments.warp;
+  if (!warp)
+    throw new Error(
+      [
+        "[error]".red,
+        "warp contract is not deployed.",
+        "Run `warp create` first.",
+      ].join(" ")
+    );
+
+  deps.ctx.deployments.warp = {
+    ...warp,
+    [opts.assetType]: warp[opts.assetType as "native" | "cw20"] || [],
+  };
+
+  const routes = deps.ctx.deployments.warp[opts.assetType] || [];
+  const route = routes.find((v) => v.id === opts.assetId);
+  if (!route) {
+    console.error(
+      "[error]".red,
+      `warp route with id ${opts.assetId} not found.`
+    );
+    return;
+  }
+
+  await executeContract(
+    deps.client,
+    route,
+    {
+      transfer_remote: {
+        dest_domain: parseInt(opts.targetDomain),
+        recipient: addPad(deps.client.signer_addr),
+        amount: `${1_000_000n}`,
+      },
+    },
+    [{ amount: `${1_000_001n}`, denom: "uosmo" }]
+  );
 }
