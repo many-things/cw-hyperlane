@@ -8,8 +8,9 @@ import {
   contractCmd,
   migrateCmd,
   walletCmd,
+  warpCmd,
 } from "./commands";
-import { config, getSigningClient } from "./shared/config";
+import { config, getNetwork, getSigningClient } from "./shared/config";
 import { loadContext } from "./shared/context";
 import { CONTAINER, Dependencies } from "./shared/ioc";
 
@@ -38,6 +39,7 @@ cli.addCommand(deployCmd);
 cli.addCommand(migrateCmd);
 cli.addCommand(uploadCmd);
 cli.addCommand(walletCmd);
+cli.addCommand(warpCmd);
 
 cli.parseAsync(process.argv).catch(console.error);
 
@@ -46,9 +48,9 @@ async function injectDependencies(cmd: Command): Promise<void> {
 
   const client = await getSigningClient(networkId, config);
   const ctx = loadContext(networkId);
+  const network = getNetwork(networkId);
 
-  CONTAINER.bind(Dependencies).toConstantValue({
-    ctx,
-    client,
-  });
+  const deps = { ctx, client, network };
+
+  CONTAINER.bind(Dependencies).toConstantValue(deps);
 }
