@@ -47,12 +47,12 @@ type Cw20TokenCollateral = {
 
 type WarpTokenConfigMap = {
   native: {
-    bridged: NativeTokenBridged;
-    collateral: NativeTokenCollateral;
+    bridged: { bridged: NativeTokenBridged };
+    collateral: { collateral: NativeTokenCollateral };
   };
   cw20: {
-    bridged: Cw20TokenBridged;
-    collateral: Cw20TokenCollateral;
+    bridged: { bridged: Cw20TokenBridged };
+    collateral: { collateral: Cw20TokenCollateral };
   };
 };
 

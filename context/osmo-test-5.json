@@ -1,0 +1,90 @@
+{
+  "artifacts": {
+    "hpl_mailbox": 7162,
+    "hpl_validator_announce": 7163,
+    "hpl_ism_aggregate": 7164,
+    "hpl_ism_multisig": 7165,
+    "hpl_ism_pausable": 7166,
+    "hpl_ism_routing": 7167,
+    "hpl_igp": 7168,
+    "hpl_hook_aggregate": 7169,
+    "hpl_hook_fee": 7170,
+    "hpl_hook_merkle": 7171,
+    "hpl_hook_pausable": 7172,
+    "hpl_hook_routing": 7173,
+    "hpl_hook_routing_custom": 7174,
+    "hpl_hook_routing_fallback": 7175,
+    "hpl_test_mock_hook": 7176,
+    "hpl_test_mock_ism": 7177,
+    "hpl_test_mock_msg_receiver": 7178,
+    "hpl_igp_oracle": 7179,
+    "hpl_warp_cw20": 7180,
+    "hpl_warp_native": 7181
+  },
+  "deployments": {
+    "core": {
+      "mailbox": {
+        "type": "hpl_mailbox",
+        "address": "osmo133mald0u39vge6mcv8gzc0j2838hn3klja3nshsyxaug95pndf8sufctsq"
+      },
+      "validator_announce": {
+        "type": "hpl_validator_announce",
+        "address": "osmo19amvm0gqzhc8wfktt55ppjadghdhemgzsjc6y3wp7v3ddd2p4ckshajfhp"
+      }
+    },
+    "isms": {
+      "type": "hpl_ism_multisig",
+      "address": "osmo1ydgvay2j86k73s9k67davma09u7vkvawyjg30lzcghqa994c4afqqv2dum"
+    },
+    "hooks": {
+      "default": {
+        "type": "hpl_hook_aggregate",
+        "address": "osmo1xx8qvhum836lpn7eftepegdrrnwlktytnylkfqzgsrvkvn5eqqzq02wlah",
+        "hooks": [
+          {
+            "type": "hpl_hook_merkle",
+            "address": "osmo1vxjlhn4dkq6htf5daaxvw0rs26vewhek2gwgmpmw7jvq0tvjrhxqljnact"
+          },
+          {
+            "type": "hpl_igp",
+            "address": "osmo19yadu0cunfv7zm9m8ewhgwnwvy7cxjuxcfs7qdcmlxsfr8taj9asdlajps",
+            "oracle": {
+              "type": "hpl_igp_oracle",
+              "address": "osmo1ncns63wyprqq6guvrd2uu2w2dt04mm5zjy4tuqvx997je2kjnnzqknyzmx"
+            }
+          }
+        ]
+      },
+      "required": {
+        "type": "hpl_hook_aggregate",
+        "address": "osmo1zf80lhjyw2kmqn39xqz4ypnef7020slfd05skxv9gslss8yrm2pqzwdjzn",
+        "hooks": [
+          {
+            "type": "hpl_hook_pausable",
+            "address": "osmo1xwd2czumymaqe8gn292r2jjxsny8uklt90rjglxtwkj25s0v4sxqadwz35"
+          },
+          {
+            "type": "hpl_hook_fee",
+            "address": "osmo12g03dm27u3zrx3lcqrl9yrkywknftsanlzr60ws4wveqdxl9tzssghukur"
+          }
+        ]
+      }
+    },
+    "warp": {
+      "native": [
+        {
+          "id": "uosmo",
+          "type": "hpl_warp_native",
+          "address": "osmo1v0vw7rsfhd8adyah20cphw45ercq5p2yj3ddsn8lx6rhhy278jcqj2l370"
+        }
+      ],
+      "cw20": []
+    },
+    "test": {
+      "msg_receiver": {
+        "type": "hpl_test_mock_msg_receiver",
+        "address": "osmo1henzdxappv2sqzg2nlfl4nv42lmp39pc42fvwkjs8al3nsppn75st54ecq"
+      }
+    }
+  }
+}
