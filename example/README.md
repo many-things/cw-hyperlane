@@ -93,29 +93,29 @@ You can upload contract codes from local environment or from [Github](https://gi
 ### Local
 
 ```bash
-$ yarn install
+yarn install
 
 # Build contracts from local environment
-$ make optimize
+make optimize
 # Run compatibility test
-$ make check
+make check
 
 # This command will make one file.
 # - context with artifacts (default path: {project-root}/context/osmo-test-5.json)
-$ yarn cw-hpl upload local -n osmo-test-5
+yarn cw-hpl upload local -n osmo-test-5
 ```
 
 ### Remote
 
 ```bash
-$ yarn install
+yarn install
 
 # check all versions of contract codes from Github
-$ yarn cw-hpl upload remote-list -n osmo-test-5
+yarn cw-hpl upload remote-list -n osmo-test-5
 
 # This command will make one file.
 # - context with artifacts (default path: {project-root}/context/osmo-test-5.json)
-$ yarn cw-hpl upload remote v0.0.6-rc8 -n osmo-test-5
+yarn cw-hpl upload remote v0.0.6-rc8 -n osmo-test-5
 ```
 
 ## 3. Instantiate Contracts
@@ -126,7 +126,7 @@ If you configured / uploaded contract codes correctly, you can deploy contract w
 # This command will output two results.
 # - context + deployment    (default path: ./context/osmo-test-5.json)
 # - Hyperlane agent-config  (default path: ./context/osmo-test-5.config.json)
-$ yarn cw-hpl deploy -n osmo-test-5
+yarn cw-hpl deploy -n osmo-test-5
 ```
 
 ## 4. Setup Validator / Relayer config
@@ -147,50 +147,35 @@ And run with below command.
 
 ```bash
 # Merge osmo-test-5.config.json and agent-config.docker.json
-$ OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ../context/osmo-test-5.config.json) && \
+OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ../context/osmo-test-5.config.json) && \
   OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG | jq -r '.name') && \
     cat ./hyperlane/agent-config.docker.json \
       | jq ".chains.$OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG)" > merge.tmp && \
   mv merge.tmp ./hyperlane/agent-config.docker.json
 
 # Run Hyperlane with docker-compose
-$ docker compose up
+docker compose up
 
 # Run this if you want to run in background
-$ docker compose up -d
+docker compose up -d
 
 # Run this if you want to see logs
-$ docker compose logs -f
+docker compose logs -f
 
 # Run this if you want to stop
-$ docker compose down
+docker compose down
 ```
 
 ## 5. Deploy Test contracts on Sepolia
 
 ```bash
-# 1. Deploy TestRecipient contract
-$ cast send \
-    --rpc-url https://rpc.sepolia.org \
-    --private-key $SEPOLIA_PRIVATE_KEY \
-    --create $(cat ./TestRecipient.bin)
-
-# 2. Deploy MultisigIsm for validating osmo-test-5 network
-# Below address is messageIdMultisigIsmFactory came from agent-config.docker.json
-$ cast send \
-    0xFEb9585b2f948c1eD74034205a7439261a9d27DD \
-    'deploy(address[],uint8)(address)' \
-    [$(cast wallet address --private-key $SEPOLIA_PRIVATE_KEY)] 1 \ # 1 validator and 1/1 threshold
-    --rpc-url https://rpc.sepolia.org \
-    --private-key $SEPOLIA_PRIVATE_KEY
-
-# 3. Get deployed multisig ism address from receipt of above command
-$ cast send \
-    $SEPOLIA_TEST_RECIPIENT_ADDRESS \ # output of step 1
-    'setInterchainSecurityModule(address)' \
-    $SEPOLIA_MULTISIG_ISM_ADDRESS \ # output of step 2
-    --rpc-url https://rpc.sepolia.org \
-    --private-key $SEPOLIA_PRIVATE_KEY
+# if you want to use private key as signing account. then you can set `--pk` option
+# if you want to use mnemonic as signing account. then you can set `--mn` option
+# or if you want to use custom rpc endpoint. then you can set `--endpoint` option
+yarn cw-hpl-exp deploy-test-recipient \
+  --pk 'YOUR_PRIVATE_KEY'
+  --mn 'YOUR_MNEMONIC_PHRASE'
+  --endpoint 'https://rpc.sepolia.org'
 ```
 
 ## 6. Run Messaging Test
@@ -199,7 +184,7 @@ $ cast send \
 
 ```bash
 # Below address is mailbox came from agent-config.docker.json
-$ cast send \
+cast send \
     0xfFAEF09B3cd11D9b20d1a19bECca54EEC2884766 --value 1wei \
     'dispatch(uint32,bytes32,bytes)' \
     1037 $OSMOSIS_TESTNET_TEST_RECIPIENT_ADDRESS 0x68656c6c6f \ # 0x68656c6c6f -> 'hello'
@@ -211,7 +196,7 @@ $ cast send \
 
 ```bash
 # [dest-domain] [recipient-address] [message]
-$ yarn cw-hpl contract test-dispatch -n osmo-test-5 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
+yarn cw-hpl contract test-dispatch -n osmo-test-5 11155111 $SEPOLIA_TEST_RECIPIENT_ADDRESS hello
 ```
 
 ## 7. Done 🎉
