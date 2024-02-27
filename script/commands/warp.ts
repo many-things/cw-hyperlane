@@ -163,11 +163,7 @@ async function handleLink(_: any, cmd: Command) {
   const linkResp = await executeContract(deps.client, route, {
     set_route: {
       domain: opts.targetDomain,
-      route: addPad(
-        opts.warpAddress.startsWith("0x")
-          ? opts.warpAddress.slice(2)
-          : opts.warpAddress
-      ),
+      route: addPad(opts.warpAddress),
     },
   });
 
