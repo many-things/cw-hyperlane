@@ -1,0 +1,12 @@
+{
+  "type": "native",
+  "mode": "collateral",
+
+  "id": "uosmo",
+  "owner": "<signer>",
+  "config": {
+    "collateral": {
+      "denom": "uosmo"
+    }
+  }
+}
