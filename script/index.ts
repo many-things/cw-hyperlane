@@ -9,6 +9,7 @@ import {
   migrateCmd,
   walletCmd,
   warpCmd,
+  contextCmd,
 } from "./commands";
 import { config, getNetwork, getSigningClient } from "./shared/config";
 import { loadContext } from "./shared/context";
@@ -34,6 +35,7 @@ cli
   .addOption(optNetworkId)
   .hook("preAction", injectDependencies);
 
+cli.addCommand(contextCmd);
 cli.addCommand(contractCmd);
 cli.addCommand(deployCmd);
 cli.addCommand(migrateCmd);
