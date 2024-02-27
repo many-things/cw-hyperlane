@@ -1,7 +1,6 @@
 import { Command } from "commander";
 import { CONTAINER, Dependencies } from "../shared/ioc";
 import { saveAgentConfig } from "../shared/context";
-import { getNetwork } from "../shared/config";
 
 const contextCmd = new Command("context");
 
