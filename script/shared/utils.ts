@@ -5,6 +5,7 @@ import { Readable } from "stream";
 import { createHash } from "crypto";
 import { IndexedTx, StargateClient } from "@cosmjs/stargate";
 import { fromBech32 } from "@cosmjs/encoding";
+import { Client } from "./config";
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -76,3 +77,10 @@ export const waitTx = async (
   }
   return found;
 };
+
+export function orSigner<SignerType extends string | "<signer>" = "<signer>">(
+  client: Client,
+  v: SignerType
+): string {
+  return v === "<signer>" ? client.signer : v;
+}
