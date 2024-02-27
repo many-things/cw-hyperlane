@@ -5,8 +5,8 @@ import {
 } from "@cosmjs/proto-signing";
 import { Command } from "commander";
 
-import { getNetwork } from "../shared/config";
 import { getKeyPair } from "../shared/crypto";
+import { CONTAINER, Dependencies } from "../shared/ioc";
 
 const walletCmd = new Command("wallet")
   .description("Wallet commands")
@@ -16,10 +16,9 @@ walletCmd
   .command("new")
   .description("Create a new wallet")
   .action(async (_, cmd) => {
-    const opts = cmd.optsWithGlobals();
-    const network = getNetwork(opts.networkId);
+    const deps = CONTAINER.get(Dependencies);
 
-    const prefix = { prefix: network.hrp };
+    const prefix = { prefix: deps.network.hrp };
     const wallet = await DirectSecp256k1HdWallet.generate(12, prefix);
 
     const [account] = await wallet.getAccounts();
@@ -39,7 +38,7 @@ walletCmd
   .option("--mnemonic <mnemonic>", "The mnemonic of the wallet")
   .action(async (_, cmd) => {
     const opts = cmd.optsWithGlobals();
-    const network = getNetwork(opts.networkId);
+    const deps = CONTAINER.get(Dependencies);
 
     if (
       (opts.privateKey && opts.mnemonic) ||
@@ -58,10 +57,10 @@ walletCmd
               : opts.privateKey,
             "hex"
           ),
-          network.hrp
+          deps.network.hrp
         )
       : await DirectSecp256k1HdWallet.fromMnemonic(opts.mnemonic, {
-          prefix: network.hrp,
+          prefix: deps.network.hrp,
         });
 
     const [account] = await wallet.getAccounts();

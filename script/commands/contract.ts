@@ -21,9 +21,7 @@ contractCmd
   .argument("recipient-addr")
   .argument("msg-body")
   .action(async (destDomain, recipientAddr, msgBody, _, cmd) => {
-    const opts = cmd.optsWithGlobals();
-    const { ctx, client } = CONTAINER.get(Dependencies);
-    const network = getNetwork(opts.networkId);
+    const { ctx, client, network } = CONTAINER.get(Dependencies);
 
     const mailbox = ctx.deployments.core?.mailbox;
     if (!mailbox)
