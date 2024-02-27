@@ -9,6 +9,7 @@
     "build": "yarn clean && esbuild ./script --bundle --outfile=./dist/index.js --platform=node",
     "start": "yarn build && node ./dist/index.js",
     "cw-hpl": "yarn start",
+    "cw-hpl-exp": "tsx ./example",
     "dev": "tsx ./script"
   },
   "keywords": [],
@@ -27,7 +28,8 @@
     "decompress": "^4.2.1",
     "inversify": "^6.0.1",
     "readline": "^1.3.0",
-    "reflect-metadata": "^0.1.13"
+    "reflect-metadata": "^0.1.13",
+    "viem": "^2.7.15"
   },
   "devDependencies": {
     "@cosmwasm/ts-codegen": "^0.35.7",
