@@ -120,7 +120,7 @@ const deployCustomRoutingHook = async (
   };
 };
 
-const deployFallbackRoitingHook = async (
+const deployFallbackRoutingHook = async (
   networkId: string,
   ctx: Context,
   client: Client,
@@ -244,7 +244,7 @@ export const deployHook = async (
 
     // deploy fallback routing hook
     case "routing-fallback":
-      return deployFallbackRoitingHook(networkId, ctx, client, hook);
+      return deployFallbackRoutingHook(networkId, ctx, client, hook);
 
     default:
       throw new Error("invalid hook type");
