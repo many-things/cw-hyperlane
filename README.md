@@ -90,7 +90,11 @@ cargo llvm-cov --workspace --exclude hpl-tests
 │   ├── pausable
 │   └── router
 │
-├── scripts # useful scripts for development (e.g. code uploading. contract deployment)
+├── context # predeployed contract information
+│
+├── example # example of contract deployment & integration
+│
+├── script # useful scripts for development (e.g. code uploading. contract deployment)
 │
 └── ts
     └── sdk # typescript sdk for contract integration. (auto generated via ts-codegen)
