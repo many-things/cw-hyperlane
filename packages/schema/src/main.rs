@@ -37,6 +37,30 @@ pub fn main() {
     }
 
     {
+        use hpl_hook::aggregate::*;
+
+        apis.push(generate_api! {
+            name: "hpl_hook_aggregate",
+            instantiate: InstantiateMsg,
+            migrate: Empty,
+            execute: ExecuteMsg,
+            query: QueryMsg,
+        });
+    }
+
+    {
+        use hpl_hook::fee::*;
+
+        apis.push(generate_api! {
+            name: "hpl_hook_fee",
+            instantiate: InstantiateMsg,
+            migrate: Empty,
+            execute: ExecuteMsg,
+            query: QueryMsg,
+        });
+    }
+
+    {
         use hpl_hook::merkle::*;
 
         apis.push(generate_api! {
@@ -113,6 +137,30 @@ pub fn main() {
 
         apis.push(generate_api! {
             name: "hpl_igp_oracle",
+            instantiate: InstantiateMsg,
+            migrate: Empty,
+            execute: ExecuteMsg,
+            query: QueryMsg,
+        });
+    }
+
+    {
+        use hpl_ism::aggregate::*;
+
+        apis.push(generate_api! {
+            name: "hpl_ism_aggregate",
+            instantiate: InstantiateMsg,
+            migrate: Empty,
+            execute: ExecuteMsg,
+            query: QueryMsg,
+        });
+    }
+
+    {
+        use hpl_ism::pausable::*;
+
+        apis.push(generate_api! {
+            name: "hpl_ism_pausable",
             instantiate: InstantiateMsg,
             migrate: Empty,
             execute: ExecuteMsg,
