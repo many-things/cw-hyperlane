@@ -1,7 +1,7 @@
-import { Hex } from "viem";
-
-import { TestRecipient } from "../abi/TestRecipient";
-import { StaticMessageIdMultisigIsmFactory } from "../abi/StaticMessageIdMultisigIsmFactory";
+import {
+  TestRecipient__factory,
+  StaticMessageIdMultisigIsmFactory__factory,
+} from "@hyperlane-xyz/core";
 
 import { CONTAINER, Dependencies } from "./ioc";
 import { expectNextContractAddr, logTx } from "./utils";
@@ -24,8 +24,8 @@ async function deployTestRecipient() {
   // deploy test recipient
   {
     const tx = await exec.deployContract({
-      abi: TestRecipient.abi,
-      bytecode: TestRecipient.bytecode.object as Hex,
+      abi: TestRecipient__factory.abi,
+      bytecode: TestRecipient__factory.bytecode,
       args: [],
     });
     logTx("Deploy test recipient", tx);
@@ -34,7 +34,7 @@ async function deployTestRecipient() {
 
   // deploy multisig ism
   const multisigIsmAddr = await query.readContract({
-    abi: StaticMessageIdMultisigIsmFactory.abi,
+    abi: StaticMessageIdMultisigIsmFactory__factory.abi,
     address: HYP_MULTSIG_ISM_FACTORY,
     functionName: "getAddress",
     args: [[account.address], 1],
@@ -43,7 +43,7 @@ async function deployTestRecipient() {
 
   {
     const tx = await exec.writeContract({
-      abi: StaticMessageIdMultisigIsmFactory.abi,
+      abi: StaticMessageIdMultisigIsmFactory__factory.abi,
       address: HYP_MULTSIG_ISM_FACTORY,
       functionName: "deploy",
       args: [[account.address], 1],
@@ -57,7 +57,7 @@ async function deployTestRecipient() {
   console.log(`Setting ism of test recipient to "${multisigIsmAddr.green}"...`);
   {
     const tx = await exec.writeContract({
-      abi: TestRecipient.abi,
+      abi: TestRecipient__factory.abi,
       address: testRecipientAddr,
       functionName: "setInterchainSecurityModule",
       args: [multisigIsmAddr],
