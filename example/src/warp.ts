@@ -1,7 +1,7 @@
 import { Command } from "commander";
-import { Hex, isAddress, parseEther } from "viem";
+import { isAddress } from "viem";
 
-import { HypERC20 } from "../abi/HypERC20";
+import { HypERC20__factory } from "@hyperlane-xyz/core";
 
 import { HYP_MAILBOX } from "./constants";
 import { CONTAINER, Dependencies } from "./ioc";
@@ -43,8 +43,8 @@ async function deployWarpRoute() {
 
   {
     const tx = await exec.deployContract({
-      abi: HypERC20.abi,
-      bytecode: HypERC20.bytecode.object as Hex,
+      abi: HypERC20__factory.abi,
+      bytecode: HypERC20__factory.bytecode,
       args: [6, HYP_MAILBOX],
     });
     logTx("Deploying HypERC20Osmo", tx);
@@ -53,7 +53,7 @@ async function deployWarpRoute() {
 
   {
     const tx = await exec.writeContract({
-      abi: HypERC20.abi,
+      abi: HypERC20__factory.abi,
       address: hypErc20OsmoAddr,
       functionName: "initialize",
       args: [0n, "Hyperlane Bridged Osmosis", "OSMO"],
@@ -77,7 +77,7 @@ async function linkWarpRoute(warp: string, domain: string, route: string) {
   if (!isAddress(warp)) throw new Error("Invalid warp address");
 
   const tx = await exec.writeContract({
-    abi: HypERC20.abi,
+    abi: HypERC20__factory.abi,
     address: warp,
     functionName: "enrollRemoteRouter",
     args: [parseInt(domain), `0x${extractByte32AddrFromBech32(route)}`],
@@ -94,7 +94,7 @@ async function transferWarpRoute(warp: string, domain: string, to: string) {
   if (!isAddress(warp)) throw new Error("Invalid warp address");
 
   const tx = await exec.writeContract({
-    abi: HypERC20.abi,
+    abi: HypERC20__factory.abi,
     address: warp,
     functionName: "transferRemote",
     args: [
