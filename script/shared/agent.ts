@@ -22,7 +22,7 @@ export type HplAgentConfig = {
     chunk: number;
   };
   blocks: {
-    reorgPeriod: 1; // instant finality ⭐️
+    reorgPeriod: 0; // instant finality ⭐️
   };
 
   mailbox: string; // hexed
