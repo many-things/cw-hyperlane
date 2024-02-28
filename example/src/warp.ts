@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { Hex, isAddress } from "viem";
+import { Hex, isAddress, parseEther } from "viem";
 
 import { HypERC20 } from "../abi/HypERC20";
 
@@ -20,6 +20,13 @@ warpCmd
   .argument("<domain>", "destination domain to set")
   .argument("<route>", "destination address to set")
   .action(linkWarpRoute);
+
+warpCmd
+  .command("transfer")
+  .argument("<warp>", "address of warp route")
+  .argument("<domain>", "destination domain to transfer")
+  .argument("<to>", "address to transfer")
+  .action(transferWarpRoute);
 
 export { warpCmd };
 
@@ -76,5 +83,26 @@ async function linkWarpRoute(warp: string, domain: string, route: string) {
     args: [parseInt(domain), `0x${extractByte32AddrFromBech32(route)}`],
   });
   logTx(`Linking warp route with external chain ${domain}`, tx);
+  await query.waitForTransactionReceipt({ hash: tx });
+}
+
+async function transferWarpRoute(warp: string, domain: string, to: string) {
+  const {
+    provider: { exec, query },
+  } = CONTAINER.get(Dependencies);
+
+  if (!isAddress(warp)) throw new Error("Invalid warp address");
+
+  const tx = await exec.writeContract({
+    abi: HypERC20.abi,
+    address: warp,
+    functionName: "transferRemote",
+    args: [
+      parseInt(domain),
+      `0x${extractByte32AddrFromBech32(to)}`,
+      1_000_000n,
+    ],
+  });
+  logTx(`Transferring warp route with external chain ${domain}`, tx);
   await query.waitForTransactionReceipt({ hash: tx });
 }
