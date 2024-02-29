@@ -57,25 +57,10 @@ deploy:
 
   hooks:
     default:
-      type: mock
-
-    required:
       type: aggregate
-      # if you keep it as "<signer>", the script will identify this as deployer address
       owner: <signer>
       hooks:
         - type: merkle
-
-        - type: pausable
-          owner: <signer>
-          paused: false
-
-        - type: fee
-          owner: <signer>
-          fee:
-            # if you didn't set the denom, it will be set as gas denom of network config
-            denom: uosmo
-            amount: 1
 
         - type: igp
           owner: <signer>
@@ -84,6 +69,19 @@ deploy:
               exchange_rate: 3000
               gas_price: 5000
           default_gas_usage: 30000
+
+    required:
+      type: aggregate
+      owner: <signer>
+      hooks:
+        - type: pausable
+          owner: <signer>
+          paused: false
+
+        - type: fee
+          owner: <signer>
+          fee:
+            amount: 1
 ```
 
 ## 2. Upload Contract Codes
@@ -135,35 +133,38 @@ Replace every `{sepolia_private_key}` and `{osmosis_private_key}` from files bel
 
 - Sepolia Testnet (`{sepolia_private_key}`)
 
-* [./hyperlane/relayer.json](./hyperlane/relayer.json)
-* [./hyperlane/validator.sepolia.json](./hyperlane/validator.sepolia.json)
+  - [./example/hyperlane/relayer.json](./example/hyperlane/relayer.json)
+  - [./example/hyperlane/validator.sepolia.json](./example/hyperlane/validator.sepolia.json)
 
 - Osmosis Testnet (`{osmosis_private_key}`)
 
-* [./hyperlane/relayer.json](./hyperlane/relayer.json)
-* [./hyperlane/validator.osmotest5.json](./hyperlane/validator.osmotest5.json)
+  - [./example/hyperlane/relayer.json](./example/hyperlane/relayer.json)
+  - [./example/hyperlane/validator.osmotest5.json](./example/hyperlane/validator.osmotest5.json)
 
 And run with below command.
 
 ```bash
 # Merge osmo-test-5.config.json and agent-config.docker.json
-$ OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ../context/osmo-test-5.config.json) && \
+OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ./context/osmo-test-5.config.json) && \
   OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG | jq -r '.name') && \
-    cat ./hyperlane/agent-config.docker.json \
+    cat ./example/hyperlane/agent-config.docker.json \
       | jq ".chains.$OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG)" > merge.tmp && \
-  mv merge.tmp ./hyperlane/agent-config.docker.json
+  mv merge.tmp ./example/hyperlane/agent-config.docker.json
+
+# Change workdir to example
+cd example
 
 # Run Hyperlane with docker-compose
-$ docker compose up
+docker compose up
 
 # Run this if you want to run in background
-$ docker compose up -d
+docker compose up -d
 
 # Run this if you want to see logs
-$ docker compose logs -f
+docker compose logs -f
 
 # Run this if you want to stop
-$ docker compose down
+docker compose down
 ```
 
 ## 5. Deploy Test contracts on Sepolia

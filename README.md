@@ -10,6 +10,7 @@
 - [Prerequisites](#prerequisites)
 - [How to build](#how-to-build)
 - [How to test](#how-to-test)
+- [How to deploy](#how-to-deploy)
 
 ## Architecture
 
@@ -37,11 +38,7 @@ cargo test --workspace --exclude hpl-tests
 cargo llvm-cov --workspace --exclude hpl-tests
 ```
 
-## How to deploy
-
-[Go to README of ./example](./example/README.md)
-
-[Go to README of ./script](./script/README.md)
+## [How to deploy](./DEPLOYMENT.md)
 
 ## Project Structure
 
