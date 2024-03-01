@@ -1,0 +1,31 @@
+{
+  "db": "/etc/data/db",
+  "relayChains": "osmotest5,sepolia",
+  "allowLocalCheckpointSyncers": "true",
+  "gasPaymentEnforcement": [{ "type": "none" }],
+  "whitelist": [
+    {
+      "origindomain": [11155111],
+      "destinationDomain": [1304]
+    },
+    {
+      "origindomain": [1304],
+      "destinationDomain": [11155111]
+    }
+  ],
+  "chains": {
+    "sepolia": {
+      "signer": {
+        "type": "hexKey",
+        "key": "{sepolia_private_key}"
+      }
+    },
+    "osmotest5": {
+      "signer": {
+        "type": "cosmosKey",
+        "key": "{osmosis_private_key}",
+        "prefix": "osmo"
+      }
+    }
+  }
+}
