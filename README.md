@@ -1,77 +1,94 @@
-# cw-hyperlane
+# CW Hyperlane
 
 [![codecov](https://codecov.io/gh/many-things/cw-hyperlane/branch/main/graph/badge.svg?token=SGYE7FBTAO)](https://codecov.io/gh/many-things/cw-hyperlane)
 [![crates.io](https://img.shields.io/crates/v/hpl-interface)](https://crates.io/crates/hpl-interface)
 
-> This project is under active development...!
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [How to build](#how-to-build)
+- [How to test](#how-to-test)
+- [How to deploy](#how-to-deploy)
+
+## Architecture
+
+![Architecture](./asset/hyperlane-all.png)
 
 ## Prerequisites
 
 - rust (wasm32-wasm32-unknown target)
 - go 1.20 or higher
-- grcov
+- llvm-cov
 
 ## How to build
 
 ```bash
-cargo build
+make install-dev
 
-cargo wasm
+make build
 ```
 
 ## How to test
 
 ```bash
-# testing
-cargo test
+cargo test --workspace --exclude hpl-tests
 
-# coverage
-export RUSTFLAGS="-Cinstrument-coverage"
-export LLVM_PROFILE_FILE="eddy-%p-%m.profraw"
-
-cargo build
-
-cargo test
-
-grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./target/debug/coverage/
+cargo llvm-cov --workspace --exclude hpl-tests
 ```
 
-## Deploy Sequence
+## [How to deploy](./DEPLOYMENT.md)
 
-1. Deploy [Mailbox](./contracts/core/mailbox)
+## Project Structure
 
-2. Deploy [Validator Announce](./contracts/core/va)
-
-3. Deploy hooks to use with Mailbox (default hook, required hook)
-
-   - [interchain gas paymaster (IGP)](./contracts/igps/core)
-
-   - [IGP oracle](./contracts/igps/oracle)
-
-   - [merkle](./contracts/hooks/merkle)
-
-   - [pausable](./contracts/hooks/pausable)
-
-   - [domain routing](./contracts/hooks/routing)
-
-   - [domain routing custom](./contracts/hooks/routing-custom)
-
-   - [domain routing fallback](./contracts/hooks/routing-fallback)
-
-   - For testing: [mock hook](./contracts/mocks/mock-hook)
-
-4. Deploy isms to use with Mailbox (defualt ism)
-
-   - [multisig ism](./contracts/isms/multisig)
-
-   - [routing ism](./contracts/isms/routing)
-
-   - [aggregate ism](./contracts/isms/aggregate)
-
-   - [pausable](./contracts/isms/pausable)
-
-   - For testing: [mock ism](./contracts/mocks/mock-ism)
-
-5. Set deployed hooks and isms to Mailbox
-
-6. Deployment for core protocol is done! You can deploy some contracts on the top.
+```text
+├── contracts
+│   │
+│   ├── core
+│   │   ├── mailbox
+│   │   └── va
+│   │
+│   ├── hooks
+│   │   ├── aggregate
+│   │   ├── fee # protocol fee
+│   │   ├── merkle
+│   │   ├── pausable
+│   │   ├── routing
+│   │   ├── routing-custom
+│   │   └── routing-fallback
+│   │
+│   ├── igps # also this is a part of `hook`
+│   │   ├── core
+│   │   └── oracle
+│   │
+│   ├── isms
+│   │   ├── aggregate
+│   │   ├── multisig
+│   │   ├── pausable
+│   │   └── routing
+│   │
+│   ├── mocks # for testing
+│   │   ├── mock-hook
+│   │   ├── mock-ism
+│   │   └── mock-msg-receiver
+│   │
+│   └── warp
+│       ├── cw20
+│       └── native
+│
+├── integration-test
+│
+├── packages
+│   │
+│   ├── connection # same as `MailboxClient` of evm implementation
+│   ├── interface # package for contract interfaces (external)
+│   ├── ownable
+│   ├── pausable
+│   └── router
+│
+├── scripts # useful scripts for development (e.g. code uploading. contract deployment)
+│
+└── ts
+    └── sdk # typescript sdk for contract integration. (auto generated via ts-codegen)
+```

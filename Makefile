@@ -8,7 +8,7 @@ clean:
 install: install-dev
 
 install-dev: install-prod
-	cargo install --force cw-optimizoor beaker
+	cargo install --force cargo-llvm-cov cw-optimizoor beaker
 
 install-prod:
 	cargo install --force cosmwasm-check

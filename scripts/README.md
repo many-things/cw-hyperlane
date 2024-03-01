@@ -1,85 +1,72 @@
-# Deploy Scripts
+# cw-hpl
 
 ## Prerequisites
 
-- [pnpm](https://pnpm.io/)
+- \>= Node v20
+- \>= Yarn v4.1
 
 ## Configuration
 
-Create a `config.yaml` file in the root directory of the project. Default option for Osmosis testnet is following.
+Create a `config.yaml` file in the root directory of the project.
 
-Also, you can check the full list of options in the [config.ts](./src/config.ts) file.
+You can check the [config.example.yaml](../config.example.yaml) file to see all supported options. And also you can check the full list of options in the [config.ts](./src/config.ts) file.
 
-```yaml
-network:
-  id: "osmo-test-5"
-  hrp: "osmo"
-  url: "https://rpc.osmotest5.osmosis.zone/"
-  gas:
-    price: "0.025"
-    denom: "uosmo"
-  domain: 1037 # osmo-test-5 -> ascii / decimal -> sum
-
-signer: { PRIVATE_KEY }
-
-deploy:
-  ism:
-    type: multisig
-    owner: { SIGNER_ADDRESS }
-    validators:
-      5:
-        addrs:
-          - { SIGNER_ETH_ADDRESS }
-        threshold: 1
-      420:
-        addrs:
-          - { SIGNER_ETH_ADDRESS }
-        threshold: 1
-      421613:
-        addrs:
-          - { SIGNER_ETH_ADDRESS }
-        threshold: 1
-
-  hooks:
-    default:
-      type: mock
-
-    required:
-      type: aggregate
-      owner: { SIGNER_ADDRESS }
-      hooks:
-        - type: merkle
-
-        - type: pausable
-          owner: { SIGNER_ADDRESS }
-          paused: false
-        - type: fee
-          owner: { SIGNER_ADDRESS }
-          fee:
-            denom: uosmo
-            amount: 1
-```
+After setup your config file, you can use cw-hpl command-line toolkit from now.
 
 ## Usage
 
-### Uploading Contract Codes
+### Contract
 
 ```bash
-pnpm upload
+# List all supported contracts
+$ yarn cw-hpl contract list
+
+# Test dispatch to a mailbox (needs to run 'cw-hpl deploy' first)
+$ yarn cw-hpl contract test-dispatch
 ```
 
-### Deploying Contracts
+### Deploy
 
 ```bash
-pnpm deploy
+# Deploy all contracts based on setting in config file
+$ yarn cw-hpl deploy
+```
+
+### Upload
+
+```bash
+# Upload contract codes that from local environment
+$ yarn cw-hpl upload local
+
+# Fetch & Upload contract codes from Github
+$ yarn cw-hpl upload remote
+
+# List all versions of contract codes from Github
+$ yarn cw-hpl upload remote-list
 ```
 
 ## Maintaining
 
 ### Adding a new contract
 
-1. Add a new module with actual contract output name in the [contracts](./src/contracts/) directory.
-2. Class name should be upper camel case conversion of the contract name.
-3. Import new module [contracts/index.ts](./src/index.ts) file.
-4. If a new contract is ISM or Hook, add a new option to config type.
-5. Add a new field to the Contracts class in the [deploy.ts](./src/deploy.ts) file.
+- ism
+
+  1. Append [contractNames](./shared/constants.ts) with new contract name
+  2. Add new ISM type to [ISMType](./shared/config.ts) and [ContextIsm](./shared/context.ts)
+  3. Write deploy script for new ISM in [ism.ts](./deploy/ism.ts)
+  4. Done!
+
+- hook
+
+  1. Append [contractNames](./shared/constants.ts) with new contract name
+  2. Add new Hook type to [HookType](./shared/config.ts) and [ContextHook](./shared/context.ts)
+  3. Write deploy script for new Hook in [hook.ts](./deploy/hook.ts)
+  4. Done!
+
+- others
+
+  1. Append [contractNames](./shared/constants.ts) with new contract name
+  2. Add new config type to [Config](./shared/config.ts) if it needs to be configured.
+  3. Add new contract field to [ContextDeployment](./shared/context.ts)
+  4. Write deploy script for new contract in [deploy.ts](./commands/deploy.ts)
+  5. Done!
