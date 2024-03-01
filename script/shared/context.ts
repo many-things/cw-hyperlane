@@ -3,8 +3,6 @@ import path from "path";
 
 import { ContractNames } from "./contract";
 import { defaultContextPath } from "./constants";
-import { HplAgentConfig, fromContext } from "./agent";
-import { Config } from "./config";
 
 type typed<T extends ContractNames> = { type: T; address: string };
 
@@ -92,17 +90,4 @@ export function saveContext(
   fs.mkdirSync(contextPath, { recursive: true });
   const fileName = path.join(contextPath, `${network}.json`);
   fs.writeFileSync(fileName, JSON.stringify(context, null, 2));
-}
-
-export async function saveAgentConfig(
-  network: Config["networks"][number],
-  context: Context,
-  { contextPath }: { contextPath: string } = {
-    contextPath: defaultContextPath,
-  }
-): Promise<HplAgentConfig> {
-  const agentConfig = await fromContext(network, context);
-  const fileName = path.join(contextPath, `${network.id}.config.json`);
-  fs.writeFileSync(fileName, JSON.stringify(agentConfig, null, 2));
-  return agentConfig;
 }
