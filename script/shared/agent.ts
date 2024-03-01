@@ -81,7 +81,7 @@ export async function fromContext(
       chunk: 10_000,
     },
     blocks: {
-      reorgPeriod: 1,
+      reorgPeriod: 0,
     },
 
     // contract addresses
