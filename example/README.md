@@ -135,13 +135,13 @@ Replace every `{sepolia_private_key}` and `{osmosis_private_key}` from files bel
 
 - Sepolia Testnet (`{sepolia_private_key}`)
 
-* [./hyperlane/relayer.json](./hyperlane/relayer.json)
-* [./hyperlane/validator.sepolia.json](./hyperlane/validator.sepolia.json)
+  - [./hyperlane/relayer.json](./hyperlane/relayer.json)
+  - [./hyperlane/validator.sepolia.json](./hyperlane/validator.sepolia.json)
 
 - Osmosis Testnet (`{osmosis_private_key}`)
 
-* [./hyperlane/relayer.json](./hyperlane/relayer.json)
-* [./hyperlane/validator.osmotest5.json](./hyperlane/validator.osmotest5.json)
+  - [./hyperlane/relayer.json](./hyperlane/relayer.json)
+  - [./hyperlane/validator.osmotest5.json](./hyperlane/validator.osmotest5.json)
 
 And run with below command.
 
