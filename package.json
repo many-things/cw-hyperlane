@@ -1,6 +1,5 @@
 {
   "name": "@many-things/cw-hyperlane",
-  "packageManager": "yarn@4.1.0",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +7,6 @@
     "clean": "rm -rf dist",
     "build": "yarn clean && esbuild ./script --bundle --outfile=./dist/index.js --platform=node",
     "start": "yarn build && node ./dist/index.js",
-    "cw-hpl": "yarn start",
     "dev": "tsx ./script"
   },
   "keywords": [],
