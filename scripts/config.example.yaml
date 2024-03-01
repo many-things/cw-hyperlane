@@ -1,8 +1,0 @@
-network:
-  id: "localosmosis"
-  hrp: "osmo"
-  url: "http://localhost:26657"
-  gas: "0.025uosmo"
-  domain: "2303"
-
-signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef

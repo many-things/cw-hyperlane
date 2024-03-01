@@ -28,3 +28,15 @@ Cargo.lock
 .idea/
 
 **/*.profraw
+
+# Script setup
+
+config.yaml
+config.*.yaml
+!config.example.yaml
+
+context/*.config.json
+
+tmp/
+dist/
+node_modules/
