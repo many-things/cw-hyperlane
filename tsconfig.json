@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["es6", "es2021"],
+    "types": ["reflect-metadata", "node"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "strictPropertyInitialization": false,
+    "outDir": "dist",
+    "declaration": true /* Skip type checking all .d.ts files. */
+  },
+  "include": ["script/**/*.ts"]
+}
