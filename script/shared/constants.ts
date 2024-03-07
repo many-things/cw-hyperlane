@@ -26,3 +26,10 @@ export const contractNames = [
   "hpl_warp_cw20",
   "hpl_warp_native",
 ];
+
+export const REMOTE_REPO_NAME = "many-things/cw-hyperlane";
+export const REMOTE_MIN_VERSION = "v0.0.6-rc8";
+
+export const RELEASE_API_URL = `https://api.github.com/repos/${REMOTE_REPO_NAME}/releases`;
+export const RELEASE_ARTIFACT_URL = (tag: string) =>
+  `https://github.com/${REMOTE_REPO_NAME}/releases/download/${tag}/cw-hyperlane-${tag}.zip`;

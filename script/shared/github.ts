@@ -3,14 +3,11 @@ import path from "path";
 import decompress from "decompress";
 
 import { downloadFile } from "./utils";
-
-const RELEASE_API_URL =
-  "https://api.github.com/repos/many-things/cw-hyperlane/releases";
-
-const RELEASE_ARTIFACT_URL = (tag: string) =>
-  `https://github.com/many-things/cw-hyperlane/releases/download/${tag}/cw-hyperlane-${tag}.zip`;
-
-export const MIN_RELEASE_VERSION = "v0.0.6-rc8";
+import {
+  RELEASE_API_URL,
+  RELEASE_ARTIFACT_URL,
+  REMOTE_MIN_VERSION,
+} from "./constants";
 
 interface ReleaseApiResp {
   tag_name: string;
@@ -23,7 +20,7 @@ export const getReleases = async (): Promise<Record<string, string>> => {
   return Object.fromEntries(
     releases
       .map((v) => v.tag_name)
-      .filter((v) => v >= MIN_RELEASE_VERSION)
+      .filter((v) => v >= REMOTE_MIN_VERSION)
       .map((v) => [v, RELEASE_ARTIFACT_URL(v)])
   );
 };
