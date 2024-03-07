@@ -1,23 +1,32 @@
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { CodeDetails } from "@cosmjs/cosmwasm-stargate";
 
 import { CONTAINER, Dependencies } from "../shared/ioc";
 import { ContractNames } from "../shared/contract";
 import { ContextHook, ContextIsm } from "../shared/context";
 import { askQuestion, waitTx } from "../shared/utils";
+import { contractNames } from "../shared/constants";
 
 export const migrateCmd = new Command("migrate")
   .description("Migrate contracts")
   .configureHelp({ showGlobalOptions: true })
-  .option("-c --contracts <contracts...>", "specify contracts to migrate")
+  .addOption(
+    new Option(
+      "-c --contracts <contracts...>",
+      "specify contract types to migrate",
+    ).choices(contractNames),
+  )
   .action(handleMigrate);
 
-async function handleMigrate(_: any, cmd: any) {
-  const { contracts } = cmd.optsWithGlobals();
+async function handleMigrate(_: object, cmd: Command) {
+  const { contracts } = cmd.optsWithGlobals() as {
+    networkId: string;
+    contracts: ContractNames[];
+  };
 
   const { ctx, client } = CONTAINER.get(Dependencies);
 
-  const flatten = [
+  const flattenedContracts = [
     ...flattenIsm(ctx.deployments.isms),
     ...flattenHook(ctx.deployments.hooks?.default),
     ...flattenHook(ctx.deployments.hooks?.required),
@@ -33,13 +42,13 @@ async function handleMigrate(_: any, cmd: any) {
 
   const withContractInfo = await Promise.all(
     (contracts
-      ? flatten.filter((v) => contracts.includes(v.type))
-      : flatten
+      ? flattenedContracts.filter((v) => contracts.includes(v.type))
+      : flattenedContracts
     ).map(async (v) => {
       const contractInfo = await client.wasm.getContract(v.address);
       const codeInfo = await client.wasm.getCodeDetails(contractInfo.codeId);
       return { ...v, contractInfo, codeInfo };
-    })
+    }),
   );
 
   const artifacts = Object.fromEntries(
@@ -47,19 +56,27 @@ async function handleMigrate(_: any, cmd: any) {
       Object.entries(ctx.artifacts).map(async ([contractName, codeId]) => {
         const codeInfo = await client.wasm.getCodeDetails(codeId);
         return [contractName, codeInfo];
-      })
-    )
+      }),
+    ),
   ) as Record<ContractNames, CodeDetails>;
 
   const toMigrate = withContractInfo.filter(
     (v) =>
       v.codeInfo.id !== ctx.artifacts[v.type] &&
-      v.codeInfo.checksum !== artifacts[v.type].checksum
+      v.codeInfo.checksum !== artifacts[v.type].checksum,
   );
 
   if (toMigrate.length === 0) {
     console.log("No changes detected.");
     return;
+  }
+
+  for (const migrate of toMigrate) {
+    console.log(
+      `${migrate.type} needs migration from`,
+      `${migrate.codeInfo.id} to ${artifacts[migrate.type].id}`,
+      `(contract: ${migrate.address})`,
+    );
   }
 
   if (!(await askQuestion("Do you want to proceed? (y/n)"))) {
@@ -69,12 +86,14 @@ async function handleMigrate(_: any, cmd: any) {
   console.log("Proceeding to migrate...");
 
   for (const migrate of toMigrate) {
+    console.log(`Migrating ${migrate.type}...`);
+
     const res = await client.wasm.migrate(
       client.signer,
       migrate.address,
       artifacts[migrate.type].id,
       {},
-      "auto"
+      "auto",
     );
     await waitTx(res.transactionHash, client.stargate);
     console.log(`${migrate.type} migrated successfully`);
