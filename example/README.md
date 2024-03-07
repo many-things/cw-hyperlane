@@ -208,7 +208,7 @@ yarn cw-hpl-exp warp deploy --pk 'YOUR_PRIVATE_KEY'
 # deploy warp route on osmo-test-5
 yarn cw-hpl warp deploy create ./warp/uosmo.json -n osmo-test-5
 
-# regiter osmo-test-5 warp route to sepolia warp route
+# register osmo-test-5 warp route to sepolia warp route
 yarn cw-hpl-exp warp link $hypErc20Osmo 1037 $OSMOSIS_WARP_ROUTE_ADDRESS --pk 'YOUR_PRIVATE_KEY'
 
 # also register sepolia warp route to osmo-test-5 warp route
