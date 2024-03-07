@@ -54,7 +54,7 @@ export type ContractInfoResp = {
       tx_index: string;
     };
     ibc_por_id?: string;
-    extension?: any;
+    extension?: object;
   };
 };
 

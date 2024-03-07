@@ -12,8 +12,8 @@ export const deployCmd = new Command('deploy')
   .configureHelp({ showGlobalOptions: true })
   .action(handleDeploy);
 
-async function handleDeploy(_: any, cmd: any) {
-  const opts = cmd.optsWithGlobals();
+async function handleDeploy(_: object, cmd: Command) {
+  const opts = cmd.optsWithGlobals() as { networkId: string };
   const { ctx, client } = CONTAINER.get(Dependencies);
 
   ctx.deployments = ctx.deployments || {};
@@ -23,28 +23,40 @@ async function handleDeploy(_: any, cmd: any) {
   // TODO: deploy warp
   ctx.deployments.test = await deployTest(opts, ctx, client);
 
+  if (!ctx.deployments.core?.mailbox)
+    throw new Error('deployed Mailbox contract not found on context');
+
+  if (!ctx.deployments.isms)
+    throw new Error('deployed ISM contract not found on context');
+
+  if (!ctx.deployments.hooks?.default)
+    throw new Error('deployed Default Hook contract not found on context');
+
+  if (!ctx.deployments.hooks?.required)
+    throw new Error('deployed Required Hook contract not found on context');
+
   await executeMultiMsg(client, [
     {
-      contract: ctx.deployments.core?.mailbox!,
+      contract: ctx.deployments.core.mailbox,
       msg: {
         set_default_ism: {
-          ism: ctx.deployments.isms?.address!,
+          ism: ctx.deployments.isms.address,
         },
       },
     },
     {
-      contract: ctx.deployments.core?.mailbox!,
+      contract: ctx.deployments.core.mailbox,
       msg: {
         set_default_hook: {
-          hook: ctx.deployments.hooks?.default!.address,
+          hook: ctx.deployments.hooks.default.address,
         },
       },
     },
     {
-      contract: ctx.deployments.core?.mailbox!,
+      contract: ctx.deployments.core.mailbox,
       msg: {
         set_required_hook: {
-          hook: ctx.deployments.hooks?.required!.address,
+          hook: ctx.deployments.hooks.required.address,
         },
       },
     },

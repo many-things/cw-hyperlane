@@ -11,7 +11,7 @@ export async function deployContract<T extends ContractNames>(
   ctx: Context,
   { wasm, stargate, signer }: Client,
   contractName: T,
-  initMsg: any,
+  initMsg: object,
 ): Promise<{ type: T; address: string }> {
   console.log(`Deploying ${contractName}`);
 
@@ -35,7 +35,7 @@ export async function deployContract<T extends ContractNames>(
 export async function executeContract(
   { wasm, stargate, signer }: Client,
   deployment: { type: ContractNames; address: string },
-  msg: any,
+  msg: object,
   funds: { amount: string; denom: string }[] = [],
 ): Promise<IndexedTx> {
   console.log(`Executing ${deployment.type}'s ${Object.keys(msg)[0]}`);
@@ -58,7 +58,7 @@ export async function executeContract(
 
 export async function executeMultiMsg(
   { wasm, stargate, signer }: Client,
-  msgs: { contract: { type: ContractNames; address: string }; msg: any }[],
+  msgs: { contract: { type: ContractNames; address: string }; msg: object }[],
 ): Promise<IndexedTx> {
   const long = msgs
     .map((v) => v.contract.type.length)

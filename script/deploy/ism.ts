@@ -47,7 +47,7 @@ export async function deployIsm(
 ): Promise<ContextIsm> {
   switch (ism.type) {
     // deploy multisig ism
-    case 'multisig':
+    case 'multisig': {
       const multisig = await deployContract(ctx, client, 'hpl_ism_multisig', {
         owner: ism.owner === '<signer>' ? client.signer : ism.owner,
       });
@@ -69,9 +69,10 @@ export async function deployIsm(
       );
 
       return multisig;
+    }
 
     // deploy aggregate ism
-    case 'aggregate':
+    case 'aggregate': {
       const aggr = [];
       for (const v of ism.isms) {
         aggr.push(await deployIsm(ctx, client, v));
@@ -83,12 +84,15 @@ export async function deployIsm(
       });
 
       return { ...aggregate, isms: aggr };
+    }
 
     // deploy routing ism
-    case 'routing':
+    case 'routing': {
       return deployRoutingIsm(ctx, client, ism);
+    }
 
-    default:
+    default: {
       throw new Error('invalid ism type');
+    }
   }
 }

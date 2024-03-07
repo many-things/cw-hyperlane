@@ -15,17 +15,23 @@ export async function fromContext(
 ): Promise<AgentConfig> {
   const { hooks, core } = context.deployments;
 
-  const mailboxAddr = core?.mailbox?.address!;
+  // FIXME: use zod to validate the context
+  if (!core?.mailbox) throw new Error('Mailbox contract not found');
+  if (!core?.validator_announce)
+    throw new Error('Validator announce contract not found');
+  if (!hooks?.default || !hooks?.required)
+    throw new Error('No hooks found on this context');
+
+  const mailboxAddr = core.mailbox.address;
   const mailboxContractInfo = await getContractInfo(network, mailboxAddr);
 
   const igp =
-    findHook(hooks?.default!, 'hpl_igp') ||
-    findHook(hooks?.required!, 'hpl_igp');
+    findHook(hooks.default, 'hpl_igp') || findHook(hooks.required, 'hpl_igp');
   if (!igp) throw new Error('no igp on this context');
 
   const merkleTreeHook =
-    findHook(hooks?.default!, 'hpl_hook_merkle') ||
-    findHook(hooks?.required!, 'hpl_hook_merkle');
+    findHook(hooks.default, 'hpl_hook_merkle') ||
+    findHook(hooks.required, 'hpl_hook_merkle');
   if (!merkleTreeHook) throw new Error('no merkle tree hook on this context');
 
   const agent: AgentConfig = {
@@ -60,8 +66,8 @@ export async function fromContext(
         },
 
         // contract addresses
-        mailbox: fromBech32(core?.mailbox?.address!),
-        validatorAnnounce: fromBech32(core?.validator_announce?.address!),
+        mailbox: fromBech32(core.mailbox.address),
+        validatorAnnounce: fromBech32(core.validator_announce.address),
         interchainGasPaymaster: fromBech32(igp.address),
         merkleTreeHook: fromBech32(merkleTreeHook.address),
       },

@@ -72,7 +72,13 @@ export function loadContext(
     const fileName = path.join(contextPath, `${network}.json`);
     const result = fs.readFileSync(fileName, 'utf-8');
     return JSON.parse(result.toString()) as Context;
-  } catch (err) {}
+  } catch (err) {
+    console.error(
+      'Failed to load context. Returning an empty context object.',
+      'err:',
+      err,
+    );
+  }
 
   return {
     artifacts: {},

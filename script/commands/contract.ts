@@ -25,7 +25,10 @@ contractCmd
     const { ctx, client } = CONTAINER.get(Dependencies);
     const network = getNetwork(opts.networkId);
 
-    const mailbox = ctx.deployments.core?.mailbox!;
+    if (!ctx.deployments.core?.mailbox)
+      throw new Error('Mailbox contract not found');
+
+    const mailbox = ctx.deployments.core.mailbox;
 
     const res = await executeContract(
       client,

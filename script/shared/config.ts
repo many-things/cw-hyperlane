@@ -28,14 +28,13 @@ export type IsmType =
   | {
       type: 'aggregate';
       owner: string;
-      isms: Exclude<IsmType, number[]>[];
+      isms: IsmType[];
     }
   | {
       type: 'routing';
       owner: string;
-      isms: { [domain: number]: Exclude<IsmType, number[]> };
-    }
-  | number[];
+      isms: { [domain: number]: IsmType };
+    };
 
 export type FeeHookType = {
   type: 'fee';
