@@ -5,23 +5,23 @@ import {
   RoutingFallbackHookType,
   RoutingHookType,
   getNetwork,
-} from "../shared/config";
-import { Context, ContextHook } from "../shared/context";
+} from '../shared/config';
+import { Context, ContextHook } from '../shared/context';
 import {
   deployContract,
   executeContract,
   executeMultiMsg,
-} from "../shared/contract";
-import { deployIgp } from "./igp";
+} from '../shared/contract';
+import { deployIgp } from './igp';
 
 const deployRoutingHook = async (
   networkId: string,
   ctx: Context,
   client: Client,
-  hook: RoutingHookType
+  hook: RoutingHookType,
 ): Promise<ContextHook> => {
-  const routing = await deployContract(ctx, client, "hpl_hook_routing", {
-    owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+  const routing = await deployContract(ctx, client, 'hpl_hook_routing', {
+    owner: hook.owner === '<signer>' ? client.signer : hook.owner,
   });
 
   const routes = [];
@@ -53,10 +53,10 @@ const deployCustomRoutingHook = async (
   networkId: string,
   ctx: Context,
   client: Client,
-  hook: RoutingCustomHookType
+  hook: RoutingCustomHookType,
 ): Promise<ContextHook> => {
-  const routing = await deployContract(ctx, client, "hpl_hook_routing_custom", {
-    owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+  const routing = await deployContract(ctx, client, 'hpl_hook_routing_custom', {
+    owner: hook.owner === '<signer>' ? client.signer : hook.owner,
   });
 
   const routes = [];
@@ -124,22 +124,22 @@ const deployFallbackRoitingHook = async (
   networkId: string,
   ctx: Context,
   client: Client,
-  hook: RoutingFallbackHookType
+  hook: RoutingFallbackHookType,
 ): Promise<ContextHook> => {
   const routing = await deployContract(
     ctx,
     client,
-    "hpl_hook_routing_fallback",
+    'hpl_hook_routing_fallback',
     {
-      owner: hook.owner === "<signer>" ? client.signer : hook.owner,
-    }
+      owner: hook.owner === '<signer>' ? client.signer : hook.owner,
+    },
   );
 
   const routes = await Promise.all(
     Object.entries(hook.hooks).map(async ([domain, v]) => ({
       domain: parseInt(domain),
       route: await deployHook(networkId, ctx, client, v),
-    }))
+    })),
   );
 
   const fallback = await deployHook(networkId, ctx, client, hook.fallback_hook);
@@ -179,15 +179,15 @@ export const deployHook = async (
   networkId: string,
   ctx: Context,
   client: Client,
-  hook: HookType
+  hook: HookType,
 ): Promise<ContextHook> => {
   switch (hook.type) {
     // deploy fee hook
-    case "fee":
+    case 'fee':
       const { gas } = getNetwork(networkId);
 
-      return deployContract(ctx, client, "hpl_hook_fee", {
-        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+      return deployContract(ctx, client, 'hpl_hook_fee', {
+        owner: hook.owner === '<signer>' ? client.signer : hook.owner,
         fee: {
           denom: hook.fee.denom || gas.denom,
           amount: hook.fee.amount.toString(),
@@ -195,28 +195,28 @@ export const deployHook = async (
       });
 
     // deploy merkle hook
-    case "merkle":
-      return deployContract(ctx, client, "hpl_hook_merkle", {
+    case 'merkle':
+      return deployContract(ctx, client, 'hpl_hook_merkle', {
         mailbox: ctx.deployments.core?.mailbox?.address,
       });
 
     // deploy mock hook
-    case "mock":
-      return deployContract(ctx, client, "hpl_test_mock_hook", {});
+    case 'mock':
+      return deployContract(ctx, client, 'hpl_test_mock_hook', {});
 
     // deploy pausable hook
-    case "pausable":
-      return deployContract(ctx, client, "hpl_hook_pausable", {
-        owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+    case 'pausable':
+      return deployContract(ctx, client, 'hpl_hook_pausable', {
+        owner: hook.owner === '<signer>' ? client.signer : hook.owner,
         paused: hook.paused || false,
       });
 
     // deploy igp hook
-    case "igp":
+    case 'igp':
       return deployIgp(networkId, ctx, client, hook);
 
     // deploy aggregate hook
-    case "aggregate":
+    case 'aggregate':
       const aggr = [];
       for (const v of hook.hooks) {
         aggr.push(await deployHook(networkId, ctx, client, v));
@@ -225,28 +225,28 @@ export const deployHook = async (
       const aggregate = await deployContract(
         ctx,
         client,
-        "hpl_hook_aggregate",
+        'hpl_hook_aggregate',
         {
-          owner: hook.owner === "<signer>" ? client.signer : hook.owner,
+          owner: hook.owner === '<signer>' ? client.signer : hook.owner,
           hooks: aggr.map((v) => v.address),
-        }
+        },
       );
 
       return { ...aggregate, hooks: aggr };
 
     // deploy routing hook
-    case "routing":
+    case 'routing':
       return deployRoutingHook(networkId, ctx, client, hook);
 
     // deploy custom routing hook
-    case "routing-custom":
+    case 'routing-custom':
       return deployCustomRoutingHook(networkId, ctx, client, hook);
 
     // deploy fallback routing hook
-    case "routing-fallback":
+    case 'routing-fallback':
       return deployFallbackRoitingHook(networkId, ctx, client, hook);
 
     default:
-      throw new Error("invalid hook type");
+      throw new Error('invalid hook type');
   }
 };

@@ -1,8 +1,9 @@
-import { contractNames } from "./constants";
-import { Context } from "./context";
-import { waitTx } from "./utils";
-import { Client } from "./config";
-import { IndexedTx } from "@cosmjs/stargate";
+import { IndexedTx } from '@cosmjs/stargate';
+
+import { Client } from './config';
+import { contractNames } from './constants';
+import { Context } from './context';
+import { waitTx } from './utils';
 
 export type ContractNames = (typeof contractNames)[number];
 
@@ -10,7 +11,7 @@ export async function deployContract<T extends ContractNames>(
   ctx: Context,
   { wasm, stargate, signer }: Client,
   contractName: T,
-  initMsg: any
+  initMsg: any,
 ): Promise<{ type: T; address: string }> {
   console.log(`Deploying ${contractName}`);
 
@@ -20,7 +21,7 @@ export async function deployContract<T extends ContractNames>(
     codeId,
     initMsg,
     `cw-hpl: ${contractName}`,
-    "auto"
+    'auto',
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
@@ -35,7 +36,7 @@ export async function executeContract(
   { wasm, stargate, signer }: Client,
   deployment: { type: ContractNames; address: string },
   msg: any,
-  funds: { amount: string; denom: string }[] = []
+  funds: { amount: string; denom: string }[] = [],
 ): Promise<IndexedTx> {
   console.log(`Executing ${deployment.type}'s ${Object.keys(msg)[0]}`);
 
@@ -43,9 +44,9 @@ export async function executeContract(
     signer,
     deployment.address,
     msg,
-    "auto",
+    'auto',
     undefined,
-    funds
+    funds,
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
@@ -57,16 +58,16 @@ export async function executeContract(
 
 export async function executeMultiMsg(
   { wasm, stargate, signer }: Client,
-  msgs: { contract: { type: ContractNames; address: string }; msg: any }[]
+  msgs: { contract: { type: ContractNames; address: string }; msg: any }[],
 ): Promise<IndexedTx> {
   const long = msgs
     .map((v) => v.contract.type.length)
     .reduce((max, v) => Math.max(v, max), 0);
 
-  console.log("Executing multiple messages.");
+  console.log('Executing multiple messages.');
   for (const msg of msgs) {
     console.log(
-      `- ${msg.contract.type.padEnd(long, " ")}: ${Object.keys(msg.msg)[0]}`
+      `- ${msg.contract.type.padEnd(long, ' ')}: ${Object.keys(msg.msg)[0]}`,
     );
   }
 
@@ -76,7 +77,7 @@ export async function executeMultiMsg(
       contractAddress: v.contract.address,
       msg: v.msg,
     })),
-    "auto"
+    'auto',
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {

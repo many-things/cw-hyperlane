@@ -1,22 +1,23 @@
-import fs from "fs";
-import path from "path";
-import { defaultArtifactPath } from "./constants";
-import { generateSha256 } from "./utils";
-import { Config } from "./config";
+import fs from 'fs';
+import path from 'path';
+
+import { Config } from './config';
+import { defaultArtifactPath } from './constants';
+import { generateSha256 } from './utils';
 
 function getWasmFilesPath(
   { artifactPath }: { artifactPath: string } = {
     artifactPath: defaultArtifactPath,
-  }
+  },
 ): string[] {
   try {
     const files = fs.readdirSync(artifactPath);
     return files
-      .filter((file) => file.endsWith(".wasm"))
+      .filter((file) => file.endsWith('.wasm'))
       .map((file) => path.join(artifactPath, file));
   } catch (err) {
     console.error(
-      "Cannot find wasm folder. Are you sure you compiled the wasm projects?"
+      'Cannot find wasm folder. Are you sure you compiled the wasm projects?',
     );
     process.exit(1);
   }
@@ -25,10 +26,10 @@ function getWasmFilesPath(
 export async function loadWasmFileDigest(
   { artifactPath }: { artifactPath: string } = {
     artifactPath: defaultArtifactPath,
-  }
+  },
 ): Promise<Record<string, string>> {
   return Object.fromEntries(
-    await Promise.all(getWasmFilesPath({ artifactPath }).map(generateSha256))
+    await Promise.all(getWasmFilesPath({ artifactPath }).map(generateSha256)),
   );
 }
 
@@ -36,7 +37,7 @@ export function getWasmPath(
   contractName: string,
   { artifactPath }: { artifactPath: string } = {
     artifactPath: defaultArtifactPath,
-  }
+  },
 ): string {
   return path.join(artifactPath, `${contractName}.wasm`);
 }
@@ -58,11 +59,11 @@ export type ContractInfoResp = {
 };
 
 export async function getContractInfo(
-  network: Config["networks"][number],
-  addr: string
+  network: Config['networks'][number],
+  addr: string,
 ): Promise<ContractInfoResp> {
   const res = await fetch(
-    path.join(network.endpoint.rest, "/cosmwasm/wasm/v1/contract/", addr)
+    path.join(network.endpoint.rest, '/cosmwasm/wasm/v1/contract/', addr),
   );
   const body = await res.json();
 

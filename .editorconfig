@@ -11,4 +11,5 @@ insert_final_newline = true
 indent_size = 4
 
 [*.ts]
+quote_type = single
 indent_size = 2
