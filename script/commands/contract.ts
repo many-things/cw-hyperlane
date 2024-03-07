@@ -33,11 +33,7 @@ contractCmd
       {
         dispatch: {
           dest_domain: parseInt(destDomain),
-          recipient_addr: addPad(
-            recipientAddr.startsWith("0x")
-              ? recipientAddr.slice(2)
-              : recipientAddr
-          ),
+          recipient_addr: addPad(recipientAddr),
           msg_body: Buffer.from(msgBody, "utf-8").toString("hex"),
         },
       },
