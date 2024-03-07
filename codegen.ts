@@ -4,6 +4,7 @@ import path from "path";
 
 const SCHEMA_DIR = process.env.SCHEMA_DIR || path.join(process.cwd(), "schema");
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const capitalize = (str: string): string =>
   str.charAt(0).toUpperCase() + str.slice(1);
 
