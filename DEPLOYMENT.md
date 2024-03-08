@@ -53,19 +53,36 @@ signer: '<private-key> or <mnemonic>'
 
 deploy:
   ism:
-    - 11155111
+    type: routing
+    owner: <signer>
+    isms:
+      - type: multisig
+        owner: <signer>
+        validators:
+          11155111:
+            addrs:
+              - <signer>
+            threshold: 1
 
   hooks:
     default:
-      type: mock
-
-    required:
       type: aggregate
-      # if you keep it as "<signer>", the script will identify this as deployer address
       owner: <signer>
       hooks:
         - type: merkle
 
+        - type: igp
+          owner: <signer>
+          configs:
+            11155111:
+              exchange_rate: 3000
+              gas_price: 5000
+          default_gas_usage: 30000
+
+    required:
+      type: aggregate
+      owner: <signer>
+      hooks:
         - type: pausable
           owner: <signer>
           paused: false
@@ -76,14 +93,6 @@ deploy:
             # if you didn't set the denom, it will be set as gas denom of network config
             denom: uosmo
             amount: 1
-
-        - type: igp
-          owner: <signer>
-          configs:
-            11155111:
-              exchange_rate: 3000
-              gas_price: 5000
-          default_gas_usage: 30000
 ```
 
 ## 2. Upload Contract Codes

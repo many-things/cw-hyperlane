@@ -1,46 +1,41 @@
 networks:
-  - id: "localwasmd"
-    hrp: "uwasm"
+  - id: 'localwasmd'
+    hrp: 'uwasm'
     endpoint:
-      rpc: "http://localhost:26657"
-      rest: "http://localhost:1317"
-      grpc: "http://localhost:9090"
+      rpc: 'http://localhost:26657'
+      rest: 'http://localhost:1317'
+      grpc: 'http://localhost:9090'
     gas:
-      price: "0.025"
-      denom: "uwasm"
+      price: '0.025'
+      denom: 'uwasm'
     domain: 1063 # localwasmd -> ascii / decimal -> sum
 
-  - id: "localosmosis"
-    hrp: "osmo"
+  - id: 'localosmosis'
+    hrp: 'osmo'
     endpoint:
-      rpc: "http://localhost:26657"
-      rest: "http://localhost:1317"
-      grpc: "http://localhost:9090"
+      rpc: 'http://localhost:26657'
+      rest: 'http://localhost:1317'
+      grpc: 'http://localhost:9090'
     gas:
-      price: "0.025"
-      denom: "uosmo"
+      price: '0.025'
+      denom: 'uosmo'
     domain: 1304 # localosmosis -> ascii / decimal -> sum
 
-  - id: "localneutron"
-    hrp: "neutron"
+  - id: 'localneutron'
+    hrp: 'neutron'
     endpoint:
-      rpc: "http://localhost:26657"
-      rest: "http://localhost:1317"
-      grpc: "http://localhost:9090"
+      rpc: 'http://localhost:26657'
+      rest: 'http://localhost:1317'
+      grpc: 'http://localhost:9090'
     gas:
-      price: "0.025"
-      denom: "untrn"
+      price: '0.025'
+      denom: 'untrn'
     domain: 1302
 
 signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
 
 deploy:
   ism:
-    # # hpl_ism_multisig with default validator setup (signer = validator, threshold = 1)
-    # - 5
-    # - 420
-    # - 421613
-
     # # hpl_ism_multisig
     # type: multisig
     # owner: <signer>
