@@ -61,7 +61,9 @@ export async function deployIsm(
               set_validators: {
                 domain: Number(domain),
                 threshold,
-                validators: addrs,
+                validators: addrs.map((v) =>
+                  v === '<signer>' ? client.signer : v,
+                ),
               },
             },
           }),
