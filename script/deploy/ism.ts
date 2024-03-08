@@ -1,10 +1,6 @@
 import { Client, IsmType } from '../shared/config';
 import { Context, ContextIsm } from '../shared/context';
-import {
-  deployContract,
-  executeContract,
-  executeMultiMsg,
-} from '../shared/contract';
+import { deployContract, executeMultiMsg } from '../shared/contract';
 
 const deployRoutingIsm = async (
   ctx: Context,
@@ -21,17 +17,10 @@ const deployRoutingIsm = async (
 
   const routing = await deployContract(ctx, client, 'hpl_ism_routing', {
     owner: ism.owner === '<signer>' ? client.signer : ism.owner,
-  });
-
-  await executeContract(client, routing, {
-    router: {
-      set_routes: {
-        set: routes.map(({ domain, route }) => ({
-          domain,
-          route: route.address,
-        })),
-      },
-    },
+    isms: routes.map(({ domain, route }) => ({
+      domain,
+      route: route.address,
+    })),
   });
 
   return {
