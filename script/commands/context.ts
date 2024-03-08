@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 
-import { saveAgentConfig } from '../shared/context';
+import { saveAgentConfig } from '../shared/agent';
 import { CONTAINER, Dependencies } from '../shared/ioc';
 
 const contextCmd = new Command('context');
