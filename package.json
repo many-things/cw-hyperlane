@@ -11,6 +11,7 @@
     "build": "yarn clean && esbuild ./script --bundle --outfile=./dist/index.js --platform=node",
     "start": "yarn build && node ./dist/index.js",
     "cw-hpl": "yarn start",
+    "cw-hpl-exp": "tsx ./example",
     "dev": "tsx ./script"
   },
   "keywords": [],
