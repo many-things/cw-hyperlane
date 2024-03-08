@@ -1,44 +1,43 @@
-import yaml from "js-yaml";
-import { readFileSync } from "fs";
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import {
-  Comet38Client,
-  Tendermint34Client,
-  Tendermint37Client,
-  CometClient,
-} from "@cosmjs/tendermint-rpc";
+import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
+import { Secp256k1, keccak256 } from '@cosmjs/crypto';
 import {
   DirectSecp256k1HdWallet,
   DirectSecp256k1Wallet,
-} from "@cosmjs/proto-signing";
-import { GasPrice, SigningStargateClient } from "@cosmjs/stargate";
-import { Secp256k1, keccak256 } from "@cosmjs/crypto";
+} from '@cosmjs/proto-signing';
+import { GasPrice, SigningStargateClient } from '@cosmjs/stargate';
+import {
+  Comet38Client,
+  CometClient,
+  Tendermint34Client,
+  Tendermint37Client,
+} from '@cosmjs/tendermint-rpc';
+import { readFileSync } from 'fs';
+import yaml from 'js-yaml';
 
 export type IsmType =
   | {
-      type: "multisig";
+      type: 'multisig';
       owner: string;
       validators: {
         [domain: number]: { addrs: string[]; threshold: number };
       };
     }
   | {
-      type: "mock";
+      type: 'mock';
     }
   | {
-      type: "aggregate";
+      type: 'aggregate';
       owner: string;
-      isms: Exclude<IsmType, number[]>[];
+      isms: IsmType[];
     }
   | {
-      type: "routing";
+      type: 'routing';
       owner: string;
-      isms: { [domain: number]: Exclude<IsmType, number[]> };
-    }
-  | number[];
+      isms: { [domain: number]: IsmType };
+    };
 
 export type FeeHookType = {
-  type: "fee";
+  type: 'fee';
   owner: string;
   fee: {
     denom?: string;
@@ -47,7 +46,7 @@ export type FeeHookType = {
 };
 
 export type IgpHookType = {
-  type: "igp";
+  type: 'igp';
   owner: string;
   token?: string;
   configs: {
@@ -60,13 +59,13 @@ export type IgpHookType = {
 };
 
 export type RoutingHookType = {
-  type: "routing";
+  type: 'routing';
   owner: string;
   hooks: { [domain: number]: HookType };
 };
 
 export type RoutingCustomHookType = {
-  type: "routing-custom";
+  type: 'routing-custom';
   owner: string;
   hooks: { [domain: number]: HookType };
   custom_hooks: {
@@ -75,7 +74,7 @@ export type RoutingCustomHookType = {
 };
 
 export type RoutingFallbackHookType = {
-  type: "routing-fallback";
+  type: 'routing-fallback';
   owner: string;
   hooks: { [domain: number]: HookType };
   fallback_hook: HookType;
@@ -84,18 +83,18 @@ export type RoutingFallbackHookType = {
 export type HookType =
   | FeeHookType
   | {
-      type: "merkle";
+      type: 'merkle';
     }
   | {
-      type: "mock";
+      type: 'mock';
     }
   | {
-      type: "pausable";
+      type: 'pausable';
       owner: string;
       paused: boolean;
     }
   | IgpHookType
-  | { type: "aggregate"; owner: string; hooks: HookType[] }
+  | { type: 'aggregate'; owner: string; hooks: HookType[] }
   | RoutingHookType
   | RoutingCustomHookType
   | RoutingFallbackHookType;
@@ -114,7 +113,7 @@ export type Config = {
       denom: string;
     };
     domain: number;
-    tm_version?: "34" | "37" | "38";
+    tm_version?: '34' | '37' | '38';
   }[];
 
   signer: string;
@@ -138,39 +137,39 @@ export class Client {
 
 const path = process.env.CONFIG || `${process.cwd()}/config.yaml`;
 
-export const getNetwork = (networkId: string): Config["networks"][number] => {
+export const getNetwork = (networkId: string): Config['networks'][number] => {
   const ret = config.networks.find((v) => v.id === networkId);
   if (!ret)
     throw new Error(`Network ${networkId} not found in the config file`);
   return ret;
 };
 
-export const config = yaml.load(readFileSync(path, "utf-8")) as Config;
+export const config = yaml.load(readFileSync(path, 'utf-8')) as Config;
 
 export async function getSigningClient(
   networkId: string,
-  { signer }: Config
+  { signer }: Config,
 ): Promise<Client> {
   const { tm_version, hrp, gas, endpoint } = getNetwork(networkId);
 
   const wallet =
-    signer.split(" ").length > 1
+    signer.split(' ').length > 1
       ? await DirectSecp256k1HdWallet.fromMnemonic(signer, { prefix: hrp })
-      : await DirectSecp256k1Wallet.fromKey(Buffer.from(signer, "hex"), hrp);
+      : await DirectSecp256k1Wallet.fromKey(Buffer.from(signer, 'hex'), hrp);
 
   const [account] = await wallet.getAccounts();
   const gasPrice = GasPrice.fromString(`${gas.price}${gas.denom}`);
 
   let clientBase: CometClient;
 
-  switch (tm_version || "38") {
-    case "34":
+  switch (tm_version || '38') {
+    case '34':
       clientBase = await Tendermint34Client.connect(endpoint.rpc);
       break;
-    case "37":
+    case '37':
       clientBase = await Tendermint37Client.connect(endpoint.rpc);
       break;
-    case "38":
+    case '38':
       clientBase = await Comet38Client.connect(endpoint.rpc);
       break;
   }
@@ -178,12 +177,12 @@ export async function getSigningClient(
   const wasm = await SigningCosmWasmClient.createWithSigner(
     clientBase,
     wallet,
-    { gasPrice }
+    { gasPrice },
   );
   const stargate = await SigningStargateClient.createWithSigner(
     clientBase,
     wallet,
-    { gasPrice }
+    { gasPrice },
   );
 
   const pubkey = Secp256k1.uncompressPubkey(account.pubkey);
@@ -193,7 +192,7 @@ export async function getSigningClient(
     wasm,
     stargate,
     signer: account.address,
-    signer_addr: Buffer.from(ethaddr).toString("hex"),
-    signer_pubkey: Buffer.from(account.pubkey).toString("hex"),
+    signer_addr: Buffer.from(ethaddr).toString('hex'),
+    signer_pubkey: Buffer.from(account.pubkey).toString('hex'),
   };
 }

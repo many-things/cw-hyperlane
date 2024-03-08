@@ -1,11 +1,11 @@
-import { Container } from "inversify";
+import { Container } from 'inversify';
 
-import { Context } from "./context";
-import { Client } from "./config";
+import { Client } from './config';
+import { Context } from './context';
 
 export const CONTAINER = new Container({
   autoBindInjectable: true,
-  defaultScope: "Singleton",
+  defaultScope: 'Singleton',
 });
 
 // referenced by tsoa

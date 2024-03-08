@@ -1,15 +1,15 @@
-import { Client, IsmType } from "../shared/config";
-import { Context, ContextIsm } from "../shared/context";
+import { Client, IsmType } from '../shared/config';
+import { Context, ContextIsm } from '../shared/context';
 import {
   deployContract,
   executeContract,
   executeMultiMsg,
-} from "../shared/contract";
+} from '../shared/contract';
 
 const deployRoutingIsm = async (
   ctx: Context,
   client: Client,
-  ism: Extract<IsmType, { type: "routing" }>
+  ism: Extract<IsmType, { type: 'routing' }>,
 ) => {
   const routes = [];
   for (const [domain, v] of Object.entries(ism.isms)) {
@@ -19,8 +19,8 @@ const deployRoutingIsm = async (
     });
   }
 
-  const routing = await deployContract(ctx, client, "hpl_ism_routing", {
-    owner: ism.owner === "<signer>" ? client.signer : ism.owner,
+  const routing = await deployContract(ctx, client, 'hpl_ism_routing', {
+    owner: ism.owner === '<signer>' ? client.signer : ism.owner,
   });
 
   await executeContract(client, routing, {
@@ -43,13 +43,13 @@ const deployRoutingIsm = async (
 export async function deployIsm(
   ctx: Context,
   client: Client,
-  ism: Exclude<IsmType, number[]>
+  ism: Exclude<IsmType, number[]>,
 ): Promise<ContextIsm> {
   switch (ism.type) {
     // deploy multisig ism
-    case "multisig":
-      const multisig = await deployContract(ctx, client, "hpl_ism_multisig", {
-        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
+    case 'multisig': {
+      const multisig = await deployContract(ctx, client, 'hpl_ism_multisig', {
+        owner: ism.owner === '<signer>' ? client.signer : ism.owner,
       });
 
       await executeMultiMsg(
@@ -64,31 +64,35 @@ export async function deployIsm(
                 validators: addrs,
               },
             },
-          })
-        )
+          }),
+        ),
       );
 
       return multisig;
+    }
 
     // deploy aggregate ism
-    case "aggregate":
+    case 'aggregate': {
       const aggr = [];
       for (const v of ism.isms) {
         aggr.push(await deployIsm(ctx, client, v));
       }
 
-      const aggregate = await deployContract(ctx, client, "hpl_ism_aggregate", {
-        owner: ism.owner === "<signer>" ? client.signer : ism.owner,
+      const aggregate = await deployContract(ctx, client, 'hpl_ism_aggregate', {
+        owner: ism.owner === '<signer>' ? client.signer : ism.owner,
         isms: aggr.map((v) => v.address),
       });
 
       return { ...aggregate, isms: aggr };
+    }
 
     // deploy routing ism
-    case "routing":
+    case 'routing': {
       return deployRoutingIsm(ctx, client, ism);
+    }
 
-    default:
-      throw new Error("invalid ism type");
+    default: {
+      throw new Error('invalid ism type');
+    }
   }
 }
