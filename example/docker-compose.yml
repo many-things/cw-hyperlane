@@ -2,6 +2,7 @@ version: '2'
 services:
   relayer:
     container_name: hpl-relayer
+    # image: gcr.io/abacus-labs-dev/hyperlane-agent:9736164-20240307-131918
     image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
     user: root
     # restart: always
@@ -21,6 +22,7 @@ services:
 
   validator-sepolia:
     container_name: hpl-validator-sepolia
+    # image: gcr.io/abacus-labs-dev/hyperlane-agent:9736164-20240307-131918
     image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
     user: root
     # restart: always
@@ -40,6 +42,7 @@ services:
 
   validator-osmotest5:
     container_name: hpl-validator-osmotest5
+    # image: gcr.io/abacus-labs-dev/hyperlane-agent:9736164-20240307-131918
     image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
     user: root
     # restart: always

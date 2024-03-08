@@ -53,19 +53,36 @@ signer: '<private-key> or <mnemonic>'
 
 deploy:
   ism:
-    - 11155111
+    type: routing
+    owner: <signer>
+    isms:
+      - type: multisig
+        owner: <signer>
+        validators:
+          11155111:
+            addrs:
+              - <signer>
+            threshold: 1
 
   hooks:
     default:
-      type: mock
-
-    required:
       type: aggregate
-      # if you keep it as "<signer>", the script will identify this as deployer address
       owner: <signer>
       hooks:
         - type: merkle
 
+        - type: igp
+          owner: <signer>
+          configs:
+            11155111:
+              exchange_rate: 3000
+              gas_price: 5000
+          default_gas_usage: 30000
+
+    required:
+      type: aggregate
+      owner: <signer>
+      hooks:
         - type: pausable
           owner: <signer>
           paused: false
@@ -76,14 +93,6 @@ deploy:
             # if you didn't set the denom, it will be set as gas denom of network config
             denom: uosmo
             amount: 1
-
-        - type: igp
-          owner: <signer>
-          configs:
-            11155111:
-              exchange_rate: 3000
-              gas_price: 5000
-          default_gas_usage: 30000
 ```
 
 ## 2. Upload Contract Codes
@@ -146,8 +155,10 @@ Replace every `{sepolia_private_key}` and `{osmosis_private_key}` from files bel
 And run with below command.
 
 ```bash
+cd ./example
+
 # Merge osmo-test-5.config.json and agent-config.docker.json
-OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ../context/osmo-test-5.config.json) && \
+OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ../context/osmo-test-5.config.json | jq -r '.chains.osmotest5') && \
   OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG | jq -r '.name') && \
     cat ./hyperlane/agent-config.docker.json \
       | jq ".chains.$OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG)" > merge.tmp && \
@@ -206,7 +217,7 @@ yarn cw-hpl-exp warp deploy --pk 'YOUR_PRIVATE_KEY'
 { "hypErc20Osmo": "0x..." }
 
 # deploy warp route on osmo-test-5
-yarn cw-hpl warp deploy create ./warp/uosmo.json -n osmo-test-5
+yarn cw-hpl warp create ./example/warp/uosmo.json -n osmo-test-5
 
 # register osmo-test-5 warp route to sepolia warp route
 yarn cw-hpl-exp warp link $hypErc20Osmo 1037 $OSMOSIS_WARP_ROUTE_ADDRESS --pk 'YOUR_PRIVATE_KEY'

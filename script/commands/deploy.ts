@@ -1,13 +1,9 @@
 import { Command } from 'commander';
 
 import { deployHook, deployIsm } from '../deploy';
+import { saveAgentConfig } from '../shared/agent';
 import { Client, config, getNetwork } from '../shared/config';
-import {
-  Context,
-  ContextDeployments,
-  saveAgentConfig,
-  saveContext,
-} from '../shared/context';
+import { Context, ContextDeployments, saveContext } from '../shared/context';
 import { deployContract, executeMultiMsg } from '../shared/contract';
 import { CONTAINER, Dependencies } from '../shared/ioc';
 
