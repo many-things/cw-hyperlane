@@ -1,16 +1,16 @@
 export class Logger {
   constructor(public name: string) {}
 
-  log(...args: any[]) {
+  log(...args: unknown[]) {
     console.log(`[${this.name}]`, ...args);
   }
 
-  debug = (...args: any[]) =>
+  debug = (...args: unknown[]) =>
     console.log('DEBUG]'.grey, `[${this.name}]`, ...args);
 
-  info = (...args: any[]) =>
+  info = (...args: unknown[]) =>
     console.log(' INFO]'.cyan, `[${this.name}]`, ...args);
 
-  error = (...args: any[]) =>
+  error = (...args: unknown[]) =>
     console.error('ERROR]'.red, `[${this.name}]`, ...args);
 }
