@@ -56,8 +56,11 @@ export async function fromContext(
         index: {
           from:
             // sub 1 block to make sure we don't miss any block
-            parseInt(mailboxContractInfo.contract_info.created.block_height) -
-            1,
+            mailboxContractInfo
+              ? parseInt(
+                  mailboxContractInfo.contract_info.created.block_height,
+                ) - 1
+              : undefined,
           chunk: 10_000,
         },
         blocks: {
