@@ -155,8 +155,10 @@ Replace every `{sepolia_private_key}` and `{osmosis_private_key}` from files bel
 And run with below command.
 
 ```bash
+cd ./example
+
 # Merge osmo-test-5.config.json and agent-config.docker.json
-OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ../context/osmo-test-5.config.json) && \
+OSMOSIS_TESTNET_AGENT_CONFIG=$(cat ../context/osmo-test-5.config.json | jq -r '.chains.osmotest5') && \
   OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG | jq -r '.name') && \
     cat ./hyperlane/agent-config.docker.json \
       | jq ".chains.$OSMOSIS_TESTNET_AGENT_CONFIG_NAME=$(echo $OSMOSIS_TESTNET_AGENT_CONFIG)" > merge.tmp && \
