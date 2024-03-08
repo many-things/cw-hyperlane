@@ -1,95 +1,93 @@
+import { AgentConfig } from '@hyperlane-xyz/sdk';
+import { ProtocolType } from '@hyperlane-xyz/utils';
+import fs from 'fs';
+import path from 'path';
+
 import { Config } from './config';
+import { defaultContextPath } from './constants';
 import { Context, ContextHook } from './context';
-import { extractByte32AddrFromBech32 } from './utils';
+import { extractByte32AddrFromBech32 as fromBech32 } from './utils';
 import { getContractInfo } from './wasm';
-
-export type HplAgentConfig = {
-  name: string;
-  domainId: string;
-  chainId: string;
-  protocol: 'cosmos';
-  rpcUrls: { http: string }[];
-  grpcUrl: string;
-  canonicalAsset: string; // usually same as gas token
-  bech32Prefix: string; // hrp
-  gasPrice: {
-    amount: string;
-    denom: string;
-  };
-  contractAddressBytes: 32;
-  index: {
-    from?: number;
-    chunk: number;
-  };
-  blocks: {
-    reorgPeriod: 0; // instant finality ⭐️
-  };
-
-  mailbox: string; // hexed
-  interchainGasPaymaster: string; // hexed
-  validatorAnnounce: string; // hexed
-  merkleTreeHook: string; // hexed
-  testRecipient: string; // hexed
-};
 
 export async function fromContext(
   network: Config['networks'][number],
   context: Context,
-): Promise<HplAgentConfig> {
-  const toHex = (v: string) => `0x${extractByte32AddrFromBech32(v)}`;
+): Promise<AgentConfig> {
+  const { hooks, core } = context.deployments;
 
-  const { hooks, core, test } = context.deployments;
+  // FIXME: use zod to validate the context
+  if (!core?.mailbox) throw new Error('Mailbox contract not found');
+  if (!core?.validator_announce)
+    throw new Error('Validator announce contract not found');
+  if (!hooks?.default || !hooks?.required)
+    throw new Error('No hooks found on this context');
 
-  const mailboxAddr = core?.mailbox?.address!;
+  const mailboxAddr = core.mailbox.address;
   const mailboxContractInfo = await getContractInfo(network, mailboxAddr);
 
   const igp =
-    findHook(hooks?.default!, 'hpl_igp') ||
-    findHook(hooks?.required!, 'hpl_igp');
+    findHook(hooks.default, 'hpl_igp') || findHook(hooks.required, 'hpl_igp');
   if (!igp) throw new Error('no igp on this context');
 
   const merkleTreeHook =
-    findHook(hooks?.default!, 'hpl_hook_merkle') ||
-    findHook(hooks?.required!, 'hpl_hook_merkle');
+    findHook(hooks.default, 'hpl_hook_merkle') ||
+    findHook(hooks.required, 'hpl_hook_merkle');
   if (!merkleTreeHook) throw new Error('no merkle tree hook on this context');
 
-  const agent: HplAgentConfig = {
-    name: network.id.split('-').join(''),
-    domainId: network.domain.toString(),
-    chainId: network.id,
-    protocol: 'cosmos',
+  const agent: AgentConfig = {
+    chains: {
+      [network.id.split('-').join('')]: {
+        name: network.id.split('-').join(''),
+        domainId: network.domain,
+        chainId: network.id,
+        protocol: ProtocolType.Cosmos,
 
-    rpcUrls: [{ http: network.endpoint.rpc }],
-    grpcUrl: network.endpoint.grpc,
-    canonicalAsset: network.gas.denom,
-    bech32Prefix: network.hrp,
+        rpcUrls: [{ http: network.endpoint.rpc }],
+        grpcUrls: [{ http: network.endpoint.grpc }],
+        canonicalAsset: network.gas.denom,
+        bech32Prefix: network.hrp,
 
-    gasPrice: {
-      amount: network.gas.price,
-      denom: network.gas.denom,
+        gasPrice: {
+          amount: network.gas.price,
+          denom: network.gas.denom,
+        },
+        contractAddressBytes: 32,
+
+        index: {
+          from:
+            // sub 1 block to make sure we don't miss any block
+            parseInt(mailboxContractInfo.contract_info.created.block_height) -
+            1,
+          chunk: 10_000,
+        },
+        blocks: {
+          confirmations: 0,
+          reorgPeriod: 0,
+        },
+
+        // contract addresses
+        mailbox: fromBech32(core.mailbox.address),
+        validatorAnnounce: fromBech32(core.validator_announce.address),
+        interchainGasPaymaster: fromBech32(igp.address),
+        merkleTreeHook: fromBech32(merkleTreeHook.address),
+      },
     },
-    contractAddressBytes: 32,
-
-    index: {
-      from:
-        // sub 1 block to make sure we don't miss any block
-        mailboxContractInfo &&
-        parseInt(mailboxContractInfo.contract_info.created.block_height) - 1,
-      chunk: 10_000,
-    },
-    blocks: {
-      reorgPeriod: 1,
-    },
-
-    // contract addresses
-    mailbox: toHex(core?.mailbox?.address!),
-    validatorAnnounce: toHex(core?.validator_announce?.address!),
-    interchainGasPaymaster: toHex(igp.address),
-    merkleTreeHook: toHex(merkleTreeHook.address),
-    testRecipient: toHex(test?.msg_receiver?.address!),
   };
 
   return agent;
+}
+
+export async function saveAgentConfig(
+  network: Config['networks'][number],
+  context: Context,
+  { contextPath }: { contextPath: string } = {
+    contextPath: defaultContextPath,
+  },
+): Promise<AgentConfig> {
+  const agentConfig = await fromContext(network, context);
+  const fileName = path.join(contextPath, `${network.id}.config.json`);
+  fs.writeFileSync(fileName, JSON.stringify(agentConfig, null, 2));
+  return agentConfig;
 }
 
 // map filter reverse pop

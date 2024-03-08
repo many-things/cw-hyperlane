@@ -36,7 +36,7 @@ export const withLink = (text: string, url: string) =>
 export const extractByte32AddrFromBech32 = (addr: string): string => {
   const { data } = fromBech32(addr);
   const hexed = Buffer.from(data).toString('hex');
-  return hexed.length === 64 ? hexed : addPad(hexed);
+  return `0x${hexed.length === 64 ? hexed : addPad(hexed)}`;
 };
 
 export const downloadFile = async (url: string, dest: string) => {

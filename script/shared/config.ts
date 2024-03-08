@@ -14,8 +14,6 @@ import {
 import { readFileSync } from 'fs';
 import yaml from 'js-yaml';
 
-import { addPad } from './utils';
-
 export type IsmType =
   | {
       type: 'multisig';
@@ -30,14 +28,13 @@ export type IsmType =
   | {
       type: 'aggregate';
       owner: string;
-      isms: Exclude<IsmType, number[]>[];
+      isms: IsmType[];
     }
   | {
       type: 'routing';
       owner: string;
-      isms: { [domain: number]: Exclude<IsmType, number[]> };
-    }
-  | number[];
+      isms: { [domain: number]: IsmType };
+    };
 
 export type FeeHookType = {
   type: 'fee';
@@ -158,10 +155,7 @@ export async function getSigningClient(
   const wallet =
     signer.split(' ').length > 1
       ? await DirectSecp256k1HdWallet.fromMnemonic(signer, { prefix: hrp })
-      : await DirectSecp256k1Wallet.fromKey(
-          Buffer.from(addPad(signer), 'hex'),
-          hrp,
-        );
+      : await DirectSecp256k1Wallet.fromKey(Buffer.from(signer, 'hex'), hrp);
 
   const [account] = await wallet.getAccounts();
   const gasPrice = GasPrice.fromString(`${gas.price}${gas.denom}`);

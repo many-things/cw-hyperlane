@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-import { HplAgentConfig, fromContext } from './agent';
-import { Config } from './config';
 import { defaultContextPath } from './constants';
 import { ContractNames } from './contract';
 
@@ -78,7 +76,13 @@ export function loadContext(
     const fileName = path.join(contextPath, `${network}.json`);
     const result = fs.readFileSync(fileName, 'utf-8');
     return JSON.parse(result.toString()) as Context;
-  } catch (err) {}
+  } catch (err) {
+    console.error(
+      'Failed to load context. Returning an empty context object.',
+      'err:',
+      err,
+    );
+  }
 
   return {
     artifacts: {},
@@ -96,17 +100,4 @@ export function saveContext(
   fs.mkdirSync(contextPath, { recursive: true });
   const fileName = path.join(contextPath, `${network}.json`);
   fs.writeFileSync(fileName, JSON.stringify(context, null, 2));
-}
-
-export async function saveAgentConfig(
-  network: Config['networks'][number],
-  context: Context,
-  { contextPath }: { contextPath: string } = {
-    contextPath: defaultContextPath,
-  },
-): Promise<HplAgentConfig> {
-  const agentConfig = await fromContext(network, context);
-  const fileName = path.join(contextPath, `${network.id}.config.json`);
-  fs.writeFileSync(fileName, JSON.stringify(agentConfig, null, 2));
-  return agentConfig;
 }

@@ -15,7 +15,7 @@ const walletCmd = new Command('wallet')
 walletCmd
   .command('new')
   .description('Create a new wallet')
-  .action(async (_, cmd) => {
+  .action(async () => {
     const deps = CONTAINER.get(Dependencies);
 
     const prefix = { prefix: deps.network.hrp };

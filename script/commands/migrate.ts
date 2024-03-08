@@ -1,6 +1,7 @@
 import { CodeDetails } from '@cosmjs/cosmwasm-stargate';
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 
+import { contractNames } from '../shared/constants';
 import { ContextHook, ContextIsm } from '../shared/context';
 import { ContractNames } from '../shared/contract';
 import { CONTAINER, Dependencies } from '../shared/ioc';
@@ -9,15 +10,23 @@ import { askQuestion, waitTx } from '../shared/utils';
 export const migrateCmd = new Command('migrate')
   .description('Migrate contracts')
   .configureHelp({ showGlobalOptions: true })
-  .option('-c --contracts <contracts...>', 'specify contracts to migrate')
+  .addOption(
+    new Option(
+      '-c --contracts <contracts...>',
+      'specify contract types to migrate',
+    ).choices(contractNames),
+  )
   .action(handleMigrate);
 
-async function handleMigrate(_: any, cmd: any) {
-  const { contracts } = cmd.optsWithGlobals();
+async function handleMigrate(_: object, cmd: Command) {
+  const { contracts } = cmd.optsWithGlobals() as {
+    networkId: string;
+    contracts: ContractNames[];
+  };
 
   const { ctx, client } = CONTAINER.get(Dependencies);
 
-  const flatten = [
+  const flattenedContracts = [
     ...flattenIsm(ctx.deployments.isms),
     ...flattenHook(ctx.deployments.hooks?.default),
     ...flattenHook(ctx.deployments.hooks?.required),
@@ -33,8 +42,8 @@ async function handleMigrate(_: any, cmd: any) {
 
   const withContractInfo = await Promise.all(
     (contracts
-      ? flatten.filter((v) => contracts.includes(v.type))
-      : flatten
+      ? flattenedContracts.filter((v) => contracts.includes(v.type))
+      : flattenedContracts
     ).map(async (v) => {
       const contractInfo = await client.wasm.getContract(v.address);
       const codeInfo = await client.wasm.getCodeDetails(contractInfo.codeId);
@@ -62,6 +71,14 @@ async function handleMigrate(_: any, cmd: any) {
     return;
   }
 
+  for (const migrate of toMigrate) {
+    console.log(
+      `${migrate.type} needs migration from`,
+      `${migrate.codeInfo.id} to ${artifacts[migrate.type].id}`,
+      `(contract: ${migrate.address})`,
+    );
+  }
+
   if (!(await askQuestion('Do you want to proceed? (y/n)'))) {
     console.log('Aborted.');
     return;
@@ -69,6 +86,8 @@ async function handleMigrate(_: any, cmd: any) {
   console.log('Proceeding to migrate...');
 
   for (const migrate of toMigrate) {
+    console.log(`Migrating ${migrate.type}...`);
+
     const res = await client.wasm.migrate(
       client.signer,
       migrate.address,

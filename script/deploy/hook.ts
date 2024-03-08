@@ -120,7 +120,7 @@ const deployCustomRoutingHook = async (
   };
 };
 
-const deployFallbackRoutingHook = async (
+const deployFallbackRoitingHook = async (
   networkId: string,
   ctx: Context,
   client: Client,
@@ -183,7 +183,7 @@ export const deployHook = async (
 ): Promise<ContextHook> => {
   switch (hook.type) {
     // deploy fee hook
-    case 'fee':
+    case 'fee': {
       const { gas } = getNetwork(networkId);
 
       return deployContract(ctx, client, 'hpl_hook_fee', {
@@ -193,30 +193,35 @@ export const deployHook = async (
           amount: hook.fee.amount.toString(),
         },
       });
+    }
 
     // deploy merkle hook
-    case 'merkle':
+    case 'merkle': {
       return deployContract(ctx, client, 'hpl_hook_merkle', {
         mailbox: ctx.deployments.core?.mailbox?.address,
       });
+    }
 
     // deploy mock hook
-    case 'mock':
+    case 'mock': {
       return deployContract(ctx, client, 'hpl_test_mock_hook', {});
+    }
 
     // deploy pausable hook
-    case 'pausable':
+    case 'pausable': {
       return deployContract(ctx, client, 'hpl_hook_pausable', {
         owner: hook.owner === '<signer>' ? client.signer : hook.owner,
         paused: hook.paused || false,
       });
+    }
 
     // deploy igp hook
-    case 'igp':
+    case 'igp': {
       return deployIgp(networkId, ctx, client, hook);
+    }
 
     // deploy aggregate hook
-    case 'aggregate':
+    case 'aggregate': {
       const aggr = [];
       for (const v of hook.hooks) {
         aggr.push(await deployHook(networkId, ctx, client, v));
@@ -233,20 +238,25 @@ export const deployHook = async (
       );
 
       return { ...aggregate, hooks: aggr };
+    }
 
     // deploy routing hook
-    case 'routing':
+    case 'routing': {
       return deployRoutingHook(networkId, ctx, client, hook);
+    }
 
     // deploy custom routing hook
-    case 'routing-custom':
+    case 'routing-custom': {
       return deployCustomRoutingHook(networkId, ctx, client, hook);
+    }
 
     // deploy fallback routing hook
-    case 'routing-fallback':
-      return deployFallbackRoutingHook(networkId, ctx, client, hook);
+    case 'routing-fallback': {
+      return deployFallbackRoitingHook(networkId, ctx, client, hook);
+    }
 
-    default:
+    default: {
       throw new Error('invalid hook type');
+    }
   }
 };

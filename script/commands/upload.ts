@@ -12,17 +12,14 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 
 import {
+  REMOTE_MIN_VERSION,
   contractNames,
   defaultArtifactPath,
   defaultTmpDir,
 } from '../shared/constants';
 import { saveContext } from '../shared/context';
 import { ContractNames } from '../shared/contract';
-import {
-  MIN_RELEASE_VERSION,
-  downloadReleases,
-  getReleases,
-} from '../shared/github';
+import { downloadReleases, getReleases } from '../shared/github';
 import { CONTAINER, Dependencies } from '../shared/ioc';
 import { askQuestion, waitTx } from '../shared/utils';
 import { getWasmPath, loadWasmFileDigest } from '../shared/wasm';
@@ -43,7 +40,7 @@ uploadCmd
 uploadCmd
   .command('remote')
   .description('upload artifacts from remote')
-  .argument('<tag-name>', `name of release tag. min: ${MIN_RELEASE_VERSION}`)
+  .argument('<tag-name>', `name of release tag. min: ${REMOTE_MIN_VERSION}`)
   .option('-o --out <out dir>', 'artifact output directory', defaultTmpDir)
   .action(handleRemote);
 
@@ -56,11 +53,15 @@ export { uploadCmd };
 
 // ============ Handler Functions
 
-async function handleRemote(tagName: string, _: any, cmd: any): Promise<void> {
-  const opts = cmd.optsWithGlobals();
+async function handleRemote(
+  tagName: string,
+  _: object,
+  cmd: Command,
+): Promise<void> {
+  const opts = cmd.optsWithGlobals() as { networkId: string; out: string };
 
-  if (tagName < MIN_RELEASE_VERSION)
-    throw new Error(`${tagName} < ${MIN_RELEASE_VERSION}`);
+  if (tagName < REMOTE_MIN_VERSION)
+    throw new Error(`${tagName} < ${REMOTE_MIN_VERSION}`);
 
   const releases = await getReleases();
   if (!releases[tagName])
