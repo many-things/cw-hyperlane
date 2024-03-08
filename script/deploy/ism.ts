@@ -11,18 +11,21 @@ const deployRoutingIsm = async (
   for (const [domain, v] of Object.entries(ism.isms)) {
     routes.push({
       domain: parseInt(domain),
-      address: await deployIsm(ctx, client, v),
+      route: await deployIsm(ctx, client, v),
     });
   }
 
   const routing = await deployContract(ctx, client, 'hpl_ism_routing', {
     owner: ism.owner === '<signer>' ? client.signer : ism.owner,
-    isms: routes,
+    isms: routes.map(({ domain, route }) => ({
+      domain,
+      address: route.address,
+    })),
   });
 
   return {
     ...routing,
-    isms: routes.reduce((acc, v) => ({ [v.domain]: v.address, ...acc })),
+    isms: routes.reduce((acc, v) => ({ [v.domain]: v.route, ...acc })),
   };
 };
 
