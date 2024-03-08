@@ -90,7 +90,7 @@ function checkConfigType<
   return config.type === tokenType && config.mode === tokenMode;
 }
 
-async function handleCreate(configFile: string, _: any, cmd: Command) {
+async function handleCreate(configFile: string) {
   const deps = CONTAINER.get(Dependencies);
 
   const warpConfigFile = readFileSync(configFile, 'utf-8');
@@ -114,7 +114,7 @@ async function handleCreate(configFile: string, _: any, cmd: Command) {
   };
 
   switch (warpType) {
-    case 'native':
+    case 'native': {
       if (!checkConfigType(warpConfig, 'native', mode))
         throw Error('Invalid wrap config type. This cannot be happended');
 
@@ -129,7 +129,8 @@ async function handleCreate(configFile: string, _: any, cmd: Command) {
         ...nativeWarp,
       });
       break;
-    case 'cw20':
+    }
+    case 'cw20': {
       if (!checkConfigType(warpConfig, 'cw20', warpConfig.mode))
         throw Error('Invalid wrap config type. This cannot be happended');
 
@@ -144,12 +145,13 @@ async function handleCreate(configFile: string, _: any, cmd: Command) {
         ...cw20Warp,
       });
       break;
+    }
   }
 
   saveContext(deps.network.id, deps.ctx);
 }
 
-async function handleLink(_: any, cmd: Command) {
+async function handleLink(_: object, cmd: Command) {
   type Option = {
     assetType: 'native' | 'cw20';
     assetId: string;
@@ -199,7 +201,7 @@ async function handleLink(_: any, cmd: Command) {
   console.log(linkResp.hash);
 }
 
-async function handleTransfer(_: any, cmd: Command) {
+async function handleTransfer(_: object, cmd: Command) {
   type Option = {
     assetType: 'native' | 'cw20';
     assetId: string;
