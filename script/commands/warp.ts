@@ -1,91 +1,91 @@
-import { readFileSync } from "fs";
-import { Command, Option } from "commander";
+import { Command, Option } from 'commander';
+import { readFileSync } from 'fs';
 
-import { CONTAINER, Dependencies } from "../shared/ioc";
 import {
   WarpTokenConfig,
   deployCw20TokenWarp,
   deployNativeTokenWarp,
-} from "../deploy";
-import { saveContext } from "../shared/context";
-import { executeContract } from "../shared/contract";
-import { addPad } from "../shared/utils";
+} from '../deploy';
+import { saveContext } from '../shared/context';
+import { executeContract } from '../shared/contract';
+import { CONTAINER, Dependencies } from '../shared/ioc';
+import { addPad } from '../shared/utils';
 
-const warpCmd = new Command("warp")
-  .description("Hyperlane warp route commands")
+const warpCmd = new Command('warp')
+  .description('Hyperlane warp route commands')
   .configureHelp({ showGlobalOptions: true });
 
 warpCmd
-  .command("create")
-  .description("Create a new warp route")
-  .argument("<config-file>", "path to the warp route config file")
+  .command('create')
+  .description('Create a new warp route')
+  .argument('<config-file>', 'path to the warp route config file')
   .action(handleCreate);
 
 warpCmd
-  .command("link")
-  .description("Link a warp route with external chain")
+  .command('link')
+  .description('Link a warp route with external chain')
   .addOption(
     new Option(
-      "--asset-type <asset-type>",
-      "type of asset, it can be native or cw20"
+      '--asset-type <asset-type>',
+      'type of asset, it can be native or cw20',
     )
       .makeOptionMandatory()
-      .choices(["native", "cw20"])
+      .choices(['native', 'cw20']),
   )
   .addOption(
     new Option(
-      "--asset-id <asset-id>",
-      "asset id to link with warp route"
-    ).makeOptionMandatory()
+      '--asset-id <asset-id>',
+      'asset id to link with warp route',
+    ).makeOptionMandatory(),
   )
   .addOption(
     new Option(
-      "--target-domain <target-domain>",
-      "target domain id to link"
-    ).makeOptionMandatory()
+      '--target-domain <target-domain>',
+      'target domain id to link',
+    ).makeOptionMandatory(),
   )
   .addOption(
     new Option(
-      "--warp-address <warp-address>",
-      "warp contract address to link with"
-    ).makeOptionMandatory()
+      '--warp-address <warp-address>',
+      'warp contract address to link with',
+    ).makeOptionMandatory(),
   )
   .action(handleLink);
 
 warpCmd
-  .command("transfer")
-  .description("Transfer a warp route to external chain")
+  .command('transfer')
+  .description('Transfer a warp route to external chain')
   .addOption(
     new Option(
-      "--asset-type <asset-type>",
-      "type of asset, it can be native or cw20"
+      '--asset-type <asset-type>',
+      'type of asset, it can be native or cw20',
     )
       .makeOptionMandatory()
-      .choices(["native", "cw20"])
+      .choices(['native', 'cw20']),
   )
   .addOption(
     new Option(
-      "--asset-id <asset-id>",
-      "asset id to link with warp route"
-    ).makeOptionMandatory()
+      '--asset-id <asset-id>',
+      'asset id to link with warp route',
+    ).makeOptionMandatory(),
   )
   .addOption(
     new Option(
-      "--target-domain <target-domain>",
-      "target domain id to link"
-    ).makeOptionMandatory()
+      '--target-domain <target-domain>',
+      'target domain id to link',
+    ).makeOptionMandatory(),
   )
   .action(handleTransfer);
 
 export { warpCmd };
 
 function checkConfigType<
-  TokenType extends "native" | "cw20",
-  TokenMode extends "bridged" | "collateral"
+  TokenType extends 'native' | 'cw20',
+  TokenMode extends 'bridged' | 'collateral',
 >(
   config: WarpTokenConfig,
   tokenType: TokenType,
-  tokenMode: TokenMode
+  tokenMode: TokenMode,
 ): config is WarpTokenConfig<typeof tokenType, typeof tokenMode> {
   return config.type === tokenType && config.mode === tokenMode;
 }
@@ -93,7 +93,7 @@ function checkConfigType<
 async function handleCreate(configFile: string, _: any, cmd: Command) {
   const deps = CONTAINER.get(Dependencies);
 
-  const warpConfigFile = readFileSync(configFile, "utf-8");
+  const warpConfigFile = readFileSync(configFile, 'utf-8');
   const warpConfig: WarpTokenConfig = JSON.parse(warpConfigFile);
 
   const { type: warpType, mode } = warpConfig;
@@ -101,9 +101,9 @@ async function handleCreate(configFile: string, _: any, cmd: Command) {
   const mailbox = deps.ctx.deployments?.core?.mailbox?.address;
   if (!mailbox) {
     console.error(
-      "[error]".red,
-      "mailbox contract not yet deployed.",
-      "how about run `deploy` command first?"
+      '[error]'.red,
+      'mailbox contract not yet deployed.',
+      'how about run `deploy` command first?',
     );
     return;
   }
@@ -114,13 +114,13 @@ async function handleCreate(configFile: string, _: any, cmd: Command) {
   };
 
   switch (warpType) {
-    case "native":
-      if (!checkConfigType(warpConfig, "native", mode))
-        throw Error("Invalid wrap config type. This cannot be happended");
+    case 'native':
+      if (!checkConfigType(warpConfig, 'native', mode))
+        throw Error('Invalid wrap config type. This cannot be happended');
 
       const nativeWarp = await deployNativeTokenWarp(deps, mailbox, warpConfig);
       if (!nativeWarp) {
-        console.log("[error]".red, "failed to deploy native warp contract");
+        console.log('[error]'.red, 'failed to deploy native warp contract');
         return;
       }
 
@@ -129,13 +129,13 @@ async function handleCreate(configFile: string, _: any, cmd: Command) {
         ...nativeWarp,
       });
       break;
-    case "cw20":
-      if (!checkConfigType(warpConfig, "cw20", warpConfig.mode))
-        throw Error("Invalid wrap config type. This cannot be happended");
+    case 'cw20':
+      if (!checkConfigType(warpConfig, 'cw20', warpConfig.mode))
+        throw Error('Invalid wrap config type. This cannot be happended');
 
       const cw20Warp = await deployCw20TokenWarp(deps, mailbox, warpConfig);
       if (!cw20Warp) {
-        console.log("[error]".red, "failed to deploy cw20 warp contract");
+        console.log('[error]'.red, 'failed to deploy cw20 warp contract');
         return;
       }
 
@@ -151,7 +151,7 @@ async function handleCreate(configFile: string, _: any, cmd: Command) {
 
 async function handleLink(_: any, cmd: Command) {
   type Option = {
-    assetType: "native" | "cw20";
+    assetType: 'native' | 'cw20';
     assetId: string;
     targetDomain: string;
     warpAddress: string;
@@ -164,23 +164,23 @@ async function handleLink(_: any, cmd: Command) {
   if (!warp)
     throw new Error(
       [
-        "[error]".red,
-        "warp contract is not deployed.",
-        "Run `warp create` first.",
-      ].join(" ")
+        '[error]'.red,
+        'warp contract is not deployed.',
+        'Run `warp create` first.',
+      ].join(' '),
     );
 
   deps.ctx.deployments.warp = {
     ...warp,
-    [opts.assetType]: warp[opts.assetType as "native" | "cw20"] || [],
+    [opts.assetType]: warp[opts.assetType as 'native' | 'cw20'] || [],
   };
 
   const routes = deps.ctx.deployments.warp[opts.assetType] || [];
   const route = routes.find((v) => v.id === opts.assetId);
   if (!route) {
     console.error(
-      "[error]".red,
-      `warp route with id ${opts.assetId} not found.`
+      '[error]'.red,
+      `warp route with id ${opts.assetId} not found.`,
     );
     return;
   }
@@ -201,7 +201,7 @@ async function handleLink(_: any, cmd: Command) {
 
 async function handleTransfer(_: any, cmd: Command) {
   type Option = {
-    assetType: "native" | "cw20";
+    assetType: 'native' | 'cw20';
     assetId: string;
     targetDomain: string;
   };
@@ -213,23 +213,23 @@ async function handleTransfer(_: any, cmd: Command) {
   if (!warp)
     throw new Error(
       [
-        "[error]".red,
-        "warp contract is not deployed.",
-        "Run `warp create` first.",
-      ].join(" ")
+        '[error]'.red,
+        'warp contract is not deployed.',
+        'Run `warp create` first.',
+      ].join(' '),
     );
 
   deps.ctx.deployments.warp = {
     ...warp,
-    [opts.assetType]: warp[opts.assetType as "native" | "cw20"] || [],
+    [opts.assetType]: warp[opts.assetType as 'native' | 'cw20'] || [],
   };
 
   const routes = deps.ctx.deployments.warp[opts.assetType] || [];
   const route = routes.find((v) => v.id === opts.assetId);
   if (!route) {
     console.error(
-      "[error]".red,
-      `warp route with id ${opts.assetId} not found.`
+      '[error]'.red,
+      `warp route with id ${opts.assetId} not found.`,
     );
     return;
   }
@@ -244,6 +244,6 @@ async function handleTransfer(_: any, cmd: Command) {
         amount: `${1_000_000n}`,
       },
     },
-    [{ amount: `${1_000_001n}`, denom: "uosmo" }]
+    [{ amount: `${1_000_001n}`, denom: 'uosmo' }],
   );
 }

@@ -1,11 +1,11 @@
-version: "2"
+version: '2'
 services:
   relayer:
     container_name: hpl-relayer
     image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
     user: root
     # restart: always
-    entrypoint: ["sh", "-c"]
+    entrypoint: ['sh', '-c']
     command:
       - |
         rm -rf /app/config/* && \
@@ -24,7 +24,7 @@ services:
     image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
     user: root
     # restart: always
-    entrypoint: ["sh", "-c"]
+    entrypoint: ['sh', '-c']
     command:
       - |
         rm -rf /app/config/* && \
@@ -43,7 +43,7 @@ services:
     image: gcr.io/abacus-labs-dev/hyperlane-agent:3bb4d87-20240129-164519
     user: root
     # restart: always
-    entrypoint: ["sh", "-c"]
+    entrypoint: ['sh', '-c']
     command:
       - |
         rm -rf /app/config/* && \

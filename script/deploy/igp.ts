@@ -1,19 +1,19 @@
-import { Client, IgpHookType, getNetwork } from "../shared/config";
-import { Context, ContextHook } from "../shared/context";
-import { deployContract, executeMultiMsg } from "../shared/contract";
+import { Client, IgpHookType, getNetwork } from '../shared/config';
+import { Context, ContextHook } from '../shared/context';
+import { deployContract, executeMultiMsg } from '../shared/contract';
 
 export const deployIgp = async (
   networkId: string,
   ctx: Context,
   client: Client,
-  igpType: IgpHookType
+  igpType: IgpHookType,
 ): Promise<ContextHook> => {
   const { hrp, gas } = getNetwork(networkId);
 
   // init igp
-  const igp = await deployContract(ctx, client, "hpl_igp", {
+  const igp = await deployContract(ctx, client, 'hpl_igp', {
     hrp,
-    owner: igpType.owner === "<signer>" ? client.signer : igpType.owner,
+    owner: igpType.owner === '<signer>' ? client.signer : igpType.owner,
     gas_token: igpType.token || gas.denom,
     beneficiary: client.signer,
     default_gas_usage: igpType.default_gas_usage.toString(),
@@ -21,7 +21,7 @@ export const deployIgp = async (
 
   // init igp oracle
 
-  const igpOracle = await deployContract(ctx, client, "hpl_igp_oracle", {
+  const igpOracle = await deployContract(ctx, client, 'hpl_igp_oracle', {
     owner: client.signer,
   });
 

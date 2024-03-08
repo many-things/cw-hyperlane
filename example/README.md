@@ -36,20 +36,20 @@ You can check full list of example in [config.example.yaml](../config.example.ya
 
 ```yaml
 networks:
-  - id: "osmo-test-5"
-    hrp: "osmo"
+  - id: 'osmo-test-5'
+    hrp: 'osmo'
     endpoint:
-      rpc: "https://rpc.testnet.osmosis.zone"
-      rest: "https://lcd.testnet.osmosis.zone"
-      grpc: "https://grpc.testnet.osmosis.zone"
+      rpc: 'https://rpc.testnet.osmosis.zone'
+      rest: 'https://lcd.testnet.osmosis.zone'
+      grpc: 'https://grpc.testnet.osmosis.zone'
     gas:
-      price: "0.025"
-      denom: "uosmo"
+      price: '0.025'
+      denom: 'uosmo'
     # osmo-test-5 -> ascii / decimal -> sum.
     # It's very arbitrary value, Perhaps you must need to change this value.
     domain: 1037 # osmo-test-5 -> ascii / decimal -> sum
 
-signer: "<private-key> or <mnemonic>"
+signer: '<private-key> or <mnemonic>'
 
 deploy:
   ism:

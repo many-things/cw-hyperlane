@@ -6,11 +6,11 @@ export class Logger {
   }
 
   debug = (...args: any[]) =>
-    console.log("DEBUG]".grey, `[${this.name}]`, ...args);
+    console.log('DEBUG]'.grey, `[${this.name}]`, ...args);
 
   info = (...args: any[]) =>
-    console.log(" INFO]".cyan, `[${this.name}]`, ...args);
+    console.log(' INFO]'.cyan, `[${this.name}]`, ...args);
 
   error = (...args: any[]) =>
-    console.error("ERROR]".red, `[${this.name}]`, ...args);
+    console.error('ERROR]'.red, `[${this.name}]`, ...args);
 }

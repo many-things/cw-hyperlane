@@ -1,11 +1,12 @@
-import { contractNames } from "./constants";
-import { Context } from "./context";
-import { waitTx } from "./utils";
-import { Client } from "./config";
-import { IndexedTx } from "@cosmjs/stargate";
-import { Logger } from "./logger";
+import { IndexedTx } from '@cosmjs/stargate';
 
-const logger = new Logger("contract");
+import { Client } from './config';
+import { contractNames } from './constants';
+import { Context } from './context';
+import { Logger } from './logger';
+import { waitTx } from './utils';
+
+const logger = new Logger('contract');
 
 export type ContractNames = (typeof contractNames)[number];
 
@@ -13,7 +14,7 @@ export async function deployContract<T extends ContractNames>(
   ctx: Context,
   { wasm, stargate, signer }: Client,
   contractName: T,
-  initMsg: any
+  initMsg: any,
 ): Promise<{ type: T; address: string }> {
   logger.debug(`deploying ${contractName}`);
 
@@ -23,13 +24,13 @@ export async function deployContract<T extends ContractNames>(
     codeId,
     initMsg,
     `cw-hpl: ${contractName}`,
-    "auto"
+    'auto',
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
     logger.error(
-      "deploy tx failed.",
-      `contract=${contractName}, hash=${receipt.hash}`
+      'deploy tx failed.',
+      `contract=${contractName}, hash=${receipt.hash}`,
     );
     throw new Error(JSON.stringify(receipt.events));
   }
@@ -42,7 +43,7 @@ export async function executeContract(
   { wasm, stargate, signer }: Client,
   deployment: { type: ContractNames; address: string },
   msg: any,
-  funds: { amount: string; denom: string }[] = []
+  funds: { amount: string; denom: string }[] = [],
 ): Promise<IndexedTx> {
   logger.debug(`executing ${deployment.type}'s ${Object.keys(msg)[0]}`);
 
@@ -50,15 +51,15 @@ export async function executeContract(
     signer,
     deployment.address,
     msg,
-    "auto",
+    'auto',
     undefined,
-    funds
+    funds,
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
     logger.error(
-      "execute tx failed.",
-      `contract=${deployment.type}, hash=${receipt.hash}`
+      'execute tx failed.',
+      `contract=${deployment.type}, hash=${receipt.hash}`,
     );
     throw new Error(JSON.stringify(receipt.events));
   }
@@ -69,7 +70,7 @@ export async function executeContract(
 
 export async function executeMultiMsg(
   { wasm, stargate, signer }: Client,
-  msgs: { contract: { type: ContractNames; address: string }; msg: any }[]
+  msgs: { contract: { type: ContractNames; address: string }; msg: any }[],
 ): Promise<IndexedTx> {
   const long = msgs
     .map((v) => v.contract.type.length)
@@ -78,9 +79,9 @@ export async function executeMultiMsg(
   logger.debug(
     `executing ${msgs.length} msgs.\n`,
     ...msgs.flatMap((v, i, arr) => [
-      `- ${v.contract.type.padEnd(long, " ")}:`,
-      `${Object.keys(v.msg)[0]}${i === arr.length - 1 ? "" : "\n"}`,
-    ])
+      `- ${v.contract.type.padEnd(long, ' ')}:`,
+      `${Object.keys(v.msg)[0]}${i === arr.length - 1 ? '' : '\n'}`,
+    ]),
   );
 
   const res = await wasm.executeMultiple(
@@ -89,13 +90,13 @@ export async function executeMultiMsg(
       contractAddress: v.contract.address,
       msg: v.msg,
     })),
-    "auto"
+    'auto',
   );
   const receipt = await waitTx(res.transactionHash, stargate);
   if (receipt.code > 0) {
     logger.error(
       `execute multiple tx failed.`,
-      `msgs=${msgs.length}, hash=${receipt.hash}`
+      `msgs=${msgs.length}, hash=${receipt.hash}`,
     );
     throw new Error(JSON.stringify(receipt.events));
   }
@@ -103,9 +104,9 @@ export async function executeMultiMsg(
   logger.info(
     `executed ${msgs.length} msgs.\n`,
     ...msgs.flatMap((v, i, arr) => [
-      `- ${v.contract.type.padEnd(long, " ")}:`,
-      `${Object.keys(v.msg)[0]}${i === arr.length - 1 ? "" : "\n"}`,
-    ])
+      `- ${v.contract.type.padEnd(long, ' ')}:`,
+      `${Object.keys(v.msg)[0]}${i === arr.length - 1 ? '' : '\n'}`,
+    ]),
   );
   return receipt;
 }

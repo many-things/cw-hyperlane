@@ -1,13 +1,14 @@
-import { Command } from "commander";
-import { CONTAINER, Dependencies } from "../shared/ioc";
-import { saveAgentConfig } from "../shared/context";
+import { Command } from 'commander';
 
-const contextCmd = new Command("context");
+import { saveAgentConfig } from '../shared/context';
+import { CONTAINER, Dependencies } from '../shared/ioc';
+
+const contextCmd = new Command('context');
 
 contextCmd
-  .command("make-agent-config")
-  .description("Make an agent config")
-  .option("-o --output <output-dir>", "The output directory")
+  .command('make-agent-config')
+  .description('Make an agent config')
+  .option('-o --output <output-dir>', 'The output directory')
   .action(async (_, cmd) => {
     const opts = cmd.optsWithGlobals();
     const { ctx, network } = CONTAINER.get(Dependencies);
@@ -15,7 +16,7 @@ contextCmd
     await saveAgentConfig(
       network,
       ctx,
-      opts.output && { contextPath: opts.output }
+      opts.output && { contextPath: opts.output },
     );
   });
 

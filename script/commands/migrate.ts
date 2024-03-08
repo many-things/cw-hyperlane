@@ -1,15 +1,15 @@
-import { Command } from "commander";
-import { CodeDetails } from "@cosmjs/cosmwasm-stargate";
+import { CodeDetails } from '@cosmjs/cosmwasm-stargate';
+import { Command } from 'commander';
 
-import { CONTAINER, Dependencies } from "../shared/ioc";
-import { ContractNames } from "../shared/contract";
-import { ContextHook, ContextIsm } from "../shared/context";
-import { askQuestion, waitTx } from "../shared/utils";
+import { ContextHook, ContextIsm } from '../shared/context';
+import { ContractNames } from '../shared/contract';
+import { CONTAINER, Dependencies } from '../shared/ioc';
+import { askQuestion, waitTx } from '../shared/utils';
 
-export const migrateCmd = new Command("migrate")
-  .description("Migrate contracts")
+export const migrateCmd = new Command('migrate')
+  .description('Migrate contracts')
   .configureHelp({ showGlobalOptions: true })
-  .option("-c --contracts <contracts...>", "specify contracts to migrate")
+  .option('-c --contracts <contracts...>', 'specify contracts to migrate')
   .action(handleMigrate);
 
 async function handleMigrate(_: any, cmd: any) {
@@ -39,7 +39,7 @@ async function handleMigrate(_: any, cmd: any) {
       const contractInfo = await client.wasm.getContract(v.address);
       const codeInfo = await client.wasm.getCodeDetails(contractInfo.codeId);
       return { ...v, contractInfo, codeInfo };
-    })
+    }),
   );
 
   const artifacts = Object.fromEntries(
@@ -47,26 +47,26 @@ async function handleMigrate(_: any, cmd: any) {
       Object.entries(ctx.artifacts).map(async ([contractName, codeId]) => {
         const codeInfo = await client.wasm.getCodeDetails(codeId);
         return [contractName, codeInfo];
-      })
-    )
+      }),
+    ),
   ) as Record<ContractNames, CodeDetails>;
 
   const toMigrate = withContractInfo.filter(
     (v) =>
       v.codeInfo.id !== ctx.artifacts[v.type] &&
-      v.codeInfo.checksum !== artifacts[v.type].checksum
+      v.codeInfo.checksum !== artifacts[v.type].checksum,
   );
 
   if (toMigrate.length === 0) {
-    console.log("No changes detected.");
+    console.log('No changes detected.');
     return;
   }
 
-  if (!(await askQuestion("Do you want to proceed? (y/n)"))) {
-    console.log("Aborted.");
+  if (!(await askQuestion('Do you want to proceed? (y/n)'))) {
+    console.log('Aborted.');
     return;
   }
-  console.log("Proceeding to migrate...");
+  console.log('Proceeding to migrate...');
 
   for (const migrate of toMigrate) {
     const res = await client.wasm.migrate(
@@ -74,7 +74,7 @@ async function handleMigrate(_: any, cmd: any) {
       migrate.address,
       artifacts[migrate.type].id,
       {},
-      "auto"
+      'auto',
     );
     await waitTx(res.transactionHash, client.stargate);
     console.log(`${migrate.type} migrated successfully`);
@@ -82,68 +82,68 @@ async function handleMigrate(_: any, cmd: any) {
 }
 
 const flattenIsm = (
-  ism: ContextIsm | undefined
+  ism: ContextIsm | undefined,
 ): { type: ContractNames; address: string }[] => {
   if (!ism) return [];
 
   switch (ism.type) {
-    case "hpl_ism_aggregate":
+    case 'hpl_ism_aggregate':
       return [
         { type: ism.type, address: ism.address },
         ...ism.isms.flatMap(flattenIsm),
       ];
-    case "hpl_ism_routing":
+    case 'hpl_ism_routing':
       return [
         { type: ism.type, address: ism.address },
         ...Object.values(ism.isms).flatMap(flattenIsm),
       ];
-    case "hpl_ism_multisig":
+    case 'hpl_ism_multisig':
       return [ism];
-    case "hpl_ism_pausable":
+    case 'hpl_ism_pausable':
       return [ism];
-    case "hpl_test_mock_ism":
+    case 'hpl_test_mock_ism':
       return [ism];
   }
 };
 
 const flattenHook = (
-  hook: ContextHook | undefined
+  hook: ContextHook | undefined,
 ): { type: ContractNames; address: string }[] => {
   if (!hook) return [];
 
   switch (hook.type) {
-    case "hpl_hook_aggregate":
+    case 'hpl_hook_aggregate':
       return [
         { type: hook.type, address: hook.address },
         ...hook.hooks.flatMap(flattenHook),
       ];
-    case "hpl_hook_routing":
+    case 'hpl_hook_routing':
       return [
         { type: hook.type, address: hook.address },
         ...Object.values(hook.hooks).flatMap(flattenHook),
       ];
-    case "hpl_hook_routing_custom":
+    case 'hpl_hook_routing_custom':
       return [
         { type: hook.type, address: hook.address },
         ...Object.values(hook.hooks).flatMap((v) =>
-          Object.values(v).flatMap(flattenHook)
+          Object.values(v).flatMap(flattenHook),
         ),
       ];
-    case "hpl_hook_routing_fallback":
+    case 'hpl_hook_routing_fallback':
       return [
         { type: hook.type, address: hook.address },
         ...Object.values(hook.hooks).flatMap(flattenHook),
       ];
 
-    case "hpl_igp":
+    case 'hpl_igp':
       return [{ type: hook.type, address: hook.address }, hook.oracle];
-    case "hpl_hook_fee":
+    case 'hpl_hook_fee':
       return [hook];
-    case "hpl_hook_merkle":
+    case 'hpl_hook_merkle':
       return [hook];
-    case "hpl_hook_pausable":
+    case 'hpl_hook_pausable':
       return [hook];
-    case "hpl_test_mock_hook":
+    case 'hpl_test_mock_hook':
       return [hook];
   }
 };

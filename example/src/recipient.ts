@@ -1,15 +1,15 @@
 import {
-  TestRecipient__factory,
   StaticMessageIdMultisigIsmFactory__factory,
-} from "@hyperlane-xyz/core";
+  TestRecipient__factory,
+} from '@hyperlane-xyz/core';
+import { Command } from 'commander';
 
-import { CONTAINER, Dependencies } from "./ioc";
-import { expectNextContractAddr, logTx } from "./utils";
-import { HYP_MULTSIG_ISM_FACTORY } from "./constants";
-import { Command } from "commander";
+import { HYP_MULTSIG_ISM_FACTORY } from './constants';
+import { CONTAINER, Dependencies } from './ioc';
+import { expectNextContractAddr, logTx } from './utils';
 
-export const recipientCmd = new Command("deploy-test-recipient").action(
-  deployTestRecipient
+export const recipientCmd = new Command('deploy-test-recipient').action(
+  deployTestRecipient,
 );
 
 async function deployTestRecipient() {
@@ -28,7 +28,7 @@ async function deployTestRecipient() {
       bytecode: TestRecipient__factory.bytecode,
       args: [],
     });
-    logTx("Deploy test recipient", tx);
+    logTx('Deploy test recipient', tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
 
@@ -36,7 +36,7 @@ async function deployTestRecipient() {
   const multisigIsmAddr = await query.readContract({
     abi: StaticMessageIdMultisigIsmFactory__factory.abi,
     address: HYP_MULTSIG_ISM_FACTORY,
-    functionName: "getAddress",
+    functionName: 'getAddress',
     args: [[account.address], 1],
   });
   console.log(`Deploying multisigIsm at "${multisigIsmAddr.green}"...`);
@@ -45,10 +45,10 @@ async function deployTestRecipient() {
     const tx = await exec.writeContract({
       abi: StaticMessageIdMultisigIsmFactory__factory.abi,
       address: HYP_MULTSIG_ISM_FACTORY,
-      functionName: "deploy",
+      functionName: 'deploy',
       args: [[account.address], 1],
     });
-    logTx("Deploy multisig ism", tx);
+    logTx('Deploy multisig ism', tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
 
@@ -59,14 +59,14 @@ async function deployTestRecipient() {
     const tx = await exec.writeContract({
       abi: TestRecipient__factory.abi,
       address: testRecipientAddr,
-      functionName: "setInterchainSecurityModule",
+      functionName: 'setInterchainSecurityModule',
       args: [multisigIsmAddr],
     });
-    logTx("Set multisig ism to test recipient", tx);
+    logTx('Set multisig ism to test recipient', tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
 
-  console.log("== Done! ==");
+  console.log('== Done! ==');
 
   console.log({
     testRecipient: testRecipientAddr,

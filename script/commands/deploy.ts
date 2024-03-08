@@ -1,18 +1,18 @@
-import { Command } from "commander";
+import { Command } from 'commander';
 
-import { deployIsm, deployHook } from "../deploy";
-import { CONTAINER, Dependencies } from "../shared/ioc";
-import { Client, config, getNetwork } from "../shared/config";
+import { deployHook, deployIsm } from '../deploy';
+import { Client, config, getNetwork } from '../shared/config';
 import {
   Context,
   ContextDeployments,
   saveAgentConfig,
   saveContext,
-} from "../shared/context";
-import { deployContract, executeMultiMsg } from "../shared/contract";
+} from '../shared/context';
+import { deployContract, executeMultiMsg } from '../shared/contract';
+import { CONTAINER, Dependencies } from '../shared/ioc';
 
-export const deployCmd = new Command("deploy")
-  .description("Deploy contracts")
+export const deployCmd = new Command('deploy')
+  .description('Deploy contracts')
   .configureHelp({ showGlobalOptions: true })
   .action(handleDeploy);
 
@@ -61,17 +61,17 @@ async function handleDeploy(_: any, cmd: any) {
 const deployCore = async (
   { networkId }: { networkId: string },
   ctx: Context,
-  client: Client
-): Promise<ContextDeployments["core"]> => {
+  client: Client,
+): Promise<ContextDeployments['core']> => {
   const { hrp, domain } = getNetwork(networkId);
 
-  const log = (v: string) => console.log("[core]".green, v);
+  const log = (v: string) => console.log('[core]'.green, v);
   const preload = ctx.deployments.core;
   const deployment = preload || {};
 
   deployment.mailbox =
     preload?.mailbox ||
-    (await deployContract(ctx, client, "hpl_mailbox", {
+    (await deployContract(ctx, client, 'hpl_mailbox', {
       hrp,
       domain,
       owner: client.signer,
@@ -80,7 +80,7 @@ const deployCore = async (
 
   deployment.validator_announce =
     preload?.validator_announce ||
-    (await deployContract(ctx, client, "hpl_validator_announce", {
+    (await deployContract(ctx, client, 'hpl_validator_announce', {
       hrp,
       mailbox: deployment.mailbox.address,
     }));
@@ -92,13 +92,13 @@ const deployCore = async (
 
 const deployIsms = async (
   ctx: Context,
-  client: Client
-): Promise<ContextDeployments["isms"]> => {
+  client: Client,
+): Promise<ContextDeployments['isms']> => {
   if (!config.deploy.ism) {
-    throw new Error("ISM deployment config not found");
+    throw new Error('ISM deployment config not found');
   }
 
-  const log = (v: string) => console.log("[ism]".green, v);
+  const log = (v: string) => console.log('[ism]'.green, v);
   const preload = ctx.deployments.isms;
   const deployment =
     preload ||
@@ -108,7 +108,7 @@ const deployIsms = async (
       config.deploy.ism instanceof Array
         ? {
             // default ism (multisig)
-            type: "multisig",
+            type: 'multisig',
             owner: client.signer,
             validators: config.deploy.ism
               .map((domain) => ({
@@ -121,10 +121,10 @@ const deployIsms = async (
                   [v.domain]: { addrs: v.addrs, threshold: v.threshold },
                   ...acc,
                 }),
-                {} as Record<string, any>
+                {} as Record<string, any>,
               ),
           }
-        : config.deploy.ism
+        : config.deploy.ism,
     ));
   if (preload) {
     log(`ism ${deployment.type} already deployed`);
@@ -136,13 +136,13 @@ const deployIsms = async (
 const deployHooks = async (
   { networkId }: { networkId: string },
   ctx: Context,
-  client: Client
-): Promise<ContextDeployments["hooks"]> => {
+  client: Client,
+): Promise<ContextDeployments['hooks']> => {
   if (!config.deploy.hooks) {
-    throw new Error("Hook deployment config not found");
+    throw new Error('Hook deployment config not found');
   }
 
-  const log = (v: string) => console.log("[hooks]".green, v);
+  const log = (v: string) => console.log('[hooks]'.green, v);
   const preload = ctx.deployments?.hooks;
   const deployment = preload || {};
 
@@ -152,7 +152,7 @@ const deployHooks = async (
       networkId,
       ctx,
       client,
-      config.deploy.hooks.default || { type: "mock" }
+      config.deploy.hooks.default || { type: 'mock' },
     ));
   if (preload?.default)
     log(`default hook ${deployment.default.type} already deployed`);
@@ -163,7 +163,7 @@ const deployHooks = async (
       networkId,
       ctx,
       client,
-      config.deploy.hooks.required || { type: "mock" }
+      config.deploy.hooks.required || { type: 'mock' },
     ));
   if (preload?.required)
     log(`required hook ${deployment.required.type} already deployed`);
@@ -174,17 +174,17 @@ const deployHooks = async (
 const deployTest = async (
   { networkId }: { networkId: string },
   ctx: Context,
-  client: Client
-): Promise<ContextDeployments["test"]> => {
+  client: Client,
+): Promise<ContextDeployments['test']> => {
   const { hrp } = getNetwork(networkId);
 
-  const log = (v: string) => console.log("[test]".green, v);
+  const log = (v: string) => console.log('[test]'.green, v);
   const preload = ctx.deployments.test;
   const deployment = preload || {};
 
   deployment.msg_receiver =
     preload?.msg_receiver ||
-    (await deployContract(ctx, client, "hpl_test_mock_msg_receiver", {
+    (await deployContract(ctx, client, 'hpl_test_mock_msg_receiver', {
       hrp,
     }));
   if (preload?.msg_receiver)

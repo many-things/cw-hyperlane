@@ -1,11 +1,11 @@
-import { Container } from "inversify";
+import { Container } from 'inversify';
 
-import { Context } from "./context";
-import { Client, Config } from "./config";
+import { Client, Config } from './config';
+import { Context } from './context';
 
 export const CONTAINER = new Container({
   autoBindInjectable: true,
-  defaultScope: "Singleton",
+  defaultScope: 'Singleton',
 });
 
 // referenced by tsoa
@@ -14,5 +14,5 @@ export const iocContainer = CONTAINER;
 export class Dependencies {
   ctx: Context;
   client: Client;
-  network: Config["networks"][number];
+  network: Config['networks'][number];
 }

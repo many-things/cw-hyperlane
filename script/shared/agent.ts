@@ -1,13 +1,13 @@
-import { Config } from "./config";
-import { Context, ContextHook } from "./context";
-import { extractByte32AddrFromBech32 } from "./utils";
-import { getContractInfo } from "./wasm";
+import { Config } from './config';
+import { Context, ContextHook } from './context';
+import { extractByte32AddrFromBech32 } from './utils';
+import { getContractInfo } from './wasm';
 
 export type HplAgentConfig = {
   name: string;
   domainId: string;
   chainId: string;
-  protocol: "cosmos";
+  protocol: 'cosmos';
   rpcUrls: { http: string }[];
   grpcUrl: string;
   canonicalAsset: string; // usually same as gas token
@@ -33,8 +33,8 @@ export type HplAgentConfig = {
 };
 
 export async function fromContext(
-  network: Config["networks"][number],
-  context: Context
+  network: Config['networks'][number],
+  context: Context,
 ): Promise<HplAgentConfig> {
   const toHex = (v: string) => `0x${extractByte32AddrFromBech32(v)}`;
 
@@ -44,20 +44,20 @@ export async function fromContext(
   const mailboxContractInfo = await getContractInfo(network, mailboxAddr);
 
   const igp =
-    findHook(hooks?.default!, "hpl_igp") ||
-    findHook(hooks?.required!, "hpl_igp");
-  if (!igp) throw new Error("no igp on this context");
+    findHook(hooks?.default!, 'hpl_igp') ||
+    findHook(hooks?.required!, 'hpl_igp');
+  if (!igp) throw new Error('no igp on this context');
 
   const merkleTreeHook =
-    findHook(hooks?.default!, "hpl_hook_merkle") ||
-    findHook(hooks?.required!, "hpl_hook_merkle");
-  if (!merkleTreeHook) throw new Error("no merkle tree hook on this context");
+    findHook(hooks?.default!, 'hpl_hook_merkle') ||
+    findHook(hooks?.required!, 'hpl_hook_merkle');
+  if (!merkleTreeHook) throw new Error('no merkle tree hook on this context');
 
   const agent: HplAgentConfig = {
-    name: network.id.split("-").join(""),
+    name: network.id.split('-').join(''),
     domainId: network.domain.toString(),
     chainId: network.id,
-    protocol: "cosmos",
+    protocol: 'cosmos',
 
     rpcUrls: [{ http: network.endpoint.rpc }],
     grpcUrl: network.endpoint.grpc,
@@ -95,7 +95,7 @@ export async function fromContext(
 // map filter reverse pop
 function mfrpHooks(
   hooks: ContextHook[],
-  want: ContextHook["type"]
+  want: ContextHook['type'],
 ): ContextHook | undefined {
   return hooks
     .map((v) => findHook(v, want))
@@ -106,23 +106,23 @@ function mfrpHooks(
 
 function findHook(
   hook: ContextHook,
-  want: ContextHook["type"]
+  want: ContextHook['type'],
 ): ContextHook | undefined {
   if (hook.type === want) return hook;
 
   switch (hook.type) {
-    case "hpl_hook_aggregate":
+    case 'hpl_hook_aggregate':
       return mfrpHooks(hook.hooks, want);
-    case "hpl_hook_routing":
+    case 'hpl_hook_routing':
       return mfrpHooks(Object.values(hook.hooks), want);
-    case "hpl_hook_routing_custom":
+    case 'hpl_hook_routing_custom':
       return mfrpHooks(
         Object.values(hook.hooks)
           .map((v) => Object.values(v))
           .flat(),
-        want
+        want,
       );
-    case "hpl_hook_routing_fallback":
+    case 'hpl_hook_routing_fallback':
       return mfrpHooks(Object.values(hook.hooks), want);
 
     default:

@@ -1,27 +1,26 @@
-import "reflect-metadata";
-import colors from "colors";
-import { Command, Option } from "commander";
+import colors from 'colors';
+import { Command, Option } from 'commander';
+import 'reflect-metadata';
 
+import { version } from '../package.json';
 import {
-  uploadCmd,
-  deployCmd,
+  contextCmd,
   contractCmd,
+  deployCmd,
   migrateCmd,
+  uploadCmd,
   walletCmd,
   warpCmd,
-  contextCmd,
-} from "./commands";
-import { config, getNetwork, getSigningClient } from "./shared/config";
-import { loadContext } from "./shared/context";
-import { CONTAINER, Dependencies } from "./shared/ioc";
-
-import { version } from "../package.json";
+} from './commands';
+import { config, getNetwork, getSigningClient } from './shared/config';
+import { loadContext } from './shared/context';
+import { CONTAINER, Dependencies } from './shared/ioc';
 
 colors.enable();
 
 const optNetworkId = new Option(
-  "-n, --network-id <networkId>",
-  "specify network id"
+  '-n, --network-id <networkId>',
+  'specify network id',
 )
   .choices(config.networks.map((v) => v.id))
   .makeOptionMandatory();
@@ -29,11 +28,11 @@ const optNetworkId = new Option(
 const cli = new Command();
 
 cli
-  .name("cw-hpl")
+  .name('cw-hpl')
   .version(version)
-  .description("CLI toolkit for CosmWasm Hyperlane")
+  .description('CLI toolkit for CosmWasm Hyperlane')
   .addOption(optNetworkId)
-  .hook("preAction", injectDependencies);
+  .hook('preAction', injectDependencies);
 
 cli.addCommand(contextCmd);
 cli.addCommand(contractCmd);

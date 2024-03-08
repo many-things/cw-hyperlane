@@ -1,6 +1,6 @@
-import { deployContract } from "../shared/contract";
-import { Dependencies } from "../shared/ioc";
-import { orSigner } from "../shared/utils";
+import { deployContract } from '../shared/contract';
+import { Dependencies } from '../shared/ioc';
+import { orSigner } from '../shared/utils';
 
 type NativeTokenBridged = {
   denom: string;
@@ -57,9 +57,9 @@ type WarpTokenConfigMap = {
 };
 
 export type WarpTokenConfig<
-  TokenType extends "native" | "cw20" = "native" | "cw20",
-  TokenMode extends "bridged" | "collateral" = "bridged" | "collateral",
-  OwnerType extends string | "<signer>" = "<signer>"
+  TokenType extends 'native' | 'cw20' = 'native' | 'cw20',
+  TokenMode extends 'bridged' | 'collateral' = 'bridged' | 'collateral',
+  OwnerType extends string | '<signer>' = '<signer>',
 > = {
   type: TokenType;
   mode: TokenMode;
@@ -72,22 +72,22 @@ export type WarpTokenConfig<
 export async function deployNativeTokenWarp(
   { ctx, client, network }: Dependencies,
   mailbox: string,
-  config: WarpTokenConfig<"native">
-): Promise<{ type: "hpl_warp_native"; address: string } | undefined> {
+  config: WarpTokenConfig<'native'>,
+): Promise<{ type: 'hpl_warp_native'; address: string } | undefined> {
   const deployments = ctx.deployments;
 
   const preload = deployments?.warp?.native?.find((v) => v.id === config.id);
   if (preload) {
     console.error(
-      "[error]".red,
+      '[error]'.red,
       `warp route ${preload.id} already exists.`,
       `type: ${preload.type},`,
-      `addr: ${preload.address}`
+      `addr: ${preload.address}`,
     );
     return;
   }
 
-  const nativeWarp = await deployContract(ctx, client, "hpl_warp_native", {
+  const nativeWarp = await deployContract(ctx, client, 'hpl_warp_native', {
     token: config.config,
 
     hrp: network.hrp,
@@ -101,22 +101,22 @@ export async function deployNativeTokenWarp(
 export async function deployCw20TokenWarp(
   { ctx, client, network }: Dependencies,
   mailbox: string,
-  config: WarpTokenConfig<"cw20">
-): Promise<{ type: "hpl_warp_cw20"; address: string } | undefined> {
+  config: WarpTokenConfig<'cw20'>,
+): Promise<{ type: 'hpl_warp_cw20'; address: string } | undefined> {
   const deployments = ctx.deployments;
 
   const preload = deployments?.warp?.cw20?.find((v) => v.id === config.id);
   if (preload) {
     console.error(
-      "[error]".red,
+      '[error]'.red,
       `warp route ${preload.id} already exists.`,
       `type: ${preload.type},`,
-      `addr: ${preload.address}`
+      `addr: ${preload.address}`,
     );
     return;
   }
 
-  const cw20Warp = await deployContract(ctx, client, "hpl_warp_cw20", {
+  const cw20Warp = await deployContract(ctx, client, 'hpl_warp_cw20', {
     token: config.config,
 
     hrp: network.hrp,
