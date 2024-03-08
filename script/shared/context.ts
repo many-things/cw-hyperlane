@@ -77,11 +77,7 @@ export function loadContext(
     const result = fs.readFileSync(fileName, 'utf-8');
     return JSON.parse(result.toString()) as Context;
   } catch (err) {
-    console.error(
-      'Failed to load context. Returning an empty context object.',
-      'err:',
-      err,
-    );
+    console.error('Failed to load context. Returning an empty context object.');
   }
 
   return {
