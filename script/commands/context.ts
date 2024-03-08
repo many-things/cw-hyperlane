@@ -1,7 +1,6 @@
 import { Command } from 'commander';
 
-import { saveAgentConfig } from '../shared/agent';
-import { getNetwork } from '../shared/config';
+import { saveAgentConfig } from '../shared/context';
 import { CONTAINER, Dependencies } from '../shared/ioc';
 
 const contextCmd = new Command('context');
@@ -12,8 +11,7 @@ contextCmd
   .option('-o --output <output-dir>', 'The output directory')
   .action(async (_, cmd) => {
     const opts = cmd.optsWithGlobals();
-    const { ctx } = CONTAINER.get(Dependencies);
-    const network = getNetwork(opts.networkId);
+    const { ctx, network } = CONTAINER.get(Dependencies);
 
     await saveAgentConfig(
       network,

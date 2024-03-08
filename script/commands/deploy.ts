@@ -1,9 +1,13 @@
 import { Command } from 'commander';
 
 import { deployHook, deployIsm } from '../deploy';
-import { saveAgentConfig } from '../shared/agent';
 import { Client, config, getNetwork } from '../shared/config';
-import { Context, ContextDeployments, saveContext } from '../shared/context';
+import {
+  Context,
+  ContextDeployments,
+  saveAgentConfig,
+  saveContext,
+} from '../shared/context';
 import { deployContract, executeMultiMsg } from '../shared/contract';
 import { CONTAINER, Dependencies } from '../shared/ioc';
 
@@ -20,7 +24,7 @@ async function handleDeploy(_: object, cmd: Command) {
   ctx.deployments.core = await deployCore(opts, ctx, client);
   ctx.deployments.isms = await deployIsms(ctx, client);
   ctx.deployments.hooks = await deployHooks(opts, ctx, client);
-  // TODO: deploy warp
+  ctx.deployments.warp = { native: [], cw20: [] };
   ctx.deployments.test = await deployTest(opts, ctx, client);
 
   if (!ctx.deployments.core?.mailbox)

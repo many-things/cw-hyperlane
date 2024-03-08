@@ -3,8 +3,16 @@ import { Command, Option } from 'commander';
 import 'reflect-metadata';
 
 import { version } from '../package.json';
-import { contractCmd, deployCmd, migrateCmd, uploadCmd } from './commands';
-import { config, getSigningClient } from './shared/config';
+import {
+  contextCmd,
+  contractCmd,
+  deployCmd,
+  migrateCmd,
+  uploadCmd,
+  walletCmd,
+  warpCmd,
+} from './commands';
+import { config, getNetwork, getSigningClient } from './shared/config';
 import { loadContext } from './shared/context';
 import { CONTAINER, Dependencies } from './shared/ioc';
 
@@ -26,10 +34,13 @@ cli
   .addOption(optNetworkId)
   .hook('preAction', injectDependencies);
 
-cli.addCommand(uploadCmd);
-cli.addCommand(deployCmd);
+cli.addCommand(contextCmd);
 cli.addCommand(contractCmd);
+cli.addCommand(deployCmd);
 cli.addCommand(migrateCmd);
+cli.addCommand(uploadCmd);
+cli.addCommand(walletCmd);
+cli.addCommand(warpCmd);
 
 cli.parseAsync(process.argv).catch(console.error);
 
@@ -38,9 +49,9 @@ async function injectDependencies(cmd: Command): Promise<void> {
 
   const client = await getSigningClient(networkId, config);
   const ctx = loadContext(networkId);
+  const network = getNetwork(networkId);
 
-  CONTAINER.bind(Dependencies).toConstantValue({
-    ctx,
-    client,
-  });
+  const deps = { ctx, client, network };
+
+  CONTAINER.bind(Dependencies).toConstantValue(deps);
 }

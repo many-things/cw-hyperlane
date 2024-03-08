@@ -1,6 +1,6 @@
 import { Container } from 'inversify';
 
-import { Client } from './config';
+import { Client, Config } from './config';
 import { Context } from './context';
 
 export const CONTAINER = new Container({
@@ -14,4 +14,5 @@ export const iocContainer = CONTAINER;
 export class Dependencies {
   ctx: Context;
   client: Client;
+  network: Config['networks'][number];
 }

@@ -17,7 +17,9 @@ function getWasmFilesPath(
       .map((file) => path.join(artifactPath, file));
   } catch (err) {
     console.error(
-      'Cannot find wasm folder. Are you sure you compiled the wasm projects?',
+      '[error]'.red,
+      'cannot find wasm folder.',
+      'did you compiled the wasm projects?',
     );
     process.exit(1);
   }
@@ -61,11 +63,16 @@ export type ContractInfoResp = {
 export async function getContractInfo(
   network: Config['networks'][number],
   addr: string,
-): Promise<ContractInfoResp> {
-  const res = await fetch(
-    path.join(network.endpoint.rest, '/cosmwasm/wasm/v1/contract/', addr),
-  );
-  const body = await res.json();
+): Promise<ContractInfoResp | undefined> {
+  try {
+    const res = await fetch(
+      path.join(network.endpoint.rest, '/cosmwasm/wasm/v1/contract/', addr),
+    );
+    const body = await res.json();
 
-  return body as ContractInfoResp;
+    return body as ContractInfoResp;
+  } catch (err) {
+    console.error('Error fetching contract info', err);
+    return undefined;
+  }
 }

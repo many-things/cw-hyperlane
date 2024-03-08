@@ -1,6 +1,5 @@
 import { Command } from 'commander';
 
-import { getNetwork } from '../shared/config';
 import { contractNames } from '../shared/constants';
 import { executeContract } from '../shared/contract';
 import { CONTAINER, Dependencies } from '../shared/ioc';
@@ -20,13 +19,11 @@ contractCmd
   .argument('dest-domian')
   .argument('recipient-addr')
   .argument('msg-body')
-  .action(async (destDomain, recipientAddr, msgBody, _, cmd) => {
-    const opts = cmd.optsWithGlobals();
-    const { ctx, client } = CONTAINER.get(Dependencies);
-    const network = getNetwork(opts.networkId);
+  .action(async (destDomain, recipientAddr, msgBody) => {
+    const { ctx, client, network } = CONTAINER.get(Dependencies);
 
     if (!ctx.deployments.core?.mailbox)
-      throw new Error('Mailbox contract not found');
+      throw new Error('Mailbox contract is not deployed. Run `deploy` first.');
 
     const mailbox = ctx.deployments.core.mailbox;
 

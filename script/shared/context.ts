@@ -41,15 +41,19 @@ export type ContextDeployments = {
     mailbox?: typed<'hpl_mailbox'>;
     validator_announce?: typed<'hpl_validator_announce'>;
   };
+
   isms?: ContextIsm;
+
   hooks?: {
     default?: ContextHook;
     required?: ContextHook;
   };
+
   warp?: {
-    cw20?: typed<'hpl_warp_cw20'>[];
-    native?: typed<'hpl_warp_native'>[];
+    cw20?: ({ id: string } & typed<'hpl_warp_cw20'>)[];
+    native?: ({ id: string } & typed<'hpl_warp_native'>)[];
   };
+
   test?: {
     msg_receiver?: typed<'hpl_test_mock_msg_receiver'>;
   };

@@ -6,6 +6,8 @@ import * as readline from 'readline';
 import { Readable } from 'stream';
 import { finished } from 'stream/promises';
 
+import { Client } from './config';
+
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -76,3 +78,10 @@ export const waitTx = async (
   }
   return found;
 };
+
+export function orSigner<SignerType extends string | '<signer>' = '<signer>'>(
+  client: Client,
+  v: SignerType,
+): string {
+  return v === '<signer>' ? client.signer : v;
+}
