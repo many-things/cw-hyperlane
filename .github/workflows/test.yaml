@@ -2,15 +2,19 @@ name: test
 
 on:
   pull_request:
+    paths:
+      - 'contracts/**'
+      - 'packages/**'
+      - 'Cargo.toml'
   push:
     branches:
-      - "main"
+      - 'main'
 
 jobs:
   unit-test:
     strategy:
       fail-fast: true
-    
+
     name: unit-test
     runs-on: ubuntu-latest
     steps:
@@ -39,11 +43,11 @@ jobs:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-      
+
       - name: Install Rust
         run: |
           rustup toolchain install 1.72 \

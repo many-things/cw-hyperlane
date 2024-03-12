@@ -3,9 +3,31 @@ name: release
 on:
   push:
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
 
 jobs:
+  crate:
+    name: crate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.72 \
+            --profile minimal \
+            --target wasm32-unknown-unknown \
+            --no-self-update
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Deps
+        run: make install-prod
+
+      - name: Publish hpl-interface
+        run: cargo publish --token ${{ secrets.CRATES_TOKEN }} --package hpl-interface
+
   artifact:
     permissions:
       contents: write
@@ -42,10 +64,7 @@ jobs:
         env:
           ARTIFACT_NAME: ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
 
-      - name: Publish hpl-interface
-        run: cargo publish --token ${{ secrets.CRATES_TOKEN }} --package hpl-interface
-
-      - name: Release
+      - name: Release Artifact
         uses: softprops/action-gh-release@v1
         with:
           files: |
