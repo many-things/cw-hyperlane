@@ -73,7 +73,9 @@ export async function deployNativeTokenWarp(
   { ctx, client, network }: Dependencies,
   mailbox: string,
   config: WarpTokenConfig<'native'>,
-): Promise<{ type: 'hpl_warp_native'; address: string } | undefined> {
+): Promise<
+  { type: 'hpl_warp_native'; address: string; hexed: string } | undefined
+> {
   const deployments = ctx.deployments;
 
   const preload = deployments?.warp?.native?.find((v) => v.id === config.id);
@@ -102,7 +104,9 @@ export async function deployCw20TokenWarp(
   { ctx, client, network }: Dependencies,
   mailbox: string,
   config: WarpTokenConfig<'cw20'>,
-): Promise<{ type: 'hpl_warp_cw20'; address: string } | undefined> {
+): Promise<
+  { type: 'hpl_warp_cw20'; address: string; hexed: string } | undefined
+> {
   const deployments = ctx.deployments;
 
   const preload = deployments?.warp?.cw20?.find((v) => v.id === config.id);

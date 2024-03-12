@@ -4,7 +4,11 @@ import path from 'path';
 import { defaultContextPath } from './constants';
 import { ContractNames } from './contract';
 
-type typed<T extends ContractNames> = { type: T; address: string };
+type typed<T extends ContractNames> = {
+  type: T;
+  address: string;
+  hexed: string;
+};
 
 export type ContextIsm =
   | (typed<'hpl_ism_aggregate'> & {
