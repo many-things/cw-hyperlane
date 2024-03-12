@@ -4,7 +4,7 @@ import { Client } from './config';
 import { contractNames } from './constants';
 import { Context } from './context';
 import { Logger } from './logger';
-import { waitTx } from './utils';
+import { extractByte32AddrFromBech32, waitTx } from './utils';
 
 const logger = new Logger('contract');
 
@@ -15,7 +15,7 @@ export async function deployContract<T extends ContractNames>(
   { wasm, stargate, signer }: Client,
   contractName: T,
   initMsg: object,
-): Promise<{ type: T; address: string }> {
+): Promise<{ type: T; address: string; hexed: string }> {
   logger.debug(`deploying ${contractName}`);
 
   const codeId = ctx.artifacts[contractName];
@@ -36,7 +36,11 @@ export async function deployContract<T extends ContractNames>(
   }
 
   logger.info(`deployed ${contractName} at ${res.contractAddress}`);
-  return { type: contractName, address: res.contractAddress };
+  return {
+    type: contractName,
+    address: res.contractAddress,
+    hexed: extractByte32AddrFromBech32(res.contractAddress),
+  };
 }
 
 export async function executeContract(
