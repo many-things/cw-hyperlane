@@ -4,7 +4,7 @@ import { Client } from './config';
 import { contractNames } from './constants';
 import { Context } from './context';
 import { Logger } from './logger';
-import { extractByte32AddrFromBech32, waitTx } from './utils';
+import { extractByte32AddrFromBech32, sleep, waitTx } from './utils';
 
 const logger = new Logger('contract');
 
@@ -12,35 +12,44 @@ export type ContractNames = (typeof contractNames)[number];
 
 export async function deployContract<T extends ContractNames>(
   ctx: Context,
-  { wasm, stargate, signer }: Client,
+  client: Client,
   contractName: T,
   initMsg: object,
+  retryAfter = 1000,
 ): Promise<{ type: T; address: string; hexed: string }> {
+  const { wasm, stargate, signer } = client;
   logger.debug(`deploying ${contractName}`);
 
-  const codeId = ctx.artifacts[contractName];
-  const res = await wasm.instantiate(
-    signer,
-    codeId,
-    initMsg,
-    `cw-hpl: ${contractName}`,
-    'auto',
-  );
-  const receipt = await waitTx(res.transactionHash, stargate);
-  if (receipt.code > 0) {
-    logger.error(
-      'deploy tx failed.',
-      `contract=${contractName}, hash=${receipt.hash}`,
+  try {
+    const codeId = ctx.artifacts[contractName];
+    const res = await wasm.instantiate(
+      signer,
+      codeId,
+      initMsg,
+      `cw-hpl: ${contractName}`,
+      'auto',
     );
-    throw new Error(JSON.stringify(receipt.events));
-  }
+    const receipt = await waitTx(res.transactionHash, stargate);
+    if (receipt.code > 0) {
+      logger.error(
+        'deploy tx failed.',
+        `contract=${contractName}, hash=${receipt.hash}`,
+      );
+      throw new Error(JSON.stringify(receipt.events));
+    }
 
-  logger.info(`deployed ${contractName} at ${res.contractAddress}`);
-  return {
-    type: contractName,
-    address: res.contractAddress,
-    hexed: extractByte32AddrFromBech32(res.contractAddress),
-  };
+    logger.info(`deployed ${contractName} at ${res.contractAddress}`);
+    return {
+      type: contractName,
+      address: res.contractAddress,
+      hexed: extractByte32AddrFromBech32(res.contractAddress),
+    };
+  } catch (e) {
+    logger.error(`failed to deploy contract. retrying after ${retryAfter}ms`);
+    logger.error('=> error: ', e);
+    await sleep(retryAfter);
+    return deployContract(ctx, client, contractName, initMsg, retryAfter * 2);
+  }
 }
 
 export async function executeContract(
