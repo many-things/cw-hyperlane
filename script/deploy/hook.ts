@@ -266,7 +266,7 @@ export const deployHook = async (
     }
 
     default: {
-      throw new Error('invalid hook type');
+      throw new Error(`invalid hook type ${hook}`);
     }
   }
 };
