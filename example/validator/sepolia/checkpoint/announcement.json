@@ -1,0 +1,14 @@
+{
+  "value": {
+    "validator": "0xe673896b0ebea59f9af10c6d605a21d727eeebc9",
+    "mailbox_address": "0x000000000000000000000000ffaef09b3cd11d9b20d1a19becca54eec2884766",
+    "mailbox_domain": 11155111,
+    "storage_location": "file:///etc/validator/sepolia/checkpoint"
+  },
+  "signature": {
+    "r": "0x72e0ec60524da822998477a3b99da9c84c4b4308891c4ed54440bb64a9b8711e",
+    "s": "0x1acb08a3b9f8412753264bcc60c24ea0b49d100d4779c4ba9ee0df4355a622a",
+    "v": 28
+  },
+  "serialized_signature": "0x72e0ec60524da822998477a3b99da9c84c4b4308891c4ed54440bb64a9b8711e01acb08a3b9f8412753264bcc60c24ea0b49d100d4779c4ba9ee0df4355a622a1c"
+}
