@@ -31,7 +31,6 @@ Cargo.lock
 
 # Script setup
 
-config.yaml
 config.*.yaml
 !config.example.yaml
 
