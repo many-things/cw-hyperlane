@@ -1,15 +1,15 @@
 {
   "db": "/etc/data/db",
-  "relayChains": "osmotest5,sepolia",
+  "relayChains": "strideinternal1,sepolia",
   "allowLocalCheckpointSyncers": "true",
   "gasPaymentEnforcement": [{ "type": "none" }],
   "whitelist": [
     {
       "origindomain": [11155111],
-      "destinationDomain": [1304]
+      "destinationDomain": [1651]
     },
     {
-      "origindomain": [1304],
+      "origindomain": [1651],
       "destinationDomain": [11155111]
     }
   ],
@@ -17,13 +17,13 @@
     "sepolia": {
       "signer": {
         "type": "hexKey",
-        "key": "{sepolia_private_key}"
+        "key": "0x48cccb40744ff1fd3d174cd53d963877d7e44180e16d139ba4f54dcbdbc366de"
       }
     },
     "osmotest5": {
       "signer": {
         "type": "cosmosKey",
-        "key": "{osmosis_private_key}",
+        "key": "0x46e1fe59288b35645669534354023897ce94bbbeb2c4856389d2745ef06b02bd",
         "prefix": "osmo"
       }
     }
