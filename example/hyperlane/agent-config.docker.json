@@ -58,6 +58,42 @@
         "from": 4517401,
         "chunk": 100000
       }
+    },
+    "strideinternal1": {
+      "name": "strideinternal1",
+      "domainId": 1651,
+      "chainId": "stride-internal-1",
+      "protocol": "cosmos",
+      "rpcUrls": [
+        {
+          "http": "https://stride-validator.testnet-1.stridenet.co"
+        }
+      ],
+      "grpcUrls": [
+        {
+          "http": "http://stride-direct.testnet-1.stridenet.co:9090"
+        }
+      ],
+      "grpcUrl": "http://stride-direct.testnet-1.stridenet.co:9090",
+      "canonicalAsset": "ustrd",
+      "bech32Prefix": "stride",
+      "gasPrice": {
+        "amount": "0.025",
+        "denom": "ustrd"
+      },
+      "contractAddressBytes": 32,
+      "index": {
+        "from": 3594136,
+        "chunk": 10000
+      },
+      "blocks": {
+        "confirmations": 0,
+        "reorgPeriod": 0
+      },
+      "mailbox": "0x89c34f43da71a93e9199bbbe65a8b3305016b785306fcb095c7e84b7db839ac3",
+      "validatorAnnounce": "0xd7bdb87c84763644f225dd617fd6afe1ef93a1bf4ae51c5083b190efb4b2a00f",
+      "interchainGasPaymaster": "0x544e76cd10e6ee5c627a3cf759a441083c88582637f3766d25adf15919946b16",
+      "merkleTreeHook": "0x75ad375182f44ab32ffbf5582c0b5ceb51824cb475c38c3a26e293575f6d34fd"
     }
   }
 }

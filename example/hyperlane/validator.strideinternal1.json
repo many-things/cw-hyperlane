@@ -1,0 +1,21 @@
+{
+  "db": "/etc/data/db",
+  "checkpointSyncer": {
+    "type": "localStorage",
+    "path": "/etc/validator/stride-internal1/checkpoint"
+  },
+  "originChainName": "strideinternal1",
+  "validator": {
+    "type": "hexKey",
+    "key": "0x46e1fe59288b35645669534354023897ce94bbbeb2c4856389d2745ef06b02bd"
+  },
+  "chains": {
+    "osmotest5": {
+      "signer": {
+        "type": "cosmosKey",
+        "key": "0x46e1fe59288b35645669534354023897ce94bbbeb2c4856389d2745ef06b02bd",
+        "prefix": "stride"
+      }
+    }
+  }
+}

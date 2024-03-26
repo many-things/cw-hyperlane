@@ -1,0 +1,56 @@
+networks:
+  - id: "stride-internal-1"
+    hrp: "stride"
+    endpoint:
+      rpc: "https://stride-validator.testnet-1.stridenet.co"
+      rest: "https://stride-validator.testnet-1.stridenet.co/api/"
+      grpc: "http://stride-direct.testnet-1.stridenet.co:9090"
+    gas:
+      price: "0.025"
+      denom: "ustrd"
+    domain: 1651
+
+signer: "46e1fe59288b35645669534354023897ce94bbbeb2c4856389d2745ef06b02bd"
+
+deploy:
+  ism:
+    type: routing
+    owner: <signer>
+    isms:
+      - type: multisig
+        owner: <signer>
+        validators:
+          1651:
+            addrs:
+              - <signer>
+            threshold: 1
+
+  hooks:
+    default:
+      type: aggregate
+      owner: <signer>
+      hooks:
+        - type: merkle
+
+        - type: igp
+          owner: <signer>
+          configs:
+            1651:
+              exchange_rate: 3000
+              gas_price: 5000
+          default_gas_usage: 30000
+
+    required:
+      type: aggregate
+      owner: <signer>
+      hooks:
+        - type: pausable
+          owner: <signer>
+          paused: false
+
+        - type: fee
+          owner: <signer>
+          fee:
+            amount: 1
+            denom: "ustrd"
+
