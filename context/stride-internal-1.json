@@ -1,0 +1,25 @@
+{
+  "artifacts": {
+    "hpl_mailbox": 161,
+    "hpl_validator_announce": 162,
+    "hpl_ism_aggregate": 163,
+    "hpl_ism_multisig": 164,
+    "hpl_ism_pausable": 165,
+    "hpl_ism_routing": 166,
+    "hpl_igp": 167,
+    "hpl_hook_aggregate": 168,
+    "hpl_hook_fee": 169,
+    "hpl_hook_merkle": 170,
+    "hpl_hook_pausable": 171,
+    "hpl_hook_routing": 172,
+    "hpl_hook_routing_custom": 173,
+    "hpl_hook_routing_fallback": 174,
+    "hpl_test_mock_hook": 175,
+    "hpl_test_mock_ism": 176,
+    "hpl_test_mock_msg_receiver": 177,
+    "hpl_igp_oracle": 178,
+    "hpl_warp_cw20": 179,
+    "hpl_warp_native": 180
+  },
+  "deployments": {}
+}
