@@ -98,7 +98,7 @@ function checkConfigType<
 
 async function handleCreate(configFile: string, cmd: Command) {
   type Option = {
-    ismAddress?: string;
+    ismAddress?: `0x{string}`;
   };
 
   const opts: Option = cmd.opts();
