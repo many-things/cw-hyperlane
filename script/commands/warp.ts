@@ -169,7 +169,7 @@ async function handleCreate(configFile: string, cmd: Command) {
   }
 
   if (opts.ismAddress) {
-    const ismResp = await executeContract(
+    await executeContract(
       deps.client,
       newWarp,
       {

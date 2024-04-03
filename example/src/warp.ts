@@ -1,5 +1,5 @@
 import { HypERC20__factory } from '@hyperlane-xyz/core';
-import { Command, Option } from 'commander';
+import { Command} from 'commander';
 import { isAddress } from 'viem';
 
 import { HYP_MAILBOX } from './constants';
@@ -32,7 +32,11 @@ warpCmd
 
 export { warpCmd };
 
-async function deployWarpRoute({ismAddress}) {
+type DeployWarpRouteArgs = {
+  ismAddress: `0x${string}`
+};
+
+async function deployWarpRoute({ismAddress}: DeployWarpRouteArgs) {
   const {
     account,
     provider: { query, exec },
