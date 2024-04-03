@@ -81,6 +81,18 @@ warpCmd
       'target domain id to link',
     ).makeOptionMandatory(),
   )
+  .addOption(
+    new Option(
+      '--amount <amount>',
+      'amount to send',
+    )
+  )
+  .addOption(
+    new Option(
+      '--denom <denom>',
+      'denom to transfer'
+    )
+  )
   .action(handleTransfer);
 
 export { warpCmd };
@@ -239,6 +251,8 @@ async function handleTransfer(_: object, cmd: Command) {
     assetType: 'native' | 'cw20';
     assetId: string;
     targetDomain: string;
+    amount?: number;
+    denom?: string;
   };
 
   const opts: Option = cmd.optsWithGlobals();
@@ -276,9 +290,9 @@ async function handleTransfer(_: object, cmd: Command) {
       transfer_remote: {
         dest_domain: parseInt(opts.targetDomain),
         recipient: addPad(deps.client.signer_addr),
-        amount: `${1_000_000n}`,
+        amount: opts.amount ? `${opts.amount}n` : `${1_000_000n}`,
       },
     },
-    [{ amount: `${1_000_001n}`, denom: 'uosmo' }],
+    [{ amount: opts.amount ? `${opts.amount + 1}n` : `${1_000_001n}`, denom: opts.denom || 'uosmo' }],
   );
 }
