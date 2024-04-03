@@ -75,6 +75,18 @@ warpCmd
       'target domain id to link',
     ).makeOptionMandatory(),
   )
+  .addOption(
+    new Option(
+      '--amount <amount>',
+      'amount to send',
+    )
+  )
+  .addOption(
+    new Option(
+      '--denom <denom>',
+      'denom to transfer'
+    )
+  )
   .action(handleTransfer);
 
 export { warpCmd };
