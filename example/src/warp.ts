@@ -1,5 +1,5 @@
 import { HypERC20__factory } from '@hyperlane-xyz/core';
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { isAddress } from 'viem';
 
 import { HYP_MAILBOX } from './constants';
@@ -12,7 +12,10 @@ import {
 
 const warpCmd = new Command('warp');
 
-warpCmd.command('deploy').action(deployWarpRoute);
+warpCmd.command('deploy')
+  .option('--ism-address <ism-address>', 'ISM to set on test recipient')
+  .action(deployWarpRoute);
+
 warpCmd
   .command('link')
   .argument('<warp>', 'address of warp route')
@@ -29,7 +32,7 @@ warpCmd
 
 export { warpCmd };
 
-async function deployWarpRoute() {
+async function deployWarpRoute({ismAddress}) {
   const {
     account,
     provider: { query, exec },
@@ -60,6 +63,18 @@ async function deployWarpRoute() {
     logTx('Initialize HypERC20Osmo', tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
+
+  if (ismAddress !== undefined) {
+    const tx = await exec.writeContract({
+      abi: HypERC20__factory.abi,
+      address: hypErc20OsmoAddr,
+      functionName: 'setInterchainSecurityModule',
+      args: [ismAddress],
+    });
+    logTx('Set ism for warp route', tx);
+    await query.waitForTransactionReceipt({ hash: tx });
+  }
+
 
   console.log('== Done! ==');
 

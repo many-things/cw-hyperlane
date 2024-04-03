@@ -19,6 +19,12 @@ warpCmd
   .command('create')
   .description('Create a new warp route')
   .argument('<config-file>', 'path to the warp route config file')
+  .addOption(
+    new Option(
+      '--ism <ism-address>',
+       'ISM to set on warp route',
+      )
+  )
   .action(handleCreate);
 
 warpCmd
@@ -90,7 +96,12 @@ function checkConfigType<
   return config.type === tokenType && config.mode === tokenMode;
 }
 
-async function handleCreate(configFile: string) {
+async function handleCreate(configFile: string, cmd: Command) {
+  type Option = {
+    ismAddress?: string;
+  };
+
+  const opts: Option = cmd.opts();
   const deps = CONTAINER.get(Dependencies);
 
   const warpConfigFile = readFileSync(configFile, 'utf-8');
@@ -113,6 +124,13 @@ async function handleCreate(configFile: string) {
     cw20: [],
   };
 
+  type WarpContract = {
+    type: string,
+    address: string,
+    hexed: string
+  }
+  let newWarp: WarpContract;
+
   switch (warpType) {
     case 'native': {
       if (!checkConfigType(warpConfig, 'native', mode))
@@ -128,6 +146,7 @@ async function handleCreate(configFile: string) {
         id: warpConfig.id,
         ...nativeWarp,
       });
+      newWarp = nativeWarp;
       break;
     }
     case 'cw20': {
@@ -144,10 +163,24 @@ async function handleCreate(configFile: string) {
         id: warpConfig.id,
         ...cw20Warp,
       });
+      newWarp = cw20Warp;
       break;
     }
   }
 
+  if (opts.ismAddress) {
+    const ismResp = await executeContract(
+      deps.client,
+      newWarp,
+      {
+        connection: {
+          set_ism: {
+            ism: opts.ismAddress
+          }
+        }
+      }
+    );
+}
   saveContext(deps.network.id, deps.ctx);
 }
 
