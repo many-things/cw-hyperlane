@@ -108,12 +108,12 @@ function checkConfigType<
   return config.type === tokenType && config.mode === tokenMode;
 }
 
-async function handleCreate(configFile: string, cmd: Command) {
+async function handleCreate(configFile: string, _: object, cmd: Command) {
   type Option = {
     ismAddress?: `0x{string}`;
   };
 
-  const opts: Option = cmd.opts();
+  const opts: Option = cmd.optsWithGlobals();
   const deps = CONTAINER.get(Dependencies);
 
   const warpConfigFile = readFileSync(configFile, 'utf-8');
