@@ -82,7 +82,26 @@
       }
     },
     "warp": {
-      "native": [],
+      "native": [
+        {
+          "id": "uosmo",
+          "type": "hpl_warp_native",
+          "address": "osmo1stqzny06rfukay2tdjzr8vnxyzdmhdsldt05twmhmfyyc7dd3cpqlsynru",
+          "hexed": "0x82c02991fa1a796e914b6c8433b266209bbbb61f6adf45bb77da484c79ad8e02"
+        },
+        {
+          "id": "utia",
+          "type": "hpl_warp_native",
+          "address": "osmo1h4y9xjcvs8lrx4z8ha48uq9a338w74dpl2ly3tf74fzvugp2kj4q9l0jkw",
+          "hexed": "0xbd48534b0c81fe335447bf6a7e00bd8c4eef55a1fabe48ad3eaa44ce202ab4aa"
+        },
+        {
+          "id": "umilkTIA",
+          "type": "hpl_warp_native",
+          "address": "osmo17xuecsykqw2xcxwv8cau7uy4hgdwqt0u4qxflyc2yshhggpazfjs6kfqd3",
+          "hexed": "0xf1b99c409603946c19cc3e3bcf7095ba1ae02dfca80c9f930a242f74203d1265"
+        }
+      ],
       "cw20": []
     },
     "test": {
