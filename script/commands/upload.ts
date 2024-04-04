@@ -44,6 +44,7 @@ uploadCmd
   .description('upload artifacts from remote')
   .argument('<tag-name>', `name of release tag. min: ${REMOTE_MIN_VERSION}`)
   .option('-o --out <out dir>', 'artifact output directory', defaultTmpDir)
+  .option('--set-instantiate-admin', 'Sets instantiate permissions to be admin address only') 
   .action(handleRemote);
 
 uploadCmd
@@ -60,7 +61,7 @@ async function handleRemote(
   _: object,
   cmd: Command,
 ): Promise<void> {
-  const opts = cmd.optsWithGlobals() as { networkId: string; out: string };
+  const opts = cmd.optsWithGlobals() as { networkId: string; out: string; setInstantiateAdmin?: boolean  };
 
   if (tagName < REMOTE_MIN_VERSION)
     throw new Error(`${tagName} < ${REMOTE_MIN_VERSION}`);
@@ -79,7 +80,7 @@ async function handleRemote(
 
   console.log('Downloaded artifacts to', artifactPath.green);
 
-  return upload({ ...opts, artifacts: artifactPath });
+  return upload({ ...opts, artifacts: artifactPath, setInstantiateAdmin: opts.setInstantiateAdmin });
 }
 
 async function handleRemoteList() {
