@@ -89,8 +89,14 @@ warpCmd
   )
   .addOption(
     new Option(
-      '--denom <denom>',
+      '--bridged-denom <bridged-denom>',
       'denom to transfer'
+    )
+  )
+  .addOption(
+    new Option(
+      '--fee-denom <fee-denom>',
+      'fee denom'
     )
   )
   .action(handleTransfer);
@@ -252,7 +258,8 @@ async function handleTransfer(_: object, cmd: Command) {
     assetId: string;
     targetDomain: string;
     amount?: number;
-    denom?: string;
+    bridgedDenom?: string;
+    feeDenom?: string;
   };
 
   const opts: Option = cmd.optsWithGlobals();
@@ -290,9 +297,18 @@ async function handleTransfer(_: object, cmd: Command) {
       transfer_remote: {
         dest_domain: parseInt(opts.targetDomain),
         recipient: addPad(deps.client.signer_addr),
-        amount: opts.amount ? `${opts.amount}n` : `${1_000_000n}`,
+        amount: opts.amount ? `${opts.amount}` : `${1_000_000n}`,
       },
     },
-    [{ amount: opts.amount ? `${opts.amount + 1}n` : `${1_000_001n}`, denom: opts.denom || 'uosmo' }],
+    [
+      {
+        amount: opts.amount ? `${opts.amount}` : `${1_000_000n}`,
+        denom: opts.bridgedDenom || 'uosmo' 
+      },
+      {
+        amount: `${1n}`,
+        denom: opts.feeDenom || 'uosmo' 
+      } ,
+    ],
   );
 }
