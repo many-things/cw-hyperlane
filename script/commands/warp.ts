@@ -22,7 +22,7 @@ warpCmd
   .addOption(
     new Option(
       '--ism <ism-address>',
-       'ISM to set on warp route',
+       'ISM to set on warp route (in bech32 format)',
       )
   )
   .action(handleCreate);
@@ -187,7 +187,8 @@ async function handleCreate(configFile: string, _: object, cmd: Command) {
   }
 
   if (opts.ismAddress) {
-    await executeContract(
+    console.log(`Setting ISM address to ${opts.ismAddress}`)
+    const response = await executeContract(
       deps.client,
       newWarp,
       {
@@ -198,7 +199,9 @@ async function handleCreate(configFile: string, _: object, cmd: Command) {
         }
       }
     );
-}
+    console.log(`Code: ${response.code}, Hash: ${response.hash}`);
+  }
+
   saveContext(deps.network.id, deps.ctx);
 }
 
@@ -306,9 +309,9 @@ async function handleTransfer(_: object, cmd: Command) {
         denom: opts.bridgedDenom || 'uosmo' 
       },
       {
-        amount: `${1n}`,
+        amount: `${50n}`,
         denom: opts.feeDenom || 'uosmo' 
-      } ,
+      },
     ],
   );
 }
