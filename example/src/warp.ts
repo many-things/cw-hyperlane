@@ -14,6 +14,8 @@ const warpCmd = new Command('warp');
 
 warpCmd.command('deploy')
   .option('--ism-address <ism-address>', 'ISM to set on test recipient')
+  .option('--contract-name <contract-name>', 'Warp contract name e.g. Hyperlane Bridged TIA')
+  .option('--asset-name <asset-name>', 'Warp route asset name e.g. TIA')
   .action(deployWarpRoute);
 
 warpCmd
@@ -33,10 +35,12 @@ warpCmd
 export { warpCmd };
 
 type DeployWarpRouteArgs = {
-  ismAddress: `0x${string}`
+  ismAddress?: `0x${string}`,
+  contractName?: string,
+  assetName?: string,
 };
 
-async function deployWarpRoute({ismAddress}: DeployWarpRouteArgs) {
+async function deployWarpRoute({ismAddress, contractName, assetName}: DeployWarpRouteArgs) {
   const {
     account,
     provider: { query, exec },
@@ -62,7 +66,7 @@ async function deployWarpRoute({ismAddress}: DeployWarpRouteArgs) {
       abi: HypERC20__factory.abi,
       address: hypErc20OsmoAddr,
       functionName: 'initialize',
-      args: [0n, 'Hyperlane Bridged Osmosis', 'OSMO'],
+      args: [0n, contractName ? contractName : 'Hyperlane Bridged OSMO', assetName ? assetName : 'OSMO'],
     });
     logTx('Initialize HypERC20Osmo', tx);
     await query.waitForTransactionReceipt({ hash: tx });
