@@ -5,12 +5,13 @@ import { typed, ContextHook } from '../shared/context';
 import { executeMultiMsg } from '../shared/contract';
 import { CONTAINER, Dependencies } from '../shared/ioc';
 
-export const registerCmd = new Command('register')
-  .description('Register new chain to contracts')
-  .configureHelp({ showGlobalOptions: true });
+export const updateCmd = new Command('update')
+  .description('Register new chain to existing contracts')
+  .configureHelp({ showGlobalOptions: true })
+;
 
-registerCmd.command('igporacle').action(handleRegisterIgpOracle);
-registerCmd.command('ism-multisig').action(handleRegisterIsm);
+updateCmd.command('igp-oracle').action(handleRegisterIgpOracle);
+updateCmd.command('ism-multisig').action(handleRegisterIsm);
 
 type AggregateHook = typed<'hpl_hook_aggregate'> & {
   hooks: ContextHook[];
@@ -73,7 +74,6 @@ async function handleRegisterIsm(_: object, cmd: Command) {
           },
         }))
       );
-      break;
     }
     default:
       throw new Error('Multisig ism config not found');
