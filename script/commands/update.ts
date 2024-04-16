@@ -23,7 +23,10 @@ function isIgpHookType(hook: ContextHook): hook is IgpHook {
   return hook.type === 'hpl_igp';
 }
 
-function findIsmsConfig() {
+function getIsmsMultisigConfig() {
+  if (!config.deploy.ism || config.deploy.ism.type != "multisig") {
+    throw new Error('Ism multisig config not found');
+  }
   return config.deploy.ism;
 }
 
@@ -33,66 +36,57 @@ function findIgpHookInAggregate() {
     const igpHook = defaultHook.hooks.find(
       (hook): hook is IgpHookType => hook.type === 'igp'
     );
+    if (!igpHook) {
+      throw new Error('igpHook not found under aggregate hook');
+    }
     return igpHook;
   }
-  return undefined;
+  throw new Error('Aggregate igp hook not found');
 }
 
 async function handleRegisterIsm(_: object, cmd: Command) {
   const { ctx, client } = CONTAINER.get(Dependencies);
 
-  const ismMultisig = ctx.deployments.isms;
-  let ismMultisigAddress: string | undefined;
-  if (ismMultisig && ismMultisig.type === 'hpl_ism_multisig') {
-    ismMultisigAddress = ismMultisig.address;
-  }
-  if (!ismMultisigAddress) {
+  if (!ctx.deployments.isms || ctx.deployments.isms.type != "hpl_ism_multisig") {
     throw new Error('Ism multisig context not found');
   }
-  const ismsConfig = findIsmsConfig();
-  if (!ismsConfig) {
-    throw new Error('Ism multisig config not found');
+  const ismMultisigAddress = ctx.deployments.isms.address
+  const ismsConfig = getIsmsMultisigConfig();
+
+  const multisig = {
+    type: 'hpl_ism_multisig',
+    address: ismMultisigAddress as string,
+  };  
+  await executeMultiMsg(
+    client,
+    Object.entries(ismsConfig.validators).map(([domain, { addrs, threshold }]) => ({
+      contract: multisig,
+      msg: {
+        set_validators: {
+          domain: Number(domain),
+          threshold,
+          validators: addrs.map((v) =>
+            v === '<signer>' ? client.signer_addr : v
+          ),
+        },
+      },
+    }))
+  );
   }
-  switch (ismsConfig.type) {
-    case 'multisig': {
-      const multisig = {
-        type: 'hpl_ism_multisig',
-        address: ismMultisigAddress as string,
-      };
-      await executeMultiMsg(
-        client,
-        Object.entries(ismsConfig.validators).map(([domain, { addrs, threshold }]) => ({
-          contract: multisig,
-          msg: {
-            set_validators: {
-              domain: Number(domain),
-              threshold,
-              validators: addrs.map((v) =>
-                v === '<signer>' ? client.signer_addr : v
-              ),
-            },
-          },
-        }))
-      );
-    }
-    default:
-      throw new Error('Multisig ism config not found');
-  }
-}
 
 async function handleRegisterIgpOracle(_: object, cmd: Command) {
   const { ctx, client } = CONTAINER.get(Dependencies);
 
   const defaultHook = ctx.deployments.hooks?.default;
-  let igpHook;
+  let igpHookDeployment;
   let aggregateHook;
   let igpOracleAddress: string | undefined;
   if (defaultHook && defaultHook.type === 'hpl_hook_aggregate') {
-    igpHook = defaultHook.hooks.find(isIgpHookType) as IgpHook;
-    igpOracleAddress = igpHook?.oracle?.address;
+    igpHookDeployment = defaultHook.hooks.find(isIgpHookType) as IgpHook;
+    igpOracleAddress = igpHookDeployment?.oracle?.address;
     aggregateHook = defaultHook as AggregateHook;
   }
-  if (!igpHook) {
+  if (!igpHookDeployment) {
     throw new Error('igpHook is undefined in context');
   }
   if (!igpOracleAddress) {
@@ -110,9 +104,6 @@ async function handleRegisterIgpOracle(_: object, cmd: Command) {
   }
 
   const igpHookConfig = findIgpHookInAggregate();
-  if (!igpHookConfig) {
-    throw new Error('No IGP hook found in aggregate');
-  }
   await executeMultiMsg(client, [
     {
       contract: {
@@ -132,7 +123,7 @@ async function handleRegisterIgpOracle(_: object, cmd: Command) {
     {
       contract: {
         type: 'hpl_igp',
-        address: igpHook.address,
+        address: igpHookDeployment.address,
       },
       msg: {
         router: {
