@@ -52,6 +52,11 @@ import {
       '--ism-validator-address <ism-validator-address>', 
       'Validator address on the ism',
     )
+    .option(
+      '--ism-threshold <ism-threshold>', 
+      'Threshold for the number of validators in the ISM',
+      "1",
+    )
     .action(deployWarpRoute);
   
   export { evmCmd };
@@ -63,6 +68,7 @@ import {
     createNewIsm?: boolean,
     warpIsmAddress?: `0x${string}`,
     ismValidatorAddress?: `0x${string}`,
+    ismThreshold?: number,
   };
   
   async function deployWarpRoute({
@@ -72,6 +78,7 @@ import {
     createNewIsm,
     warpIsmAddress,
     ismValidatorAddress,
+    ismThreshold,
   }: DeployWarpRouteArgs) {
     const { signer } = config;
     const evmNetwork = getEvmNetwork(evmNetworkName)
@@ -144,7 +151,7 @@ import {
         abi: StaticMessageIdMultisigIsmFactory__factory.abi,
         address: evmNetwork.multisig_ism_factory_address,
         functionName: 'getAddress',
-        args: [[ismValidatorAddress], 1],
+        args: [[ismValidatorAddress], Number(ismThreshold)],
       });
       console.log(`Deploying multisigIsm at "${multisigIsmAddr.green}"...`);
     
@@ -153,7 +160,7 @@ import {
           abi: StaticMessageIdMultisigIsmFactory__factory.abi,
           address: evmNetwork.multisig_ism_factory_address,
           functionName: 'deploy',
-          args: [[ismValidatorAddress], 1],
+          args: [[ismValidatorAddress], Number(ismThreshold)],
         });
         logTx('Deploy multisig ism', tx);
         await query.waitForTransactionReceipt({ hash: tx });
