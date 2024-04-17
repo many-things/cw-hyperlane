@@ -15,6 +15,7 @@ import {
 import { config, getNetwork, getSigningClient } from './shared/config';
 import { loadContext } from './shared/context';
 import { CONTAINER, Dependencies } from './shared/ioc';
+import { updateCmd } from './commands/update';
 
 colors.enable();
 
@@ -38,6 +39,7 @@ cli.addCommand(contextCmd);
 cli.addCommand(contractCmd);
 cli.addCommand(deployCmd);
 cli.addCommand(migrateCmd);
+cli.addCommand(updateCmd);
 cli.addCommand(uploadCmd);
 cli.addCommand(walletCmd);
 cli.addCommand(warpCmd);
