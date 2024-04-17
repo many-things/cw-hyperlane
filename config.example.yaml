@@ -44,7 +44,7 @@ evm_networks:
       symbol: 'ETH'
       decimals: 18
     mailbox_address: "0x123..."
-    multisig_ism_factory_addres: "0x123..."
+    multisig_ism_factory_address: "0x123..."
 
 
 

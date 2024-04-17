@@ -153,7 +153,7 @@ import {
         functionName: 'getAddress',
         args: [[ismValidatorAddress], Number(ismThreshold)],
       });
-      console.log(`Deploying multisigIsm at "${multisigIsmAddr.green}"...`);
+      console.log(`\nDeploying multisigIsm at "${multisigIsmAddr.green}"...`);
     
       {
         const tx = await exec.writeContract({
@@ -182,11 +182,10 @@ import {
       logTx('Set ism for warp route', tx);
       await query.waitForTransactionReceipt({ hash: tx });
     }
-  
-    console.log('== Done! ==');
-  
-    console.log({
-      hypErc20: hypErc20Addr,
-    });
+    
+    console.log(`\nWarp ERC20: ${hypErc20Addr.blue}`);
+    if (warpIsmAddress !== undefined) {
+      console.log(`ISM Address: ${warpIsmAddress.blue}`);
+    }
   }
   
