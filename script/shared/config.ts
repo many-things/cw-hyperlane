@@ -116,6 +116,20 @@ export type Config = {
     tm_version?: '34' | '37' | '38';
   }[];
 
+  evmNetworks: {
+    name: string;
+    chain_id: number;
+    rpc_endpoint: string;
+    network: string;
+    nativeCurrency: {
+      name: string;
+      symbol: string;
+      decimals: number;
+    };
+    mailboxAddress: `0x${string}`;
+    multisigIsmFactoryAddress: `0x${string}`;
+  }[];
+
   signer: string;
 
   deploy: {
@@ -145,6 +159,13 @@ export const getNetwork = (networkId: string): Config['networks'][number] => {
 };
 
 export const config = yaml.load(readFileSync(path, 'utf-8')) as Config;
+
+export const getEvmNetwork = (networkName: string): Config['evmNetworks'][number] => {
+  const ret = config.evmNetworks.find((v) => v.name === networkName);
+  if (!ret)
+    throw new Error(`EVM Network ${networkName} not found in the config file`);
+  return ret;
+}
 
 export async function getSigningClient(
   networkId: string,

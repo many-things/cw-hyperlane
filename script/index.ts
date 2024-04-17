@@ -6,6 +6,7 @@ import { version } from '../package.json';
 import {
   contextCmd,
   contractCmd,
+  evmCmd,
   deployCmd,
   migrateCmd,
   uploadCmd,
@@ -41,6 +42,7 @@ cli.addCommand(migrateCmd);
 cli.addCommand(uploadCmd);
 cli.addCommand(walletCmd);
 cli.addCommand(warpCmd);
+cli.addCommand(evmCmd);
 
 cli.parseAsync(process.argv).catch(console.error);
 

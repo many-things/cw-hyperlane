@@ -5,3 +5,4 @@ export { migrateCmd } from './migrate';
 export { uploadCmd } from './upload';
 export { walletCmd } from './wallet';
 export { warpCmd } from './warp';
+export { evmCmd } from './evm';

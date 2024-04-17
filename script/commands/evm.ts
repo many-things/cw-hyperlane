@@ -2,20 +2,33 @@ import {
     HypERC20__factory, 
     StaticMessageIdMultisigIsmFactory__factory,
   } from '@hyperlane-xyz/core';
-  import { Command, Option} from 'commander';
-  import { isAddress } from 'viem';
-  
-  import { HYP_MAILBOX, HYP_MULTSIG_ISM_FACTORY } from './constants';
-  import { CONTAINER, Dependencies } from './ioc';
+  import { Command, Option } from 'commander';
+  import {
+    Account,
+    Chain,
+    Hex,
+    createPublicClient,
+    createWalletClient,
+    http,
+  } from 'viem';
+  import { mnemonicToAccount, privateKeyToAccount } from 'viem/accounts';
+  import { config, getEvmNetwork } from '../shared/config';
   import {
     expectNextContractAddr,
-    extractByte32AddrFromBech32,
     logTx,
-  } from './utils';
+  } from '../../example/src/utils';
   
-  const warpCmd = new Command('warp');
+  const evmCmd = new Command('evm')
+    .addOption(
+      new Option(
+        '--evm-network-name <evmNetworkName>',
+        'specify the EVM network name',
+      )
+      .choices(config.evmNetworks.map((v) => v.name))
+      .makeOptionMandatory()
+    )
   
-  warpCmd.command('deploy')
+  evmCmd.command('deploy')
     .option(
       '--contract-name <contract-name>', 
       'Warp contract name e.g. Hyperlane Bridged TIA',
@@ -41,21 +54,7 @@ import {
     )
     .action(deployWarpRoute);
   
-  warpCmd
-    .command('link')
-    .argument('<warp>', 'address of warp route')
-    .argument('<domain>', 'destination domain to set')
-    .argument('<route>', 'destination address to set')
-    .action(linkWarpRoute);
-  
-  warpCmd
-    .command('transfer')
-    .argument('<warp>', 'address of warp route')
-    .argument('<domain>', 'destination domain to transfer')
-    .argument('<to>', 'address to transfer')
-    .action(transferWarpRoute);
-  
-  export { warpCmd };
+  export { evmCmd };
   
   type DeployWarpRouteArgs = {
     contractName: string,
@@ -63,6 +62,7 @@ import {
     createNewIsm?: boolean,
     warpIsmAddress?: `0x${string}`,
     ismValidatorAddress?: `0x${string}`,
+    evmNetworkId: string,
   };
   
   async function deployWarpRoute({
@@ -71,12 +71,42 @@ import {
     createNewIsm,
     warpIsmAddress,
     ismValidatorAddress,
+    evmNetworkId,
   }: DeployWarpRouteArgs) {
-    const {
+    const { signer } = config;
+    const evmNetwork = getEvmNetwork(evmNetworkId)
+    
+    const account: Account =
+      signer.split(' ').length > 1
+        ? mnemonicToAccount(signer)
+        : privateKeyToAccount(signer as Hex);
+
+    const chain: Chain = {
+      id: evmNetwork.chain_id,
+      network: evmNetwork.network,
+      name: evmNetwork.name,
+      nativeCurrency: evmNetwork.nativeCurrency,
+      rpcUrls: {
+        default: {
+          http: [evmNetwork.rpc_endpoint],
+        },
+        public: {
+          http: [evmNetwork.rpc_endpoint],
+        },
+      },
+    }
+
+    const query = createPublicClient({
+      chain: chain,
+      transport: http(evmNetwork.rpc_endpoint),
+    })
+
+    const exec = createWalletClient({
+      chain: chain,
       account,
-      provider: { query, exec },
-    } = CONTAINER.get(Dependencies);
-  
+      transport: http(evmNetwork.rpc_endpoint),
+    });
+
     if (createNewIsm && warpIsmAddress !== undefined) {
       throw new Error("invalid options: cannot create a new ISM and pass a custom ISM address at the same time")
     }
@@ -89,7 +119,7 @@ import {
       const tx = await exec.deployContract({
         abi: HypERC20__factory.abi,
         bytecode: HypERC20__factory.bytecode,
-        args: [6, HYP_MAILBOX],
+        args: [6, evmNetwork.mailboxAddress],
       });
       logTx('Deploying HypERC20', tx);
       await query.waitForTransactionReceipt({ hash: tx });
@@ -112,7 +142,7 @@ import {
   
       const multisigIsmAddr = await query.readContract({
         abi: StaticMessageIdMultisigIsmFactory__factory.abi,
-        address: HYP_MULTSIG_ISM_FACTORY,
+        address: evmNetwork.multisigIsmFactoryAddress,
         functionName: 'getAddress',
         args: [[ismValidatorAddress], 1],
       });
@@ -121,7 +151,7 @@ import {
       {
         const tx = await exec.writeContract({
           abi: StaticMessageIdMultisigIsmFactory__factory.abi,
-          address: HYP_MULTSIG_ISM_FACTORY,
+          address: evmNetwork.multisigIsmFactoryAddress,
           functionName: 'deploy',
           args: [[ismValidatorAddress], 1],
         });
@@ -151,43 +181,5 @@ import {
     console.log({
       hypErc20: hypErc20Addr,
     });
-  }
-  
-  async function linkWarpRoute(warp: string, domain: string, route: string) {
-    const {
-      provider: { exec, query },
-    } = CONTAINER.get(Dependencies);
-  
-    if (!isAddress(warp)) throw new Error('Invalid warp address');
-  
-    const tx = await exec.writeContract({
-      abi: HypERC20__factory.abi,
-      address: warp,
-      functionName: 'enrollRemoteRouter',
-      args: [parseInt(domain), `0x${extractByte32AddrFromBech32(route)}`],
-    });
-    logTx(`Linking warp route with external chain ${domain}`, tx);
-    await query.waitForTransactionReceipt({ hash: tx });
-  }
-  
-  async function transferWarpRoute(warp: string, domain: string, to: string) {
-    const {
-      provider: { exec, query },
-    } = CONTAINER.get(Dependencies);
-  
-    if (!isAddress(warp)) throw new Error('Invalid warp address');
-  
-    const tx = await exec.writeContract({
-      abi: HypERC20__factory.abi,
-      address: warp,
-      functionName: 'transferRemote',
-      args: [
-        parseInt(domain),
-        `0x${extractByte32AddrFromBech32(to)}`,
-        1_000_000n,
-      ],
-    });
-    logTx(`Transferring warp route with external chain ${domain}`, tx);
-    await query.waitForTransactionReceipt({ hash: tx });
   }
   
