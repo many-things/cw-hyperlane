@@ -19,16 +19,16 @@ import {
   } from '../../example/src/utils';
   
   const evmCmd = new Command('evm')
+  
+  evmCmd.command('deploy-warp')
     .addOption(
       new Option(
         '--evm-network-name <evmNetworkName>',
         'specify the EVM network name',
       )
-      .choices(config.evmNetworks.map((v) => v.name))
+      .choices(config.evm_networks.map((v) => v.name))
       .makeOptionMandatory()
     )
-  
-  evmCmd.command('deploy')
     .option(
       '--contract-name <contract-name>', 
       'Warp contract name e.g. Hyperlane Bridged TIA',
@@ -57,35 +57,35 @@ import {
   export { evmCmd };
   
   type DeployWarpRouteArgs = {
+    evmNetworkName: string,
     contractName: string,
     assetName: string,
     createNewIsm?: boolean,
     warpIsmAddress?: `0x${string}`,
     ismValidatorAddress?: `0x${string}`,
-    evmNetworkId: string,
   };
   
   async function deployWarpRoute({
+    evmNetworkName,
     contractName,
     assetName,
     createNewIsm,
     warpIsmAddress,
     ismValidatorAddress,
-    evmNetworkId,
   }: DeployWarpRouteArgs) {
     const { signer } = config;
-    const evmNetwork = getEvmNetwork(evmNetworkId)
+    const evmNetwork = getEvmNetwork(evmNetworkName)
     
     const account: Account =
       signer.split(' ').length > 1
         ? mnemonicToAccount(signer)
-        : privateKeyToAccount(signer as Hex);
+        : privateKeyToAccount(`0x${signer}` as Hex);
 
     const chain: Chain = {
       id: evmNetwork.chain_id,
       network: evmNetwork.network,
       name: evmNetwork.name,
-      nativeCurrency: evmNetwork.nativeCurrency,
+      nativeCurrency: evmNetwork.native_currency,
       rpcUrls: {
         default: {
           http: [evmNetwork.rpc_endpoint],
@@ -119,7 +119,7 @@ import {
       const tx = await exec.deployContract({
         abi: HypERC20__factory.abi,
         bytecode: HypERC20__factory.bytecode,
-        args: [6, evmNetwork.mailboxAddress],
+        args: [6, evmNetwork.mailbox_address],
       });
       logTx('Deploying HypERC20', tx);
       await query.waitForTransactionReceipt({ hash: tx });
@@ -142,7 +142,7 @@ import {
   
       const multisigIsmAddr = await query.readContract({
         abi: StaticMessageIdMultisigIsmFactory__factory.abi,
-        address: evmNetwork.multisigIsmFactoryAddress,
+        address: evmNetwork.multisig_ism_factory_address,
         functionName: 'getAddress',
         args: [[ismValidatorAddress], 1],
       });
@@ -151,7 +151,7 @@ import {
       {
         const tx = await exec.writeContract({
           abi: StaticMessageIdMultisigIsmFactory__factory.abi,
-          address: evmNetwork.multisigIsmFactoryAddress,
+          address: evmNetwork.multisig_ism_factory_address,
           functionName: 'deploy',
           args: [[ismValidatorAddress], 1],
         });
