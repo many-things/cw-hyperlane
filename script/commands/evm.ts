@@ -26,7 +26,7 @@ evmCmd.command('deploy-warp')
       '--evm-network-name <evmNetworkName>',
       'specify the EVM network name',
     )
-    .choices(config.evm_networks.map((v) => v.name))
+    .choices(config.evm_networks ? config.evm_networks.map((v) => v.name) : [])
     .makeOptionMandatory()
   )
   .option(
