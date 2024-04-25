@@ -60,7 +60,7 @@ evmCmd.command('deploy-warp')
     'TIA'
   )
   .option(
-    '--warp-ism-address <warp-ism-address>', 
+    '--ism-address <warp-ism-address>', 
     'ISM to set on the warp route recipient'
   )
   .action(deployWarpRoute);
@@ -134,7 +134,7 @@ async function deployIsm({
     await query.waitForTransactionReceipt({ hash: tx });
   }
 
-  console.log(`Multisig ISM Address: ${multisigIsmAddr.blue}`);
+  console.log(`\nMultisig ISM Address: ${multisigIsmAddr.blue}`);
 }
 
 
@@ -142,14 +142,14 @@ type DeployWarpRouteArgs = {
   evmNetworkName: string,
   contractName: string,
   assetName: string,
-  warpIsmAddress?: `0x${string}`,
+  ismAddress?: `0x${string}`,
 };
 
 async function deployWarpRoute({
   evmNetworkName,
   contractName,
   assetName,
-  warpIsmAddress,
+  ismAddress,
 }: DeployWarpRouteArgs) {
   const { signer } = config;
   const evmNetwork = getEvmNetwork(evmNetworkName)
@@ -212,12 +212,12 @@ async function deployWarpRoute({
   
   // If a custom ISM address was specified, register that address in the warp contract
   // Otherwise, the default ISM will be used
-  if (warpIsmAddress !== undefined) {
+  if (ismAddress !== undefined) {
     const tx = await exec.writeContract({
       abi: HypERC20__factory.abi,
       address: hypErc20Addr,
       functionName: 'setInterchainSecurityModule',
-      args: [warpIsmAddress],
+      args: [ismAddress],
     });
     logTx('Set ism for warp route', tx);
     await query.waitForTransactionReceipt({ hash: tx });
