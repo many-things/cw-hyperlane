@@ -20,6 +20,26 @@ import {
 
 const evmCmd = new Command('evm')
 
+evmCmd.command('deploy-ism')
+  .addOption(
+    new Option(
+      '--evm-network-name <evmNetworkName>',
+      'specify the EVM network name',
+    )
+    .choices(config.evm_networks ? config.evm_networks.map((v) => v.name) : [])
+    .makeOptionMandatory()
+  )
+  .option(
+    '--validator-addresses <validator-addresses>', 
+    'Comma separated list of validator address on the ism',
+  )
+  .option(
+    '--threshold <threshold>', 
+    'Threshold for the number of validators in the ISM',
+    "1",
+  )
+  .action(deployIsm);
+
 evmCmd.command('deploy-warp')
   .addOption(
     new Option(
@@ -40,45 +60,96 @@ evmCmd.command('deploy-warp')
     'TIA'
   )
   .option(
-    '--create-new-ism', 
-    'Option to create a new ISM for the the warp route',
-    false
-  )
-  .option(
-    '--warp-ism-address <warp-ism-address>', 
+    '--ism-address <warp-ism-address>', 
     'ISM to set on the warp route recipient'
-  )
-  .option(
-    '--ism-validator-addresses <ism-validator-addresses>', 
-    'Comma separated list of validator address on the ism',
-  )
-  .option(
-    '--ism-threshold <ism-threshold>', 
-    'Threshold for the number of validators in the ISM',
-    "1",
   )
   .action(deployWarpRoute);
 
 export { evmCmd };
 
+type DeployIsmArgs = {
+  evmNetworkName: string,
+  validatorAddresses?: `0x${string}`,
+  threshold?: number,
+};
+
+async function deployIsm({
+  evmNetworkName,
+  validatorAddresses,
+  threshold,
+}: DeployIsmArgs) {
+  const { signer } = config;
+  const evmNetwork = getEvmNetwork(evmNetworkName)
+  
+  const account: Account =
+    signer.split(' ').length > 1
+      ? mnemonicToAccount(signer)
+      : privateKeyToAccount(`0x${signer}` as Hex);
+
+  const chain: Chain = {
+    id: evmNetwork.chain_id,
+    network: evmNetwork.network,
+    name: evmNetwork.name,
+    nativeCurrency: evmNetwork.native_currency,
+    rpcUrls: {
+      default: {
+        http: [evmNetwork.rpc_endpoint],
+      },
+      public: {
+        http: [evmNetwork.rpc_endpoint],
+      },
+    },
+  }
+
+  const query = createPublicClient({
+    chain: chain,
+    transport: http(evmNetwork.rpc_endpoint),
+  })
+
+  const exec = createWalletClient({
+    chain: chain,
+    account,
+    transport: http(evmNetwork.rpc_endpoint),
+  });
+
+  const validatorAddressesString = validatorAddresses ? validatorAddresses : account.address
+  const validatorAddressesList = validatorAddressesString.split(",").map(address => address as `0x${string}`)
+
+  const multisigIsmAddr = await query.readContract({
+    abi: StaticMessageIdMultisigIsmFactory__factory.abi,
+    address: evmNetwork.multisig_ism_factory_address,
+    functionName: 'getAddress',
+    args: [validatorAddressesList, Number(threshold)],
+  });
+  console.log(`Multisig ISM Address to be deployed at: ${multisigIsmAddr.green}`);
+
+  {
+    const tx = await exec.writeContract({
+      abi: StaticMessageIdMultisigIsmFactory__factory.abi,
+      address: evmNetwork.multisig_ism_factory_address,
+      functionName: 'deploy',
+      args: [validatorAddressesList, Number(threshold)],
+    });
+    logTx('Deploying multisig ISM', tx);
+    await query.waitForTransactionReceipt({ hash: tx });
+  }
+
+  console.log(`\nMultisig ISM Address: ${multisigIsmAddr.blue}`);
+}
+
+
 type DeployWarpRouteArgs = {
   evmNetworkName: string,
   contractName: string,
   assetName: string,
-  createNewIsm?: boolean,
-  warpIsmAddress?: `0x${string}`,
-  ismValidatorAddresses?: `0x${string}`,
-  ismThreshold?: number,
+  ismAddress?: `0x${string}`,
 };
 
 async function deployWarpRoute({
   evmNetworkName,
   contractName,
   assetName,
-  createNewIsm,
-  warpIsmAddress,
-  ismValidatorAddresses,
-  ismThreshold,
+  ismAddress,
 }: DeployWarpRouteArgs) {
   const { signer } = config;
   const evmNetwork = getEvmNetwork(evmNetworkName)
@@ -114,10 +185,6 @@ async function deployWarpRoute({
     transport: http(evmNetwork.rpc_endpoint),
   });
 
-  if (createNewIsm && warpIsmAddress !== undefined) {
-    throw new Error("invalid options: cannot create a new ISM and pass a custom ISM address at the same time")
-  }
-
   // deploy hyp erc20 (implementation)
   const hypErc20Addr = await expectNextContractAddr(query, account);
   console.log(`Deploying HypERC20 at "${hypErc20Addr.green}"...`);
@@ -142,50 +209,19 @@ async function deployWarpRoute({
     logTx('Initialize HypERC20', tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
-
-  // If the option was specifed to create a new ISM, deploy the multisig ISM contract
-  if (createNewIsm) {
-    const ismValidatorAddressString = ismValidatorAddresses ? ismValidatorAddresses : account.address
-    const ismValidatorAddressesList = ismValidatorAddressString.split(",").map(address => address as `0x${string}`)
-
-    const multisigIsmAddr = await query.readContract({
-      abi: StaticMessageIdMultisigIsmFactory__factory.abi,
-      address: evmNetwork.multisig_ism_factory_address,
-      functionName: 'getAddress',
-      args: [ismValidatorAddressesList, Number(ismThreshold)],
-    });
-    console.log(`\nDeploying multisigIsm at "${multisigIsmAddr.green}"...`);
   
-    {
-      const tx = await exec.writeContract({
-        abi: StaticMessageIdMultisigIsmFactory__factory.abi,
-        address: evmNetwork.multisig_ism_factory_address,
-        functionName: 'deploy',
-        args: [ismValidatorAddressesList, Number(ismThreshold)],
-      });
-      logTx('Deploy multisig ism', tx);
-      await query.waitForTransactionReceipt({ hash: tx });
-    }
-
-    warpIsmAddress = multisigIsmAddr
-  }
-  
-  // If a custom ISM address was specified or if a new ISM was created,
-  // register that address in the warp contract
+  // If a custom ISM address was specified, register that address in the warp contract
   // Otherwise, the default ISM will be used
-  if (warpIsmAddress !== undefined) {
+  if (ismAddress !== undefined) {
     const tx = await exec.writeContract({
       abi: HypERC20__factory.abi,
       address: hypErc20Addr,
       functionName: 'setInterchainSecurityModule',
-      args: [warpIsmAddress],
+      args: [ismAddress],
     });
     logTx('Set ism for warp route', tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
   
   console.log(`\nWarp ERC20: ${hypErc20Addr.blue}`);
-  if (warpIsmAddress !== undefined) {
-    console.log(`ISM Address: ${warpIsmAddress.blue}`);
-  }
 }
