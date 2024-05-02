@@ -99,7 +99,9 @@ pub fn execute(
             dest_domain,
             recipient,
             amount,
-        } => transfer_remote(deps, env, info, dest_domain, recipient, amount),
+            hook,
+            metadata,
+        } => transfer_remote(deps, env, info, dest_domain, recipient, amount, hook, metadata),
     }
 }
 
@@ -177,6 +179,8 @@ fn transfer_remote(
     dest_domain: u32,
     recipient: HexBinary,
     transfer_amount: Uint128,
+    hook: Option<String>,
+    metadata: Option<HexBinary>,
 ) -> Result<Response, ContractError> {
     let token = TOKEN.load(deps.storage)?;
     let mode = MODE.load(deps.storage)?;
@@ -218,8 +222,8 @@ fn transfer_remote(
             metadata: HexBinary::default(),
         }
         .into(),
-        get_hook(deps.storage)?.map(|v| v.into()),
-        None,
+        hook.clone().or(get_hook(deps.storage)?.map(|v| v.into())),
+        metadata.clone(),
         info.funds,
     )?);
 
@@ -229,7 +233,9 @@ fn transfer_remote(
             .add_attribute("dest_domain", dest_domain.to_string())
             .add_attribute("recipient", recipient.to_hex())
             .add_attribute("token", token)
-            .add_attribute("amount", transfer_amount),
+            .add_attribute("amount", transfer_amount)
+            .add_attribute("hook", hook.unwrap_or_default())
+            .add_attribute("metadata", metadata.unwrap_or_default().to_string()),
     ))
 }
 
@@ -536,6 +542,8 @@ mod test {
                 dest_domain: domain,
                 recipient: recipient.clone(),
                 amount: Uint128::new(100),
+                hook: None,
+                metadata: None,
             },
             vec![],
         );

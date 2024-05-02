@@ -40,3 +40,4 @@ context/*.config.json
 tmp/
 dist/
 node_modules/
+wasm_codes.zip
