@@ -103,7 +103,9 @@ pub fn execute(
             dest_domain,
             recipient,
             amount,
-        } => transfer_remote(deps, env, info, dest_domain, recipient, amount),
+            hook,
+            metadata,
+        } => transfer_remote(deps, env, info, dest_domain, recipient, amount, hook, metadata),
     }
 }
 
@@ -190,6 +192,8 @@ fn transfer_remote(
     dest_domain: u32,
     recipient: HexBinary,
     transfer_amount: Uint128,
+    hook: Option<String>,
+    metadata: Option<HexBinary>,
 ) -> Result<Response, ContractError> {
     let token = TOKEN.load(deps.storage)?;
     let mode = MODE.load(deps.storage)?;
@@ -213,6 +217,11 @@ fn transfer_remote(
         .route
         .expect("route not found");
 
+    // validate hook if present
+    if let Some(ref custom_hook) = hook {
+        let _ = deps.api.addr_validate(&custom_hook)?;
+    }
+
     let mut msgs: Vec<CosmosMsg> = vec![];
 
     if mode == TokenMode::Bridged {
@@ -232,8 +241,8 @@ fn transfer_remote(
         dest_domain,
         dest_router,
         dispatch_payload.into(),
-        get_hook(deps.storage)?.map(|v| v.into()),
-        None,
+        hook.clone().or(get_hook(deps.storage)?.map(|v| v.into())),
+        metadata.clone(),
         funds,
     )?);
 
@@ -242,7 +251,9 @@ fn transfer_remote(
             .add_attribute("sender", info.sender)
             .add_attribute("recipient", recipient.to_hex())
             .add_attribute("token", token)
-            .add_attribute("amount", transfer_amount.to_string()),
+            .add_attribute("amount", transfer_amount.to_string())
+            .add_attribute("hook", hook.unwrap_or_default())
+            .add_attribute("metadata", metadata.unwrap_or_default().to_string()),
     ))
 }
 
@@ -314,6 +325,7 @@ mod test {
     const OWNER: &str = "owner";
     const MAILBOX: &str = "mailbox";
     const DENOM: &str = "utest";
+    const CUSTOM_HOOK: &str = "custom_hook";
 
     #[fixture]
     fn metadata(#[default(true)] empty: bool) -> Option<Metadata> {
@@ -508,20 +520,22 @@ mod test {
     }
 
     #[rstest]
-    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM)])]
-    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM), coin(100, "uatom")])]
+    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM)], Some(CUSTOM_HOOK), None)]
+    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, DENOM), coin(100, "uatom")], None, Some(gen_bz(100)))]
     #[should_panic(expected = "route not found")]
-    #[case(2, gen_bz(32), gen_bz(32), vec![coin(100, DENOM)])]
+    #[case(2, gen_bz(32), gen_bz(32), vec![coin(100, DENOM)], None, None)]
     #[should_panic(expected = "no funds sent")]
-    #[case(1, gen_bz(32), gen_bz(32), vec![])]
+    #[case(1, gen_bz(32), gen_bz(32), vec![], None, None)]
     #[should_panic(expected = "no funds sent")]
-    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, "uatom")])]
+    #[case(1, gen_bz(32), gen_bz(32), vec![coin(100, "uatom")], None, None)]
     fn test_transfer_remote(
         mut deps: TestDeps,
         #[case] dest_domain: u32,
         #[case] dest_router: HexBinary,
         #[case] dest_recipient: HexBinary,
         #[case] funds: Vec<Coin>,
+        #[case] custom_hook: Option<&str>,
+        #[case] custom_metadata: Option<HexBinary>,
     ) {
         set_route(
             deps.as_mut().storage,
@@ -540,6 +554,8 @@ mod test {
                 dest_domain,
                 recipient: dest_recipient.clone(),
                 amount: Uint128::new(50),
+                hook: custom_hook.map(|h| h.to_string()),
+                metadata: custom_metadata.clone(),
             },
             funds.clone(),
         );
@@ -559,8 +575,8 @@ mod test {
                     metadata: HexBinary::default(),
                 }
                 .into(),
-                None,
-                None,
+                custom_hook.map(|h| h.to_string()),
+                custom_metadata,
                 [
                     vec![coin(50, DENOM)],
                     funds.into_iter().filter(|v| v.denom != DENOM).collect()
