@@ -1,0 +1,115 @@
+{
+  "artifacts": {
+    "hpl_mailbox": 616,
+    "hpl_validator_announce": 617,
+    "hpl_ism_aggregate": 618,
+    "hpl_ism_multisig": 619,
+    "hpl_ism_pausable": 620,
+    "hpl_ism_routing": 621,
+    "hpl_igp": 622,
+    "hpl_hook_aggregate": 623,
+    "hpl_hook_fee": 624,
+    "hpl_hook_merkle": 625,
+    "hpl_hook_pausable": 626,
+    "hpl_hook_routing": 627,
+    "hpl_hook_routing_custom": 628,
+    "hpl_hook_routing_fallback": 629,
+    "hpl_test_mock_hook": 630,
+    "hpl_test_mock_ism": 631,
+    "hpl_test_mock_msg_receiver": 632,
+    "hpl_igp_oracle": 633,
+    "hpl_warp_cw20": 634,
+    "hpl_warp_native": 635
+  },
+  "deployments": {
+    "core": {
+      "mailbox": {
+        "type": "hpl_mailbox",
+        "address": "osmo1jjf788v9m5pcqghe0ky2hf4llxxe37dqz6609eychuwe3xzzq9eql969h3",
+        "hexed": "0x9493e39d85dd038022f97d88aba6bff98d98f9a016b4f2e498bf1d9898420172"
+      },
+      "validator_announce": {
+        "type": "hpl_validator_announce",
+        "address": "osmo147r8mfdsngswujgkr4tln9rhcrzz6yq0xn448ksd96mlcmp9wg6stvznke",
+        "hexed": "0xaf867da5b09a20ee49161d57f99477c0c42d100f34eb53da0d2eb7fc6c257235"
+      }
+    },
+    "isms": {
+      "type": "hpl_ism_routing",
+      "address": "osmo1s9a438mmpkz5r4460cz8a3tjef0r2jesl3ntygxca8xrvwpfrruqfzvjmu",
+      "hexed": "0x817b589f7b0d8541d6ba7e047ec572ca5e354b30fc66b220d8e9cc36382918f8",
+      "isms": {
+        "domain": 169,
+        "route": {
+          "type": "hpl_ism_multisig",
+          "address": "osmo19ly393xvxsc65dtg8dqwdkklanrwr43dugl8m8j8jsfskyeuxzjs453c7q",
+          "hexed": "0x2fc912c4cc3431aa35683b40e6dadfecc6e1d62de23e7d9e4794130b133c30a5"
+        }
+      }
+    },
+    "hooks": {
+      "default": {
+        "type": "hpl_hook_aggregate",
+        "address": "osmo12pvc4v625ewl34uqqgm3ezw76durxlky5j4guz8kvhal7em3e5wqz7cnla",
+        "hexed": "0x50598ab34aa65df8d78002371c89ded378337ec4a4aa8e08f665fbff6771cd1c",
+        "hooks": [
+          {
+            "type": "hpl_hook_merkle",
+            "address": "osmo13yswqchwtmv2ln9uz4w3865sfy5k8x0wg9qrv4vxflxjg0kuwwyqqpvqxz",
+            "hexed": "0x8920e062ee5ed8afccbc155d13ea9049296399ee41403655864fcd243edc7388"
+          },
+          {
+            "type": "hpl_hook_pausable",
+            "address": "osmo1tql3ltzvkmd05ht2d8wfsevum4z2zk800h4uxwvx5kw0d9azajfsphcaql",
+            "hexed": "0x583f1fac4cb6dafa5d6a69dc98659cdd44a158ef7debc33986a59cf697a2ec93"
+          },
+          {
+            "type": "hpl_igp",
+            "address": "osmo16g9fmnmpjw0u9ln265qmj3tmzq5m8nr6kyhdwfn4aghppkp3aewstheuxu",
+            "hexed": "0xd20a9dcf61939fc2fe6ad501b9457b1029b3cc7ab12ed72675ea2e10d831ee5d",
+            "oracle": {
+              "type": "hpl_igp_oracle",
+              "address": "osmo1hz39l28re8vrgrzmqkyh009vndjjfewevq6kdfehhmncyplgeecqlnfea6",
+              "hexed": "0xb8a25fa8e3c9d8340c5b058977bcac9b6524e5d9603566a737bee78207e8ce70"
+            }
+          }
+        ]
+      },
+      "required": {
+        "type": "hpl_hook_fee",
+        "address": "osmo1hsztuzngm4skzjejqxw8kwg4dg39nr3jzwwp38638pqe8kg03nyqtzuw0l",
+        "hexed": "0xbc04be0a68dd61614b32019c7b39156a22598e32139c189f51384193d90f8cc8"
+      }
+    },
+    "warp": {
+      "native": [
+        {
+          "id": "uosmo",
+          "type": "hpl_warp_native",
+          "address": "osmo1stqzny06rfukay2tdjzr8vnxyzdmhdsldt05twmhmfyyc7dd3cpqlsynru",
+          "hexed": "0x82c02991fa1a796e914b6c8433b266209bbbb61f6adf45bb77da484c79ad8e02"
+        },
+        {
+          "id": "utia",
+          "type": "hpl_warp_native",
+          "address": "osmo1h4y9xjcvs8lrx4z8ha48uq9a338w74dpl2ly3tf74fzvugp2kj4q9l0jkw",
+          "hexed": "0xbd48534b0c81fe335447bf6a7e00bd8c4eef55a1fabe48ad3eaa44ce202ab4aa"
+        },
+        {
+          "id": "umilkTIA",
+          "type": "hpl_warp_native",
+          "address": "osmo17xuecsykqw2xcxwv8cau7uy4hgdwqt0u4qxflyc2yshhggpazfjs6kfqd3",
+          "hexed": "0xf1b99c409603946c19cc3e3bcf7095ba1ae02dfca80c9f930a242f74203d1265"
+        }
+      ],
+      "cw20": []
+    },
+    "test": {
+      "msg_receiver": {
+        "type": "hpl_test_mock_msg_receiver",
+        "address": "osmo15uph9pymalv5xz0muuedrfap94vs55p0d78gj6shktxr22jgjteqjvlksa",
+        "hexed": "0xa70372849befd94309fbe732d1a7a12d590a502f6f8e896a17b2cc352a4892f2"
+      }
+    }
+  }
+}

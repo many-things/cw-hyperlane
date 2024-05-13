@@ -24,6 +24,9 @@ const deployRoutingHook = async (
     owner: hook.owner === '<signer>' ? client.signer : hook.owner,
   });
 
+  // if no hooks, return empty hooks
+  if (Object.keys(hook.hooks).length === 0) return { ...routing, hooks: {} };
+
   const routes = [];
   for (const [domain, v] of Object.entries(hook.hooks)) {
     routes.push({
@@ -58,6 +61,9 @@ const deployCustomRoutingHook = async (
   const routing = await deployContract(ctx, client, 'hpl_hook_routing_custom', {
     owner: hook.owner === '<signer>' ? client.signer : hook.owner,
   });
+
+  // if no hooks, return empty hooks
+  if (Object.keys(hook.hooks).length === 0) return { ...routing, hooks: {} };
 
   const routes = [];
   for (const [domain, v] of Object.entries(hook.hooks)) {
@@ -135,14 +141,18 @@ const deployFallbackRoitingHook = async (
     },
   );
 
+  const fallback = await deployHook(networkId, ctx, client, hook.fallback_hook);
+
+  // if no hooks, return empty hooks
+  if (Object.keys(hook.hooks).length === 0)
+    return { ...routing, hooks: { fallback } };
+
   const routes = await Promise.all(
     Object.entries(hook.hooks).map(async ([domain, v]) => ({
       domain: parseInt(domain),
       route: await deployHook(networkId, ctx, client, v),
     })),
   );
-
-  const fallback = await deployHook(networkId, ctx, client, hook.fallback_hook);
 
   await executeMultiMsg(client, [
     {
@@ -256,7 +266,7 @@ export const deployHook = async (
     }
 
     default: {
-      throw new Error('invalid hook type');
+      throw new Error(`invalid hook type ${hook}`);
     }
   }
 };
