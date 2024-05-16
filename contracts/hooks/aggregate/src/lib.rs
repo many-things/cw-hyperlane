@@ -3,7 +3,7 @@ mod error;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Coins, CosmosMsg, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
+    ensure_eq, Addr, Coins, CosmosMsg, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo,
     QueryResponse, Response, StdResult,
 };
 use cw_storage_plus::Item;
@@ -177,4 +177,10 @@ fn get_hooks(deps: Deps) -> Result<HooksResponse, ContractError> {
             .map(|v| v.into())
             .collect(),
     })
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }
