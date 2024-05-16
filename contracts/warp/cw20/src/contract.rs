@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Env, HexBinary, MessageInfo,
-    QueryResponse, Reply, Response, StdError, SubMsg, Uint128, Uint256, WasmMsg,
+    ensure_eq, to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Empty, Env, HexBinary,
+    MessageInfo, QueryResponse, Reply, Response, StdError, SubMsg, Uint128, Uint256, WasmMsg,
 };
 
 use cw20::Cw20ExecuteMsg;
@@ -101,7 +101,16 @@ pub fn execute(
             amount,
             hook,
             metadata,
-        } => transfer_remote(deps, env, info, dest_domain, recipient, amount, hook, metadata),
+        } => transfer_remote(
+            deps,
+            env,
+            info,
+            dest_domain,
+            recipient,
+            amount,
+            hook,
+            metadata,
+        ),
     }
 }
 
@@ -276,6 +285,12 @@ fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
     let mode = MODE.load(deps.storage)?;
 
     Ok(TokenModeResponse { mode })
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }
 
 #[cfg(test)]
@@ -582,7 +597,8 @@ mod test {
             custom_hook.map(|h| h.to_string()),
             custom_metadata,
             vec![],
-        ).unwrap();
+        )
+        .unwrap();
 
         match token_mode {
             TokenModeMsg::Bridged(_) => {
