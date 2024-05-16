@@ -36,6 +36,7 @@ export const RELEASE_ARTIFACT_URL = (tag: string) =>
 
 export const DEFAULT_CRADLE_RPC_BASE_URL =
   'https://cradle-manager.ec1-prod.newmetric.xyz/cradle/proxy/{session_id}';
-export const DEFAULT_CRADLE_REST_BASE_URL = '';
+export const DEFAULT_CRADLE_REST_BASE_URL =
+  'https://cradle-manager.ec1-prod.newmetric.xyz/cradle/proxy/{session_id}';
 export const DEFAULT_CRADLE_GRPC_BASE_URL =
   '{session_id}.cradle-grpc.ec1-prod.newmetric.xyz:80';
