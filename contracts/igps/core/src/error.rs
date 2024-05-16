@@ -11,6 +11,9 @@ pub enum ContractError {
     #[error("{0}")]
     ParseIntError(#[from] std::num::ParseIntError),
 
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
+
     #[error("unauthorized")]
     Unauthorized {},
 
