@@ -105,7 +105,16 @@ pub fn execute(
             amount,
             hook,
             metadata,
-        } => transfer_remote(deps, env, info, dest_domain, recipient, amount, hook, metadata),
+        } => transfer_remote(
+            deps,
+            env,
+            info,
+            dest_domain,
+            recipient,
+            amount,
+            hook,
+            metadata,
+        ),
     }
 }
 
@@ -292,8 +301,9 @@ fn get_token_mode(deps: Deps) -> Result<TokenModeResponse, ContractError> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
-    Ok(Response::new())
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }
 
 #[cfg(test)]
