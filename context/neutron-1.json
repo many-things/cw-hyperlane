@@ -1,0 +1,76 @@
+{
+  "version": "v0.0.6-rc6",
+  "artifacts": {
+    "hpl-validator-announce": 432,
+    "hpl-ism-multisig": 431,
+    "hpl-mailbox": 416,
+    "hpl-igp": 433,
+    "hpl-igp-oracle": 412,
+    "hpl-hook-merkle": 406,
+    "hpl-test-mock-msg-receiver": 418,
+    "hpl-test-mock-hook": 417,
+    "hpl-warp-native": 421,
+    "hpl-warp-cw20": 420,
+    "hpl-hook-pausable": 407,
+    "hpl-hook-aggregate": 405
+  },
+  "deployments": {
+    "core": {
+      "mailbox": {
+        "type": "hpl_mailbox",
+        "address": "neutron1sjzzd4gwkggy6hrrs8kxxatexzcuz3jecsxm3wqgregkulzj8r7qlnuef4",
+        "hexed": "0x848426d50eb2104d5c6381ec63757930b1c14659c40db8b8081e516e7c5238fc"
+      },
+      "validator_announce": {
+        "type": "hpl_validator_announce",
+        "address": "neutron17w4q6efzym3p4c6umyp4cjf2ustjtmwfqdhd7rt2fpcpk9fmjzsq0kj0f8",
+        "hexed": "0xf3aa0d652226e21ae35cd9035c492ae41725edc9036edf0d6a48701b153b90a0"
+      }
+    },
+    "isms": {
+      "type": "hpl_ism_multisig",
+      "address": "neutron1q75ky8reksqzh0lkhk9k3csvjwv74jjquahrj233xc7dvzz5fv4qtvw0qg",
+      "hexed": "0x07a9621c79b4002bbff6bd8b68e20c9399eaca40e76e392a31363cd608544b2a"
+    },
+    "hooks": {
+      "default": {
+        "type": "hpl_hook_merkle",
+        "address": "neutron1e5c2qqquc86rd3q77aj2wyht40z6z3q5pclaq040ue9f5f8yuf7qnpvkzk",
+        "hexed": "0xcd30a0001cc1f436c41ef764a712ebabc5a144140e3fd03eafe64a9a24e4e27c"
+      },
+      "required": {
+        "type": "hpl_igp",
+        "address": "neutron1ww9yg48qvmpmedyvkrcrmjsudxeu840l5n6ywqykpqlsdq9pdxkqg2zq7e",
+        "hexed": "0x738a4454e066c3bcb48cb0f03dca1c69b3c3d5ffa4f4470096083f0680a169ac",
+        "oracle": {
+          "type": "hpl_igp_oracle",
+          "address": "neutron1sjxus3rynpwq0ncnm0m0dfun9x3flwmalsmveh4kuml0650wsq4q8n4mus",
+          "hexed": "0x848dc84464985c07cf13dbf6f6a79329a29fbb7dfc36ccdeb6e6fefd51ee802a"
+        }
+      }
+    },
+    "warp": {
+      "native": [
+        {
+          "id": "MantaPacific TIA.n",
+          "type": "hpl_warp_native",
+          "address": "neutron1ch7x3xgpnj62weyes8vfada35zff6z59kt2psqhnx9gjnt2ttqdqtva3pa",
+          "hexed": "0xc5fc6899019cb4a7649981d89eb7b1a0929d0a85b2d41802f3315129ad4b581a"
+        },
+        {
+          "id": "Arbitrum TIA.n",
+          "type": "hpl_warp_native",
+          "address": "neutron1jyyjd3x0jhgswgm6nnctxvzla8ypx50tew3ayxxwkrjfxhvje6kqzvzudq",
+          "hexed": "0x910926c4cf95d107237a9cf0b3305fe9c81351ebcba3d218ceb0e4935d92ceac"
+        }
+      ]
+    },
+    "test": {
+      "msg_receiver": {
+        "type": "hpl_test_mock_msg_receiver",
+        "address": "neutron1v0t8nztzhdsan2cv23x66xjrak9844zz9hq7gkz0w4j6xl4lmpzq89kt5g",
+        "hexed": "63d6798962bb61d9ab0c544dad1a43ed8a7ad4422dc1e4584f7565a37ebfd844"
+      }
+    }
+  }
+}
