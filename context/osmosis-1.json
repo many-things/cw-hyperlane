@@ -1,4 +1,5 @@
 {
+  "version": "v0.0.6",
   "artifacts": {
     "hpl_mailbox": 616,
     "hpl_validator_announce": 617,
