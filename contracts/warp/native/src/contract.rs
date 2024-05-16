@@ -194,6 +194,7 @@ fn mailbox_handle(
     ))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn transfer_remote(
     deps: DepsMut,
     env: Env,
@@ -228,7 +229,7 @@ fn transfer_remote(
 
     // validate hook if present
     if let Some(ref custom_hook) = hook {
-        let _ = deps.api.addr_validate(&custom_hook)?;
+        let _ = deps.api.addr_validate(custom_hook)?;
     }
 
     let mut msgs: Vec<CosmosMsg> = vec![];
