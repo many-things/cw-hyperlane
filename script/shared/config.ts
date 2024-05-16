@@ -113,12 +113,14 @@ export type Config = {
         is_cradle: undefined | false;
         endpoint: {
           rpc: string;
+          rest: string;
           grpc: string;
         };
       }
     | {
         is_cradle: true;
         cradle_rpc_base_url?: string;
+        cradle_rest_base_url?: string;
         cradle_grpc_base_url?: string;
         cradle_session_id: string;
       }
