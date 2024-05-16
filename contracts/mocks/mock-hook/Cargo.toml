@@ -26,6 +26,7 @@ cosmwasm-schema.workspace = true
 cw2.workspace = true
 cw-storage-plus.workspace = true
 
+hpl-utils.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]

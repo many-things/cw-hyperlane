@@ -33,6 +33,7 @@ bech32.workspace = true
 
 thiserror.workspace = true
 
+hpl-utils.workspace = true
 hpl-ownable.workspace = true
 hpl-interface.workspace = true
 

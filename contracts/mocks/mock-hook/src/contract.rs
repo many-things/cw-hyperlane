@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coins, to_json_binary, Deps, DepsMut, Env, Event, MessageInfo, QueryResponse, Response,
+    coins, to_json_binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, QueryResponse, Response,
     StdError, StdResult, Uint256,
 };
 use cw2::set_contract_version;
@@ -111,6 +111,12 @@ pub fn query(deps: Deps, _env: Env, msg: ExpectedHookQueryMsg) -> StdResult<Quer
             }
         },
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> StdResult<Response> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+    Ok(Response::default())
 }
 
 #[cfg(test)]

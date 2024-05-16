@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_eq, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Event, MessageInfo,
+    ensure, ensure_eq, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Empty, Env, Event, MessageInfo,
     QueryResponse, Response, StdError,
 };
 use cw_storage_plus::Item;
@@ -20,6 +20,9 @@ pub enum ContractError {
 
     #[error("{0}")]
     PaymentError(#[from] cw_utils::PaymentError),
+
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
 
     #[error("unauthorized")]
     Unauthorized {},
@@ -150,6 +153,12 @@ fn quote_dispatch(deps: Deps) -> Result<QuoteDispatchResponse, ContractError> {
     Ok(QuoteDispatchResponse { fees: vec![fee] })
 }
 
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
+}
+
 #[cfg(test)]
 mod test {
     use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
@@ -258,7 +267,9 @@ mod test {
             deps.as_mut(),
             mock_env(),
             mock_info(sender.as_str(), &[]),
-            ExecuteMsg::FeeHook(FeeHookMsg::Claim { recipient: recipient.clone() }),
+            ExecuteMsg::FeeHook(FeeHookMsg::Claim {
+                recipient: recipient.clone(),
+            }),
         )
         .map_err(|e| e.to_string())
         .unwrap();

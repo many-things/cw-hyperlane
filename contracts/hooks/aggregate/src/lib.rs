@@ -1,13 +1,10 @@
-mod error;
-
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, Addr, Coins, CosmosMsg, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
-    QueryResponse, Response, StdResult,
+    ensure_eq, Addr, Coins, CosmosMsg, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo,
+    QueryResponse, Response, StdError, StdResult,
 };
 use cw_storage_plus::Item;
-use error::ContractError;
 use hpl_interface::{
     hook::{
         aggregate::{AggregateHookQueryMsg, ExecuteMsg, HooksResponse, InstantiateMsg, QueryMsg},
@@ -18,6 +15,24 @@ use hpl_interface::{
     types::Message,
 };
 use hpl_ownable::get_owner;
+
+#[derive(thiserror::Error, Debug, PartialEq)]
+pub enum ContractError {
+    #[error("{0}")]
+    Std(#[from] StdError),
+
+    #[error("{0}")]
+    PaymentError(#[from] cw_utils::PaymentError),
+
+    #[error("{0}")]
+    CoinsError(#[from] cosmwasm_std::CoinsError),
+
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
+
+    #[error("unauthorized")]
+    Unauthorized {},
+}
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -177,4 +192,10 @@ fn get_hooks(deps: Deps) -> Result<HooksResponse, ContractError> {
             .map(|v| v.into())
             .collect(),
     })
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }

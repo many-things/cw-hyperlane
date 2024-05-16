@@ -26,6 +26,9 @@ pub enum ContractError {
     #[error("unauthorized. reason: {0}")]
     Unauthorized(String),
 
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
+
     #[error("hook paused")]
     Paused {},
 }
@@ -191,8 +194,9 @@ fn get_tree_checkpoint(deps: Deps) -> Result<merkle::CheckPointResponse, Contrac
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
-    Ok(Response::new())
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }
 
 #[cfg(test)]

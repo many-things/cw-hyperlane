@@ -9,6 +9,9 @@ pub enum ContractError {
     #[error("{0}")]
     ParseReplyError(#[from] cw_utils::ParseReplyError),
 
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
+
     #[error("unauthorized")]
     Unauthorized,
 

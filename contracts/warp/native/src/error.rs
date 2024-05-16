@@ -12,6 +12,9 @@ pub enum ContractError {
     #[error("{0}")]
     RecoverPubkeyError(#[from] RecoverPubkeyError),
 
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
+
     #[error("unauthorized")]
     Unauthorized,
 

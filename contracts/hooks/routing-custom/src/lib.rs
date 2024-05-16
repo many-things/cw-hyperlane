@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure_eq, wasm_execute, Addr, Deps, DepsMut, Env, Event, HexBinary, MessageInfo,
+    ensure_eq, wasm_execute, Addr, Deps, DepsMut, Empty, Env, Event, HexBinary, MessageInfo,
     QueryResponse, Response, StdError, StdResult, Storage,
 };
 
@@ -28,6 +28,9 @@ pub enum ContractError {
 
     #[error("{0}")]
     PaymentError(#[from] cw_utils::PaymentError),
+
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
 
     #[error("unauthorized")]
     Unauthorized {},
@@ -310,6 +313,12 @@ fn quote_dispatch(
     )?;
 
     Ok(resp)
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::default())
 }
 
 #[cfg(test)]

@@ -36,6 +36,7 @@ serde.workspace = true
 
 thiserror.workspace = true
 
+hpl-utils.workspace = true
 hpl-interface.workspace = true
 
 [dev-dependencies]

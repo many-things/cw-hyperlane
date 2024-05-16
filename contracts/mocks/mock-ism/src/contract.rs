@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response, StdResult,
+    to_json_binary, Deps, DepsMut, Empty, Env, MessageInfo, QueryResponse, Response, StdResult,
 };
 use cw2::set_contract_version;
 use hpl_interface::ism::{
@@ -32,11 +32,6 @@ pub fn instantiate(
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
-    Ok(Response::default())
-}
-
 /// Handling contract execution
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
@@ -63,4 +58,10 @@ pub fn query(_deps: Deps, _env: Env, msg: ExpectedIsmQueryMsg) -> StdResult<Quer
             })?),
         },
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> StdResult<Response> {
+    hpl_utils::migrate(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+    Ok(Response::default())
 }

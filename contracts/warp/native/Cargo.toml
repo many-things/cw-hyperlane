@@ -39,6 +39,7 @@ serde-json-wasm.workspace = true
 
 thiserror.workspace = true
 
+hpl-utils.workspace = true
 hpl-connection.workspace = true
 hpl-ownable.workspace = true
 hpl-router.workspace = true
