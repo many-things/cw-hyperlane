@@ -9,6 +9,9 @@ pub enum ContractError {
     #[error("{0}")]
     VerificationError(#[from] VerificationError),
 
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
+
     #[error("Unauthorized")]
     Unauthorized,
 
