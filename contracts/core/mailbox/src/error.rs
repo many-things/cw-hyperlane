@@ -18,6 +18,9 @@ pub enum ContractError {
     #[error("{0}")]
     CoinsError(#[from] cosmwasm_std::CoinsError),
 
+    #[error("{0}")]
+    MigrationError(#[from] hpl_utils::MigrationError),
+
     #[error("unauthorized")]
     Unauthorized {},
 
