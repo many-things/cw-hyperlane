@@ -47,7 +47,7 @@ cli.parseAsync(process.argv).catch(console.error);
 async function injectDependencies(cmd: Command): Promise<void> {
   const { networkId } = cmd.optsWithGlobals();
 
-  const client = await getSigningClient(networkId, config);
+  const client = await getSigningClient(networkId);
   const ctx = loadContext(networkId);
   const network = getNetwork(networkId);
 
