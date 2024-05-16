@@ -1,8 +1,7 @@
 use cosmwasm_std::{
-    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env,
-    HexBinary, MessageInfo, Response,
+    ensure, ensure_eq, to_json_binary, wasm_execute, Coin, Coins, DepsMut, Env, HexBinary,
+    MessageInfo, Response,
 };
-use cw_utils::PaymentError::MissingDenom;
 use hpl_interface::{
     core::{
         mailbox::{DispatchMsg, DispatchResponse},
@@ -123,7 +122,7 @@ pub fn dispatch(
 
     let mut funds = Coins::try_from(info.funds.clone())?;
     for coin in required_hook_fees.iter() {
-        if let Err(_) = funds.sub(coin.clone()) {
+        if funds.sub(coin.clone()).is_err() {
             return Err(ContractError::HookPayment {
                 wanted: required_hook_fees,
                 received: info.funds,
@@ -233,8 +232,8 @@ mod tests {
     use cosmwasm_std::{
         coin, from_json,
         testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
-        to_json_binary, Addr, ContractResult, CosmosMsg, OwnedDeps, QuerierResult,
-        SystemResult, WasmMsg, WasmQuery,
+        to_json_binary, Addr, ContractResult, CosmosMsg, OwnedDeps, QuerierResult, SystemResult,
+        WasmMsg, WasmQuery,
     };
 
     use hpl_interface::{
