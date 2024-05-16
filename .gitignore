@@ -41,3 +41,5 @@ tmp/
 dist/
 node_modules/
 wasm_codes.zip
+
+.yarn/install-state.gz
