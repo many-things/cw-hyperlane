@@ -9,6 +9,7 @@ import {
   MULTISIG_PROP_MODULE,
   NEUTRON_WHALE,
   RUNNER,
+  TIA_WHALE,
   denom,
   endpoint,
 } from './deps';
@@ -76,7 +77,7 @@ const migrationTargets = [
 ];
 
 async function main() {
-  const initialAccounts = [RUNNER, ...MULTISIG_MEMBERS];
+  const initialAccounts = [RUNNER, TIA_WHALE, ...MULTISIG_MEMBERS];
 
   const artifacts = readdirSync('./artifacts').filter((v) =>
     v.endsWith('.wasm'),
@@ -101,7 +102,7 @@ async function main() {
 
   // initial funding
 
-  await sendTx({ address: NEUTRON_WHALE, client }, [
+  const initFundingResp = await sendTx({ address: NEUTRON_WHALE, client }, [
     ...initialAccounts.map(
       (toAddress) =>
         ({
@@ -114,6 +115,7 @@ async function main() {
         }) as MsgSendEncodeObject,
     ),
   ]);
+  console.log('initial funding', initFundingResp.transactionHash);
 
   // upload new contract codes
 
@@ -121,7 +123,6 @@ async function main() {
 
   for (const artifact of artifacts) {
     const resp = await uploadContract(runner, `./artifacts/${artifact}`);
-    console.log(`uploaded ${artifact}: ${resp.hash}`);
 
     const codeId = Number(
       resp.events
@@ -129,6 +130,7 @@ async function main() {
         .attributes.find((v) => v.key === 'code_id')!.value,
     );
 
+    console.log(`code uploaded. ${resp.hash} ${codeId} ${artifact}`);
     codes.push({ name: artifact.replace('.wasm', ''), codeId });
   }
   writeFileSync('./uploaded.json', JSON.stringify(codes, null, 2));
@@ -137,20 +139,18 @@ async function main() {
   // run migration
 
   await multisig.run(
-    migrationTargets.map((info) =>
+    migrationTargets.flatMap((info) =>
       info.address.map((addr) => ({
         wasm: {
-          contract_addr: addr,
-          new_code_id: codes.find((c) => c.name === info.name),
-          msg: Buffer.from(JSON.stringify({}), 'base64'),
+          migrate: {
+            contract_addr: addr,
+            new_code_id: codes.find((c) => c.name === info.name)?.codeId,
+            msg: Buffer.from(JSON.stringify({})).toString('base64'),
+          },
         },
       })),
     ),
   );
-
-  // dispatch random message
-
-  // check validator
 }
 
 main().catch(console.error);

@@ -4,6 +4,7 @@ import {
   MsgStoreCodeEncodeObject,
 } from '@cosmjs/cosmwasm-stargate';
 import {
+  Coin,
   EncodeObject,
   encodePubkey,
   makeAuthInfoBytes,
@@ -76,6 +77,7 @@ export async function executeContract(
   member: Member,
   contract: string,
   msg: object,
+  funds?: Coin[],
 ) {
   const resp = await sendTx(member, [
     {
@@ -84,6 +86,7 @@ export async function executeContract(
         sender: member.address,
         contract: contract,
         msg: Buffer.from(JSON.stringify(msg)),
+        funds,
       },
     } as MsgExecuteContractEncodeObject,
   ]);

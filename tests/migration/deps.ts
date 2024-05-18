@@ -9,7 +9,7 @@ import {
 } from '../../script/shared/constants';
 import { loadContext } from '../../script/shared/context';
 
-export const RUNNER = 'neutron14n3a65fnqz9jve85l23al6m3pjugf0atq8njmp';
+export const RUNNER = 'neutron1rdrfmxtu7jes96r9ta2ykf922ejwd9cw0wazhw';
 
 export const MULTISIG =
   'neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7';
@@ -24,6 +24,7 @@ export const MULTISIG_MEMBERS = [
   'neutron16q4u9swh27fs0y7w733qnaxk9qr7zrkgdf696n',
 ];
 
+export const TIA_WHALE = 'neutron1r2xujqn6ud8g29pppz02e0jpk500rctxxfa622';
 export const NEUTRON_WHALE = 'neutron1p3ucd3ptpw902fluyjzhq3ffgq4ntddau6elth';
 
 export const networkId = 'neutron-1-fork';
