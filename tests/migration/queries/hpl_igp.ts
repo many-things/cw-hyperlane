@@ -8,11 +8,11 @@ export const QUERIES = toNamedQueries('hpl_igp', [
   ...HookQueryMsgs({ quote_dispatch: [] }), // TODO
   ...RouterQueryMsgs({ get_route: { domains: [] } }),
   ...wrapMany(
-    [
-      {
-        get_exchange_rate_and_gas_price: { dest_domain: 1 },
+    [169, 42161].map((domain) => ({
+      get_exchange_rate_and_gas_price: {
+        dest_domain: domain,
       },
-    ],
+    })),
     'oracle',
   ),
   ...wrapMany(
@@ -29,12 +29,12 @@ export const QUERIES = toNamedQueries('hpl_igp', [
         list_gas_for_domains: {},
       },
       { beneficiary: {} },
-      {
+      ...[169, 42161].map((domain) => ({
         quote_gas_payment: {
-          dest_domain: 0,
-          gas_amount: '0',
+          dest_domain: domain,
+          gas_amount: `${300_000}`,
         },
-      },
+      })),
     ],
     'igp',
   ),

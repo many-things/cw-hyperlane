@@ -11,6 +11,8 @@ export const QUERIES = toNamedQueries('hpl_warp_native', [
     [
       {
         token_type: {},
+      },
+      {
         token_mode: {},
       },
     ],
@@ -19,7 +21,7 @@ export const QUERIES = toNamedQueries('hpl_warp_native', [
   ...wrapMany(
     [
       {
-        interchain_securify_module: {},
+        interchain_security_module: [],
       },
     ],
     'ism_specifier',
