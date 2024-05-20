@@ -19,49 +19,49 @@ import { makeMember, sendTx, uploadContract } from './shared';
 const migrationTargets = [
   {
     name: 'hpl_mailbox',
-    codeId: 416,
+
     address: [
       'neutron1sjzzd4gwkggy6hrrs8kxxatexzcuz3jecsxm3wqgregkulzj8r7qlnuef4',
     ],
   },
   {
     name: 'hpl_validator_announce',
-    codeId: 432,
+
     address: [
       'neutron17w4q6efzym3p4c6umyp4cjf2ustjtmwfqdhd7rt2fpcpk9fmjzsq0kj0f8',
     ],
   },
   {
     name: 'hpl_ism_multisig',
-    codeId: 431,
+
     address: [
       'neutron1q75ky8reksqzh0lkhk9k3csvjwv74jjquahrj233xc7dvzz5fv4qtvw0qg',
     ],
   },
   {
     name: 'hpl_hook_merkle',
-    codeId: 406,
+
     address: [
       'neutron1e5c2qqquc86rd3q77aj2wyht40z6z3q5pclaq040ue9f5f8yuf7qnpvkzk',
     ],
   },
   {
     name: 'hpl_igp',
-    codeId: 433,
+
     address: [
       'neutron1ww9yg48qvmpmedyvkrcrmjsudxeu840l5n6ywqykpqlsdq9pdxkqg2zq7e',
     ],
   },
   {
     name: 'hpl_igp_oracle',
-    codeId: 412,
+
     address: [
       'neutron1sjxus3rynpwq0ncnm0m0dfun9x3flwmalsmveh4kuml0650wsq4q8n4mus',
     ],
   },
   {
     name: 'hpl_warp_native',
-    codeId: 421,
+
     address: [
       'neutron1jyyjd3x0jhgswgm6nnctxvzla8ypx50tew3ayxxwkrjfxhvje6kqzvzudq',
       'neutron1ch7x3xgpnj62weyes8vfada35zff6z59kt2psqhnx9gjnt2ttqdqtva3pa',
@@ -69,7 +69,7 @@ const migrationTargets = [
   },
   {
     name: 'hpl_test_mock_msg_receiver',
-    codeId: 418,
+
     address: [
       'neutron1v0t8nztzhdsan2cv23x66xjrak9844zz9hq7gkz0w4j6xl4lmpzq89kt5g',
     ],

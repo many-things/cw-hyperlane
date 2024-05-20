@@ -10,15 +10,13 @@ async function main() {
     stargate: await StargateClient.connect(endpoint.rpc),
   };
 
-  // dispatch random message
-
   await executeContract(
     { address: TIA_WHALE, client },
     'neutron1jyyjd3x0jhgswgm6nnctxvzla8ypx50tew3ayxxwkrjfxhvje6kqzvzudq',
     {
       transfer_remote: {
         amount: `${1_000_000}`,
-        dest_domain: 42161,
+        dest_domain: 42161, // arbitrum
         recipient:
           '0000000000000000000000004264c2ebd0af02798259ffeb2691d19190dd1bcb',
       },
@@ -31,8 +29,6 @@ async function main() {
       },
     ],
   );
-
-  // check validator
 }
 
 main().catch(console.error);
