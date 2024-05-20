@@ -1,13 +1,17 @@
 import { CosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { StargateClient } from '@cosmjs/stargate';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import _ from 'lodash';
 
 import { endpoint } from './deps';
-import { Snapshot, makeSnapshot } from './shared';
+import { Snapshot, makeSnapshot, resultPath } from './shared';
 
-function loadSnapshot(): Snapshot {
-  return JSON.parse(readFileSync('snapshot-prev.json', 'utf-8'));
+function loadPrevSnapshot(): Snapshot {
+  return JSON.parse(readFileSync(resultPath('snapshot-prev.json'), 'utf-8'));
+}
+
+function loadNewSnapshot(): Snapshot {
+  return JSON.parse(readFileSync(resultPath('snapshot-new.json'), 'utf-8'));
 }
 
 async function main() {
@@ -16,10 +20,18 @@ async function main() {
     stargate: await StargateClient.connect(endpoint.rpc),
   };
 
-  const prevSnapshot = loadSnapshot();
-  const newSnapshot = await makeSnapshot(client);
+  writeFileSync(
+    resultPath('snapshot-new.json'),
+    JSON.stringify(await makeSnapshot(client), null, 2),
+  );
+  console.log(`Snapshot saved to ${resultPath('snapshot-new.json')}`);
+
+  const prevSnapshot = loadPrevSnapshot();
+  const newSnapshot = loadNewSnapshot();
 
   console.log('Comparing snapshots...');
+
+  const compareResults = [];
 
   for (const { contract, address, results } of newSnapshot) {
     const compareTarget = prevSnapshot.find(
@@ -33,16 +45,38 @@ async function main() {
       if (!prevResult)
         throw Error(`No previous prevResult found for ${result.id}`);
 
-      const isEqual = _.isEqual(result, prevResult);
-      if (isEqual) {
-        console.log(`[${contract}] ${address} ${result.id} is equal`);
-      } else {
-        console.log(`[${contract}] ${address} ${result.id} is different`);
-        console.log('Prev:', prevResult);
-        console.log('New:', result);
-      }
+      compareResults.push({
+        id: result.id,
+        contract,
+        address,
+        query: JSON.stringify(result.query),
+        diff: !_.isEqual(result, prevResult)
+          ? {
+              prev: prevResult,
+              new: result,
+            }
+          : undefined,
+      });
     }
   }
+
+  writeFileSync(
+    resultPath('compare-results.json'),
+    JSON.stringify(compareResults, null, 2),
+  );
+  console.log(`Compare results saved to ${resultPath('compare-results.json')}`);
+
+  writeFileSync(
+    resultPath('compare-results.diff.json'),
+    JSON.stringify(
+      compareResults.filter((v) => v.diff !== undefined),
+      null,
+      2,
+    ),
+  );
+  console.log(
+    `Diff results saved to ${resultPath('compare-results.diff.json')}`,
+  );
 }
 
 main().catch(console.error);

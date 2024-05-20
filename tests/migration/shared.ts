@@ -14,12 +14,17 @@ import {
 import { DeliverTxResponse, StargateClient } from '@cosmjs/stargate';
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import { readFileSync } from 'fs';
+import { join } from 'path';
 
 import { waitTx } from '../../script/shared/utils';
 import { denom, reg } from './deps';
 import { migrationTargets } from './migration';
 import { QUERIES } from './queries';
 import { ClientSet, Member } from './types';
+
+export function resultPath(name: string): string {
+  return join(__dirname, 'results', name);
+}
 
 export async function makeMember(
   client: ClientSet,

@@ -10,7 +10,7 @@ async function main() {
     stargate: await StargateClient.connect(endpoint.rpc),
   };
 
-  await executeContract(
+  const resp = await executeContract(
     { address: TIA_WHALE, client },
     'neutron1jyyjd3x0jhgswgm6nnctxvzla8ypx50tew3ayxxwkrjfxhvje6kqzvzudq',
     {
@@ -29,6 +29,26 @@ async function main() {
       },
     ],
   );
+  if (resp.code !== 0) throw new Error(`Tx failed: ${resp.rawLog}`);
+
+  const queue = [
+    'wasm-hpl_warp_native::transfer-remote',
+    'wasm-mailbox_dispatch_id',
+    'wasm-mailbox_dispatch',
+    'wasm-igp-core-pay-for-gas',
+    'wasm-igp-core-post-dispatch',
+    'wasm-hpl_hook_merkle::post_dispatch',
+    'wasm-hpl_hook_merkle::inserted_into_tree',
+  ];
+  resp.events.forEach((evt) => queue[0] === evt.type && queue.shift());
+
+  if (queue.length > 0) {
+    console.log('Expected events not flushed');
+    console.log(`=> left: ${queue}`);
+    throw Error('Transfer failed');
+  }
+
+  console.log('Transfer completed');
 }
 
 main().catch(console.error);
