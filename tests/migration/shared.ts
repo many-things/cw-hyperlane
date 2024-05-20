@@ -1,20 +1,24 @@
 import {
+  CosmWasmClient,
   MsgExecuteContractEncodeObject,
   MsgInstantiateContractEncodeObject,
   MsgStoreCodeEncodeObject,
 } from '@cosmjs/cosmwasm-stargate';
+import { keccak256 } from '@cosmjs/crypto';
 import {
   Coin,
   EncodeObject,
   encodePubkey,
   makeAuthInfoBytes,
 } from '@cosmjs/proto-signing';
-import { DeliverTxResponse } from '@cosmjs/stargate';
+import { DeliverTxResponse, StargateClient } from '@cosmjs/stargate';
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import { readFileSync } from 'fs';
 
 import { waitTx } from '../../script/shared/utils';
 import { denom, reg } from './deps';
+import { migrationTargets } from './migration';
+import { QUERIES } from './queries';
 import { ClientSet, Member } from './types';
 
 export async function makeMember(
@@ -136,4 +140,66 @@ export async function sendTx(
   );
 
   return from.client.stargate.broadcastTx(txRawBytes);
+}
+
+export type Snapshot = {
+  contract: string;
+  address: string;
+  results: {
+    id: string;
+    query: object;
+    response?: object;
+    error?: unknown;
+  }[];
+}[];
+
+export async function makeSnapshot(client: {
+  wasm: CosmWasmClient;
+  stargate: StargateClient;
+}): Promise<Snapshot> {
+  const snapshot = [];
+
+  console.log('Generating snapshot...');
+
+  for (const contract of migrationTargets) {
+    const found = QUERIES.find((v) => v.contract === contract.name);
+    if (!found) throw new Error(`No queries found for ${contract.name}`);
+
+    console.log(`Processing ${contract.name}...`);
+
+    for (const target of contract.address) {
+      console.log(`=> CONTRACT: ${target}`);
+
+      const results: Snapshot[0]['results'] = [];
+
+      for (const query of found.queries) {
+        console.log(`==> QUERING: ${JSON.stringify(query)}`);
+
+        const queryIdRaw = keccak256(Buffer.from(JSON.stringify(query)));
+        const queryId = Buffer.from(queryIdRaw).toString('hex');
+
+        try {
+          const resp = await client.wasm.queryContractSmart(target, query);
+          console.log(JSON.stringify(resp));
+
+          results.push({
+            id: queryId,
+            query,
+            response: resp,
+          });
+        } catch (e) {
+          console.error(e);
+          results.push({ id: queryId, query, error: e });
+        }
+      }
+
+      snapshot.push({
+        contract: contract.name,
+        address: target,
+        results,
+      });
+    }
+  }
+
+  return snapshot;
 }
