@@ -1,0 +1,58 @@
+[
+  {
+    "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+    "contract": "hpl_hook_merkle",
+    "address": "neutron1e5c2qqquc86rd3q77aj2wyht40z6z3q5pclaq040ue9f5f8yuf7qnpvkzk",
+    "query": "{\"ownable\":{\"get_owner\":{}}}",
+    "diff": {
+      "prev": {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      "new": {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "error": {}
+      }
+    }
+  },
+  {
+    "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+    "contract": "hpl_hook_merkle",
+    "address": "neutron1e5c2qqquc86rd3q77aj2wyht40z6z3q5pclaq040ue9f5f8yuf7qnpvkzk",
+    "query": "{\"ownable\":{\"get_pending_owner\":{}}}",
+    "diff": {
+      "prev": {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      "new": {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "error": {}
+      }
+    }
+  }
+]
