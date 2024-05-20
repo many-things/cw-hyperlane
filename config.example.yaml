@@ -32,6 +32,15 @@ networks:
       denom: 'untrn'
     domain: 1302
 
+  - id: 'cradle-neutron-chain'
+    hrp: 'neutron'
+    is_cradle: true
+    cradle_session_id: '{{cradle_session_id}}'
+    gas:
+      price: 0.025
+      denom: untrn
+    domain: 1853125230
+
 signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
 
 deploy:
