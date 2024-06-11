@@ -43,7 +43,7 @@ async function deployTestRecipient({validatorAddress}: DeployTestRecipientArgs) 
     abi: StaticMessageIdMultisigIsmFactory__factory.abi,
     address: HYP_MULTSIG_ISM_FACTORY,
     functionName: 'getAddress',
-    args: [[validatorAddress ? validatorAddress : account.address], 1],
+    args: [[validatorAddress || account.address], 1],
   });
   console.log(`Deploying multisigIsm at "${multisigIsmAddr.green}"...`);
 
@@ -52,7 +52,7 @@ async function deployTestRecipient({validatorAddress}: DeployTestRecipientArgs) 
       abi: StaticMessageIdMultisigIsmFactory__factory.abi,
       address: HYP_MULTSIG_ISM_FACTORY,
       functionName: 'deploy',
-      args: [[validatorAddress ? validatorAddress : account.address], 1],
+      args: [[validatorAddress || account.address], 1],
     });
     logTx('Deploy multisig ism', tx);
     await query.waitForTransactionReceipt({ hash: tx });
