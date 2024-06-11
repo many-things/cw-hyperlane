@@ -7,6 +7,7 @@ import { Command } from 'commander';
 
 import { getKeyPair } from '../shared/crypto';
 import { CONTAINER, Dependencies } from '../shared/ioc';
+import { addPad, extractByte32AddrFromBech32 } from '../shared/utils';
 
 const walletCmd = new Command('wallet')
   .description('Wallet commands')
@@ -67,5 +68,17 @@ walletCmd
 
     console.log(account.address);
   });
+
+walletCmd
+  .command('zero-pad')
+  .argument('address', 'eth address of length 20 bytes')
+  .description('zero pads an ETH address to length 64 bytes')
+  .action((address: string) => console.log(`0x${addPad(address)}`));
+
+walletCmd
+  .command('convert-cosmos-to-eth')
+  .argument('address', 'converts a bech32 cosmos address to a 64 byte length eth address')
+  .description('zero pads an ETH address to length 64 bytes')
+  .action((address: string) => console.log(`0x${extractByte32AddrFromBech32(address)}`));
 
 export { walletCmd };
