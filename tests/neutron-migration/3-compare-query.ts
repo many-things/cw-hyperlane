@@ -1,10 +1,11 @@
-import { CosmWasmClient } from '@cosmjs/cosmwasm-stargate';
-import { StargateClient } from '@cosmjs/stargate';
+import { CosmWasmClient, setupWasmExtension } from '@cosmjs/cosmwasm-stargate';
+import { QueryClient, StargateClient } from '@cosmjs/stargate';
 import { readFileSync, writeFileSync } from 'fs';
 import _ from 'lodash';
 
 import { endpoint } from './deps';
 import { Snapshot, makeSnapshot, resultPath } from './shared';
+import { connectComet } from '@cosmjs/tendermint-rpc';
 
 function loadPrevSnapshot(): Snapshot {
   return JSON.parse(readFileSync(resultPath('snapshot-prev.json'), 'utf-8'));
@@ -18,6 +19,7 @@ async function main() {
   const client = {
     wasm: await CosmWasmClient.connect(endpoint.rpc),
     stargate: await StargateClient.connect(endpoint.rpc),
+    stateClient: QueryClient.withExtensions(await connectComet(endpoint.rpc), setupWasmExtension),
   };
 
   writeFileSync(
@@ -32,8 +34,9 @@ async function main() {
   console.log('Comparing snapshots...');
 
   const compareResults = [];
+  const compareState   = [];
 
-  for (const { contract, address, results } of newSnapshot) {
+  for (const { contract, address, results, state } of newSnapshot) {
     const compareTarget = prevSnapshot.find(
       (v) => v.contract === contract && v.address === address,
     );
@@ -58,6 +61,24 @@ async function main() {
           : undefined,
       });
     }
+
+    for (const state_kv of state) {
+      const prevStateKv = compareTarget.state.find((kv) => kv.key === state_kv.key);
+      if (!prevStateKv)
+        throw Error(`No previous prevStateKv found for ${state_kv.key}`);
+
+      compareState.push({
+        key: prevStateKv.key,
+        contract,
+        address,
+        state_diff: !_.isEqual(state_kv, prevStateKv)
+        ? {
+            prev: prevStateKv,
+            new: state_kv,
+          }
+        : undefined,
+      })
+    }
   }
 
   writeFileSync(
@@ -76,6 +97,24 @@ async function main() {
   );
   console.log(
     `Diff results saved to ${resultPath('compare-results.diff.json')}`,
+  );
+
+  writeFileSync(
+    resultPath('compare-state.json'),
+    JSON.stringify(compareState, null, 2),
+  );
+  console.log(`Compare state saved to ${resultPath('compare-state.json')}`);
+
+  writeFileSync(
+    resultPath('compare-state.diff.json'),
+    JSON.stringify(
+      compareState.filter((v) => v.state_diff !== undefined),
+      null,
+      2,
+    ),
+  );
+  console.log(
+    `Diff state saved to ${resultPath('compare-state.diff.json')}`,
   );
 }
 

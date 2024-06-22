@@ -3,6 +3,7 @@ import {
   MsgExecuteContractEncodeObject,
   MsgInstantiateContractEncodeObject,
   MsgStoreCodeEncodeObject,
+  WasmExtension,
 } from '@cosmjs/cosmwasm-stargate';
 import { keccak256 } from '@cosmjs/crypto';
 import {
@@ -11,8 +12,10 @@ import {
   encodePubkey,
   makeAuthInfoBytes,
 } from '@cosmjs/proto-signing';
-import { DeliverTxResponse, StargateClient } from '@cosmjs/stargate';
+import { DeliverTxResponse, QueryClient, StargateClient } from '@cosmjs/stargate';
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
+import { Model } from 'cosmjs-types/cosmwasm/wasm/v1/types';
+import { base64FromBytes } from 'cosmjs-types/helpers';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -156,11 +159,16 @@ export type Snapshot = {
     response?: object;
     error?: unknown;
   }[];
+  state: {
+    key: string;
+    value: string;
+  }[];
 }[];
 
 export async function makeSnapshot(client: {
   wasm: CosmWasmClient;
   stargate: StargateClient;
+  stateClient: QueryClient & WasmExtension;
 }): Promise<Snapshot> {
   const snapshot = [];
 
@@ -198,10 +206,26 @@ export async function makeSnapshot(client: {
         }
       }
 
+      const contractState: Snapshot[0]['state'] = [];
+      let paginationKey = undefined;
+      const decoder = new TextDecoder();
+      while(true) {
+        const statePage = await client.stateClient.wasm.getAllContractState(target, paginationKey);
+        statePage.models.forEach((model) => {
+          contractState.push({key: decoder.decode(model.key), value: decoder.decode(model.value)});
+        });
+
+        paginationKey = statePage.pagination?.nextKey;
+        if (paginationKey === undefined || paginationKey.length === 0) {
+          break;
+        }
+      }
+
       snapshot.push({
         contract: contract.name,
         address: target,
         results,
+        state: contractState,
       });
     }
   }
