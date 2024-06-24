@@ -120,10 +120,10 @@ deploy:
       # token: "uosmo" # or default to gas token (in this case, uosmo will be set)
       # configs:
       #   5:
-      #     exchange_rate: 1.0
+      #     exchange_rate: 1
       #     gas_price: 40000
       #   420:
-      #     exchange_rate: 1.4
+      #     exchange_rate: 2
       #     gas_price: 10322
       #   ...
 
