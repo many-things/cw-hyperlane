@@ -20,7 +20,7 @@ export function askQuestion(query: string) {
   return new Promise((resolve) =>
     rl.question(`${query} [Y/n] `, (ans) => {
       rl.close();
-      resolve(ans.toLowerCase() == 'y' ? true : false);
+      resolve(ans.toLowerCase() == 'y' || ans == '' ? true : false);
     }),
   );
 }

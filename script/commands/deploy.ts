@@ -104,7 +104,7 @@ const deployIsms = async (
   ctx: Context,
   client: Client,
 ): Promise<ContextDeployments['isms']> => {
-  if (!config.deploy.ism) {
+  if (!config?.deploy?.ism) {
     throw new Error('ISM deployment config not found');
   }
 

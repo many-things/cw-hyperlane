@@ -170,7 +170,7 @@ async function upload({
     return;
   }
 
-  if (!(await askQuestion('Do you want to proceed? (y/n)'))) {
+  if (!(await askQuestion('Do you want to proceed?'))) {
     console.log('Aborted.');
     return;
   }
