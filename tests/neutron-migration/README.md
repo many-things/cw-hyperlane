@@ -30,15 +30,15 @@ This directory contains tests for the Neutron contract migration.
 3. Run the scripts one by one.
 
    ```bash
-   yarn tsx ./tests/migration/0-init.ts
+   yarn tsx ./tests/neutron-migration/0-init.ts
 
-   yarn tsx ./tests/migration/1-save-query.ts
+   yarn tsx ./tests/neutron-migration/1-save-query.ts
 
-   yarn tsx ./tests/migration/2-migrate.ts
+   yarn tsx ./tests/neutron-migration/2-migrate.ts
 
-   yarn tsx ./tests/migration/3-compare-query.ts
+   yarn tsx ./tests/neutron-migration/3-compare-query.ts
 
-   yarn tsx ./tests/migration/4-test.ts
+   yarn tsx ./tests/neutron-migration/4-test.ts
    ```
 
    1. Step 1. Initialize the test environment.
