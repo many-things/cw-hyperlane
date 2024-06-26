@@ -51,10 +51,9 @@ export const deployIgp = async (
             },
           },
         },
-      }
-    ],
-    );
-  };
+      },
+    ]);
+  }
 
   return { ...igp, oracle: igpOracle };
 };

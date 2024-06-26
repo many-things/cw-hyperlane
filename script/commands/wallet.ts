@@ -77,8 +77,13 @@ walletCmd
 
 walletCmd
   .command('convert-cosmos-to-eth')
-  .argument('address', 'converts a bech32 cosmos address to a 64 byte length eth address')
+  .argument(
+    'address',
+    'converts a bech32 cosmos address to a 64 byte length eth address',
+  )
   .description('zero pads an ETH address to length 64 bytes')
-  .action((address: string) => console.log(`0x${extractByte32AddrFromBech32(address)}`));
+  .action((address: string) =>
+    console.log(`0x${extractByte32AddrFromBech32(address)}`),
+  );
 
 export { walletCmd };

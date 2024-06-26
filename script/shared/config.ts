@@ -128,6 +128,7 @@ export type Config = {
 
   evm_networks: {
     name: string;
+    signer: string;
     chain_id: number;
     rpc_endpoint: string;
     network: string;

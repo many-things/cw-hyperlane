@@ -22,8 +22,8 @@ warpCmd
   .addOption(
     new Option(
       '--ism <ism-address>',
-       'ISM to set on warp route (in bech32 format)',
-      )
+      'ISM to set on warp route (in bech32 format)',
+    ),
   )
   .action(handleCreate);
 
@@ -81,24 +81,9 @@ warpCmd
       'target domain id to link',
     ).makeOptionMandatory(),
   )
-  .addOption(
-    new Option(
-      '--amount <amount>',
-      'amount to send',
-    )
-  )
-  .addOption(
-    new Option(
-      '--bridged-denom <bridged-denom>',
-      'denom to transfer'
-    )
-  )
-  .addOption(
-    new Option(
-      '--fee-denom <fee-denom>',
-      'fee denom'
-    )
-  )
+  .addOption(new Option('--amount <amount>', 'amount to send'))
+  .addOption(new Option('--bridged-denom <bridged-denom>', 'denom to transfer'))
+  .addOption(new Option('--fee-denom <fee-denom>', 'fee denom'))
   .action(handleTransfer);
 
 export { warpCmd };
@@ -143,10 +128,10 @@ async function handleCreate(configFile: string, _: object, cmd: Command) {
   };
 
   type WarpContract = {
-    type: string,
-    address: string,
-    hexed: string
-  }
+    type: string;
+    address: string;
+    hexed: string;
+  };
   let newWarp: WarpContract;
 
   switch (warpType) {
@@ -187,18 +172,14 @@ async function handleCreate(configFile: string, _: object, cmd: Command) {
   }
 
   if (opts.ismAddress) {
-    console.log(`Setting ISM address to ${opts.ismAddress}`)
-    const response = await executeContract(
-      deps.client,
-      newWarp,
-      {
-        connection: {
-          set_ism: {
-            ism: opts.ismAddress
-          }
-        }
-      }
-    );
+    console.log(`Setting ISM address to ${opts.ismAddress}`);
+    const response = await executeContract(deps.client, newWarp, {
+      connection: {
+        set_ism: {
+          ism: opts.ismAddress,
+        },
+      },
+    });
     console.log(`Code: ${response.code}, Hash: ${response.hash}`);
   }
 
@@ -306,11 +287,11 @@ async function handleTransfer(_: object, cmd: Command) {
     [
       {
         amount: opts.amount ? `${opts.amount}` : `${1_000_000n}`,
-        denom: opts.bridgedDenom || 'uosmo' 
+        denom: opts.bridgedDenom || 'uosmo',
       },
       {
         amount: `${50n}`,
-        denom: opts.feeDenom || 'uosmo' 
+        denom: opts.feeDenom || 'uosmo',
       },
     ],
   );
