@@ -1,6 +1,7 @@
 networks:
   - id: 'localwasmd'
     hrp: 'uwasm'
+    signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
     endpoint:
       rpc: 'http://localhost:26657'
       rest: 'http://localhost:1317'
@@ -12,6 +13,7 @@ networks:
 
   - id: 'localosmosis'
     hrp: 'osmo'
+    signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
     endpoint:
       rpc: 'http://localhost:26657'
       rest: 'http://localhost:1317'
@@ -23,6 +25,7 @@ networks:
 
   - id: 'localneutron'
     hrp: 'neutron'
+    signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
     endpoint:
       rpc: 'http://localhost:26657'
       rest: 'http://localhost:1317'
@@ -34,6 +37,7 @@ networks:
 
   - id: 'cradle-neutron-chain'
     hrp: 'neutron'
+    signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
     is_cradle: true
     cradle_session_id: '{{cradle_session_id}}'
     gas:
@@ -41,7 +45,20 @@ networks:
       denom: untrn
     domain: 1853125230
 
-signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+# Networks that already have hyperlane deployments
+# but might require new warp route connections
+evm_networks:
+  - name: 'mantasepolia'
+    signer: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+    chain_id: 3441006
+    rpc_endpoint: 'http://localhost:8545'
+    network: 'sepolia'
+    nativeCurrency:
+      name: 'Sepolia Ether'
+      symbol: 'ETH'
+      decimals: 18
+    mailbox_address: '0x123...'
+    multisig_ism_factory_address: '0x123...'
 
 deploy:
   ism:
@@ -113,10 +130,10 @@ deploy:
       # token: "uosmo" # or default to gas token (in this case, uosmo will be set)
       # configs:
       #   5:
-      #     exchange_rate: 1.0
+      #     exchange_rate: 1
       #     gas_price: 40000
       #   420:
-      #     exchange_rate: 1.4
+      #     exchange_rate: 2
       #     gas_price: 10322
       #   ...
 

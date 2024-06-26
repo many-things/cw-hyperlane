@@ -79,7 +79,7 @@ async function handleMigrate(_: object, cmd: Command) {
     );
   }
 
-  if (!(await askQuestion('Do you want to proceed? (y/n)'))) {
+  if (!(await askQuestion('Do you want to proceed?'))) {
     console.log('Aborted.');
     return;
   }

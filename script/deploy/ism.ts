@@ -41,6 +41,7 @@ export async function deployIsm(
         owner: ism.owner === '<signer>' ? client.signer : ism.owner,
       });
 
+    if (ism.validators != undefined) {
       await executeMultiMsg(
         client,
         Object.entries(ism.validators).map(
@@ -58,6 +59,7 @@ export async function deployIsm(
           }),
         ),
       );
+    };
 
       return multisig;
     }

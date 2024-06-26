@@ -19,6 +19,12 @@ warpCmd
   .command('create')
   .description('Create a new warp route')
   .argument('<config-file>', 'path to the warp route config file')
+  .addOption(
+    new Option(
+      '--ism <ism-address>',
+       'ISM to set on warp route (in bech32 format)',
+      )
+  )
   .action(handleCreate);
 
 warpCmd
@@ -75,6 +81,24 @@ warpCmd
       'target domain id to link',
     ).makeOptionMandatory(),
   )
+  .addOption(
+    new Option(
+      '--amount <amount>',
+      'amount to send',
+    )
+  )
+  .addOption(
+    new Option(
+      '--bridged-denom <bridged-denom>',
+      'denom to transfer'
+    )
+  )
+  .addOption(
+    new Option(
+      '--fee-denom <fee-denom>',
+      'fee denom'
+    )
+  )
   .action(handleTransfer);
 
 export { warpCmd };
@@ -90,7 +114,12 @@ function checkConfigType<
   return config.type === tokenType && config.mode === tokenMode;
 }
 
-async function handleCreate(configFile: string) {
+async function handleCreate(configFile: string, _: object, cmd: Command) {
+  type Option = {
+    ismAddress?: `0x{string}`;
+  };
+
+  const opts: Option = cmd.optsWithGlobals();
   const deps = CONTAINER.get(Dependencies);
 
   const warpConfigFile = readFileSync(configFile, 'utf-8');
@@ -113,6 +142,13 @@ async function handleCreate(configFile: string) {
     cw20: [],
   };
 
+  type WarpContract = {
+    type: string,
+    address: string,
+    hexed: string
+  }
+  let newWarp: WarpContract;
+
   switch (warpType) {
     case 'native': {
       if (!checkConfigType(warpConfig, 'native', mode))
@@ -128,6 +164,7 @@ async function handleCreate(configFile: string) {
         id: warpConfig.id,
         ...nativeWarp,
       });
+      newWarp = nativeWarp;
       break;
     }
     case 'cw20': {
@@ -144,8 +181,25 @@ async function handleCreate(configFile: string) {
         id: warpConfig.id,
         ...cw20Warp,
       });
+      newWarp = cw20Warp;
       break;
     }
+  }
+
+  if (opts.ismAddress) {
+    console.log(`Setting ISM address to ${opts.ismAddress}`)
+    const response = await executeContract(
+      deps.client,
+      newWarp,
+      {
+        connection: {
+          set_ism: {
+            ism: opts.ismAddress
+          }
+        }
+      }
+    );
+    console.log(`Code: ${response.code}, Hash: ${response.hash}`);
   }
 
   saveContext(deps.network.id, deps.ctx);
@@ -206,6 +260,9 @@ async function handleTransfer(_: object, cmd: Command) {
     assetType: 'native' | 'cw20';
     assetId: string;
     targetDomain: string;
+    amount?: number;
+    bridgedDenom?: string;
+    feeDenom?: string;
   };
 
   const opts: Option = cmd.optsWithGlobals();
@@ -243,9 +300,18 @@ async function handleTransfer(_: object, cmd: Command) {
       transfer_remote: {
         dest_domain: parseInt(opts.targetDomain),
         recipient: addPad(deps.client.signer_addr),
-        amount: `${1_000_000n}`,
+        amount: opts.amount ? `${opts.amount}` : `${1_000_000n}`,
       },
     },
-    [{ amount: `${1_000_001n}`, denom: 'uosmo' }],
+    [
+      {
+        amount: opts.amount ? `${opts.amount}` : `${1_000_000n}`,
+        denom: opts.bridgedDenom || 'uosmo' 
+      },
+      {
+        amount: `${50n}`,
+        denom: opts.feeDenom || 'uosmo' 
+      },
+    ],
   );
 }

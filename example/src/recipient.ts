@@ -8,11 +8,17 @@ import { HYP_MULTSIG_ISM_FACTORY } from './constants';
 import { CONTAINER, Dependencies } from './ioc';
 import { expectNextContractAddr, logTx } from './utils';
 
-export const recipientCmd = new Command('deploy-test-recipient').action(
+export const recipientCmd = new Command('deploy-test-recipient')
+  .option('--validator-address <validator-address>', 'validator address to use')
+  .action(
   deployTestRecipient,
 );
 
-async function deployTestRecipient() {
+type DeployTestRecipientArgs = {
+  validatorAddress?: `0x{string}`
+}
+
+async function deployTestRecipient({validatorAddress}: DeployTestRecipientArgs) {
   const {
     account,
     provider: { query, exec },
@@ -37,7 +43,7 @@ async function deployTestRecipient() {
     abi: StaticMessageIdMultisigIsmFactory__factory.abi,
     address: HYP_MULTSIG_ISM_FACTORY,
     functionName: 'getAddress',
-    args: [[account.address], 1],
+    args: [[validatorAddress || account.address], 1],
   });
   console.log(`Deploying multisigIsm at "${multisigIsmAddr.green}"...`);
 
@@ -46,7 +52,7 @@ async function deployTestRecipient() {
       abi: StaticMessageIdMultisigIsmFactory__factory.abi,
       address: HYP_MULTSIG_ISM_FACTORY,
       functionName: 'deploy',
-      args: [[account.address], 1],
+      args: [[validatorAddress || account.address], 1],
     });
     logTx('Deploy multisig ism', tx);
     await query.waitForTransactionReceipt({ hash: tx });
