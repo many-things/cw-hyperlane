@@ -1,5 +1,5 @@
 import { CosmWasmClient, setupWasmExtension } from '@cosmjs/cosmwasm-stargate';
-import { StargateClient, QueryClient } from '@cosmjs/stargate';
+import { QueryClient, StargateClient } from '@cosmjs/stargate';
 import { connectComet } from '@cosmjs/tendermint-rpc';
 import { writeFileSync } from 'fs';
 
@@ -10,7 +10,10 @@ async function main() {
   const client = {
     wasm: await CosmWasmClient.connect(endpoint.rpc),
     stargate: await StargateClient.connect(endpoint.rpc),
-    stateClient: QueryClient.withExtensions(await connectComet(endpoint.rpc), setupWasmExtension),
+    stateClient: QueryClient.withExtensions(
+      await connectComet(endpoint.rpc),
+      setupWasmExtension,
+    ),
   };
 
   const snapshot = await makeSnapshot(client);

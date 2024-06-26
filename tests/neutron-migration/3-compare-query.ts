@@ -1,11 +1,11 @@
 import { CosmWasmClient, setupWasmExtension } from '@cosmjs/cosmwasm-stargate';
 import { QueryClient, StargateClient } from '@cosmjs/stargate';
+import { connectComet } from '@cosmjs/tendermint-rpc';
 import { readFileSync, writeFileSync } from 'fs';
 import _ from 'lodash';
 
 import { endpoint } from './deps';
 import { Snapshot, makeSnapshot, resultPath } from './shared';
-import { connectComet } from '@cosmjs/tendermint-rpc';
 
 function loadPrevSnapshot(): Snapshot {
   return JSON.parse(readFileSync(resultPath('snapshot-prev.json'), 'utf-8'));
@@ -19,7 +19,10 @@ async function main() {
   const client = {
     wasm: await CosmWasmClient.connect(endpoint.rpc),
     stargate: await StargateClient.connect(endpoint.rpc),
-    stateClient: QueryClient.withExtensions(await connectComet(endpoint.rpc), setupWasmExtension),
+    stateClient: QueryClient.withExtensions(
+      await connectComet(endpoint.rpc),
+      setupWasmExtension,
+    ),
   };
 
   writeFileSync(
@@ -34,7 +37,7 @@ async function main() {
   console.log('Comparing snapshots...');
 
   const compareResults = [];
-  const compareState   = [];
+  const compareState = [];
 
   for (const { contract, address, results, state } of newSnapshot) {
     const compareTarget = prevSnapshot.find(
@@ -63,7 +66,9 @@ async function main() {
     }
 
     for (const state_kv of state) {
-      const prevStateKv = compareTarget.state.find((kv) => kv.key === state_kv.key);
+      const prevStateKv = compareTarget.state.find(
+        (kv) => kv.key === state_kv.key,
+      );
       if (!prevStateKv)
         throw Error(`No previous prevStateKv found for ${state_kv.key}`);
 
@@ -72,12 +77,12 @@ async function main() {
         contract,
         address,
         state_diff: !_.isEqual(state_kv, prevStateKv)
-        ? {
-            prev: prevStateKv,
-            new: state_kv,
-          }
-        : undefined,
-      })
+          ? {
+              prev: prevStateKv,
+              new: state_kv,
+            }
+          : undefined,
+      });
     }
   }
 
@@ -113,9 +118,7 @@ async function main() {
       2,
     ),
   );
-  console.log(
-    `Diff state saved to ${resultPath('compare-state.diff.json')}`,
-  );
+  console.log(`Diff state saved to ${resultPath('compare-state.diff.json')}`);
 }
 
 main().catch(console.error);

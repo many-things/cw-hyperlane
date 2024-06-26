@@ -7,7 +7,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "lint": "eslint . --ext ts",
-    "prettier": "prettier ./script ./example ./codegen.ts --write",
+    "prettier": "prettier ./script ./example ./tests ./codegen.ts --write",
     "build": "yarn clean && esbuild ./script --bundle --outfile=./dist/index.js --platform=node",
     "start": "yarn build && node ./dist/index.js",
     "cw-hpl": "yarn start",

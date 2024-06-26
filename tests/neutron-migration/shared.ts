@@ -12,7 +12,11 @@ import {
   encodePubkey,
   makeAuthInfoBytes,
 } from '@cosmjs/proto-signing';
-import { DeliverTxResponse, QueryClient, StargateClient } from '@cosmjs/stargate';
+import {
+  DeliverTxResponse,
+  QueryClient,
+  StargateClient,
+} from '@cosmjs/stargate';
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import { Model } from 'cosmjs-types/cosmwasm/wasm/v1/types';
 import { base64FromBytes } from 'cosmjs-types/helpers';
@@ -209,10 +213,16 @@ export async function makeSnapshot(client: {
       const contractState: Snapshot[0]['state'] = [];
       let paginationKey = undefined;
       const decoder = new TextDecoder();
-      while(true) {
-        const statePage = await client.stateClient.wasm.getAllContractState(target, paginationKey);
+      while (true) {
+        const statePage = await client.stateClient.wasm.getAllContractState(
+          target,
+          paginationKey,
+        );
         statePage.models.forEach((model) => {
-          contractState.push({key: decoder.decode(model.key), value: decoder.decode(model.value)});
+          contractState.push({
+            key: decoder.decode(model.key),
+            value: decoder.decode(model.value),
+          });
         });
 
         paginationKey = statePage.pagination?.nextKey;
