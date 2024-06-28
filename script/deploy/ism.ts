@@ -41,25 +41,25 @@ export async function deployIsm(
         owner: ism.owner === '<signer>' ? client.signer : ism.owner,
       });
 
-    if (ism.validators != undefined) {
-      await executeMultiMsg(
-        client,
-        Object.entries(ism.validators).map(
-          ([domain, { addrs, threshold }]) => ({
-            contract: multisig,
-            msg: {
-              set_validators: {
-                domain: Number(domain),
-                threshold,
-                validators: addrs.map((v) =>
-                  v === '<signer>' ? client.signer_addr : v,
-                ),
+      if (ism.validators != undefined) {
+        await executeMultiMsg(
+          client,
+          Object.entries(ism.validators).map(
+            ([domain, { addrs, threshold }]) => ({
+              contract: multisig,
+              msg: {
+                set_validators: {
+                  domain: Number(domain),
+                  threshold,
+                  validators: addrs.map((v) =>
+                    v === '<signer>' ? client.signer_addr : v,
+                  ),
+                },
               },
-            },
-          }),
-        ),
-      );
-    };
+            }),
+          ),
+        );
+      }
 
       return multisig;
     }

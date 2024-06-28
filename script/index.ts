@@ -6,17 +6,17 @@ import { version } from '../package.json';
 import {
   contextCmd,
   contractCmd,
-  evmCmd,
   deployCmd,
+  evmCmd,
   migrateCmd,
   uploadCmd,
   walletCmd,
   warpCmd,
 } from './commands';
+import { updateCmd } from './commands/update';
 import { config, getNetwork, getSigningClient } from './shared/config';
 import { loadContext } from './shared/context';
 import { CONTAINER, Dependencies } from './shared/ioc';
-import { updateCmd } from './commands/update';
 
 colors.enable();
 
@@ -51,7 +51,7 @@ cli.parseAsync(process.argv).catch(console.error);
 async function injectDependencies(cmd: Command): Promise<void> {
   const { networkId } = cmd.optsWithGlobals();
 
-  const client = await getSigningClient(networkId, config);
+  const client = await getSigningClient(networkId);
   const ctx = loadContext(networkId);
   const network = getNetwork(networkId);
 

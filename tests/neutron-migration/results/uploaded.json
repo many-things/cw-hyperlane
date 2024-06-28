@@ -1,0 +1,82 @@
+[
+  {
+    "name": "hpl_hook_aggregate",
+    "codeId": 1271
+  },
+  {
+    "name": "hpl_hook_fee",
+    "codeId": 1272
+  },
+  {
+    "name": "hpl_hook_merkle",
+    "codeId": 1273
+  },
+  {
+    "name": "hpl_hook_pausable",
+    "codeId": 1274
+  },
+  {
+    "name": "hpl_hook_routing",
+    "codeId": 1275
+  },
+  {
+    "name": "hpl_hook_routing_custom",
+    "codeId": 1276
+  },
+  {
+    "name": "hpl_hook_routing_fallback",
+    "codeId": 1277
+  },
+  {
+    "name": "hpl_igp",
+    "codeId": 1278
+  },
+  {
+    "name": "hpl_igp_oracle",
+    "codeId": 1279
+  },
+  {
+    "name": "hpl_ism_aggregate",
+    "codeId": 1280
+  },
+  {
+    "name": "hpl_ism_multisig",
+    "codeId": 1281
+  },
+  {
+    "name": "hpl_ism_pausable",
+    "codeId": 1282
+  },
+  {
+    "name": "hpl_ism_routing",
+    "codeId": 1283
+  },
+  {
+    "name": "hpl_mailbox",
+    "codeId": 1284
+  },
+  {
+    "name": "hpl_test_mock_hook",
+    "codeId": 1285
+  },
+  {
+    "name": "hpl_test_mock_ism",
+    "codeId": 1286
+  },
+  {
+    "name": "hpl_test_mock_msg_receiver",
+    "codeId": 1287
+  },
+  {
+    "name": "hpl_validator_announce",
+    "codeId": 1288
+  },
+  {
+    "name": "hpl_warp_cw20",
+    "codeId": 1289
+  },
+  {
+    "name": "hpl_warp_native",
+    "codeId": 1290
+  }
+]

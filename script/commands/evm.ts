@@ -1,5 +1,5 @@
-import { 
-  HypERC20__factory, 
+import {
+  HypERC20__factory,
   StaticMessageIdMultisigIsmFactory__factory,
 } from '@hyperlane-xyz/core';
 import { Command, Option } from 'commander';
@@ -12,65 +12,65 @@ import {
   http,
 } from 'viem';
 import { mnemonicToAccount, privateKeyToAccount } from 'viem/accounts';
+
+import { expectNextContractAddr, logTx } from '../../example/src/utils';
 import { config, getEvmNetwork } from '../shared/config';
-import {
-  expectNextContractAddr,
-  logTx,
-} from '../../example/src/utils';
 
-const evmCmd = new Command('evm')
+const evmCmd = new Command('evm');
 
-evmCmd.command('deploy-ism')
+evmCmd
+  .command('deploy-ism')
   .addOption(
     new Option(
       '--evm-network-name <evmNetworkName>',
       'specify the EVM network name',
     )
-    .choices(config.evm_networks ? config.evm_networks.map((v) => v.name) : [])
-    .makeOptionMandatory()
+      .choices(
+        config.evm_networks ? config.evm_networks.map((v) => v.name) : [],
+      )
+      .makeOptionMandatory(),
   )
   .option(
-    '--validator-addresses <validator-addresses>', 
+    '--validator-addresses <validator-addresses>',
     'Comma separated list of validator address on the ism',
   )
   .option(
-    '--threshold <threshold>', 
+    '--threshold <threshold>',
     'Threshold for the number of validators in the ISM',
-    "1",
+    '1',
   )
   .action(deployIsm);
 
-evmCmd.command('deploy-warp')
+evmCmd
+  .command('deploy-warp')
   .addOption(
     new Option(
       '--evm-network-name <evmNetworkName>',
       'specify the EVM network name',
     )
-    .choices(config.evm_networks ? config.evm_networks.map((v) => v.name) : [])
-    .makeOptionMandatory()
+      .choices(
+        config.evm_networks ? config.evm_networks.map((v) => v.name) : [],
+      )
+      .makeOptionMandatory(),
   )
   .option(
-    '--contract-name <contract-name>', 
+    '--contract-name <contract-name>',
     'Warp contract name e.g. Hyperlane Bridged TIA',
-    'Hyperlane Bridged Osmo'
+    'Hyperlane Bridged Osmo',
   )
+  .option('--asset-name <asset-name>', 'Warp route asset name e.g. TIA', 'TIA')
   .option(
-    '--asset-name <asset-name>', 
-    'Warp route asset name e.g. TIA',
-    'TIA'
-  )
-  .option(
-    '--ism-address <warp-ism-address>', 
-    'ISM to set on the warp route recipient'
+    '--ism-address <warp-ism-address>',
+    'ISM to set on the warp route recipient',
   )
   .action(deployWarpRoute);
 
 export { evmCmd };
 
 type DeployIsmArgs = {
-  evmNetworkName: string,
-  validatorAddresses?: `0x${string}`,
-  threshold?: number,
+  evmNetworkName: string;
+  validatorAddresses?: `0x${string}`;
+  threshold?: number;
 };
 
 async function deployIsm({
@@ -78,13 +78,16 @@ async function deployIsm({
   validatorAddresses,
   threshold,
 }: DeployIsmArgs) {
-  const { signer } = config;
-  const evmNetwork = getEvmNetwork(evmNetworkName)
-  
+  const evmNetwork = getEvmNetwork(evmNetworkName);
+
   const account: Account =
-    signer.split(' ').length > 1
-      ? mnemonicToAccount(signer)
-      : privateKeyToAccount(`0x${signer}` as Hex);
+    evmNetwork.signer.split(' ').length > 1
+      ? mnemonicToAccount(evmNetwork.signer)
+      : privateKeyToAccount(
+          (evmNetwork.signer.startsWith('0x')
+            ? evmNetwork.signer
+            : `0x${evmNetwork.signer}`) as Hex,
+        );
 
   const chain: Chain = {
     id: evmNetwork.chain_id,
@@ -99,12 +102,12 @@ async function deployIsm({
         http: [evmNetwork.rpc_endpoint],
       },
     },
-  }
+  };
 
   const query = createPublicClient({
     chain: chain,
     transport: http(evmNetwork.rpc_endpoint),
-  })
+  });
 
   const exec = createWalletClient({
     chain: chain,
@@ -112,8 +115,12 @@ async function deployIsm({
     transport: http(evmNetwork.rpc_endpoint),
   });
 
-  const validatorAddressesString = validatorAddresses ? validatorAddresses : account.address
-  const validatorAddressesList = validatorAddressesString.split(",").map(address => address as `0x${string}`)
+  const validatorAddressesString = validatorAddresses
+    ? validatorAddresses
+    : account.address;
+  const validatorAddressesList = validatorAddressesString
+    .split(',')
+    .map((address) => address as `0x${string}`);
 
   const multisigIsmAddr = await query.readContract({
     abi: StaticMessageIdMultisigIsmFactory__factory.abi,
@@ -121,7 +128,9 @@ async function deployIsm({
     functionName: 'getAddress',
     args: [validatorAddressesList, Number(threshold)],
   });
-  console.log(`Multisig ISM Address to be deployed at: ${multisigIsmAddr.green}`);
+  console.log(
+    `Multisig ISM Address to be deployed at: ${multisigIsmAddr.green}`,
+  );
 
   {
     const tx = await exec.writeContract({
@@ -137,12 +146,11 @@ async function deployIsm({
   console.log(`\nMultisig ISM Address: ${multisigIsmAddr.blue}`);
 }
 
-
 type DeployWarpRouteArgs = {
-  evmNetworkName: string,
-  contractName: string,
-  assetName: string,
-  ismAddress?: `0x${string}`,
+  evmNetworkName: string;
+  contractName: string;
+  assetName: string;
+  ismAddress?: `0x${string}`;
 };
 
 async function deployWarpRoute({
@@ -151,13 +159,16 @@ async function deployWarpRoute({
   assetName,
   ismAddress,
 }: DeployWarpRouteArgs) {
-  const { signer } = config;
-  const evmNetwork = getEvmNetwork(evmNetworkName)
-  
+  const evmNetwork = getEvmNetwork(evmNetworkName);
+
   const account: Account =
-    signer.split(' ').length > 1
-      ? mnemonicToAccount(signer)
-      : privateKeyToAccount(`0x${signer}` as Hex);
+    evmNetwork.signer.split(' ').length > 1
+      ? mnemonicToAccount(evmNetwork.signer)
+      : privateKeyToAccount(
+          (evmNetwork.signer.startsWith('0x')
+            ? evmNetwork.signer
+            : `0x${evmNetwork.signer}`) as Hex,
+        );
 
   const chain: Chain = {
     id: evmNetwork.chain_id,
@@ -172,12 +183,12 @@ async function deployWarpRoute({
         http: [evmNetwork.rpc_endpoint],
       },
     },
-  }
+  };
 
   const query = createPublicClient({
     chain: chain,
     transport: http(evmNetwork.rpc_endpoint),
-  })
+  });
 
   const exec = createWalletClient({
     chain: chain,
@@ -204,12 +215,16 @@ async function deployWarpRoute({
       abi: HypERC20__factory.abi,
       address: hypErc20Addr,
       functionName: 'initialize',
-      args: [0n, contractName ? contractName : 'Hyperlane Bridged OSMO', assetName ? assetName : 'OSMO'],
+      args: [
+        0n,
+        contractName ? contractName : 'Hyperlane Bridged OSMO',
+        assetName ? assetName : 'OSMO',
+      ],
     });
     logTx('Initialize HypERC20', tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
-  
+
   // If a custom ISM address was specified, register that address in the warp contract
   // Otherwise, the default ISM will be used
   if (ismAddress !== undefined) {
@@ -222,6 +237,6 @@ async function deployWarpRoute({
     logTx('Set ism for warp route', tx);
     await query.waitForTransactionReceipt({ hash: tx });
   }
-  
+
   console.log(`\nWarp ERC20: ${hypErc20Addr.blue}`);
 }

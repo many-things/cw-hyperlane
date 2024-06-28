@@ -5,14 +5,13 @@ import {
   DirectSecp256k1Wallet,
 } from '@cosmjs/proto-signing';
 import { GasPrice, SigningStargateClient } from '@cosmjs/stargate';
-import {
-  Comet38Client,
-  CometClient,
-  Tendermint34Client,
-  Tendermint37Client,
-} from '@cosmjs/tendermint-rpc';
 import { readFileSync } from 'fs';
 import yaml from 'js-yaml';
+
+import {
+  DEFAULT_CRADLE_GRPC_BASE_URL,
+  DEFAULT_CRADLE_RPC_BASE_URL,
+} from './constants';
 
 export type IsmType =
   | {
@@ -100,24 +99,36 @@ export type HookType =
   | RoutingFallbackHookType;
 
 export type Config = {
-  networks: {
+  networks: ({
     id: string;
+    signer: string;
     hrp: string;
-    endpoint: {
-      rpc: string;
-      rest: string;
-      grpc: string;
-    };
     gas: {
       price: string;
       denom: string;
     };
     domain: number;
-    tm_version?: '34' | '37' | '38';
-  }[];
+  } & (
+    | {
+        is_cradle: undefined | false;
+        endpoint: {
+          rpc: string;
+          rest: string;
+          grpc: string;
+        };
+      }
+    | {
+        is_cradle: true;
+        cradle_rpc_base_url?: string;
+        cradle_rest_base_url?: string;
+        cradle_grpc_base_url?: string;
+        cradle_session_id: string;
+      }
+  ))[];
 
   evm_networks: {
     name: string;
+    signer: string;
     chain_id: number;
     rpc_endpoint: string;
     network: string;
@@ -129,8 +140,6 @@ export type Config = {
     mailbox_address: `0x${string}`;
     multisig_ism_factory_address: `0x${string}`;
   }[];
-
-  signer: string;
 
   deploy: {
     ism?: IsmType;
@@ -160,18 +169,32 @@ export const getNetwork = (networkId: string): Config['networks'][number] => {
 
 export const config = yaml.load(readFileSync(path, 'utf-8')) as Config;
 
-export const getEvmNetwork = (networkName: string): Config['evm_networks'][number] => {
+export const getEvmNetwork = (
+  networkName: string,
+): Config['evm_networks'][number] => {
   const ret = config.evm_networks.find((v) => v.name === networkName);
   if (!ret)
     throw new Error(`EVM Network ${networkName} not found in the config file`);
   return ret;
-}
+};
 
-export async function getSigningClient(
-  networkId: string,
-  { signer }: Config,
-): Promise<Client> {
-  const { tm_version, hrp, gas, endpoint } = getNetwork(networkId);
+export async function getSigningClient(networkId: string): Promise<Client> {
+  const networkConfig = getNetwork(networkId);
+
+  const { signer, hrp, gas } = networkConfig;
+
+  const endpoint = (() =>
+    networkConfig.is_cradle
+      ? {
+          rpc: (
+            networkConfig.cradle_rpc_base_url || DEFAULT_CRADLE_RPC_BASE_URL
+          ).replaceAll('{session_id}', networkConfig.cradle_session_id),
+
+          grpc: (
+            networkConfig.cradle_grpc_base_url || DEFAULT_CRADLE_GRPC_BASE_URL
+          ).replaceAll('{session_id}', networkConfig.cradle_session_id),
+        }
+      : networkConfig.endpoint)();
 
   const wallet =
     signer.split(' ').length > 1
@@ -181,27 +204,13 @@ export async function getSigningClient(
   const [account] = await wallet.getAccounts();
   const gasPrice = GasPrice.fromString(`${gas.price}${gas.denom}`);
 
-  let clientBase: CometClient;
-
-  switch (tm_version || '38') {
-    case '34':
-      clientBase = await Tendermint34Client.connect(endpoint.rpc);
-      break;
-    case '37':
-      clientBase = await Tendermint37Client.connect(endpoint.rpc);
-      break;
-    case '38':
-      clientBase = await Comet38Client.connect(endpoint.rpc);
-      break;
-  }
-
-  const wasm = await SigningCosmWasmClient.createWithSigner(
-    clientBase,
+  const wasm = await SigningCosmWasmClient.connectWithSigner(
+    endpoint.rpc,
     wallet,
     { gasPrice },
   );
-  const stargate = await SigningStargateClient.createWithSigner(
-    clientBase,
+  const stargate = await SigningStargateClient.connectWithSigner(
+    endpoint.rpc,
     wallet,
     { gasPrice },
   );

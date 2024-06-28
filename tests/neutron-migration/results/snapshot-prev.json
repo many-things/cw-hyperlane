@@ -1,0 +1,1043 @@
+[
+  {
+    "contract": "hpl_mailbox",
+    "address": "neutron1sjzzd4gwkggy6hrrs8kxxatexzcuz3jecsxm3wqgregkulzj8r7qlnuef4",
+    "results": [
+      {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      {
+        "id": "36fc5daf3000e5e1e2d8723262306578fed7bae166e1b2eb52335bc3c6c77e59",
+        "query": {
+          "mailbox": {
+            "hrp": {}
+          }
+        },
+        "response": {
+          "hrp": "neutron"
+        }
+      },
+      {
+        "id": "fbc92948a20cbd7837e65705eeb33d5e45537c8d742c7323c514de50e2dc4f83",
+        "query": {
+          "mailbox": {
+            "local_domain": {}
+          }
+        },
+        "response": {
+          "local_domain": 1853125230
+        }
+      },
+      {
+        "id": "14e8f25b379e3f1c33fe293523ab032efe325ef28bfe56aabf5addd53bc6da54",
+        "query": {
+          "mailbox": {
+            "message_delivered": {
+              "id": ""
+            }
+          }
+        },
+        "response": {
+          "delivered": false
+        }
+      },
+      {
+        "id": "dfe3cc2db258b3604bf9bbe7b2f4c28f7141e5b3ded79d1d9eec8af29da60418",
+        "query": {
+          "mailbox": {
+            "default_ism": {}
+          }
+        },
+        "response": {
+          "default_ism": "neutron1q75ky8reksqzh0lkhk9k3csvjwv74jjquahrj233xc7dvzz5fv4qtvw0qg"
+        }
+      },
+      {
+        "id": "13063792b0f32b73d6fce54effd180ded2cc41c547f2a666e9a783a92a3b7287",
+        "query": {
+          "mailbox": {
+            "default_hook": {}
+          }
+        },
+        "response": {
+          "default_hook": "neutron1e5c2qqquc86rd3q77aj2wyht40z6z3q5pclaq040ue9f5f8yuf7qnpvkzk"
+        }
+      },
+      {
+        "id": "99d94778f572f135cbc470e9995e7e04a8eaed0b757c4bc08cdedc6a05d111aa",
+        "query": {
+          "mailbox": {
+            "required_hook": {}
+          }
+        },
+        "response": {
+          "required_hook": "neutron1ww9yg48qvmpmedyvkrcrmjsudxeu840l5n6ywqykpqlsdq9pdxkqg2zq7e"
+        }
+      },
+      {
+        "id": "360f386c4d59cd711ea584dc5a091a283f6297c89b38f8cd66e1e556fc7f302a",
+        "query": {
+          "mailbox": {
+            "nonce": {}
+          }
+        },
+        "response": {
+          "nonce": 294639
+        }
+      },
+      {
+        "id": "e76ea74b792ee57b345d450c6d8397d9e14bbc1f7b1fbbcba034419f6a1ce7c6",
+        "query": {
+          "mailbox": {
+            "recipient_ism": {
+              "recipient_addr": "neutron1v0t8nztzhdsan2cv23x66xjrak9844zz9hq7gkz0w4j6xl4lmpzq89kt5g"
+            }
+          }
+        },
+        "response": {
+          "ism": "neutron1q75ky8reksqzh0lkhk9k3csvjwv74jjquahrj233xc7dvzz5fv4qtvw0qg"
+        }
+      },
+      {
+        "id": "3edddeb1c7ca55d50badf4fdda08c4a756f4a7e66b4ebfa602e4a7fda39d911b",
+        "query": {
+          "mailbox": {
+            "latest_dispatch_id": {}
+          }
+        },
+        "response": {
+          "message_id": "880a6a3c84d485ac84671b795fabde119e370706d16a68a08d9b73ba97098569"
+        }
+      }
+    ]
+  },
+  {
+    "contract": "hpl_validator_announce",
+    "address": "neutron17w4q6efzym3p4c6umyp4cjf2ustjtmwfqdhd7rt2fpcpk9fmjzsq0kj0f8",
+    "results": [
+      {
+        "id": "ac9c408207c750546823983c3aff74ec8aee15a10c4bf69df0a04f5bb4f665f6",
+        "query": {
+          "get_announce_storage_locations": {
+            "validators": [
+              "26fa235bc3f9e1b00ac3a0db4d84abb6f34244da",
+              "42b6de2edbaa62c2ea2309ad85d20b3e37d38acf",
+              "42fa752defe92459370a052b6387a87f7de9b80c",
+              "47aa126e05933b95c5eb90b26e6b668d84f4b25a",
+              "54b2cca5091b098a1a993dec03c4d1ee9af65999",
+              "60e890b34cb44ce3fa52f38684f613f31b47a1a6",
+              "7885fae56dbcf5176657f54adbbd881dc6714132",
+              "a9b8c1f4998f781f958c63cfcd1708d02f004ff0",
+              "b65438a014fb05fbadcfe35bc6e25d372b6ba460",
+              "c79503a3e3011535a9c60f6d21f76f59823a38bd",
+              "e000fa4e466831db288290dd97e66560fb3d7d28"
+            ]
+          }
+        },
+        "response": {
+          "storage_locations": [
+            [
+              "26fa235bc3f9e1b00ac3a0db4d84abb6f34244da",
+              [
+                "s3://hyperlane-validator-signatures-imperator-neutron/eu-north-1"
+              ]
+            ],
+            [
+              "42b6de2edbaa62c2ea2309ad85d20b3e37d38acf",
+              [
+                "s3://hyperlane-validator-signatures-sg-1-celestia/us-east-1",
+                "s3://hyperlane-validator-signatures-sg-1-manta/us-east-1"
+              ]
+            ],
+            [
+              "42fa752defe92459370a052b6387a87f7de9b80c",
+              [
+                "s3://hyperlane-p2p-org/eu-west-3/h1"
+              ]
+            ],
+            [
+              "47aa126e05933b95c5eb90b26e6b668d84f4b25a",
+              [
+                "s3://dsrv-hyperlane-v3-validator-signatures-validator11-neutron/eu-central-1"
+              ]
+            ],
+            [
+              "54b2cca5091b098a1a993dec03c4d1ee9af65999",
+              [
+                "s3://hyperlane-validator-signatures-sspaces1-neutron/eu-north-1"
+              ]
+            ],
+            [
+              "60e890b34cb44ce3fa52f38684f613f31b47a1a6",
+              [
+                "s3://hyperlane-mainnet3-neutron-validator-1/us-east-1"
+              ]
+            ],
+            [
+              "7885fae56dbcf5176657f54adbbd881dc6714132",
+              [
+                "s3://hyperlane-mainnet3-neutron-validator-2/us-east-1"
+              ]
+            ],
+            [
+              "a9b8c1f4998f781f958c63cfcd1708d02f004ff0",
+              [
+                "s3://hyperlane-mainnet3-neutron-validator-0/us-east-1"
+              ]
+            ],
+            [
+              "b65438a014fb05fbadcfe35bc6e25d372b6ba460",
+              [
+                "s3://hyperlane-validator-signatures-cosmostation-neutron/ca-central-1"
+              ]
+            ],
+            [
+              "c79503a3e3011535a9c60f6d21f76f59823a38bd",
+              [
+                "s3://hyperlane-validator-signatures-neutron/eu-central-1"
+              ]
+            ],
+            [
+              "e000fa4e466831db288290dd97e66560fb3d7d28",
+              [
+                "file://./neutron_validator_sigs"
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "id": "4d558270d60bbdb4c2421812e47d08deab4ab9347e02d9468b0b43e0dea6745e",
+        "query": {
+          "get_announced_validators": {}
+        },
+        "response": {
+          "validators": [
+            "26fa235bc3f9e1b00ac3a0db4d84abb6f34244da",
+            "42b6de2edbaa62c2ea2309ad85d20b3e37d38acf",
+            "42fa752defe92459370a052b6387a87f7de9b80c",
+            "47aa126e05933b95c5eb90b26e6b668d84f4b25a",
+            "54b2cca5091b098a1a993dec03c4d1ee9af65999",
+            "60e890b34cb44ce3fa52f38684f613f31b47a1a6",
+            "7885fae56dbcf5176657f54adbbd881dc6714132",
+            "a9b8c1f4998f781f958c63cfcd1708d02f004ff0",
+            "b65438a014fb05fbadcfe35bc6e25d372b6ba460",
+            "c79503a3e3011535a9c60f6d21f76f59823a38bd",
+            "e000fa4e466831db288290dd97e66560fb3d7d28"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "contract": "hpl_ism_multisig",
+    "address": "neutron1q75ky8reksqzh0lkhk9k3csvjwv74jjquahrj233xc7dvzz5fv4qtvw0qg",
+    "results": [
+      {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      {
+        "id": "c2bb642d92e74db6c488d002dbdae9bedee09115196df365d42d0f15dc22bc01",
+        "query": {
+          "ism": {
+            "module_type": {}
+          }
+        },
+        "response": {
+          "type": "message_id_multisig"
+        }
+      },
+      {
+        "id": "3f11e9be78e8f85d4546d67a54df73ddc202b7d7eecfe1fe6c1952a14833079e",
+        "query": {
+          "multisig_ism": {
+            "enrolled_validators": {
+              "domain": 169
+            }
+          }
+        },
+        "response": {
+          "validators": [
+            "14025fe092f5f8a401dd9819704d9072196d2125",
+            "25b9a0961c51e74fd83295293bc029131bf1e05a",
+            "42b6de2edbaa62c2ea2309ad85d20b3e37d38acf",
+            "521a3e6bf8d24809fde1c1fd3494a859a16f132c",
+            "8e668c97ad76d0e28375275c41ece4972ab8a5bc",
+            "a0ee95e280d46c14921e524b075d0c341e7ad1c8",
+            "cc9a0b6de7fe314bd99223687d784730a75bb957"
+          ],
+          "threshold": 5
+        }
+      },
+      {
+        "id": "e1038850b9b771b466574402b4be6a8388fe0e29d674ab4ce68340cad3539c19",
+        "query": {
+          "multisig_ism": {
+            "enrolled_validators": {
+              "domain": 42161
+            }
+          }
+        },
+        "error": {}
+      }
+    ]
+  },
+  {
+    "contract": "hpl_ism_multisig",
+    "address": "neutron13uk6ydlx22kdtlkgs6p72ddhefzm2acxntp28adc0gs87we56neqz4smjc",
+    "results": [
+      {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      {
+        "id": "c2bb642d92e74db6c488d002dbdae9bedee09115196df365d42d0f15dc22bc01",
+        "query": {
+          "ism": {
+            "module_type": {}
+          }
+        },
+        "response": {
+          "type": "message_id_multisig"
+        }
+      },
+      {
+        "id": "3f11e9be78e8f85d4546d67a54df73ddc202b7d7eecfe1fe6c1952a14833079e",
+        "query": {
+          "multisig_ism": {
+            "enrolled_validators": {
+              "domain": 169
+            }
+          }
+        },
+        "error": {}
+      },
+      {
+        "id": "e1038850b9b771b466574402b4be6a8388fe0e29d674ab4ce68340cad3539c19",
+        "query": {
+          "multisig_ism": {
+            "enrolled_validators": {
+              "domain": 42161
+            }
+          }
+        },
+        "response": {
+          "validators": [
+            "092e1c19da58e87ea65198785ee83867fe4bb418",
+            "4d966438fe9e2b1e7124c87bbb90cb4f0f6c59a1",
+            "5450447aee7b544c462c9352bef7cad049b0c2dc",
+            "ec68258a7c882ac2fc46b81ce80380054ffb4ef2"
+          ],
+          "threshold": 3
+        }
+      }
+    ]
+  },
+  {
+    "contract": "hpl_hook_merkle",
+    "address": "neutron1e5c2qqquc86rd3q77aj2wyht40z6z3q5pclaq040ue9f5f8yuf7qnpvkzk",
+    "results": [
+      {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      {
+        "id": "d312859468f2875fd187f408c450316ca233790c4517b04918204acb7e3ac183",
+        "query": {
+          "hook": {
+            "mailbox": {}
+          }
+        },
+        "response": {
+          "mailbox": "neutron1sjzzd4gwkggy6hrrs8kxxatexzcuz3jecsxm3wqgregkulzj8r7qlnuef4"
+        }
+      },
+      {
+        "id": "5d985521e2e5ec887015db42c3cf3dfd7427f53d200dc51313c3a8e7263653a9",
+        "query": {
+          "merkle_hook": {
+            "count": {}
+          }
+        },
+        "response": {
+          "count": 294639
+        }
+      },
+      {
+        "id": "6c6a245a5dfe4f4678a4877f714f0994096e3758c4dc4efb11d77eb9fb88aac1",
+        "query": {
+          "merkle_hook": {
+            "root": {}
+          }
+        },
+        "response": {
+          "root": "36ba4afef453a46ed853250ae668b0af401aa082241a586783664b80f777507e"
+        }
+      },
+      {
+        "id": "9f4518b8667a69e28048d921a6bc236cef1afaa1cfed19db6f4c1eb2bc411305",
+        "query": {
+          "merkle_hook": {
+            "branch": {}
+          }
+        },
+        "response": {
+          "branch": [
+            "880a6a3c84d485ac84671b795fabde119e370706d16a68a08d9b73ba97098569",
+            "e27f4961218f8079c0d4066539da5e795bdbea12ed8a02f17c611170c0954037",
+            "5a834704b125cc4ff22639770fd7893be81fcd4f0f452e6b1fe934bb43a2d72d",
+            "a6f29b814f621f766df1a0b42bd6ed3f51135268d10654ab07b2244e0620bc01",
+            "75224f21cb145c739072a029a08b38a34702a72a9197258c6807dc7bae577faf",
+            "fb07e4e02a9b91f7077e56a59900a9f150b209acd20cde4f0c84ce0dda1060b7",
+            "de3987540dd1026837969f664fc5bc80717c117309ba1c0d50cf2b85111073c3",
+            "d56ea29c3f8626fc4481a4c919bc2f92d4259073724a9a43be17223155ca134c",
+            "52036fbc44bc40b0359aa513a74ae20e4b2fd7d01e7fbe1021cc8f557fe25898",
+            "674766cc4e42b3fec0d1a2793a07e2d301e31b0b3d85ddd1781763566ada0c93",
+            "7a6f711ca6c754accec81f0afd066bbaf939504d91ceede3f584afd9faa16832",
+            "bf3ca9717a0e297fc31a4040e81b8063f82b739d856da71cb810e7d6ba73d335",
+            "49480dc1bb213d84664e7434a5c81aca6fd17a818c7244cd8a4ae49297c2571c",
+            "dd94a842126a3226e9ec0b832b0f1918be3f2cf651ab29ce864d34643a15151d",
+            "9c0dc5648532313009dfc9bdc087d55c97018664d0103219e2117a22938a8d13",
+            "b6e4c9a7bfdb359bb05e13d0aff4ff07d4ec5139be205e37f6587cb80d355390",
+            "4d8215cf8f597d146a408c592c08326235f5ec254e9403ad312841620a12fdce",
+            "901a52f44079bb3a3d68dd39cf01ed932417efe1d10492287fd213ee40d24b40",
+            "f37ca0d2ad7cc187a54c59b40223e414677323510ef621f33770be94505ee789",
+            "b46a28b6f55540f89444f63de0378e3d121be09e06cc9ded1c20e65876d36aa0",
+            "c65e9645644786b620e2dd2ad648ddfcbf4a7e5b1a3a4ecfe7f64667a3f0b7e2",
+            "f4418588ed35a2458cffeb39b93d26f18d2ab13bdce6aee58e7b99359ec2dfd9",
+            "5a9c16dc00d6ef18b7933a6f8dc65ccb55667138776f7dea101070dc8796e377",
+            "4df84f40ae0c8229d0d6069e5c8f39a7c299677a09d367fc7b05e3bc380ee652",
+            "cdc72595f74c7b1043d0e1ffbab734648c838dfb0527d971b602bc216c9619ef",
+            "0abf5ac974a1ed57f4050aa510dd9c74f508277b39d7973bb2dfccc5eeb0618d",
+            "b8cd74046ff337f0a7bf2c8e03e10f642c1886798d71806ab1e888d9e5ee87d0",
+            "838c5655cb21c6cb83313b5a631175dff4963772cce9108188b34ac87c81c41e",
+            "662ee4dd2dd7b2bc707961b1e646c4047669dcb6584f0d8d770daf5d7e7deb2e",
+            "388ab20e2573d171a88108e79d820e98f26c0b84aa8b2f4aa4968dbb818ea322",
+            "93237c50ba75ee485f4c22adf2f741400bdf8d6a9cc7df7ecae576221665d735",
+            "8448818bb4ae4562849e949e17ac16e0be16688e156b5cf15e098c627c0056a9"
+          ]
+        }
+      },
+      {
+        "id": "1212f36f084aeebd7bee6db10ca634c6e6456630546bf14af471e6b3b2f7ccd7",
+        "query": {
+          "merkle_hook": {
+            "tree": {}
+          }
+        },
+        "response": {
+          "branch": [
+            "880a6a3c84d485ac84671b795fabde119e370706d16a68a08d9b73ba97098569",
+            "e27f4961218f8079c0d4066539da5e795bdbea12ed8a02f17c611170c0954037",
+            "5a834704b125cc4ff22639770fd7893be81fcd4f0f452e6b1fe934bb43a2d72d",
+            "a6f29b814f621f766df1a0b42bd6ed3f51135268d10654ab07b2244e0620bc01",
+            "75224f21cb145c739072a029a08b38a34702a72a9197258c6807dc7bae577faf",
+            "fb07e4e02a9b91f7077e56a59900a9f150b209acd20cde4f0c84ce0dda1060b7",
+            "de3987540dd1026837969f664fc5bc80717c117309ba1c0d50cf2b85111073c3",
+            "d56ea29c3f8626fc4481a4c919bc2f92d4259073724a9a43be17223155ca134c",
+            "52036fbc44bc40b0359aa513a74ae20e4b2fd7d01e7fbe1021cc8f557fe25898",
+            "674766cc4e42b3fec0d1a2793a07e2d301e31b0b3d85ddd1781763566ada0c93",
+            "7a6f711ca6c754accec81f0afd066bbaf939504d91ceede3f584afd9faa16832",
+            "bf3ca9717a0e297fc31a4040e81b8063f82b739d856da71cb810e7d6ba73d335",
+            "49480dc1bb213d84664e7434a5c81aca6fd17a818c7244cd8a4ae49297c2571c",
+            "dd94a842126a3226e9ec0b832b0f1918be3f2cf651ab29ce864d34643a15151d",
+            "9c0dc5648532313009dfc9bdc087d55c97018664d0103219e2117a22938a8d13",
+            "b6e4c9a7bfdb359bb05e13d0aff4ff07d4ec5139be205e37f6587cb80d355390",
+            "4d8215cf8f597d146a408c592c08326235f5ec254e9403ad312841620a12fdce",
+            "901a52f44079bb3a3d68dd39cf01ed932417efe1d10492287fd213ee40d24b40",
+            "f37ca0d2ad7cc187a54c59b40223e414677323510ef621f33770be94505ee789",
+            "b46a28b6f55540f89444f63de0378e3d121be09e06cc9ded1c20e65876d36aa0",
+            "c65e9645644786b620e2dd2ad648ddfcbf4a7e5b1a3a4ecfe7f64667a3f0b7e2",
+            "f4418588ed35a2458cffeb39b93d26f18d2ab13bdce6aee58e7b99359ec2dfd9",
+            "5a9c16dc00d6ef18b7933a6f8dc65ccb55667138776f7dea101070dc8796e377",
+            "4df84f40ae0c8229d0d6069e5c8f39a7c299677a09d367fc7b05e3bc380ee652",
+            "cdc72595f74c7b1043d0e1ffbab734648c838dfb0527d971b602bc216c9619ef",
+            "0abf5ac974a1ed57f4050aa510dd9c74f508277b39d7973bb2dfccc5eeb0618d",
+            "b8cd74046ff337f0a7bf2c8e03e10f642c1886798d71806ab1e888d9e5ee87d0",
+            "838c5655cb21c6cb83313b5a631175dff4963772cce9108188b34ac87c81c41e",
+            "662ee4dd2dd7b2bc707961b1e646c4047669dcb6584f0d8d770daf5d7e7deb2e",
+            "388ab20e2573d171a88108e79d820e98f26c0b84aa8b2f4aa4968dbb818ea322",
+            "93237c50ba75ee485f4c22adf2f741400bdf8d6a9cc7df7ecae576221665d735",
+            "8448818bb4ae4562849e949e17ac16e0be16688e156b5cf15e098c627c0056a9"
+          ],
+          "count": 294639
+        }
+      },
+      {
+        "id": "a40494962312b962b3d80a3f25744e5341507df514e28da089f0041d525bb902",
+        "query": {
+          "merkle_hook": {
+            "check_point": {}
+          }
+        },
+        "response": {
+          "root": "36ba4afef453a46ed853250ae668b0af401aa082241a586783664b80f777507e",
+          "count": 294638
+        }
+      }
+    ]
+  },
+  {
+    "contract": "hpl_igp",
+    "address": "neutron1ww9yg48qvmpmedyvkrcrmjsudxeu840l5n6ywqykpqlsdq9pdxkqg2zq7e",
+    "results": [
+      {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      {
+        "id": "d312859468f2875fd187f408c450316ca233790c4517b04918204acb7e3ac183",
+        "query": {
+          "hook": {
+            "mailbox": {}
+          }
+        },
+        "response": {
+          "mailbox": "unrestricted"
+        }
+      },
+      {
+        "id": "05da99983807c4d773058eed27b4307b03542be927a8cb9fe4eba2ad59ea70cb",
+        "query": {
+          "router": {
+            "domains": {}
+          }
+        },
+        "response": {
+          "domains": [
+            169,
+            42161
+          ]
+        }
+      },
+      {
+        "id": "c80f327fc2f9dc0d41f348008c4ad7a35efa4326ec9b3819804f04fcbbd9ea4f",
+        "query": {
+          "router": {
+            "list_routes": {}
+          }
+        },
+        "response": {
+          "routes": [
+            {
+              "domain": 169,
+              "route": "neutron1sjxus3rynpwq0ncnm0m0dfun9x3flwmalsmveh4kuml0650wsq4q8n4mus"
+            },
+            {
+              "domain": 42161,
+              "route": "neutron1sjxus3rynpwq0ncnm0m0dfun9x3flwmalsmveh4kuml0650wsq4q8n4mus"
+            }
+          ]
+        }
+      },
+      {
+        "id": "215488671aefcbbe71bbf8f3b4e8a81fd93aeca3274e935354a4a2c51fc56aa1",
+        "query": {
+          "oracle": {
+            "get_exchange_rate_and_gas_price": {
+              "dest_domain": 169
+            }
+          }
+        },
+        "response": {
+          "gas_price": "100000000",
+          "exchange_rate": "9"
+        }
+      },
+      {
+        "id": "d8259a4cbec72905336fadeddb05ac886396415e15af1b554a71e26ef4c573cb",
+        "query": {
+          "oracle": {
+            "get_exchange_rate_and_gas_price": {
+              "dest_domain": 42161
+            }
+          }
+        },
+        "response": {
+          "gas_price": "100000000",
+          "exchange_rate": "9"
+        }
+      },
+      {
+        "id": "b5afef84c49f3d03b711533a5da5fda71f429303ee64f0c7f677062b32563ddb",
+        "query": {
+          "igp": {
+            "default_gas": {}
+          }
+        },
+        "response": {
+          "gas": "3000000"
+        }
+      },
+      {
+        "id": "33406de699e77578553c89170c5e23e5368df0c5b266811ec3e623f622946cdb",
+        "query": {
+          "igp": {
+            "gas_for_domain": {
+              "domains": []
+            }
+          }
+        },
+        "response": {
+          "gas": []
+        }
+      },
+      {
+        "id": "c759691d3aecb35ff66bb1b47d1ad0bb54ecda231ee4ac3d2a1a4c62a2745dcb",
+        "query": {
+          "igp": {
+            "list_gas_for_domains": {}
+          }
+        },
+        "response": {
+          "gas": []
+        }
+      },
+      {
+        "id": "5def1d58cf3055cd1620d7359a5148ca7c69b8f2feb631c7b7eef45b3daa5e80",
+        "query": {
+          "igp": {
+            "beneficiary": {}
+          }
+        },
+        "response": {
+          "beneficiary": "neutron1l5y24mk3s37ks35alsmq83cljhd7c7hsam3ag2"
+        }
+      },
+      {
+        "id": "e70871c0d57b7832c436c00c38a9a0ccb7d65dd71a2aae8bb5746c31ac3ad933",
+        "query": {
+          "igp": {
+            "quote_gas_payment": {
+              "dest_domain": 169,
+              "gas_amount": "300000"
+            }
+          }
+        },
+        "response": {
+          "gas_needed": "27000"
+        }
+      },
+      {
+        "id": "e8b7d911dd3005aff08d4389c3e36380f86dd3a53ecab812d1899df5233e3707",
+        "query": {
+          "igp": {
+            "quote_gas_payment": {
+              "dest_domain": 42161,
+              "gas_amount": "300000"
+            }
+          }
+        },
+        "response": {
+          "gas_needed": "27000"
+        }
+      }
+    ]
+  },
+  {
+    "contract": "hpl_igp_oracle",
+    "address": "neutron1sjxus3rynpwq0ncnm0m0dfun9x3flwmalsmveh4kuml0650wsq4q8n4mus",
+    "results": [
+      {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      {
+        "id": "215488671aefcbbe71bbf8f3b4e8a81fd93aeca3274e935354a4a2c51fc56aa1",
+        "query": {
+          "oracle": {
+            "get_exchange_rate_and_gas_price": {
+              "dest_domain": 169
+            }
+          }
+        },
+        "response": {
+          "gas_price": "100000000",
+          "exchange_rate": "9"
+        }
+      },
+      {
+        "id": "d8259a4cbec72905336fadeddb05ac886396415e15af1b554a71e26ef4c573cb",
+        "query": {
+          "oracle": {
+            "get_exchange_rate_and_gas_price": {
+              "dest_domain": 42161
+            }
+          }
+        },
+        "response": {
+          "gas_price": "100000000",
+          "exchange_rate": "9"
+        }
+      }
+    ]
+  },
+  {
+    "contract": "hpl_warp_native",
+    "address": "neutron1jyyjd3x0jhgswgm6nnctxvzla8ypx50tew3ayxxwkrjfxhvje6kqzvzudq",
+    "results": [
+      {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      {
+        "id": "05da99983807c4d773058eed27b4307b03542be927a8cb9fe4eba2ad59ea70cb",
+        "query": {
+          "router": {
+            "domains": {}
+          }
+        },
+        "response": {
+          "domains": [
+            42161
+          ]
+        }
+      },
+      {
+        "id": "c80f327fc2f9dc0d41f348008c4ad7a35efa4326ec9b3819804f04fcbbd9ea4f",
+        "query": {
+          "router": {
+            "list_routes": {}
+          }
+        },
+        "response": {
+          "routes": [
+            {
+              "domain": 42161,
+              "route": "000000000000000000000000d56734d7f9979dd94fae3d67c7e928234e71cd4c"
+            }
+          ]
+        }
+      },
+      {
+        "id": "9af57d56545e574ff9d7966459c924479e7f2a026ee4f5d7af46e8f92b7c2e88",
+        "query": {
+          "connection": {
+            "get_mailbox": {}
+          }
+        },
+        "response": {
+          "mailbox": null
+        }
+      },
+      {
+        "id": "d55bdddfe980e439be1462656d5cca6d22dde08b084c41d688424326a9a5d2d6",
+        "query": {
+          "connection": {
+            "get_hook": {}
+          }
+        },
+        "response": {
+          "hook": "neutron1e5c2qqquc86rd3q77aj2wyht40z6z3q5pclaq040ue9f5f8yuf7qnpvkzk"
+        }
+      },
+      {
+        "id": "b2c31e359408d89a258441650c71c54b909aabb6126281e220fba6f0ca105d5d",
+        "query": {
+          "connection": {
+            "get_ism": {}
+          }
+        },
+        "response": {
+          "ism": "neutron13uk6ydlx22kdtlkgs6p72ddhefzm2acxntp28adc0gs87we56neqz4smjc"
+        }
+      },
+      {
+        "id": "0b26e3f6b659e8ef1f6b5dbf563b317e9c5ca78b2f0301c1fa2bff219edea6fa",
+        "query": {
+          "token_default": {
+            "token_type": {}
+          }
+        },
+        "response": {
+          "type": {
+            "native": {
+              "fungible": {
+                "denom": "ibc/773B4D0A3CD667B2275D5A4A7A2F0909C0BA0F4059C0B9181E680DDF4965DCC7"
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "2cf6e2438d95b8542d4d133ffdcdf2bd402449ef183c20dfd453722a007a2ffd",
+        "query": {
+          "token_default": {
+            "token_mode": {}
+          }
+        },
+        "response": {
+          "mode": "collateral"
+        }
+      },
+      {
+        "id": "cc6cbb6d5e07d1d91921bb535721cff70b736e77ef2f94dfc146c5d6af8d0362",
+        "query": {
+          "ism_specifier": {
+            "interchain_security_module": []
+          }
+        },
+        "response": {
+          "ism": "neutron13uk6ydlx22kdtlkgs6p72ddhefzm2acxntp28adc0gs87we56neqz4smjc"
+        }
+      }
+    ]
+  },
+  {
+    "contract": "hpl_warp_native",
+    "address": "neutron1ch7x3xgpnj62weyes8vfada35zff6z59kt2psqhnx9gjnt2ttqdqtva3pa",
+    "results": [
+      {
+        "id": "9b460364ed9a1f946f7c0571bb5e058bec4b6189ff3efcf8946b4e347e32869b",
+        "query": {
+          "ownable": {
+            "get_owner": {}
+          }
+        },
+        "response": {
+          "owner": "neutron1fqf5mprg3f5hytvzp3t7spmsum6rjrw80mq8zgkc0h6rxga0dtzqws3uu7"
+        }
+      },
+      {
+        "id": "2fd20a9fe342c1533d48d2a1c486099f1478b988fcfe912d1967b8c9be35757b",
+        "query": {
+          "ownable": {
+            "get_pending_owner": {}
+          }
+        },
+        "response": {
+          "pending_owner": null
+        }
+      },
+      {
+        "id": "05da99983807c4d773058eed27b4307b03542be927a8cb9fe4eba2ad59ea70cb",
+        "query": {
+          "router": {
+            "domains": {}
+          }
+        },
+        "response": {
+          "domains": [
+            169
+          ]
+        }
+      },
+      {
+        "id": "c80f327fc2f9dc0d41f348008c4ad7a35efa4326ec9b3819804f04fcbbd9ea4f",
+        "query": {
+          "router": {
+            "list_routes": {}
+          }
+        },
+        "response": {
+          "routes": [
+            {
+              "domain": 169,
+              "route": "0000000000000000000000006fae4d9935e2fcb11fc79a64e917fb2bf14dafaa"
+            }
+          ]
+        }
+      },
+      {
+        "id": "9af57d56545e574ff9d7966459c924479e7f2a026ee4f5d7af46e8f92b7c2e88",
+        "query": {
+          "connection": {
+            "get_mailbox": {}
+          }
+        },
+        "response": {
+          "mailbox": null
+        }
+      },
+      {
+        "id": "d55bdddfe980e439be1462656d5cca6d22dde08b084c41d688424326a9a5d2d6",
+        "query": {
+          "connection": {
+            "get_hook": {}
+          }
+        },
+        "response": {
+          "hook": null
+        }
+      },
+      {
+        "id": "b2c31e359408d89a258441650c71c54b909aabb6126281e220fba6f0ca105d5d",
+        "query": {
+          "connection": {
+            "get_ism": {}
+          }
+        },
+        "response": {
+          "ism": null
+        }
+      },
+      {
+        "id": "0b26e3f6b659e8ef1f6b5dbf563b317e9c5ca78b2f0301c1fa2bff219edea6fa",
+        "query": {
+          "token_default": {
+            "token_type": {}
+          }
+        },
+        "response": {
+          "type": {
+            "native": {
+              "fungible": {
+                "denom": "ibc/773B4D0A3CD667B2275D5A4A7A2F0909C0BA0F4059C0B9181E680DDF4965DCC7"
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "2cf6e2438d95b8542d4d133ffdcdf2bd402449ef183c20dfd453722a007a2ffd",
+        "query": {
+          "token_default": {
+            "token_mode": {}
+          }
+        },
+        "response": {
+          "mode": "collateral"
+        }
+      },
+      {
+        "id": "cc6cbb6d5e07d1d91921bb535721cff70b736e77ef2f94dfc146c5d6af8d0362",
+        "query": {
+          "ism_specifier": {
+            "interchain_security_module": []
+          }
+        },
+        "response": {
+          "ism": null
+        }
+      }
+    ]
+  }
+]

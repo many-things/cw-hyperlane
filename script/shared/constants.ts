@@ -33,3 +33,10 @@ export const REMOTE_MIN_VERSION = 'v0.0.6-rc8';
 export const RELEASE_API_URL = `https://api.github.com/repos/${REMOTE_REPO_NAME}/releases`;
 export const RELEASE_ARTIFACT_URL = (tag: string) =>
   `https://github.com/${REMOTE_REPO_NAME}/releases/download/${tag}/cw-hyperlane-${tag}.zip`;
+
+export const DEFAULT_CRADLE_RPC_BASE_URL =
+  'https://cradle-manager.ec1-prod.newmetric.xyz/cradle/proxy/{session_id}';
+export const DEFAULT_CRADLE_REST_BASE_URL =
+  'https://cradle-manager.ec1-prod.newmetric.xyz/cradle/proxy/{session_id}';
+export const DEFAULT_CRADLE_GRPC_BASE_URL =
+  '{session_id}.cradle-grpc.ec1-prod.newmetric.xyz:80';

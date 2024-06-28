@@ -8,8 +8,8 @@
  *  - list available releases from github (check `../common/github.ts` to see how it works)
  */
 import { CodeDetails } from '@cosmjs/cosmwasm-stargate';
-import { AccessConfig, AccessType } from "cosmjs-types/cosmwasm/wasm/v1/types";
 import { Command } from 'commander';
+import { AccessConfig, AccessType } from 'cosmjs-types/cosmwasm/wasm/v1/types';
 import * as fs from 'fs';
 
 import {
@@ -36,7 +36,10 @@ uploadCmd
   .command('local')
   .description('upload artifacts from local')
   .option('-a --artifacts <artifacts dir>', 'artifacts', defaultArtifactPath)
-  .option('--set-instantiate-admin', 'Sets instantiate permissions to be admin address only') 
+  .option(
+    '--set-instantiate-admin',
+    'Sets instantiate permissions to be admin address only',
+  )
   .action(async (_, cmd) => upload(cmd.optsWithGlobals()));
 
 uploadCmd
@@ -44,7 +47,10 @@ uploadCmd
   .description('upload artifacts from remote')
   .argument('<tag-name>', `name of release tag. min: ${REMOTE_MIN_VERSION}`)
   .option('-o --out <out dir>', 'artifact output directory', defaultTmpDir)
-  .option('--set-instantiate-admin', 'Sets instantiate permissions to be admin address only') 
+  .option(
+    '--set-instantiate-admin',
+    'Sets instantiate permissions to be admin address only',
+  )
   .action(handleRemote);
 
 uploadCmd
@@ -61,7 +67,11 @@ async function handleRemote(
   _: object,
   cmd: Command,
 ): Promise<void> {
-  const opts = cmd.optsWithGlobals() as { networkId: string; out: string; setInstantiateAdmin?: boolean  };
+  const opts = cmd.optsWithGlobals() as {
+    networkId: string;
+    out: string;
+    setInstantiateAdmin?: boolean;
+  };
 
   if (tagName < REMOTE_MIN_VERSION)
     throw new Error(`${tagName} < ${REMOTE_MIN_VERSION}`);
@@ -80,7 +90,11 @@ async function handleRemote(
 
   console.log('Downloaded artifacts to', artifactPath.green);
 
-  return upload({ ...opts, artifacts: artifactPath, setInstantiateAdmin: opts.setInstantiateAdmin });
+  return upload({
+    ...opts,
+    artifacts: artifactPath,
+    setInstantiateAdmin: opts.setInstantiateAdmin,
+  });
 }
 
 async function handleRemoteList() {
@@ -177,9 +191,9 @@ async function upload({
   console.log('Proceeding to upload...');
 
   const restrictedInstantiationPermissions: AccessConfig = {
-    permission: AccessType.ACCESS_TYPE_ANY_OF_ADDRESSES, 
-    address: "", //
-    addresses: [client.signer]
+    permission: AccessType.ACCESS_TYPE_ANY_OF_ADDRESSES,
+    address: '', //
+    addresses: [client.signer],
   };
 
   let okCount = 0;

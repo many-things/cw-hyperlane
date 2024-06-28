@@ -10,15 +10,15 @@ import { expectNextContractAddr, logTx } from './utils';
 
 export const recipientCmd = new Command('deploy-test-recipient')
   .option('--validator-address <validator-address>', 'validator address to use')
-  .action(
-  deployTestRecipient,
-);
+  .action(deployTestRecipient);
 
 type DeployTestRecipientArgs = {
-  validatorAddress?: `0x{string}`
-}
+  validatorAddress?: `0x{string}`;
+};
 
-async function deployTestRecipient({validatorAddress}: DeployTestRecipientArgs) {
+async function deployTestRecipient({
+  validatorAddress,
+}: DeployTestRecipientArgs) {
   const {
     account,
     provider: { query, exec },

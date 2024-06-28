@@ -16,5 +16,5 @@
     "outDir": "dist",
     "declaration": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["script/**/*.ts", "example/**/*.ts"]
+  "include": ["script/**/*.ts", "example/**/*.ts", "tests/**/*.ts"]
 }

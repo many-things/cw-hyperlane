@@ -2,7 +2,12 @@ import fs from 'fs';
 import path from 'path';
 
 import { Config } from './config';
-import { defaultArtifactPath } from './constants';
+import {
+  DEFAULT_CRADLE_GRPC_BASE_URL,
+  DEFAULT_CRADLE_REST_BASE_URL,
+  DEFAULT_CRADLE_RPC_BASE_URL,
+  defaultArtifactPath,
+} from './constants';
 import { generateSha256 } from './utils';
 
 function getWasmFilesPath(
@@ -65,8 +70,24 @@ export async function getContractInfo(
   addr: string,
 ): Promise<ContractInfoResp | undefined> {
   try {
+    // FIXME: refactor this
+    const endpoint = (() =>
+      network.is_cradle
+        ? {
+            rpc: (
+              network.cradle_rpc_base_url || DEFAULT_CRADLE_RPC_BASE_URL
+            ).replaceAll('{session_id}', network.cradle_session_id),
+            rest: (
+              network.cradle_rest_base_url || DEFAULT_CRADLE_REST_BASE_URL
+            ).replaceAll('{session_id}', network.cradle_session_id),
+            grpc: (
+              network.cradle_grpc_base_url || DEFAULT_CRADLE_GRPC_BASE_URL
+            ).replaceAll('{session_id}', network.cradle_session_id),
+          }
+        : network.endpoint)();
+
     const res = await fetch(
-      path.join(network.endpoint.rest, '/cosmwasm/wasm/v1/contract/', addr),
+      path.join(endpoint.rest, '/cosmwasm/wasm/v1/contract/', addr),
     );
     const body = await res.json();
 
