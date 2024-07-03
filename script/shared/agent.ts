@@ -61,7 +61,7 @@ export async function fromContext(
                   mailboxContractInfo.contract_info.created.block_height,
                 ) - 1
               : undefined,
-          chunk: 10_000,
+          chunk: 5,
         },
         blocks: {
           confirmations: 0,
