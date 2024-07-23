@@ -218,7 +218,7 @@ pub fn process(
     Ok(Response::new().add_message(handle_msg).add_events(vec![
         emit_process_id(id),
         emit_process(
-            config.local_domain,
+            decoded_msg.origin_domain,
             decoded_msg.sender,
             decoded_msg.recipient,
         ),
