@@ -32,7 +32,7 @@ pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn new_event(name: &str) -> Event {
-    Event::new(format!("hpl_hook_pausable::{}", name))
+    Event::new(format!("hpl_ism_pausable::{}", name))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
