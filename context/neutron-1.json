@@ -29,8 +29,8 @@
     },
     "isms": {
       "type": "hpl_ism_multisig",
-      "address": "neutron1q75ky8reksqzh0lkhk9k3csvjwv74jjquahrj233xc7dvzz5fv4qtvw0qg",
-      "hexed": "0x07a9621c79b4002bbff6bd8b68e20c9399eaca40e76e392a31363cd608544b2a"
+      "address": "neutron1pa0fupajl0ysmdylcwau5szdkdcxg7rxt967p04felf9n6hc7zvqh4ycv9",
+      "hexed": "0x0f5e9e07b2fbc90db49fc3bbca404db3706478665975e0bea9cfd259eaf8f098"
     },
     "hooks": {
       "default": {
