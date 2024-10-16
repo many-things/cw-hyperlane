@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use cosmwasm_std::{Deps, HexBinary};
 use hpl_interface::{
     ism::{IsmType, ModuleTypeResponse, VerifyInfoResponse, VerifyResponse},
@@ -35,20 +37,25 @@ pub fn verify_message(
 
     let hashed_message = eth_hash(multisig_hash)?;
 
-    // pizza :)
     let validators = VALIDATORS.load(deps.storage, message.origin_domain)?;
     let mut threshold = THRESHOLD.load(deps.storage, message.origin_domain)?;
 
+    let mut matched_validators = HashSet::new();
+
     for signature in metadata.signatures {
         let signature = signature.as_slice();
-        let pubkey = deps.api.secp256k1_recover_pubkey(
+        let signer_pubkey = deps.api.secp256k1_recover_pubkey(
             &hashed_message,
             &signature[..64],
             signature[64] - 27,
         )?;
 
-        if validators.contains(&eth_addr(pubkey.into())?) {
+        let signer_addr = eth_addr(signer_pubkey.into())?;
+
+        if validators.contains(&signer_addr) && !matched_validators.contains(&signer_addr) {
             threshold -= 1;
+            matched_validators.insert(signer_addr);
+
             if threshold == 0 {
                 break;
             }
@@ -81,7 +88,7 @@ mod test {
     use cosmwasm_std::{testing::mock_dependencies, HexBinary};
     use hpl_interface::{
         ism::{IsmType, ModuleTypeResponse, VerifyResponse},
-        types::{eth_addr, Message},
+        types::{eth_addr, Message, MessageIdMultisigIsmMetadata},
     };
     use ibcx_test_utils::hex;
     use k256::{ecdsa::SigningKey, elliptic_curve::rand_core::OsRng};
@@ -104,7 +111,7 @@ mod test {
     #[rstest]
     #[case(
         hex("0000000000000068220000000000000000000000000d1255b09d94659bb0888e0aa9fca60245ce402a0000682155208cd518cffaac1b5d8df216a9bd050c9a03f0d4f3ba88e5268ac4cd12ee2d68656c6c6f"),
-        hex("986a1625d44e4b3969b08a5876171b2b4fcdf61b3e5c70a86ad17b304f17740a9f45d99ea6bec61392a47684f4e5d1416ddbcb5fdef0f132c27d7034e9bbff1c00000000ba9911d78ec6d561413e3589f920388cbd7554fbddd8ce50739337250853ec3577a51fa40e727c05b50f15db13f5aad5857c89d432644be48d70325ea83fdb6c1c"),        
+        hex("986a1625d44e4b3969b08a5876171b2b4fcdf61b3e5c70a86ad17b304f17740a9f45d99ea6bec61392a47684f4e5d1416ddbcb5fdef0f132c27d7034e9bbff1c00000000ba9911d78ec6d561413e3589f920388cbd7554fbddd8ce50739337250853ec3577a51fa40e727c05b50f15db13f5aad5857c89d432644be48d70325ea83fdb6c1c"),
         vec![
             hex("122e0663ccc190266427e7fc0ed6589b5d7d36db"),
             hex("01d7525e91dfc3f594fd366aad70f956b398de9e"),
@@ -137,6 +144,49 @@ mod test {
 
         let res = verify_message(deps.as_ref(), raw_metadata, raw_message).unwrap();
         assert_eq!(res, VerifyResponse { verified: true });
+    }
+
+    #[test]
+    fn test_verify_prevent_reuse_of_validator_signature() {
+        let mut deps = mock_dependencies();
+
+        let threshold = 2u8;
+        let validators = vec![
+            hex("ebc301013b6cd2548e347c28d2dc43ec20c068f2"),
+            hex("315db9868fc8813b221b1694f8760ece39f45447"),
+            hex("17517c98358c5937c5d9ee47ce1f5b4c2b7fc9f5"),
+        ];
+
+        let message = Message {
+            version: 3,
+            nonce: 36,
+            origin_domain: 80001,
+            sender: hex("00000000000000000000000004980c17e2ce26578c82f81207e706e4505fae3b"),
+            dest_domain: 43113,
+            recipient: hex("0000000000000000000000000b1c1b54f45e02552331d3106e71f5e0b573d5d4"),
+            body: hex("48656c6c6f21"),
+        };
+
+        let metadata = MessageIdMultisigIsmMetadata {
+            origin_merkle_tree: hex("0000000000000000000000009af85731edd41e2e50f81ef8a0a69d2fb836edf9"),
+            merkle_root: hex("a84430f822e0e9b5942faace72bd5b97f0b59a58a9b8281231d9e5c393b5859c"),
+            merkle_index: hex("00000024"),
+            signatures: [
+                // same signature
+                hex("539feceace17782697e29e74151006dc7b47227cf48aba02926336cb5f7fa38b3d05e8293045f7b5811eda3ae8aa070116bb5fbf57c79e143a69e909df90cefa1b"),
+                hex("539feceace17782697e29e74151006dc7b47227cf48aba02926336cb5f7fa38b3d05e8293045f7b5811eda3ae8aa070116bb5fbf57c79e143a69e909df90cefa1b")
+                ].to_vec()
+            };
+
+        VALIDATORS
+            .save(deps.as_mut().storage, message.origin_domain, &validators)
+            .unwrap();
+        THRESHOLD
+            .save(deps.as_mut().storage, message.origin_domain, &threshold)
+            .unwrap();
+
+        let res = verify_message(deps.as_ref(), metadata.into(), message.into()).unwrap();
+        assert_eq!(res, VerifyResponse { verified: false });
     }
 
     #[test]
