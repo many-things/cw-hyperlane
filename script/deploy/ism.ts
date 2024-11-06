@@ -38,7 +38,7 @@ export async function deployIsm(
     // deploy multisig ism
     case 'multisig': {
       const multisig = await deployContract(ctx, client, 'hpl_ism_multisig', {
-        owner: ism.owner === '<signer>' ? client.signer : ism.owner,
+        owner: ism.owner === '<signer>' ? client.injective_signer : ism.owner,
       });
 
       if (ism.validators != undefined) {

@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 
+import { MsgExecuteContract } from '@injectivelabs/sdk-ts';
 import { deployHook, deployIsm } from '../deploy';
 import { saveAgentConfig } from '../shared/agent';
 import { Client, config, getNetwork } from '../shared/config';
@@ -19,9 +20,33 @@ async function handleDeploy(_: object, cmd: Command) {
   ctx.deployments = ctx.deployments || {};
   ctx.deployments.core = await deployCore(opts, ctx, client);
   ctx.deployments.isms = await deployIsms(ctx, client);
-  ctx.deployments.hooks = await deployHooks(opts, ctx, client);
-  ctx.deployments.warp = { native: [], cw20: [] };
-  ctx.deployments.test = await deployTest(opts, ctx, client);
+  // ctx.deployments.hooks = await deployHooks(opts, ctx, client);
+  // ctx.deployments.warp = { native: [], cw20: [] };
+  // ctx.deployments.test = await deployTest(opts, ctx, client);
+
+  // const updateMsg = MsgUpdateAdmin.fromJSON({
+  //   sender: client.injective_signer,
+  //   newAdmin: 'inj1ac6qpt57vhtfzdecd2an052elwgenwtxcn9chl',
+  //   contract: ctx.deployments.isms?.address!,
+  // });
+
+  const initMsg = MsgExecuteContract.fromJSON({
+    contractAddress: ctx.deployments.isms?.address!,
+    sender: client.injective_signer,
+    msg: {
+      ownable: {
+        init_ownership_transfer: {
+          next_owner: 'inj1ac6qpt57vhtfzdecd2an052elwgenwtxcn9chl'
+        }
+      }
+    }
+  })
+
+  const resp = await client.injective.broadcast({
+    msgs: initMsg,
+  });
+
+  console.log({resp});
 
   if (!ctx.deployments.core?.mailbox)
     throw new Error('deployed Mailbox contract not found on context');
