@@ -1,0 +1,41 @@
+{
+  "version": "v0.0.7",
+  "artifacts": {
+    "hpl_hook_aggregate": 381,
+    "hpl_hook_fee": 382,
+    "hpl_hook_merkle": 383,
+    "hpl_hook_pausable": 384,
+    "hpl_hook_routing": 385,
+    "hpl_hook_routing_custom": 386,
+    "hpl_hook_routing_fallback": 387,
+    "hpl_igp": 388,
+    "hpl_igp_oracle": 389,
+    "hpl_ism_aggregate": 390,
+    "hpl_ism_multisig": 1183,
+    "hpl_ism_pausable": 392,
+    "hpl_ism_routing": 393,
+    "hpl_mailbox": 394,
+    "hpl_test_mock_hook": 395,
+    "hpl_test_mock_ism": 396,
+    "hpl_test_mock_msg_receiver": 397,
+    "hpl_validator_announce": 398,
+    "hpl_warp_cw20": 399,
+    "hpl_warp_native": 400
+  },
+  "deployments": {
+    "core": {
+      "mailbox": {
+        "type": "hpl_mailbox",
+        "address": "inj1palm2wtp6urg0c6j4f2ukv5u5ahdcrqek0sapt"
+      },
+      "validator_announce": {
+        "type": "hpl_validator_announce",
+        "address": "inj1r7eztvhul0n4uc22r438m6tl7dezgthdw2cjjx"
+      }
+    },
+    "isms": {
+      "type": "hpl_ism_multisig",
+      "address": "inj17hfpmd6yqy3gs4sxc0hh779k3nvldu5rpjkepn"
+    }
+  }
+}

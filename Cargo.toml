@@ -1,13 +1,13 @@
 [workspace]
 members = [
-    "contracts/core/*",
-    "contracts/hooks/*",
-    "contracts/igps/*",
-    "contracts/isms/*",
-    "contracts/mocks/*",
-    "contracts/warp/*",
-    "packages/*",
-    "integration-test",
+  "contracts/core/*",
+  "contracts/hooks/*",
+  "contracts/igps/*",
+  "contracts/isms/*",
+  "contracts/mocks/*",
+  "contracts/warp/*",
+  "packages/*",
+  "integration-test",
 ]
 resolver = "2"
 
@@ -27,11 +27,11 @@ panic = "abort"
 rpath = false
 
 [workspace.package]
-version = "0.0.6"
+version = "0.0.7"
 authors = [
-    "byeongsu-hong <hong@byeongsu.dev>",
-    "Eric <hashableric@gmail.com>",
-    "Steve <steve8060914@gmail.com>",
+  "byeongsu-hong <hong@byeongsu.dev>",
+  "Eric <hashableric@gmail.com>",
+  "Steve <steve8060914@gmail.com>",
 ]
 edition = "2021"
 license = "Apache-2.0"
@@ -68,7 +68,7 @@ serde_json = "1.0.96"
 serde-json-wasm = "1.0.0"
 schemars = "0.8.12"
 prost = { version = "0.12.1", default-features = false, features = [
-    "prost-derive",
+  "prost-derive",
 ] }
 prost-types = { version = "0.12.1", default-features = false }
 hex-literal = { version = "0.4.1" }

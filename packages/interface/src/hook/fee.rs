@@ -22,12 +22,8 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub enum FeeHookMsg {
-    SetFee {
-        fee: Coin,
-    },
-    Claim {
-        recipient: Option<Addr>
-    }
+    SetFee { fee: Coin },
+    Claim { recipient: Option<Addr> },
 }
 
 #[cw_serde]
@@ -43,7 +39,7 @@ pub enum QueryMsg {
 #[derive(QueryResponses)]
 pub enum FeeHookQueryMsg {
     #[returns(FeeResponse)]
-    Fee {}
+    Fee {},
 }
 
 #[cw_serde]

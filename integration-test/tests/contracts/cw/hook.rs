@@ -98,9 +98,7 @@ impl Hook {
         let hook = wasm
             .instantiate(
                 codes.hook_merkle,
-                &hook::merkle::InstantiateMsg {
-                    mailbox,
-                },
+                &hook::merkle::InstantiateMsg { mailbox },
                 Some(deployer.address().as_str()),
                 Some("cw-hpl-hook-merkle"),
                 &[],
