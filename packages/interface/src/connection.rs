@@ -4,9 +4,9 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 pub enum ConnectionMsg {
     SetMailbox { mailbox: String },
 
-    SetHook { hook: String },
+    SetHook { hook: Option<String> },
 
-    SetIsm { ism: String },
+    SetIsm { ism: Option<String> },
 }
 
 #[cw_serde]
