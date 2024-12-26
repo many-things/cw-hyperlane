@@ -80,14 +80,10 @@ pub fn handle<C: CustomQuery>(
                     ))
             }
                 None => {
-                    let removed_hook = get_hook(deps.storage)?
-                        .map(|addr| addr.to_string())
-                        .unwrap_or_else(|| "none".to_string());
-
                     HOOK.remove(deps.storage);
 
                     Ok(event_to_resp(
-                        new_event("unset_hook").add_attribute("hook", removed_hook),
+                        new_event("unset_hook")
                     ))
                 }
             }
