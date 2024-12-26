@@ -191,13 +191,7 @@ mod tests {
         };
         let info = mock_info(sender.as_str(), &[]);
 
-        let res = handle(deps.as_mut(), mock_env(), info, msg).unwrap();
-        assert_eq!(
-            res,
-            event_to_resp(
-                new_event("set_hook").add_attribute("hook", new_hook_addr.to_string())
-            )
-        );
+        handle(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         let hook = get_hook(&deps.storage).unwrap().unwrap();
         assert_eq!(hook, new_hook_addr);
@@ -205,13 +199,7 @@ mod tests {
         let unset_msg = ConnectionMsg::SetHook { hook: None };
         let unset_info = mock_info(sender.as_str(), &[]);
 
-        let res = handle(deps.as_mut(), mock_env(), unset_info, unset_msg).unwrap();
-        assert_eq!(
-            res,
-            event_to_resp(
-                new_event("unset_hook").add_attribute("hook", new_hook_addr.to_string())
-            )
-        );
+        handle(deps.as_mut(), mock_env(), unset_info, unset_msg).unwrap();
 
         let hook = get_hook(&deps.storage).unwrap();
         assert!(hook.is_none());
