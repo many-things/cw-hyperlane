@@ -60,14 +60,10 @@ pub fn handle<C: CustomQuery>(
                     ))
                 }
                 None => {
-                    let removed_ism = get_ism(deps.storage)?
-                        .map(|addr| addr.to_string())
-                        .unwrap_or_else(|| "none".to_string());
-
                     ISM.remove(deps.storage);
 
                     Ok(event_to_resp(
-                        new_event("unset_ism").add_attribute("ism", removed_ism),
+                        new_event("unset_ism")
                     ))
                 }
             }
