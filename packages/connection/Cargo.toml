@@ -30,6 +30,8 @@ serde.workspace = true
 serde-json-wasm.workspace = true
 thiserror.workspace = true
 cosmwasm-schema.workspace = true
+rstest.workspace = true
+ibcx-test-utils.workspace = true
 
 hpl-ownable.workspace = true
 hpl-interface.workspace = true
